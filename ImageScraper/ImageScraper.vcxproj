@@ -176,7 +176,7 @@ xcopy "$(SolutionDir)\config.json" "$(TargetDir)" /Y</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Config.cpp" />
     <ClCompile Include="src\Logger.cpp" />
     <ClCompile Include="src\RedditRequest.cpp" />
