@@ -5,10 +5,12 @@
 #include <filesystem>
 #include <string>
 
+#include "Logger.h"
 
-int main(int argc, char* argv[])
+
+int main( int argc, char* argv[ ] )
 {
-    const std::filesystem::path exe_path = std::filesystem::path(argv[0]).parent_path();
+    const std::filesystem::path exe_path = std::filesystem::path( argv[ 0 ] ).parent_path( );
     const std::filesystem::path cert_path = exe_path / "curl-ca-bundle.crt";
     const std::string user_agent = "carlocgc";
 
@@ -19,24 +21,25 @@ int main(int argc, char* argv[])
     std::ostringstream response;
 
     // Set the URL to retrieve
-    request.setOpt(new curlpp::options::Url(endpoint));
+    request.setOpt( new curlpp::options::Url( endpoint ) );
 
     // Follow redirects if any
-    request.setOpt(new curlpp::options::FollowLocation(true));
+    request.setOpt( new curlpp::options::FollowLocation( true ) );
 
     // Set user agent
-    request.setOpt(new curlpp::options::UserAgent(user_agent));
+    request.setOpt( new curlpp::options::UserAgent( user_agent ) );
 
     // Set the output stream for the response
-    request.setOpt(new curlpp::options::WriteStream(&response));
+    request.setOpt( new curlpp::options::WriteStream( &response ) );
 
-    request.setOpt(new curlpp::options::CaInfo(cert_path.generic_string()));
+    request.setOpt( new curlpp::options::CaInfo( cert_path.generic_string( ) ) );
 
     // Perform the request and get the response
-    request.perform();
+    request.perform( );
 
     // Print the response
-    std::cout << response.str() << std::endl;
+    const std::string responseStr{ response.str( ) };
+    InfoLog( "[%s] Response: %s", __FUNCTION__, responseStr.c_str() );
 
     return 0;
 }

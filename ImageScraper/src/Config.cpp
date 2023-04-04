@@ -3,17 +3,17 @@
 #include <fstream>
 #include <filesystem>
 
-bool Config::ReadFromFile(const std::string& filepath)
+bool Config::ReadFromFile( const std::string& filepath )
 {
     std::filesystem::path configPath = filepath;
-    if (!std::filesystem::exists(configPath))
+    if( !std::filesystem::exists( configPath ) )
     {
         return false;
     };
 
     std::ofstream file;
-    file.open(filepath);
-    if (!file.is_open())
+    file.open( filepath );
+    if( !file.is_open( ) )
     {
         return false;
     }

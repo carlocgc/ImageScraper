@@ -176,6 +176,7 @@ xcopy "$(SolutionDir)\cert\curl-ca-bundle.crt" "$(TargetDir)" /Y</Command>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\Config.cpp" />
+    <ClCompile Include="src\Logger.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Config.h" />
@@ -218,6 +219,8 @@ xcopy "$(SolutionDir)\cert\curl-ca-bundle.crt" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\json\value.h" />
     <ClInclude Include="include\json\version.h" />
     <ClInclude Include="include\json\writer.h" />
+    <ClInclude Include="include\Logger.h" />
+    <ClInclude Include="include\TypeTraits.h" />
     <ClInclude Include="include\utilspp\clone_ptr.hpp" />
     <ClInclude Include="include\utilspp\EmptyType.hpp" />
     <ClInclude Include="include\utilspp\NonCopyable.hpp" />

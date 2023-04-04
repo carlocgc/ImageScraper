@@ -2,8 +2,8 @@
 
 #include <string>
 
-class Config
+class Config final
 {
-    bool ReadFromFile(const std::string& filepath);
+    bool ReadFromFile( const std::string& filepath );
 };
 
