@@ -17,7 +17,7 @@ public:
     virtual void Perform( ) = 0;
 
     // Create a response obj and have perform return it?
-    std::string Response( ) { return m_Response.str( ).c_str( ); };
+    std::string Response( ) { return m_Response.str( ); };
 
 protected:
     virtual void Configure( const Config& config ) = 0;
