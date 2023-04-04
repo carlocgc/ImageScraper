@@ -142,6 +142,7 @@
     <PreBuildEvent>
       <Command>xcopy "$(SolutionDir)\lib\Debug\libcurl-d.dll" "$(TargetDir)" /Y
 xcopy "$(SolutionDir)\cert\curl-ca-bundle.crt" "$(TargetDir)" /Y
+xcopy "$(SolutionDir)\config.json" "$(TargetDir)" /Y
 </Command>
     </PreBuildEvent>
     <PreBuildEvent>
@@ -169,7 +170,8 @@ xcopy "$(SolutionDir)\cert\curl-ca-bundle.crt" "$(TargetDir)" /Y
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(SolutionDir)lib\Release\libcurl.dll" "$(TargetDir)" /Y
-xcopy "$(SolutionDir)\cert\curl-ca-bundle.crt" "$(TargetDir)" /Y</Command>
+xcopy "$(SolutionDir)\cert\curl-ca-bundle.crt" "$(TargetDir)" /Y
+xcopy "$(SolutionDir)\config.json" "$(TargetDir)" /Y</Command>
       <Message>Copy libcurl-d to the output directory alongside exe</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -177,6 +179,7 @@ xcopy "$(SolutionDir)\cert\curl-ca-bundle.crt" "$(TargetDir)" /Y</Command>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\Config.cpp" />
     <ClCompile Include="src\Logger.cpp" />
+    <ClCompile Include="src\RedditRequest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Config.h" />
@@ -211,6 +214,8 @@ xcopy "$(SolutionDir)\cert\curl-ca-bundle.crt" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\curl\websockets.h" />
     <ClInclude Include="include\Logger.h" />
     <ClInclude Include="include\nlohmann\json.hpp" />
+    <ClInclude Include="include\RedditRequest.h" />
+    <ClInclude Include="include\Request.h" />
     <ClInclude Include="include\TypeTraits.h" />
     <ClInclude Include="include\utilspp\clone_ptr.hpp" />
     <ClInclude Include="include\utilspp\EmptyType.hpp" />

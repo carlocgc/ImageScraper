@@ -1,4 +1,4 @@
 {
   "UserAgent": "image_scraper_cgc",
-  "CertBundle": "curl-ca-bundle.crt"
+  "CaBundle": "curl-ca-bundle.crt",
 }
