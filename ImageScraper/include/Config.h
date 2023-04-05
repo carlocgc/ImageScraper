@@ -6,10 +6,7 @@
 class Config final
 {
 public:
-    Config( const std::string filepath )
-    {
-        ReadFromFile( filepath );
-    }
+    Config( );
 
     template<typename T>
     const T GetValue( const std::string& key ) const

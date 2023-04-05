@@ -176,6 +176,7 @@ xcopy "$(SolutionDir)\config.json" "$(TargetDir)" /Y</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\DownloadRequest.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Config.cpp" />
     <ClCompile Include="src\Logger.cpp" />
@@ -212,6 +213,8 @@ xcopy "$(SolutionDir)\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\curl\typecheck-gcc.h" />
     <ClInclude Include="include\curl\urlapi.h" />
     <ClInclude Include="include\curl\websockets.h" />
+    <ClInclude Include="include\DownloadRequest.h" />
+    <ClInclude Include="include\DownloadUtils.h" />
     <ClInclude Include="include\Logger.h" />
     <ClInclude Include="include\nlohmann\json.hpp" />
     <ClInclude Include="include\RedditRequest.h" />

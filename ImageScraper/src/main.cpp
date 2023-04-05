@@ -7,15 +7,15 @@
 #include "Config.h"
 #include "Logger.h"
 #include "RedditRequest.h"
+#include "DownloadRequest.h"
 
 
 int main( int argc, char* argv[ ] )
 {
-    const std::filesystem::path configPath = std::filesystem::current_path( ) / "config.json";
-    const std::string configPathString = configPath.generic_string( );
-    Config config{ configPathString };
+    Config config{ };
 
-    const std::string subreddit = "programming";
+    /*
+    const std::string subreddit = "CrappyArt";
     const std::string endpoint = "https://www.reddit.com/r/" + subreddit + "/hot.json";
 
     RedditRequest request{ config, endpoint };
@@ -25,6 +25,13 @@ int main( int argc, char* argv[ ] )
     // Print the response
     const std::string responseStr{ request.Response() };
     InfoLog( "[%s] Response: %s", __FUNCTION__, responseStr.c_str( ) );
+    */
+
+    const std::string url = "https://www.boredpanda.com/blog/wp-content/uploads/2017/10/59d490df85312_lpj7hm6t9zly__700.jpg";
+
+    DownloadRequest request{ config, url };
+    request.Perform( );
+
 
     return 0;
 }

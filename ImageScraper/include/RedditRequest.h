@@ -2,11 +2,13 @@
 #include "Request.h"
 #include "Config.h"
 
-class RedditRequest : public Request
+class RedditRequest final : public Request
 {
 public:
-	RedditRequest( const Config& config, const std::string& endpoint );
-	void Perform( ) override;
-	void Configure( const Config& config ) override;
+    RedditRequest( const Config& config, const std::string& endpoint );
+    bool Perform( ) override;
+
+protected:
+    bool Configure( const Config& config ) override;
 };
 
