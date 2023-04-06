@@ -197,5 +197,6 @@
     <None Include="include\curlpp\internal\OptionSetter.inl">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="data\config.json" />
   </ItemGroup>
 </Project>

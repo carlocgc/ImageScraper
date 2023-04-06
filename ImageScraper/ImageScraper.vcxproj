@@ -142,7 +142,7 @@
     <PreBuildEvent>
       <Command>xcopy "$(SolutionDir)\lib\Debug\libcurl-d.dll" "$(TargetDir)" /Y
 xcopy "$(SolutionDir)\cert\curl-ca-bundle.crt" "$(TargetDir)" /Y
-xcopy "$(SolutionDir)\config.json" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
 </Command>
     </PreBuildEvent>
     <PreBuildEvent>
@@ -170,8 +170,8 @@ xcopy "$(SolutionDir)\config.json" "$(TargetDir)" /Y
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(SolutionDir)lib\Release\libcurl.dll" "$(TargetDir)" /Y
-xcopy "$(SolutionDir)\cert\curl-ca-bundle.crt" "$(TargetDir)" /Y
-xcopy "$(SolutionDir)\config.json" "$(TargetDir)" /Y</Command>
+xcopy "$(SolutionDir)cert\curl-ca-bundle.crt" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
       <Message>Copy libcurl-d to the output directory alongside exe</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -231,6 +231,7 @@ xcopy "$(SolutionDir)\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\utilspp\TypeTrait.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="data\config.json" />
     <None Include="include\curlpp\Easy.inl" />
     <None Include="include\curlpp\Info.inl" />
     <None Include="include\curlpp\internal\CurlHandle.inl" />
