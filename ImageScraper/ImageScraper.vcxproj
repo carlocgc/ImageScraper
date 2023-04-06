@@ -136,12 +136,12 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;libcurl-d_imp.lib;</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>xcopy "$(SolutionDir)\lib\Debug\libcurl-d.dll" "$(TargetDir)" /Y
-xcopy "$(SolutionDir)\cert\curl-ca-bundle.crt" "$(TargetDir)" /Y
+      <Command>xcopy "$(ProjectDir)lib\Debug\libcurl-d.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\Debug\curl-ca-bundle.crt" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
 </Command>
     </PreBuildEvent>
@@ -165,12 +165,12 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\Release</AdditionalLibraryDirectories>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;libcurl_imp.lib;</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>xcopy "$(SolutionDir)lib\Release\libcurl.dll" "$(TargetDir)" /Y
-xcopy "$(SolutionDir)cert\curl-ca-bundle.crt" "$(TargetDir)" /Y
+      <Command>xcopy "$(ProjectDir)lib\Release\libcurl.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\Release\curl-ca-bundle.crt" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
       <Message>Copy libcurl-d to the output directory alongside exe</Message>
     </PreBuildEvent>
