@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <filesystem>
 #include "Logger.h"
+#include "requests/RequestTypes.h"
 
 namespace DownloadHelpers
 {
@@ -28,7 +29,7 @@ namespace DownloadHelpers
             safeString.erase( fragment_pos );
         }
 
-        InfoLog( "[%s] Successfully parsed url to safe string: %s", __FUNCTION__, safeString );
+        InfoLog( "[%s] Successfully parsed url to safe string: %s", __FUNCTION__, safeString.c_str() );
         return safeString;
     }
 
@@ -39,7 +40,7 @@ namespace DownloadHelpers
         std::size_t slashPos = url.find_last_of( "/" );
         if( slashPos == std::string::npos )
         {
-            InfoLog( "[%s] %s did not contain a file name and ext", __FUNCTION__, url );
+            InfoLog( "[%s] %s did not contain a file name and ext", __FUNCTION__, url.c_str() );
             return "";
         }
 
@@ -48,7 +49,7 @@ namespace DownloadHelpers
         std::size_t dotPos = filename.find_last_of( "." );
         if( dotPos == std::string::npos )
         {
-            InfoLog( "[%s] %s did not contain a file name and ext", __FUNCTION__, url );
+            InfoLog( "[%s] %s did not contain a file name and ext", __FUNCTION__, url.c_str( ) );
             return "";
         }
 
@@ -69,7 +70,20 @@ namespace DownloadHelpers
             }
         }
 
-        InfoLog( "[%s] Successfully created folder: %s", __FUNCTION__, folderPath );
+        InfoLog( "[%s] Successfully created folder: %s", __FUNCTION__, pathString.c_str() );
         return pathString;
+    }
+
+    static bool IsResponseError( RequestResult& result )
+    {
+        if( result.m_Response.find( "Error" ) == std::string::npos )
+        {
+            result.m_Error.m_ErrorCode = ResponseErrorCode::None;
+            return false;
+        }
+
+        // TODO Parse response for error code
+        result.m_Error.m_ErrorCode = ResponseErrorCode::Unknown;
+        return true;
     }
 }

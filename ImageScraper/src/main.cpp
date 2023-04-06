@@ -17,31 +17,69 @@ The program also displays log output to the user.
 #include <string>
 #include "Config.h"
 #include "Logger.h"
-#include "RedditRequest.h"
-#include "DownloadRequest.h"
+#include "requests/RedditRequest.h"
+#include "requests/DownloadRequest.h"
+#include "parsers/RedditParser.h"
+
+using namespace nlohmann;
 
 int main( int argc, char* argv[ ] )
 {
     Config config{ };
 
-    /*
     const std::string subreddit = "CrappyArt";
-    const std::string endpoint = "https://www.reddit.com/r/" + subreddit + "/hot.json";
 
-    RedditRequest request{ config, endpoint };
+    RequestOptions options{ };
+    options.m_CaBundle = config.CaBundle( );
+    options.m_UserAgent = config.UserAgent( );
+    options.m_Url = "https://www.reddit.com/r/" + subreddit + "/hot.json";
 
-    request.Perform( );
+    RedditRequest request{ };
+    RequestResult result = request.Perform( options );
 
-    // Print the response
-    const std::string responseStr{ request.Response() };
-    InfoLog( "[%s] Response: %s", __FUNCTION__, responseStr.c_str( ) );
-    */
+    if( !result.m_Success )
+    {
+        WarningLog( "[%s] RedditRequest failed with error: %i", __FUNCTION__, static_cast<uint16_t>( result.m_Error.m_ErrorCode ) );
+        return 1;
+    }
 
-    const std::string url = "https://www.boredpanda.com/blog/wp-content/uploads/2017/10/59d490df85312_lpj7hm6t9zly__700.jpg";
+    InfoLog( "[%s] Response: %s", __FUNCTION__, result.m_Response.c_str() );
 
-    DownloadRequest request{ config, url };
-    request.Perform( );
+    json response = json::parse( result.m_Response );
+    const std::vector<json>& posts = response[ "data" ][ "children" ];
 
+    std::vector<std::string> urls{ };
+
+    for( const json& post : posts )
+    {
+        RedditParser::GetImageUrlFromRedditPost( post, urls );
+    }
+
+    if( urls.empty( ) )
+    {
+        InfoLog( "[%s] No content to download, exiting...", __FUNCTION__ );
+        return 1;
+    }
+
+    for( const std::string& url : urls )
+    {
+        RequestOptions options{ };
+        options.m_CaBundle = config.CaBundle( );
+        options.m_UserAgent = config.UserAgent( );
+        options.m_Url = url;
+
+        DownloadRequest request{ };
+
+        RequestResult result = request.Perform( options );
+        if( result.m_Success )
+        {
+            InfoLog( "[%s] Download complete: %s", __FUNCTION__, result.m_Response.c_str( ) );
+        }
+        else
+        {
+            WarningLog( "[%s] Download failed with error: %i", __FUNCTION__, static_cast< uint16_t >( result.m_Error.m_ErrorCode ) );
+        }
+    }
 
     return 0;
 }

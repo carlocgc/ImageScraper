@@ -20,7 +20,7 @@ void AssertLog( const char* message, Args... args )
     assert( ( message, false ) );
 }
 
-#define DebugLog( logType, message, ... ) PrintLog( logType, message, __VA_ARGS__ );
+#define DebugLog( LogType, message, ... ) PrintLog( LogType, message, __VA_ARGS__ );
 #define InfoLog( message, ... ) PrintLog( LogType::Info, message, __VA_ARGS__ );
 #define WarningLog( message, ... ) PrintLog( LogType::Warning, message, __VA_ARGS__ );
 #define ErrorLog( message, ... ) PrintLog( LogType::Error, message, __VA_ARGS__ );

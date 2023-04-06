@@ -27,9 +27,17 @@ void PrintLog( LogType type, const char* message, ... )
     output[ LOG_MAX_SIZE - 1 ] = '\0';
     va_end( ap );
 
-    const int len = static_cast< int >( strlen( output ) );
-    output[ len - 1 ] = '\n';
-    output[ len ] = '\0';
+    int len = strlen( output );
+
+    if( len >= LOG_MAX_SIZE - 1 )
+    {
+        output[ LOG_MAX_SIZE - 2 ] = '\n';
+        output[ LOG_MAX_SIZE - 1 ] = '\0';
+    }
+    else
+    {
+        strcat_s( output, "\n" );
+    }
 
     std::cout << output;
     OutputDebugStringA( output );

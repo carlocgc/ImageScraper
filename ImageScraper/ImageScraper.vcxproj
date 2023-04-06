@@ -176,11 +176,11 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\DownloadRequest.cpp" />
+    <ClCompile Include="src\requests\DownloadRequest.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Config.cpp" />
     <ClCompile Include="src\Logger.cpp" />
-    <ClCompile Include="src\RedditRequest.cpp" />
+    <ClCompile Include="src\requests\RedditRequest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Config.h" />
@@ -213,12 +213,14 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\curl\typecheck-gcc.h" />
     <ClInclude Include="include\curl\urlapi.h" />
     <ClInclude Include="include\curl\websockets.h" />
-    <ClInclude Include="include\DownloadRequest.h" />
-    <ClInclude Include="include\DownloadUtils.h" />
+    <ClInclude Include="include\parsers\RedditParser.h" />
+    <ClInclude Include="include\requests\DownloadRequest.h" />
+    <ClInclude Include="include\utils\DownloadUtils.h" />
     <ClInclude Include="include\Logger.h" />
     <ClInclude Include="include\nlohmann\json.hpp" />
-    <ClInclude Include="include\RedditRequest.h" />
-    <ClInclude Include="include\Request.h" />
+    <ClInclude Include="include\requests\RedditRequest.h" />
+    <ClInclude Include="include\requests\Request.h" />
+    <ClInclude Include="include\requests\RequestTypes.h" />
     <ClInclude Include="include\TypeTraits.h" />
     <ClInclude Include="include\utilspp\clone_ptr.hpp" />
     <ClInclude Include="include\utilspp\EmptyType.hpp" />
@@ -238,7 +240,6 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <None Include="include\curlpp\internal\OptionContainer.inl" />
     <None Include="include\curlpp\internal\OptionSetter.inl" />
     <None Include="include\curlpp\Option.inl" />
-    <None Include="include\curl\Makefile.am" />
     <None Include="include\utilspp\ThreadingFactoryMutex.inl" />
     <None Include="include\utilspp\ThreadingSingle.inl" />
   </ItemGroup>

@@ -24,10 +24,10 @@
     <ClCompile Include="src\Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\RedditRequest.cpp">
+    <ClCompile Include="src\requests\RedditRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\DownloadRequest.cpp">
+    <ClCompile Include="src\requests\DownloadRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -158,16 +158,22 @@
     <ClInclude Include="include\nlohmann\json.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Request.h">
+    <ClInclude Include="include\requests\Request.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\RedditRequest.h">
+    <ClInclude Include="include\requests\RedditRequest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\DownloadRequest.h">
+    <ClInclude Include="include\requests\DownloadRequest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\DownloadUtils.h">
+    <ClInclude Include="include\utils\DownloadUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\requests\RequestTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\parsers\RedditParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -187,7 +193,6 @@
     <None Include="include\utilspp\ThreadingSingle.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="include\curl\Makefile.am" />
     <None Include="include\curlpp\internal\CurlHandle.inl">
       <Filter>Header Files</Filter>
     </None>
