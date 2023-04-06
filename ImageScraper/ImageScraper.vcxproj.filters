@@ -176,6 +176,9 @@
     <ClInclude Include="include\parsers\RedditParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\requests\DownloadRequestTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\curlpp\Easy.inl">

@@ -1,4 +1,4 @@
 {
-  "UserAgent": "image_scraper_cgc",
+  "UserAgent": "windows:image_scraper:0.1 (by /u/carlocgc)",
   "CaBundle": "curl-ca-bundle.crt"
 }

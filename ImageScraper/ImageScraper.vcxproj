@@ -215,6 +215,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\curl\websockets.h" />
     <ClInclude Include="include\parsers\RedditParser.h" />
     <ClInclude Include="include\requests\DownloadRequest.h" />
+    <ClInclude Include="include\requests\DownloadRequestTypes.h" />
     <ClInclude Include="include\utils\DownloadUtils.h" />
     <ClInclude Include="include\Logger.h" />
     <ClInclude Include="include\nlohmann\json.hpp" />

@@ -20,14 +20,15 @@ The program also displays log output to the user.
 #include "requests/RedditRequest.h"
 #include "requests/DownloadRequest.h"
 #include "parsers/RedditParser.h"
+#include "utils/DownloadUtils.h"
 
 using namespace nlohmann;
 
-int main( int argc, char* argv[ ] )
-{
-    Config config{ };
 
-    const std::string subreddit = "CrappyArt";
+void DownloadHotReddit( const Config& config )
+{
+    // Create request for subreddit post data
+    const std::string subreddit = "BravelyDefault";
 
     RequestOptions options{ };
     options.m_CaBundle = config.CaBundle( );
@@ -39,12 +40,13 @@ int main( int argc, char* argv[ ] )
 
     if( !result.m_Success )
     {
-        WarningLog( "[%s] RedditRequest failed with error: %i", __FUNCTION__, static_cast<uint16_t>( result.m_Error.m_ErrorCode ) );
-        return 1;
+        WarningLog( "[%s] RedditRequest failed with error: %i", __FUNCTION__, static_cast< uint16_t >( result.m_Error.m_ErrorCode ) );
+        return;
     }
 
-    InfoLog( "[%s] Response: %s", __FUNCTION__, result.m_Response.c_str() );
+    InfoLog( "[%s] RedditRequest success, response: %s", __FUNCTION__, result.m_Response.c_str( ) );
 
+    // Parse response
     json response = json::parse( result.m_Response );
     const std::vector<json>& posts = response[ "data" ][ "children" ];
 
@@ -58,28 +60,62 @@ int main( int argc, char* argv[ ] )
     if( urls.empty( ) )
     {
         InfoLog( "[%s] No content to download, exiting...", __FUNCTION__ );
-        return 1;
+        return;
     }
 
+    InfoLog( "[%s] Starting downloading content, urls: %i", __FUNCTION__, urls.size() );
+
+    // Create download directory
+    const std::string folder = "output";
+    const std::string dir = DownloadHelpers::CreateFolder( folder );
+    if( dir.empty( ) )
+    {
+        ErrorLog( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str() );
+        return;
+    }
+
+    // Download images
     for( const std::string& url : urls )
     {
-        RequestOptions options{ };
+        std::vector<char> buffer{ };
+
+        DownloadOptions options{ };
         options.m_CaBundle = config.CaBundle( );
-        options.m_UserAgent = config.UserAgent( );
         options.m_Url = url;
+        options.m_BufferPtr = &buffer;
 
         DownloadRequest request{ };
+        DownloadResult result = request.Perform( options );
+        if( !result.m_Success )
+        {
+            ErrorLog( "[%s] Download failed for url: %s", __FUNCTION__, url.c_str( ) );
+            continue;
+        }
 
-        RequestResult result = request.Perform( options );
-        if( result.m_Success )
+        std::string filename = DownloadHelpers::ExtractFileNameAndExtFromUrl( options.m_Url );
+        const std::string filepath = dir + "/" + filename;
+
+        std::ofstream outfile{ filepath, std::ios::binary };
+        if( !outfile.is_open( ) )
         {
-            InfoLog( "[%s] Download complete: %s", __FUNCTION__, result.m_Response.c_str( ) );
+            ErrorLog( "[%s] Failed to open file: %s", __FUNCTION__, filepath.c_str( ) );
+            continue;
         }
-        else
-        {
-            WarningLog( "[%s] Download failed with error: %i", __FUNCTION__, static_cast< uint16_t >( result.m_Error.m_ErrorCode ) );
-        }
+
+        outfile.write( buffer.data( ), buffer.size( ) );
+        outfile.close( );
+
+        InfoLog( "[%s] File written successfully: %s", __FUNCTION__, filepath.c_str( ) );
     }
+}
+
+
+
+int main( int argc, char* argv[ ] )
+{
+    Config config{ };
+
+    DownloadHotReddit( config );
 
     return 0;
 }

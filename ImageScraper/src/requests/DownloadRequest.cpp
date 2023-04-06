@@ -1,62 +1,64 @@
 #include "requests/DownloadRequest.h"
-#include "curlpp/Options.hpp"
 #include "utils/DownloadUtils.h"
+#include "Logger.h"
+#include "curlpp/Options.hpp"
+#include "curlpp/cURLpp.hpp"
+#include "curlpp/Easy.hpp"
+#include <sstream>
 
-RequestResult DownloadRequest::Perform( const RequestOptions& options )
+DownloadResult DownloadRequest::Perform( const DownloadOptions& options )
 {
-    RequestResult result{ };
+    m_BufferPtr = options.m_BufferPtr;
 
-    std::string filename = DownloadHelpers::ExtractFileNameAndExtFromUrl( options.m_Url );
-    //std::string folder = DownloadHelpers::UrlToSafeString( options.m_Url );
-    std::string folder = "output";
-    std::string dir = DownloadHelpers::CreateFolder( folder );
-    if( dir.empty( ) )
+    try
     {
-        ErrorLog( "[%s] Failed to create download directory for url: ", __FUNCTION__, options.m_Url );
-        result.m_Error.m_ErrorCode = ResponseErrorCode::InvalidDirectory;
-        return result;
+        curlpp::Cleanup cleanup{ };
+        curlpp::Easy request{ };
+
+        // Set the write callback
+        using namespace std::placeholders;
+        curlpp::types::WriteFunctionFunctor functor = std::bind( &DownloadRequest::WriteCallback, this, _1, _2, _3 );
+
+        curlpp::options::WriteFunction* writeCallback = new curlpp::options::WriteFunction( functor );
+        request.setOpt( writeCallback );
+
+        // Set the cert bundle for TLS/HTTPS
+        request.setOpt( new curlpp::options::CaInfo( options.m_CaBundle ) );
+
+        // Set URL for the image
+        request.setOpt( new curlpp::options::Url( options.m_Url ) );
+
+        request.perform( );
+
+        m_Result.m_Success = true;
+    }
+    catch( curlpp::RuntimeError& e )
+    {
+        ErrorLog( "[%s] Failed, error: %s", __FUNCTION__, e.what( ) );
+        m_Result.m_Error.m_ErrorCode = DownloadErrorCode::Unknown;
+    }
+    catch( curlpp::LogicError& e )
+    {
+        ErrorLog( "[%s] Failed, error: %s", __FUNCTION__, e.what( ) );
+        m_Result.m_Error.m_ErrorCode = DownloadErrorCode::InvalidOptions;
     }
 
-    const std::string filepath = dir + "/" + filename;
-
-    // Open file for writing // TODO : Use a raw buffer for this? safer?
-    m_File.open( filepath, std::ios::binary );
-    if( !m_File.is_open( ) )
-    {
-        ErrorLog( "[%s] Failed to open buffer file with path: %s", __FUNCTION__, filepath );
-        result.m_Error.m_ErrorCode = ResponseErrorCode::InvalidDirectory;
-        return result;
-    }
-
-    curlpp::Cleanup cleanup{ };
-    curlpp::Easy request{ };
-
-    // Set the write callback
-    using namespace std::placeholders;
-    curlpp::types::WriteFunctionFunctor functor = std::bind( &DownloadRequest::WriteCallback, this, _1, _2, _3 );
-
-    curlpp::options::WriteFunction* writeCallback = new curlpp::options::WriteFunction( functor );
-    request.setOpt( writeCallback );
-
-    // Set the cert bundle for TLS/HTTPS
-    request.setOpt( new curlpp::options::CaInfo( options.m_CaBundle ) );
-
-    // Set URL for the image
-    request.setOpt( new curlpp::options::Url( options.m_Url ) );
-
-    request.perform( );
-
-    m_File.close( );
-
-    result.m_Response = filepath;
-    result.m_Success = true;
-
-    return result;
+    return m_Result;
 }
 
 size_t DownloadRequest::WriteCallback( char* contents, size_t size, size_t nmemb )
 {
+    if( !m_BufferPtr )
+    {
+        ErrorLog( "[%s] Failed, invalid buffer", __FUNCTION__ );
+        m_Result.m_Error.m_ErrorCode = DownloadErrorCode::InvalidOptions;
+        return 0;
+    }
+
     size_t realsize = size * nmemb;
-    m_File.write( static_cast< char* >( contents ), realsize );
+    m_BufferPtr->insert( m_BufferPtr->begin( ) + m_BytesWritten, contents, contents + realsize );
+    m_BytesWritten += realsize;
+
+    InfoLog( "[%s] %i bytes written...", __FUNCTION__, static_cast< int >( m_BytesWritten ) );
     return realsize;
 }
