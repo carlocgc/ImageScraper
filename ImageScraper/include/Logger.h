@@ -4,24 +4,26 @@
 #include <iostream>
 #include <cassert>
 
-enum class LogType
+enum class LogLevel
 {
     Info,
     Warning,
     Error
 };
 
-void PrintLog( LogType type, const char* message, ... );
+std::string TimeStamp( );
+
+void PrintLog( LogLevel type, const char* message, ... );
 
 template<typename... Args>
 void AssertLog( const char* message, Args... args )
 {
-    PrintLog( LogType::Error, message, args... );
+    PrintLog( LogLevel::Error, message, args... );
     assert( ( message, false ) );
 }
 
-#define DebugLog( LogType, message, ... ) PrintLog( LogType, message, __VA_ARGS__ );
-#define InfoLog( message, ... ) PrintLog( LogType::Info, message, __VA_ARGS__ );
-#define WarningLog( message, ... ) PrintLog( LogType::Warning, message, __VA_ARGS__ );
-#define ErrorLog( message, ... ) PrintLog( LogType::Error, message, __VA_ARGS__ );
+#define DebugLog( logLevel, message, ... ) PrintLog( logLevel, message, __VA_ARGS__ );
+#define InfoLog( message, ... ) PrintLog( LogLevel::Info, message, __VA_ARGS__ );
+#define WarningLog( message, ... ) PrintLog( LogLevel::Warning, message, __VA_ARGS__ );
+#define ErrorLog( message, ... ) PrintLog( LogLevel::Error, message, __VA_ARGS__ );
 #define ErrorAssert( message, ... ) AssertLog( message, __VA_ARGS__ );
