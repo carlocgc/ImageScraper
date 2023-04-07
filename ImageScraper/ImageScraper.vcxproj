@@ -97,13 +97,22 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);CURLPP_STATICLIB;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;curlpp.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;curlpp.lib;Asyncgc.lib</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Message>Copy dependencies to target directory</Message>
+      <Command>xcopy "$(ProjectDir)lib\Debug\libcurl-d.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\Debug\curl-ca-bundle.crt" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
+</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -114,15 +123,23 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CURLPP_STATICLIB;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;curlpp.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;curlpp.lib;Asyncgc.lib</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>xcopy "$(ProjectDir)lib\Release\libcurl.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\Release\curl-ca-bundle.crt" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
+      <Message>Copy dependencies to target directory</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -132,12 +149,13 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;libcurl-d_imp.lib;</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;libcurl-d_imp.lib;Asyncgc.lib;</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\Debug\libcurl-d.dll" "$(TargetDir)" /Y
@@ -146,7 +164,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
 </Command>
     </PreBuildEvent>
     <PreBuildEvent>
-      <Message>Copy libcurl-d to the output directory alongside exe</Message>
+      <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -159,6 +177,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -166,13 +185,13 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\Release</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;libcurl_imp.lib;</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;libcurl_imp.lib;Asyncgc.lib;</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\Release\libcurl.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\Release\curl-ca-bundle.crt" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
-      <Message>Copy libcurl-d to the output directory alongside exe</Message>
+      <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -183,6 +202,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClCompile Include="src\requests\RedditRequest.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\asyncgc\ThreadPool.h" />
     <ClInclude Include="include\Config.h" />
     <ClInclude Include="include\curlpp\cURLpp.hpp" />
     <ClInclude Include="include\curlpp\Easy.hpp" />

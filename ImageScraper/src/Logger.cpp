@@ -27,7 +27,7 @@ void PrintLog( LogType type, const char* message, ... )
     output[ LOG_MAX_SIZE - 1 ] = '\0';
     va_end( ap );
 
-    int len = strlen( output );
+    uint64_t len = static_cast<uint64_t>( strlen( output ) );
 
     if( len >= LOG_MAX_SIZE - 1 )
     {
