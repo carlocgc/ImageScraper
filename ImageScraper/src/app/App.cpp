@@ -22,7 +22,6 @@ int App::Run( )
 
             InfoLog( "[%s] Processing input: %s", __FUNCTION__, input.c_str());
 
-            /*
             for ( auto service : m_Services )
             {
                 if( service->HandleUrl( m_Config, input ) )
@@ -30,7 +29,6 @@ int App::Run( )
                     break;
                 }
             }
-            */
         }
 
         // Check main thread queue for callbacks

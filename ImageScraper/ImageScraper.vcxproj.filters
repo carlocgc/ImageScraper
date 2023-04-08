@@ -36,7 +36,7 @@
     <ClCompile Include="src\app\App.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ui\ConsoleInput.cpp">
+    <ClCompile Include="src\ui\ConsoleUI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -197,7 +197,7 @@
     <ClInclude Include="include\app\App.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\ui\ConsoleInput.h">
+    <ClInclude Include="include\ui\ConsoleUI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\services\Service.h">

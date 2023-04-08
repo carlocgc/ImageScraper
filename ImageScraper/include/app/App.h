@@ -1,6 +1,6 @@
 #pragma once
 #include "config/Config.h"
-#include "ui/ConsoleInput.h"
+#include "ui/ConsoleUI.h"
 #include "services/Service.h"
 #include "traits/TypeTraits.h"
 #include <memory>
@@ -13,7 +13,7 @@ public:
 
 private:
     Config m_Config{ };
-    ConsoleInput m_UI{ };
+    ConsoleUI m_UI{ };
     std::vector<std::shared_ptr<Service>> m_Services{ };
 };
 
