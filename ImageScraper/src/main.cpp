@@ -8,18 +8,13 @@ The purpose of this program is to scrape media content from a website URL, inclu
 The program allows for asynchronous downloading of all media at the specified URL, with a graphical user interface (GUI) that allows the user to input the URL and configure options.
 The program also displays log output to the user.
 */
-
-#include "config/Config.h"
-#include <iostream>
+#include "app/App.h"
 
 int main( int argc, char* argv[ ] )
 {
-    Config config{ };
+    App app{ };
 
-    for( ;; )
-    {
+    int result = app.Run( );
 
-    }
-
-    return 0;
+    return result;
 }

@@ -7,16 +7,13 @@
 #include "parsers/RedditParser.h"
 #include "utils/DownloadUtils.h"
 #include "log/Logger.h"
+#include "async/ThreadPool.h"
 
 using json = nlohmann::json;
 
 void RedditService::DownloadHotReddit( const Config& config, const std::string& subreddit )
 {
-    Asyncgc::ThreadPool threadPool{ 3 };
-
-    Asyncgc::ThreadContext context = 0;
-
-    auto task = threadPool.Submit( context, [ config, subreddit ]( )
+    auto task = ThreadPool::Instance().Submit( ThreadPool::s_NetworkContext, [ config, subreddit ]( )
         {
             RequestOptions options{ };
             options.m_CaBundle = config.CaBundle( );
@@ -111,4 +108,16 @@ void RedditService::DownloadHotReddit( const Config& config, const std::string& 
             InfoLog( "[%s] Waiting for task...", __FUNCTION__ );
         }
     }
+}
+
+bool RedditService::HandleUrl( const Config& config, const std::string& url )
+{
+    // TODO Handle a proper url when more services are added, for now just a subreddit name is expected
+
+    if( true ) // Check url for reddit address
+    {
+        DownloadHotReddit( config, url );
+    }
+
+    return true;
 }
