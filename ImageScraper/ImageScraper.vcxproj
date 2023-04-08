@@ -196,6 +196,12 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\app\App.cpp" />
+    <ClCompile Include="src\imgui\imgui.cpp" />
+    <ClCompile Include="src\imgui\imgui_demo.cpp" />
+    <ClCompile Include="src\imgui\imgui_draw.cpp" />
+    <ClCompile Include="src\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="src\imgui\imgui_tables.cpp" />
+    <ClCompile Include="src\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\requests\DownloadRequest.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\config\Config.cpp" />
@@ -238,6 +244,15 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\curl\typecheck-gcc.h" />
     <ClInclude Include="include\curl\urlapi.h" />
     <ClInclude Include="include\curl\websockets.h" />
+    <ClInclude Include="include\imgui\imconfig.h" />
+    <ClInclude Include="include\imgui\imgui.h" />
+    <ClInclude Include="include\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="include\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="include\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="include\imgui\imgui_internal.h" />
+    <ClInclude Include="include\imgui\imstb_rectpack.h" />
+    <ClInclude Include="include\imgui\imstb_textedit.h" />
+    <ClInclude Include="include\imgui\imstb_truetype.h" />
     <ClInclude Include="include\parsers\RedditParser.h" />
     <ClInclude Include="include\requests\DownloadRequest.h" />
     <ClInclude Include="include\requests\DownloadRequestTypes.h" />
