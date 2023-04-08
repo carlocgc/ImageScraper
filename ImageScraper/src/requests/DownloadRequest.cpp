@@ -1,6 +1,6 @@
 #include "requests/DownloadRequest.h"
 #include "utils/DownloadUtils.h"
-#include "Logger.h"
+#include "log/Logger.h"
 #include "curlpp/Options.hpp"
 #include "curlpp/cURLpp.hpp"
 #include "curlpp/Easy.hpp"

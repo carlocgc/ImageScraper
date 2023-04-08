@@ -1,6 +1,6 @@
 #pragma once
 #include "Request.h"
-#include "Config.h"
+#include "config/Config.h"
 
 class RedditRequest final : public Request
 {

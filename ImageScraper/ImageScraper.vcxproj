@@ -197,13 +197,14 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
   <ItemGroup>
     <ClCompile Include="src\requests\DownloadRequest.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\Config.cpp" />
-    <ClCompile Include="src\Logger.cpp" />
+    <ClCompile Include="src\config\Config.cpp" />
+    <ClCompile Include="src\log\Logger.cpp" />
     <ClCompile Include="src\requests\RedditRequest.cpp" />
+    <ClCompile Include="src\services\RedditService.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\asyncgc\ThreadPool.h" />
-    <ClInclude Include="include\Config.h" />
+    <ClInclude Include="include\config\Config.h" />
     <ClInclude Include="include\curlpp\cURLpp.hpp" />
     <ClInclude Include="include\curlpp\Easy.hpp" />
     <ClInclude Include="include\curlpp\Exception.hpp" />
@@ -236,13 +237,14 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\parsers\RedditParser.h" />
     <ClInclude Include="include\requests\DownloadRequest.h" />
     <ClInclude Include="include\requests\DownloadRequestTypes.h" />
+    <ClInclude Include="include\services\RedditService.h" />
     <ClInclude Include="include\utils\DownloadUtils.h" />
-    <ClInclude Include="include\Logger.h" />
+    <ClInclude Include="include\log\Logger.h" />
     <ClInclude Include="include\nlohmann\json.hpp" />
     <ClInclude Include="include\requests\RedditRequest.h" />
     <ClInclude Include="include\requests\Request.h" />
     <ClInclude Include="include\requests\RequestTypes.h" />
-    <ClInclude Include="include\TypeTraits.h" />
+    <ClInclude Include="include\traits\TypeTraits.h" />
     <ClInclude Include="include\utilspp\clone_ptr.hpp" />
     <ClInclude Include="include\utilspp\EmptyType.hpp" />
     <ClInclude Include="include\utilspp\NonCopyable.hpp" />

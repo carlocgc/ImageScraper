@@ -2,7 +2,7 @@
 #include <string>
 #include <algorithm>
 #include <filesystem>
-#include "Logger.h"
+#include "log/Logger.h"
 #include "requests/RequestTypes.h"
 
 namespace DownloadHelpers

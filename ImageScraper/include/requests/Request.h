@@ -1,10 +1,10 @@
 #pragma once
-#include "Config.h"
+#include "RequestTypes.h"
+#include "config/Config.h"
 #include <curlpp/Easy.hpp>
 #include <curlpp/cURLpp.hpp>
 #include <sstream>
 #include <string>
-#include "RequestTypes.h"
 
 class Request
 {
