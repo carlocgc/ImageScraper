@@ -104,7 +104,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;curlpp.lib;Asyncgc.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;curlpp.lib;Asyncgc.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Message>Copy dependencies to target directory</Message>
@@ -132,7 +132,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\Release</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;curlpp.lib;Asyncgc.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;curlpp.lib;Asyncgc.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\Release\libcurl.dll" "$(TargetDir)" /Y
@@ -155,7 +155,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;libcurl-d_imp.lib;Asyncgc.lib;</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl-d_imp.lib;Asyncgc.lib;</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\Debug\libcurl-d.dll" "$(TargetDir)" /Y
@@ -185,7 +185,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\Release</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;libcurl_imp.lib;Asyncgc.lib;</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl_imp.lib;Asyncgc.lib;</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\Release\libcurl.dll" "$(TargetDir)" /Y
@@ -244,6 +244,8 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\curl\typecheck-gcc.h" />
     <ClInclude Include="include\curl\urlapi.h" />
     <ClInclude Include="include\curl\websockets.h" />
+    <ClInclude Include="include\GLFW\glfw3.h" />
+    <ClInclude Include="include\GLFW\glfw3native.h" />
     <ClInclude Include="include\imgui\imconfig.h" />
     <ClInclude Include="include\imgui\imgui.h" />
     <ClInclude Include="include\imgui\imgui_impl_glfw.h" />

@@ -4,6 +4,8 @@
 
 App::App( )
 {
+
+
      m_Services.push_back( std::make_shared<RedditService>() );
 }
 
