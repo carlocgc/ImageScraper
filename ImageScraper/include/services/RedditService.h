@@ -13,9 +13,9 @@ namespace ImageScraper
     public:
         ~RedditService( ) = default;
 
-        bool HandleUrl( const Config& config, const FrontEnd& frontEnd, const std::string& url ) override;
+        bool HandleUrl( const Config& config, FrontEnd& frontEnd, const std::string& url ) override;
 
     private:
-        void DownloadHotReddit( const Config& config, const std::string& subreddit );
+        void DownloadHotReddit( const Config& config, FrontEnd& frontEnd, const std::string& subreddit );
     };
 }

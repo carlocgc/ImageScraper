@@ -214,7 +214,6 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\app\App.h" />
-    <ClInclude Include="include\async\Promise.h" />
     <ClInclude Include="include\async\ThreadPool.h" />
     <ClInclude Include="include\async\ThreadPoolSingleton.h" />
     <ClInclude Include="include\config\Config.h" />

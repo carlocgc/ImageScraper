@@ -7,24 +7,57 @@
 #include "utils/DownloadUtils.h"
 #include "log/Logger.h"
 #include "async/ThreadPoolSingleton.h"
+#include "ui/FrontEnd.h"
 
 using json = nlohmann::json;
 
-bool ImageScraper::RedditService::HandleUrl( const Config& config, const FrontEnd& frontEnd, const std::string& url )
+bool ImageScraper::RedditService::HandleUrl( const Config& config, FrontEnd& frontEnd, const std::string& url )
 {
     // TODO Check url for reddit address
     if( true )
     {
-        DownloadHotReddit( config, url );
+        DownloadHotReddit( config, frontEnd, url );
     }
 
     return true;
 }
 
-void ImageScraper::RedditService::DownloadHotReddit( const Config& config, const std::string& subreddit )
+void ImageScraper::RedditService::DownloadHotReddit( const Config& config, FrontEnd& frontEnd, const std::string& subreddit )
 {
-    auto task = ThreadPoolSingleton::Instance().Submit( ThreadPoolSingleton::s_NetworkContext, [ config, subreddit ]( )
+    std::thread::id id = std::this_thread::get_id( );
+    std::stringstream ss;
+    ss << id;
+    std::string outLog = ss.str( );
+    InfoLog( "[%s] Task being set up: invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
+
+    auto complete = [ & ]( const std::string& log )
+    {
+        std::thread::id id = std::this_thread::get_id( );
+        std::stringstream ss;
+        ss << id;
+        std::string outLog = ss.str( );
+        InfoLog( "[%s] Complete: invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
+        frontEnd.SetInputState( InputState::Free );
+    };
+
+    auto fail = [ & ]( const std::string& log )
+    {
+        std::thread::id id = std::this_thread::get_id( );
+        std::stringstream ss;
+        ss << id;
+        std::string outLog = ss.str( );
+        InfoLog( "[%s] Fail: I am being invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
+        frontEnd.SetInputState( InputState::Free );
+    };
+
+    auto task = ThreadPoolSingleton::Instance( ).Submit( ThreadPoolSingleton::s_NetworkContext, [ config, subreddit, complete, fail ]( )
         {
+            std::thread::id id = std::this_thread::get_id( );
+            std::stringstream ss;
+            ss << id;
+            std::string outLog = ss.str( );
+            InfoLog( "[%s] Task Started: invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
+
             RequestOptions options{ };
             options.m_CaBundle = config.CaBundle( );
             options.m_UserAgent = config.UserAgent( );
@@ -36,6 +69,7 @@ void ImageScraper::RedditService::DownloadHotReddit( const Config& config, const
             if( !result.m_Success )
             {
                 WarningLog( "[%s] RedditRequest failed with error: %i", __FUNCTION__, static_cast< uint16_t >( result.m_Error.m_ErrorCode ) );
+                ThreadPoolSingleton::Instance( ).SubmitMain( fail, "" );
                 return;
             }
 
@@ -55,6 +89,7 @@ void ImageScraper::RedditService::DownloadHotReddit( const Config& config, const
             if( urls.empty( ) )
             {
                 InfoLog( "[%s] No content to download, exiting...", __FUNCTION__ );
+                ThreadPoolSingleton::Instance( ).SubmitMain( complete, "Complete!!!" );
                 return;
             }
 
@@ -66,6 +101,7 @@ void ImageScraper::RedditService::DownloadHotReddit( const Config& config, const
             if( dir.empty( ) )
             {
                 ErrorLog( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );
+                ThreadPoolSingleton::Instance( ).SubmitMain( fail, "" );
                 return;
             }
 
@@ -102,20 +138,10 @@ void ImageScraper::RedditService::DownloadHotReddit( const Config& config, const
 
                 InfoLog( "[%s] File written successfully: %s", __FUNCTION__, filepath.c_str( ) );
             }
+
+
+            ThreadPoolSingleton::Instance( ).SubmitMain( complete, "Complete!!!" );
         } );
 
-    bool complete = false;
-    while( !complete )
-    {
-        auto status = task.wait_for( std::chrono::milliseconds( 16 ) );
-        complete = status == std::future_status::ready;
-        if( complete )
-        {
-            InfoLog( "[%s] Task complete!", __FUNCTION__ );
-        }
-        else
-        {
-            InfoLog( "[%s] Waiting for task...", __FUNCTION__ );
-        }
-    }
+    ( void )task;
 }

@@ -93,6 +93,11 @@ void ImageScraper::FrontEnd::Update( )
 
 bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Service>>& services )
 {
+    if( m_InputState == InputState::Blocked )
+    {
+        return false;
+    }
+
     if( !m_StartProcess )
     {
         return false;
@@ -161,14 +166,14 @@ void ImageScraper::FrontEnd::UpdateWidgets( )
     ImGui::BeginDisabled( m_InputState == InputState::Blocked );
 
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-    bool show_demo_window = false;
+    bool show_demo_window = true;
     if( show_demo_window )
     {
         ImGui::ShowDemoWindow( &show_demo_window );
     }
 
     char url[ 64 ] = "";
-    if( ImGui::InputText( "default", url, 64 ) )
+    if( ImGui::InputText( "Sub reddit Name", url, 64 ) )
     {
         m_UrlField = url;
     }

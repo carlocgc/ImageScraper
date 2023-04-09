@@ -2,6 +2,7 @@
 
 #include "services/RedditService.h"
 #include "log/Logger.h"
+#include "async/ThreadPoolSingleton.h"
 
 ImageScraper::App::App( )
 {
@@ -27,7 +28,7 @@ int ImageScraper::App::Run( )
             m_FrontEnd->SetInputState( InputState::Blocked );
         }
 
-        // Check main thread queue for callbacks
+        ThreadPoolSingleton::Instance( ).Update( );
 
         m_FrontEnd->Render( );
     }

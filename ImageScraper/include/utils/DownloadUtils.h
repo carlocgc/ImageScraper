@@ -76,7 +76,7 @@ namespace ImageScraper::DownloadHelpers
 
     static bool IsResponseError( RequestResult& result )
     {
-        if( result.m_Response.find( "Error" ) == std::string::npos )
+        if( result.m_Response.find( "error" ) == std::string::npos )
         {
             result.m_Error.m_ErrorCode = ResponseErrorCode::None;
             return false;

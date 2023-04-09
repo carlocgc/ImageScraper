@@ -31,11 +31,6 @@ namespace ImageScraper
         template<class F, class... Args>
         auto Submit( ThreadContext context, F&& f, Args&&... args ) -> std::future<decltype( f( args... ) )>
         {
-            if( context > m_Threads.size( ) )
-            {
-                AssertLog( "[%s] Invalid ThreadContext, max context count is set in ThreadPool ctor." );
-            }
-
             using ReturnT = decltype( f( args... ) );
 
             // Create a new packaged_task object that will wrap the function to be executed
