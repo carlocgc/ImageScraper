@@ -111,7 +111,7 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
 
     for( auto service : services )
     {
-        if( service->HandleUrl( *m_Config, m_UrlField ) )
+        if( service->HandleUrl( *m_Config, *this, m_UrlField ) )
         {
             m_UrlField.clear( );
             return true;

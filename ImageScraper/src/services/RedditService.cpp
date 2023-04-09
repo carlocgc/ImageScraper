@@ -8,6 +8,7 @@
 #include "utils/DownloadUtils.h"
 #include "log/Logger.h"
 #include "async/ThreadPool.h"
+#include "ui/FrontEnd.h"
 
 using json = nlohmann::json;
 
@@ -110,7 +111,7 @@ void ImageScraper::RedditService::DownloadHotReddit( const Config& config, const
     }
 }
 
-bool ImageScraper::RedditService::HandleUrl( const Config& config, const std::string& url )
+bool ImageScraper::RedditService::HandleUrl( const Config& config, const FrontEnd& frontEnd, const std::string& url )
 {
     // TODO Check url for reddit address
     if( true )

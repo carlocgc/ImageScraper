@@ -9,6 +9,6 @@ namespace ImageScraper
     {
     public:
         virtual ~Service( ) { };
-        virtual bool HandleUrl( const Config& config, const std::string& url ) = 0;
+        virtual bool HandleUrl( const Config& config, const FrontEnd& frontEnd, const std::string& url ) = 0;
     };
 }
