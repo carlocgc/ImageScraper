@@ -42,8 +42,6 @@ namespace ImageScraper
         void Render( );
         GLFWwindow* GetWindow( ) { return m_WindowPtr; };
     private:
-        void UpdateWidgets( );
-
         std::shared_ptr<Config> m_Config{ nullptr };
         GLFWwindow* m_WindowPtr{ nullptr };
 

@@ -204,6 +204,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClCompile Include="src\imgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\imgui\imgui_tables.cpp" />
     <ClCompile Include="src\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\log\FrontEndLogger.cpp" />
     <ClCompile Include="src\requests\DownloadRequest.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\config\Config.cpp" />
@@ -216,6 +217,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\app\App.h" />
     <ClInclude Include="include\async\ThreadPool.h" />
     <ClInclude Include="include\async\ThreadPoolSingleton.h" />
+    <ClInclude Include="include\collections\RingBuffer.h" />
     <ClInclude Include="include\config\Config.h" />
     <ClInclude Include="include\curlpp\cURLpp.hpp" />
     <ClInclude Include="include\curlpp\Easy.hpp" />
@@ -257,6 +259,10 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\imgui\imstb_rectpack.h" />
     <ClInclude Include="include\imgui\imstb_textedit.h" />
     <ClInclude Include="include\imgui\imstb_truetype.h" />
+    <ClInclude Include="include\log\ConsoleLogger.h" />
+    <ClInclude Include="include\log\DevLogger.h" />
+    <ClInclude Include="include\log\FrontEndLogger.h" />
+    <ClInclude Include="include\log\LoggerBase.h" />
     <ClInclude Include="include\parsers\RedditParser.h" />
     <ClInclude Include="include\requests\DownloadRequest.h" />
     <ClInclude Include="include\requests\DownloadRequestTypes.h" />

@@ -1,13 +1,15 @@
 #include "log/Logger.h"
+#include "log/LoggerBase.h"
 
-#include <windows.h>
 #include <chrono>
 #include <thread>
 #include <mutex>
 
 #define LOG_MAX_SIZE 1024
 
-std::string ImageScraper::TimeStamp( )
+std::vector<std::shared_ptr<ImageScraper::LoggerBase>> ImageScraper::Logger::m_Loggers;
+
+std::string ImageScraper::Logger::TimeStamp( )
 {
     std::chrono::system_clock::time_point timePoint = std::chrono::system_clock::now( );
     std::time_t timeT = std::chrono::system_clock::to_time_t( timePoint );
@@ -20,7 +22,15 @@ std::string ImageScraper::TimeStamp( )
     return buffer;
 }
 
-void ImageScraper::PrintLog( LogLevel type, const char* message, ... )
+void ImageScraper::Logger::Update( )
+{
+    for( auto logger : m_Loggers )
+    {
+        logger->Update( );
+    }
+}
+
+void ImageScraper::Logger::Log( LogLevel type, const char* message, ... )
 {
     char output[ LOG_MAX_SIZE ];
 
@@ -64,7 +74,8 @@ void ImageScraper::PrintLog( LogLevel type, const char* message, ... )
         strcat_s( output, "\n" );
     }
 
-    std::cout << output;
-
-    OutputDebugStringA( output );
+    for (auto logger : m_Loggers )
+    {
+        logger->Log( output );
+    }
 }

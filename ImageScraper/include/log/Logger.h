@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <iostream>
 #include <cassert>
+#include "traits/TypeTraits.h"
+#include <vector>
 
 namespace ImageScraper
 {
@@ -13,20 +15,37 @@ namespace ImageScraper
         Error
     };
 
-    std::string TimeStamp( );
+    class LoggerBase;
 
-    void PrintLog( LogLevel type, const char* message, ... );
-
-    template<typename... Args>
-    void AssertLog( const char* message, Args... args )
+    class Logger : public NonCopyMovable
     {
-        PrintLog( LogLevel::Error, message, args... );
-        assert( ( message, false ) );
-    }
+    public:
+        static void AddLogger( std::shared_ptr<LoggerBase> logger )
+        {
+            m_Loggers.push_back( logger );
+        }
+
+        static void Update( );
+
+        static void Log( LogLevel type, const char* message, ... );
+
+        template<typename... Args>
+        static void Assert( const char* message, Args... args )
+        {
+            Log( LogLevel::Error, message, args... );
+            assert( ( message, false ) );
+        }
+
+    private:
+        Logger( ) = default;
+
+        static std::string TimeStamp( );
+        static std::vector<std::shared_ptr<LoggerBase>> m_Loggers;
+    };
 }
 
-#define DebugLog( logLevel, message, ... ) ImageScraper::PrintLog( logLevel, message, __VA_ARGS__ );
-#define InfoLog( message, ... ) ImageScraper::PrintLog( LogLevel::Info, message, __VA_ARGS__ );
-#define WarningLog( message, ... ) ImageScraper::PrintLog( LogLevel::Warning, message, __VA_ARGS__ );
-#define ErrorLog( message, ... ) ImageScraper::PrintLog( LogLevel::Error, message, __VA_ARGS__ );
-#define ErrorAssert( message, ... ) ImageScraper::AssertLog( message, __VA_ARGS__ );
+#define DebugLog( logLevel, message, ... ) ImageScraper::Logger::Log( logLevel, message, __VA_ARGS__ );
+#define InfoLog( message, ... ) ImageScraper::Logger::Log( LogLevel::Info, message, __VA_ARGS__ );
+#define WarningLog( message, ... ) ImageScraper::Logger::Log( LogLevel::Warning, message, __VA_ARGS__ );
+#define ErrorLog( message, ... ) ImageScraper::Logger::Log( LogLevel::Error, message, __VA_ARGS__ );
+#define ErrorAssert( message, ... ) ImageScraper::Logger::Assert( message, __VA_ARGS__ );

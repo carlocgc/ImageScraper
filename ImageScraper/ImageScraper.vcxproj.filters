@@ -63,6 +63,9 @@
     <ClCompile Include="src\async\ThreadPool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\log\FrontEndLogger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\curlpp\cURLpp.hpp">
@@ -261,6 +264,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\async\ThreadPoolSingleton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\LoggerBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\FrontEndLogger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\collections\RingBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\DevLogger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\ConsoleLogger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
