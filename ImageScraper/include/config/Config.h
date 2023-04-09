@@ -3,24 +3,26 @@
 #include <string>
 #include <nlohmann/json.hpp>
 
-class Config final
+namespace ImageScraper
 {
-public:
-    Config( );
-
-    template<typename T>
-    const T GetValue( const std::string& key ) const
+    class Config final
     {
-        return m_ConfigData[ key ].get<T>( );
-    }
+    public:
+        Config( );
 
-    const std::string UserAgent( ) const;
+        template<typename T>
+        const T GetValue( const std::string& key ) const
+        {
+            return m_ConfigData[ key ].get<T>( );
+        }
 
-    const std::string CaBundle( ) const;
+        const std::string UserAgent( ) const;
+        const std::string CaBundle( ) const;
 
-private:
-    nlohmann::json m_ConfigData{ };
+    private:
+        bool ReadFromFile( const std::string& filepath );
 
-    bool ReadFromFile( const std::string& filepath );
-};
+        nlohmann::json m_ConfigData{ };
+    };
 
+}

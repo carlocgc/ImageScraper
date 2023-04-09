@@ -6,11 +6,12 @@
 #include <sstream>
 #include <string>
 
-class Request
+namespace ImageScraper
 {
-public:
-    virtual ~Request( ) { };
-
-    virtual RequestResult Perform( const RequestOptions& options ) = 0;
-};
-
+    class Request
+    {
+    public:
+        virtual ~Request( ) { };
+        virtual RequestResult Perform( const RequestOptions& options ) = 0;
+    };
+}

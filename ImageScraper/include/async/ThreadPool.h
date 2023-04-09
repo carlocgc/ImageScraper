@@ -2,19 +2,22 @@
 #include "asyncgc/ThreadPool.h"
 #include "traits/TypeTraits.h"
 
-class ThreadPool : public NonCopyMovable
+namespace ImageScraper
 {
-public:
-    static Asyncgc::ThreadPool& Instance( )
+    class ThreadPool : public NonCopyMovable
     {
-        static Asyncgc::ThreadPool instance{ 2 };
-        return instance;
-    }
+    public:
+        static Asyncgc::ThreadPool& Instance( )
+        {
+            static Asyncgc::ThreadPool instance{ 2 };
+            return instance;
+        }
 
-    static const Asyncgc::ThreadContext s_UIContext = 0;
-    static const Asyncgc::ThreadContext s_NetworkContext = 1;
+        static const Asyncgc::ThreadContext s_UIContext = 0;
+        static const Asyncgc::ThreadContext s_NetworkContext = 1;
 
-private:
-    ThreadPool( ) = default;
-    ~ThreadPool( ) = default;
-};
+    private:
+        ThreadPool( ) = default;
+        ~ThreadPool( ) = default;
+    };
+}

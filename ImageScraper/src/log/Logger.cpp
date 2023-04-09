@@ -1,13 +1,13 @@
 #include "log/Logger.h"
+
 #include <windows.h>
 #include <chrono>
 #include <thread>
-#include "ui/ConsoleUI.h"
 #include <mutex>
 
 #define LOG_MAX_SIZE 1024
 
-std::string TimeStamp( )
+std::string ImageScraper::TimeStamp( )
 {
     std::chrono::system_clock::time_point timePoint = std::chrono::system_clock::now( );
     std::time_t timeT = std::chrono::system_clock::to_time_t( timePoint );
@@ -20,7 +20,7 @@ std::string TimeStamp( )
     return buffer;
 }
 
-void PrintLog( LogLevel type, const char* message, ... )
+void ImageScraper::PrintLog( LogLevel type, const char* message, ... )
 {
     char output[ LOG_MAX_SIZE ];
 
@@ -64,10 +64,7 @@ void PrintLog( LogLevel type, const char* message, ... )
         strcat_s( output, "\n" );
     }
 
-    {
-        std::unique_lock<std::mutex> lock{ ConsoleUI::GetMutex( ) };
-        std::cout << output;
-    }
+    std::cout << output;
 
     OutputDebugStringA( output );
 }

@@ -4,7 +4,7 @@
 #include "requests/RequestTypes.h"
 #include "requests/RedditRequest.h"
 
-RequestResult RedditRequest::Perform( const RequestOptions& options )
+ImageScraper::RequestResult ImageScraper::RedditRequest::Perform( const RequestOptions& options )
 {
     curlpp::Cleanup cleanup{ };
     curlpp::Easy request{ };

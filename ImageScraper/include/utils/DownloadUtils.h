@@ -5,7 +5,7 @@
 #include "log/Logger.h"
 #include "requests/RequestTypes.h"
 
-namespace DownloadHelpers
+namespace ImageScraper::DownloadHelpers
 {
     static std::string UrlToSafeString( const std::string& url )
     {

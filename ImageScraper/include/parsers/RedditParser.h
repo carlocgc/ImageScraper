@@ -5,7 +5,7 @@
 
 using namespace nlohmann;
 
-namespace RedditParser
+namespace ImageScraper::RedditParser
 {
     static bool GetImageUrlFromRedditPost( const json& post, std::vector<std::string>& out )
     {

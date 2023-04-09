@@ -11,7 +11,7 @@
 
 using json = nlohmann::json;
 
-void RedditService::DownloadHotReddit( const Config& config, const std::string& subreddit )
+void ImageScraper::RedditService::DownloadHotReddit( const Config& config, const std::string& subreddit )
 {
     auto task = ThreadPool::Instance().Submit( ThreadPool::s_NetworkContext, [ config, subreddit ]( )
         {
@@ -39,7 +39,7 @@ void RedditService::DownloadHotReddit( const Config& config, const std::string& 
 
             for( const json& post : posts )
             {
-                RedditParser::GetImageUrlFromRedditPost( post, urls );
+                ImageScraper::RedditParser::GetImageUrlFromRedditPost( post, urls );
             }
 
             if( urls.empty( ) )
@@ -110,11 +110,10 @@ void RedditService::DownloadHotReddit( const Config& config, const std::string& 
     }
 }
 
-bool RedditService::HandleUrl( const Config& config, const std::string& url )
+bool ImageScraper::RedditService::HandleUrl( const Config& config, const std::string& url )
 {
-    // TODO Handle a proper url when more services are added, for now just a subreddit name is expected
-
-    if( true ) // Check url for reddit address
+    // TODO Check url for reddit address
+    if( true )
     {
         DownloadHotReddit( config, url );
     }

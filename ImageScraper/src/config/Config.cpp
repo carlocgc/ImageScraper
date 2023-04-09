@@ -3,19 +3,19 @@
 #include <fstream>
 #include <filesystem>
 
-Config::Config( )
+ImageScraper::Config::Config( )
 {
     const std::filesystem::path confPath = std::filesystem::current_path( ) / "config.json";
     const std::string pathStr = confPath.generic_string( );
     ReadFromFile( pathStr );
 }
 
-const std::string Config::UserAgent( ) const
+const std::string ImageScraper::Config::UserAgent( ) const
 {
     return GetValue<std::string>( "UserAgent" );
 }
 
-const std::string Config::CaBundle( ) const
+const std::string ImageScraper::Config::CaBundle( ) const
 {
     const std::string bundleName = GetValue<std::string>( "CaBundle" );
     const std::filesystem::path root = std::filesystem::current_path( );
@@ -23,7 +23,7 @@ const std::string Config::CaBundle( ) const
     return bundlePath.generic_string( );
 }
 
-bool Config::ReadFromFile( const std::string& filepath )
+bool ImageScraper::Config::ReadFromFile( const std::string& filepath )
 {
     std::filesystem::path configPath = filepath;
     if( !std::filesystem::exists( configPath ) )

@@ -1,9 +1,14 @@
 #pragma once
+#include "config/Config.h"
+
 #include <string>
 
-class Service
+namespace ImageScraper
 {
-public:
-    virtual ~Service( ) { };
-    virtual bool HandleUrl( const Config& config, const std::string& url ) = 0;
-};
+    class Service
+    {
+    public:
+        virtual ~Service( ) { };
+        virtual bool HandleUrl( const Config& config, const std::string& url ) = 0;
+    };
+}

@@ -6,7 +6,7 @@
 #include "curlpp/Easy.hpp"
 #include <sstream>
 
-DownloadResult DownloadRequest::Perform( const DownloadOptions& options )
+ImageScraper::DownloadResult ImageScraper::DownloadRequest::Perform( const DownloadOptions& options )
 {
     m_BufferPtr = options.m_BufferPtr;
 
@@ -46,7 +46,7 @@ DownloadResult DownloadRequest::Perform( const DownloadOptions& options )
     return m_Result;
 }
 
-size_t DownloadRequest::WriteCallback( char* contents, size_t size, size_t nmemb )
+size_t ImageScraper::DownloadRequest::WriteCallback( char* contents, size_t size, size_t nmemb )
 {
     if( !m_BufferPtr )
     {
