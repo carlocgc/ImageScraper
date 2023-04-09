@@ -1,5 +1,7 @@
 #include "ui/FrontEnd.h"
 #include "log/Logger.h"
+#include "services/Service.h"
+#include "config/Config.h"
 
 ImageScraper::FrontEnd::FrontEnd( std::shared_ptr<Config> config )
     : m_Config{ config }

@@ -1,4 +1,7 @@
 #pragma once
+
+#include "log/Logger.h"
+
 #include <map>
 #include <thread>
 #include <queue>
@@ -16,9 +19,23 @@ namespace ImageScraper
         ThreadPool( int numThreads );
         ~ThreadPool( );
 
+        /// <summary>
+        /// Submit callable to be executed on the given thread context
+        /// </summary>
+        /// <typeparam name="F"> Callable type </typeparam>
+        /// <typeparam name="...Args"> Callable arge types </typeparam>
+        /// <param name="context"> Thread context as integer, uniquely identifies the execution thread. </param>
+        /// <param name="f"> Callable </param>
+        /// <param name="...args"> Callable args </param>
+        /// <returns></returns>
         template<class F, class... Args>
         auto Submit( ThreadContext context, F&& f, Args&&... args ) -> std::future<decltype( f( args... ) )>
         {
+            if( context > m_Threads.size( ) )
+            {
+                AssertLog( "[%s] Invalid ThreadContext, max context count is set in ThreadPool ctor." );
+            }
+
             using ReturnT = decltype( f( args... ) );
 
             // Create a new packaged_task object that will wrap the function to be executed
@@ -38,6 +55,14 @@ namespace ImageScraper
             return res;
         }
 
+        /// <summary>
+        /// Submit callable on main thread task queue, typically used for completion callbacks of worker thread tasks
+        /// </summary>
+        /// <typeparam name="F"> Callable type </typeparam>
+        /// <typeparam name="...Args"> Callable arge types </typeparam>
+        /// <param name="f"> Callable </param>
+        /// <param name="...args"> Callable args </param>
+        /// <returns></returns>
         template<class F, class... Args>
         auto SubmitMain( F&& f, Args&&... args ) -> std::future<decltype( f( args... ) )>
         {
@@ -60,7 +85,10 @@ namespace ImageScraper
             return res;
         }
 
-        void InvokeMainTaskQueue( );
+        /// <summary>
+        /// Invokes tasks on the main thread task queue
+        /// </summary>
+        void Update( );
 
     private:
         std::vector<std::thread> m_Threads{ };

@@ -12,9 +12,6 @@
 #include <vector>
 #include <memory>
 
-#include "services/Service.h"
-#include "config/Config.h"
-
 static void glfw_error_callback( int error, const char* description )
 {
     fprintf( stderr, "GLFW Error %d: %s\n", error, description );
@@ -22,6 +19,9 @@ static void glfw_error_callback( int error, const char* description )
 
 namespace ImageScraper
 {
+    class Config;
+    class Service;
+
     enum class InputState : uint8_t
     {
         Free = 0,

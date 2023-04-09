@@ -60,6 +60,9 @@
     <ClCompile Include="src\ui\FrontEnd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\async\ThreadPool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\curlpp\cURLpp.hpp">
@@ -209,9 +212,6 @@
     <ClInclude Include="include\requests\DownloadRequestTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\asyncgc\ThreadPool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\services\RedditService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -258,6 +258,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ui\FrontEnd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\async\ThreadPoolSingleton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\async\Promise.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

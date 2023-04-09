@@ -1,20 +1,20 @@
 #pragma once
-#include "asyncgc/ThreadPool.h"
 #include "traits/TypeTraits.h"
+#include "async/ThreadPool.h"
 
 namespace ImageScraper
 {
     class ThreadPoolSingleton : public NonCopyMovable
     {
     public:
-        static Asyncgc::ThreadPool& Instance( )
+        static ThreadPool& Instance( )
         {
-            static Asyncgc::ThreadPool instance{ 2 };
+            static ThreadPool instance{ 2 };
             return instance;
         }
 
-        static const Asyncgc::ThreadContext s_UIContext = 0;
-        static const Asyncgc::ThreadContext s_NetworkContext = 1;
+        static const ThreadContext s_UIContext = 0;
+        static const ThreadContext s_NetworkContext = 1;
 
     private:
         ThreadPoolSingleton( ) = default;

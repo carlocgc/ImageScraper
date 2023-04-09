@@ -1,5 +1,4 @@
 #include "services/RedditService.h"
-#include "asyncgc/ThreadPool.h"
 #include "requests/RequestTypes.h"
 #include "requests/RedditRequest.h"
 #include "requests/DownloadRequestTypes.h"
@@ -7,14 +6,24 @@
 #include "parsers/RedditParser.h"
 #include "utils/DownloadUtils.h"
 #include "log/Logger.h"
-#include "async/ThreadPool.h"
-#include "ui/FrontEnd.h"
+#include "async/ThreadPoolSingleton.h"
 
 using json = nlohmann::json;
 
+bool ImageScraper::RedditService::HandleUrl( const Config& config, const FrontEnd& frontEnd, const std::string& url )
+{
+    // TODO Check url for reddit address
+    if( true )
+    {
+        DownloadHotReddit( config, url );
+    }
+
+    return true;
+}
+
 void ImageScraper::RedditService::DownloadHotReddit( const Config& config, const std::string& subreddit )
 {
-    auto task = ThreadPool::Instance().Submit( ThreadPool::s_NetworkContext, [ config, subreddit ]( )
+    auto task = ThreadPoolSingleton::Instance().Submit( ThreadPoolSingleton::s_NetworkContext, [ config, subreddit ]( )
         {
             RequestOptions options{ };
             options.m_CaBundle = config.CaBundle( );
@@ -109,15 +118,4 @@ void ImageScraper::RedditService::DownloadHotReddit( const Config& config, const
             InfoLog( "[%s] Waiting for task...", __FUNCTION__ );
         }
     }
-}
-
-bool ImageScraper::RedditService::HandleUrl( const Config& config, const FrontEnd& frontEnd, const std::string& url )
-{
-    // TODO Check url for reddit address
-    if( true )
-    {
-        DownloadHotReddit( config, url );
-    }
-
-    return true;
 }

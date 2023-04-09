@@ -51,7 +51,7 @@ ImageScraper::ThreadPool::~ThreadPool( )
     }
 }
 
-void ImageScraper::ThreadPool::InvokeMainTaskQueue( )
+void ImageScraper::ThreadPool::Update( )
 {
     std::function<void( )> task;
 
