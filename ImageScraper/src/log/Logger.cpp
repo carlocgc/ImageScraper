@@ -28,21 +28,25 @@ void ImageScraper::Logger::Log( LogLevel logLevel, const char* message, ... )
 
     strncpy_s( output, timeStamp.c_str( ), LOG_MAX_SIZE );
 
+    std::string levelTag = "";
+
     switch( logLevel )
     {
     case LogLevel::Warning:
-        strcat_s( output, LOG_MAX_SIZE, " [WARN] " );
-        //strncpy_s( output, "[WARN] ", LOG_MAX_SIZE );
+        levelTag = " [WARN] ";
         break;
     case LogLevel::Error:
-        strcat_s( output, LOG_MAX_SIZE, " [ERRO] " );
-        //strncpy_s( output, "[ERRO] ", LOG_MAX_SIZE );
+        levelTag = " [ERRO] ";
+        break;
+    case LogLevel::Debug:
+        levelTag = " [DBUG] ";
         break;
     default:
-        strcat_s( output, LOG_MAX_SIZE, " [INFO] " );
-        //strncpy_s( output, "[INFO] ", LOG_MAX_SIZE );
+        levelTag = " [INFO] ";
         break;
     }
+
+    strcat_s( output, LOG_MAX_SIZE, levelTag.c_str( ) );
 
     const uint64_t preLen = static_cast< uint64_t >( strlen( output ) );
 

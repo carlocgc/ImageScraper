@@ -205,14 +205,16 @@ void ImageScraper::FrontEnd::UpdateUrlInput( )
         {
             m_UrlField = url;
         }
-        ImGui::EndChild( );
     }
+
+    ImGui::EndChild( );
 
     if( ImGui::BeginChild( "RunButton", ImVec2( 300, 25), false ) )
     {
         m_StartProcess = ImGui::Button( "Run", ImVec2( 50, 25 ) );
-        ImGui::EndChild( );
     }
+
+    ImGui::EndChild( );
 
     ImGui::End( );
 }
@@ -230,9 +232,12 @@ void ImageScraper::FrontEnd::UpdateLogWindow( )
     if( ImGui::BeginPopup( "Options" ) )
     {
         ImGui::Checkbox( "Auto-scroll", &m_AutoScroll );
+        ImGui::Checkbox( "Debug Logs", &m_DebugLogging );
 
         ImGui::EndPopup( );
     }
+
+    m_LogLevel = m_DebugLogging ? LogLevel::Debug : LogLevel::Error;
 
     // Options, Filter
     if( ImGui::Button( "Options" ) )
@@ -355,7 +360,9 @@ void ImageScraper::FrontEnd::UpdateLogWindow( )
 
         ImGui::PopStyleVar( );
     }
+
     ImGui::EndChild( );
+
     ImGui::Separator( );
 
     ImGui::End( );

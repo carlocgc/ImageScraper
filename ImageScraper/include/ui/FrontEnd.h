@@ -73,6 +73,7 @@ namespace ImageScraper
         // Log
         RingBuffer<LogLine> m_LogContent;
         bool m_AutoScroll{ true };
+        bool m_DebugLogging{ false };
         bool m_ScrollToBottom{ false };
         ImGuiTextFilter m_Filter;
         LogLevel m_LogLevel{ LogLevel::Error };

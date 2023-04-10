@@ -9,7 +9,7 @@
 #include "config/Config.h"
 #include "ui/FrontEnd.h"
 
-#define UI_MAX_LOG_LINES 1000
+#define UI_MAX_LOG_LINES 10000
 
 ImageScraper::App::App( )
 {
