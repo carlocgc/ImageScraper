@@ -14,7 +14,14 @@ namespace ImageScraper
     {
         Info,
         Warning,
-        Error
+        Error,
+        Debug
+    };
+
+    struct LogLine
+    {
+        LogLevel m_Level;
+        std::string m_String;
     };
 
     class LoggerBase;
@@ -27,7 +34,7 @@ namespace ImageScraper
             m_Loggers.push_back( logger );
         }
 
-        static void Log( LogLevel type, const char* message, ... );
+        static void Log( LogLevel logLevel, const char* message, ... );
 
         template<typename... Args>
         static void Assert( const char* message, Args... args )
@@ -44,8 +51,10 @@ namespace ImageScraper
     };
 }
 
-#define DebugLog( logLevel, message, ... ) ImageScraper::Logger::Log( logLevel, message, __VA_ARGS__ );
 #define InfoLog( message, ... ) ImageScraper::Logger::Log( LogLevel::Info, message, __VA_ARGS__ );
 #define WarningLog( message, ... ) ImageScraper::Logger::Log( LogLevel::Warning, message, __VA_ARGS__ );
 #define ErrorLog( message, ... ) ImageScraper::Logger::Log( LogLevel::Error, message, __VA_ARGS__ );
-#define ErrorAssert( message, ... ) ImageScraper::Logger::Assert( message, __VA_ARGS__ );
+#define DebugLog( message, ... ) ImageScraper::Logger::Log( LogLevel::Debug, message, __VA_ARGS__ );
+
+// TODO Add condition to assert
+#define Assert( message, ... ) ImageScraper::Logger::Assert( message, __VA_ARGS__ );

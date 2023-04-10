@@ -22,7 +22,7 @@ bool ImageScraper::Config::ReadFromFile( const std::string& filename )
     const std::string filepath = configPath.generic_string( );
     if( !std::filesystem::exists( configPath ) )
     {
-        ErrorAssert( "[%s] Read failed, file not found: %s", __FUNCTION__, filepath.c_str( ) );
+        ErrorLog( "[%s] Read failed, file not found: %s", __FUNCTION__, filepath.c_str( ) );
         return false;
     };
 

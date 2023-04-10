@@ -20,7 +20,7 @@ std::string ImageScraper::Logger::TimeStamp( )
     return buffer;
 }
 
-void ImageScraper::Logger::Log( LogLevel type, const char* message, ... )
+void ImageScraper::Logger::Log( LogLevel logLevel, const char* message, ... )
 {
     char output[ LOG_MAX_SIZE ];
 
@@ -28,7 +28,7 @@ void ImageScraper::Logger::Log( LogLevel type, const char* message, ... )
 
     strncpy_s( output, timeStamp.c_str( ), LOG_MAX_SIZE );
 
-    switch( type )
+    switch( logLevel )
     {
     case LogLevel::Warning:
         strcat_s( output, LOG_MAX_SIZE, " [WARN] " );
@@ -64,8 +64,9 @@ void ImageScraper::Logger::Log( LogLevel type, const char* message, ... )
         strcat_s( output, "\n" );
     }
 
-    for (auto logger : m_Loggers )
+    for( auto logger : m_Loggers )
     {
-        logger->Log( output );
+        LogLine line{ logLevel, output };
+        logger->Log( line );
     }
 }

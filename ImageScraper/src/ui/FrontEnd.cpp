@@ -22,7 +22,7 @@ ImageScraper::FrontEnd::~FrontEnd( )
 
 bool ImageScraper::FrontEnd::Init( )
 {
-    glfwSetErrorCallback( glfw_error_callback );
+    glfwSetErrorCallback( GLFW_ErrorCallback );
     if( !glfwInit( ) )
     {
         return false;
@@ -171,7 +171,7 @@ void ImageScraper::FrontEnd::Render( )
     glfwSwapBuffers( m_WindowPtr );
 }
 
-void ImageScraper::FrontEnd::Log( const std::string& line )
+void ImageScraper::FrontEnd::Log( const LogLine& line )
 {
     m_LogContent.Push( line );
 }
@@ -226,8 +226,6 @@ void ImageScraper::FrontEnd::UpdateLogWindow( )
         return;
     }
 
-    bool copy_to_clipboard = ImGui::SmallButton( "Copy" );
-
     // Options menu
     if( ImGui::BeginPopup( "Options" ) )
     {
@@ -241,8 +239,13 @@ void ImageScraper::FrontEnd::UpdateLogWindow( )
     {
         ImGui::OpenPopup( "Options" );
     }
+
+    ImGui::SameLine( );
+    bool copy_to_clipboard = ImGui::Button( "Copy" );
+
     ImGui::SameLine( );
     m_Filter.Draw( "Filter (\"incl,-excl\") (\"error\")", 180 );
+
     ImGui::Separator( );
 
     // Reserve enough left-over height for 1 separator + 1 input text
@@ -283,31 +286,63 @@ void ImageScraper::FrontEnd::UpdateLogWindow( )
         // - Split them into same height items would be simpler and facilitate random-seeking into your list.
         // - Consider using manual call to IsRectVisible() and skipping extraneous decoration from your items.
         ImGui::PushStyleVar( ImGuiStyleVar_ItemSpacing, ImVec2( 4, 1 ) ); // Tighten spacing
+
         if( copy_to_clipboard )
         {
             ImGui::LogToClipboard( );
         }
 
-        for( int i = 0; i < m_LogContent.GetSize(); i++ )
+        int size = m_LogContent.GetSize( );
+        for( int i = 0; i < size; i++ )
         {
-            const char* item = m_LogContent[ i ].c_str();
-            if( !m_Filter.PassFilter( item ) )
+            if( m_LogContent[ i ].m_Level > m_LogLevel )
+            {
                 continue;
+            }
+
+            const char* item = m_LogContent[ i ].m_String.c_str();
+            if( !m_Filter.PassFilter( item ) )
+            {
+                continue;
+            }
 
             // Normally you would store more information in your item than just a string.
             // (e.g. make Items[] an array of structure, store color/type etc.)
             ImVec4 color;
             bool has_color = false;
-            if( strstr( item, "[error]" ) ) { color = ImVec4( 1.0f, 0.4f, 0.4f, 1.0f ); has_color = true; }
-            else if( strncmp( item, "# ", 2 ) == 0 ) { color = ImVec4( 1.0f, 0.8f, 0.6f, 1.0f ); has_color = true; }
+            if( m_LogContent[ i ].m_Level == LogLevel::Error )
+            {
+                color = ImVec4( 1.0f, 0.4f, 0.4f, 1.0f );
+                has_color = true;
+            }
+            else if( m_LogContent[ i ].m_Level == LogLevel::Warning )
+            {
+                color = ImVec4( 1.0f, 0.8f, 0.0f, 1.0f );
+                has_color = true;
+            }
+            else if( strncmp( item, "# ", 2 ) == 0 )
+            {
+                color = ImVec4( 1.0f, 0.8f, 0.6f, 1.0f );
+                has_color = true;
+            }
+
             if( has_color )
+            {
                 ImGui::PushStyleColor( ImGuiCol_Text, color );
+            }
+
             ImGui::TextUnformatted( item );
+
             if( has_color )
+            {
                 ImGui::PopStyleColor( );
+            }
         }
+
         if( copy_to_clipboard )
+        {
             ImGui::LogFinish( );
+        }
 
         // Keep up at the bottom of the scroll region if we were already at the bottom at the beginning of the frame.
         // Using a scrollbar or mouse-wheel will take away from the bottom edge.

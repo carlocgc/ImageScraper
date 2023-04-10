@@ -13,20 +13,21 @@
 #include <memory>
 
 #include "collections/RingBuffer.h"
-
-static void glfw_error_callback( int error, const char* description )
-{
-    fprintf( stderr, "GLFW Error %d: %s\n", error, description );
-}
+#include "log/Logger.h"
 
 namespace ImageScraper
 {
+    static void GLFW_ErrorCallback( int error, const char* description )
+    {
+        ErrorLog( "[%s] GLFW Error %d: %s", error, description );
+    }
+
     class Config;
     class Service;
 
     enum class InputState : uint8_t
     {
-        Free = 0,
+        Free,
         Blocked,
     };
 
@@ -42,8 +43,9 @@ namespace ImageScraper
         bool HandleUserInput( std::vector<std::shared_ptr<Service>>& services );
         void SetInputState( const InputState& state );
         void Render( );
-        void Log( const std::string& line );
-        GLFWwindow* GetWindow( ) { return m_WindowPtr; };
+        void Log( const LogLine& line );
+        GLFWwindow* GetWindow( ) const { return m_WindowPtr; };
+        LogLevel GetLogLevel( ) const { return m_LogLevel; };
 
         int InputTextCallback( ImGuiInputTextCallbackData* data );
         static int InputTextCallbackProxy( ImGuiInputTextCallbackData* data )
@@ -69,10 +71,11 @@ namespace ImageScraper
         bool m_StartProcess{ false };
 
         // Log
-        RingBuffer<std::string> m_LogContent;
+        RingBuffer<LogLine> m_LogContent;
         bool m_AutoScroll{ true };
         bool m_ScrollToBottom{ false };
         ImGuiTextFilter m_Filter;
+        LogLevel m_LogLevel{ LogLevel::Error };
     };
 }
 
