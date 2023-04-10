@@ -13,8 +13,9 @@ namespace ImageScraper
     class RingBuffer
     {
     public:
-        RingBuffer( int capacity )
-            : m_Buffer{ capacity }
+        RingBuffer( const std::size_t capacity )
+            : m_Capacity{ capacity }
+            , m_Buffer{ capacity }
         {
         };
 
@@ -71,6 +72,15 @@ namespace ImageScraper
             return static_cast< int >( m_Buffer.size( ) );
         }
 
+        void Clear( )
+        {
+            m_Tail = 0;
+            m_Head = 0;
+            m_Size = 0;
+            m_Buffer.clear( );
+            m_Buffer.resize( m_Capacity );
+        }
+
         T& operator[]( const int i )
         {
             if( i > m_Size )
@@ -83,6 +93,7 @@ namespace ImageScraper
 
     private:
         std::vector<T> m_Buffer{ };
+        std::size_t m_Capacity{ 0 };
         std::size_t m_Size{ 0 };
         std::size_t m_Head{ 0 }; // Index of the oldest element
         std::size_t m_Tail{ 0 }; // Index of the next "empty" location

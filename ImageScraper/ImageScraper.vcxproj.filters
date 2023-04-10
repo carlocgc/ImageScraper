@@ -263,9 +263,6 @@
     <ClInclude Include="include\ui\FrontEnd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\async\ThreadPoolSingleton.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\log\LoggerBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -279,6 +276,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\log\ConsoleLogger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\async\TaskManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

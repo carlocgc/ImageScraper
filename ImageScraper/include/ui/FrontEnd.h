@@ -42,8 +42,15 @@ namespace ImageScraper
         bool HandleUserInput( std::vector<std::shared_ptr<Service>>& services );
         void SetInputState( const InputState& state );
         void Render( );
-        void AppendLogContent( const std::string& line );
+        void Log( const std::string& line );
         GLFWwindow* GetWindow( ) { return m_WindowPtr; };
+
+        int InputTextCallback( ImGuiInputTextCallbackData* data );
+        static int InputTextCallbackProxy( ImGuiInputTextCallbackData* data )
+        {
+            FrontEnd* frontEnd = reinterpret_cast< FrontEnd* >( data->UserData );
+            return frontEnd->InputTextCallback( data );
+        }
 
     private:
         void ShowDemoWindow( );
@@ -55,10 +62,17 @@ namespace ImageScraper
 
         InputState m_InputState{ InputState::Free };
 
+        // TODO Move all input logic into components
+
+        // Url input
         std::string m_UrlField{ };
         bool m_StartProcess{ false };
 
+        // Log
         RingBuffer<std::string> m_LogContent;
+        bool m_AutoScroll{ true };
+        bool m_ScrollToBottom{ false };
+        ImGuiTextFilter m_Filter;
     };
 }
 

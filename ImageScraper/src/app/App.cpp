@@ -5,7 +5,7 @@
 #include "log/DevLogger.h"
 #include "log/ConsoleLogger.h"
 #include "services/RedditService.h"
-#include "async/ThreadPoolSingleton.h"
+#include "async/TaskManager.h"
 #include "config/Config.h"
 #include "ui/FrontEnd.h"
 
@@ -43,9 +43,9 @@ int ImageScraper::App::Run( )
             m_FrontEnd->SetInputState( InputState::Blocked );
         }
 
-        ThreadPoolSingleton::Instance( ).Update( );
+        TaskManager::Instance( ).Update( );
 
-        m_FrontEnd->Render( );
+        m_FrontEnd->Render( ); // TOOD dedicated UI thread
     }
 
     return 0;

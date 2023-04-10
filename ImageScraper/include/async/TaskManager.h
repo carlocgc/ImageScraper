@@ -1,10 +1,11 @@
 #pragma once
+#pragma once
 #include "traits/TypeTraits.h"
 #include "async/ThreadPool.h"
 
 namespace ImageScraper
 {
-    class ThreadPoolSingleton : public NonCopyMovable
+    class TaskManager : public NonCopyMovable
     {
     public:
         static ThreadPool& Instance( )
@@ -17,7 +18,7 @@ namespace ImageScraper
         static const ThreadContext s_NetworkContext = 1;
 
     private:
-        ThreadPoolSingleton( ) = default;
-        ~ThreadPoolSingleton( ) = default;
+        TaskManager( ) = default;
+        ~TaskManager( ) = default;
     };
 }

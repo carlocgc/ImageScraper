@@ -215,8 +215,8 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\app\App.h" />
+    <ClInclude Include="include\async\TaskManager.h" />
     <ClInclude Include="include\async\ThreadPool.h" />
-    <ClInclude Include="include\async\ThreadPoolSingleton.h" />
     <ClInclude Include="include\collections\RingBuffer.h" />
     <ClInclude Include="include\config\Config.h" />
     <ClInclude Include="include\curlpp\cURLpp.hpp" />
