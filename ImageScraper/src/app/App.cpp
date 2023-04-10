@@ -22,6 +22,8 @@ ImageScraper::App::App( )
     Logger::AddLogger( std::make_shared<FrontEndLogger>( m_FrontEnd ) );
 
     m_Services.push_back( std::make_shared<RedditService>( ) );
+
+    m_Config->ReadFromFile( "config.json" );
 }
 
 int ImageScraper::App::Run( )

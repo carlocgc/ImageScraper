@@ -3,13 +3,6 @@
 #include <fstream>
 #include <filesystem>
 
-ImageScraper::Config::Config( )
-{
-    const std::filesystem::path confPath = std::filesystem::current_path( ) / "config.json";
-    const std::string pathStr = confPath.generic_string( );
-    ReadFromFile( pathStr );
-}
-
 const std::string ImageScraper::Config::UserAgent( ) const
 {
     return GetValue<std::string>( "UserAgent" );
@@ -23,9 +16,10 @@ const std::string ImageScraper::Config::CaBundle( ) const
     return bundlePath.generic_string( );
 }
 
-bool ImageScraper::Config::ReadFromFile( const std::string& filepath )
+bool ImageScraper::Config::ReadFromFile( const std::string& filename )
 {
-    std::filesystem::path configPath = filepath;
+    std::filesystem::path configPath = std::filesystem::current_path( ) / filename;
+    const std::string filepath = configPath.generic_string( );
     if( !std::filesystem::exists( configPath ) )
     {
         ErrorAssert( "[%s] Read failed, file not found: %s", __FUNCTION__, filepath.c_str( ) );
@@ -40,7 +34,7 @@ bool ImageScraper::Config::ReadFromFile( const std::string& filepath )
         return false;
     }
 
-    m_ConfigData = nlohmann::json::parse( file );
+    m_Json = json::parse( file );
 
     InfoLog( "[%s] Config Loaded successfully.", __FUNCTION__ );
     return false;
