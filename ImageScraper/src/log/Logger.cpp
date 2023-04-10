@@ -2,8 +2,6 @@
 #include "log/LoggerBase.h"
 
 #include <chrono>
-#include <thread>
-#include <mutex>
 
 #define LOG_MAX_SIZE 1024
 
