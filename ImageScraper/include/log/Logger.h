@@ -1,9 +1,11 @@
 #pragma once
+
+#include "traits/TypeTraits.h"
+
 #include <cstdarg>
 #include <cstdio>
 #include <iostream>
 #include <cassert>
-#include "traits/TypeTraits.h"
 #include <vector>
 
 namespace ImageScraper
@@ -24,8 +26,6 @@ namespace ImageScraper
         {
             m_Loggers.push_back( logger );
         }
-
-        static void Update( );
 
         static void Log( LogLevel type, const char* message, ... );
 

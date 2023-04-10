@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <stdexcept>
 
 namespace ImageScraper
 {
@@ -62,12 +63,22 @@ namespace ImageScraper
 
         int GetSize( ) const
         {
-            return m_Size;
+            return static_cast<int>( m_Size );
         }
 
         int GetCapacity( ) const
         {
-            return m_Buffer.size( );
+            return static_cast< int >( m_Buffer.size( ) );
+        }
+
+        T& operator[]( const int i )
+        {
+            if( i > m_Size )
+            {
+                throw std::out_of_range( "Index out of range" );
+            }
+
+            return m_Buffer[ ( m_Head + i ) % m_Buffer.size( ) ];
         }
 
     private:

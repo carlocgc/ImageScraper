@@ -1,13 +1,16 @@
 #pragma once
-#include "config/Config.h"
-#include "services/Service.h"
+
 #include "traits/TypeTraits.h"
-#include "ui/FrontEnd.h"
 
 #include <memory>
+#include <vector>
 
 namespace ImageScraper
 {
+    class Config;
+    class FrontEnd;
+    class Service;
+
     class App : public NonCopyMovable
     {
     public:

@@ -3,8 +3,9 @@
 #include "services/Service.h"
 #include "config/Config.h"
 
-ImageScraper::FrontEnd::FrontEnd( std::shared_ptr<Config> config )
+ImageScraper::FrontEnd::FrontEnd( std::shared_ptr<Config> config, int maxLogLines )
     : m_Config{ config }
+    , m_LogContent{ maxLogLines }
 {
 }
 
@@ -90,22 +91,12 @@ void ImageScraper::FrontEnd::Update( )
 
     ImGui::BeginDisabled( m_InputState == InputState::Blocked );
 
-    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-    bool show_demo_window = true;
-    if( show_demo_window )
-    {
-        ImGui::ShowDemoWindow( &show_demo_window );
-    }
-
-    char url[ 64 ] = "";
-    if( ImGui::InputText( "Sub reddit Name", url, 64 ) )
-    {
-        m_UrlField = url;
-    }
-
-    m_StartProcess = ImGui::Button( "Start", ImVec2( 50, 25 ) );
+    ShowDemoWindow( );
+    UpdateUrlInput( );
 
     ImGui::EndDisabled( );
+
+    UpdateLogWindow( );
 }
 
 bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Service>>& services )
@@ -176,6 +167,51 @@ void ImageScraper::FrontEnd::Render( )
     }
 
     glfwSwapBuffers( m_WindowPtr );
+}
+
+void ImageScraper::FrontEnd::AppendLogContent( const std::string& line )
+{
+    m_LogContent.Push( line );
+}
+
+void ImageScraper::FrontEnd::ShowDemoWindow( )
+{
+    bool show = true;
+    ImGui::ShowDemoWindow( &show );
+}
+
+void ImageScraper::FrontEnd::UpdateUrlInput( )
+{
+    char url[ 64 ] = "";
+    if( ImGui::InputText( "Sub reddit Name", url, 64 ) )
+    {
+        m_UrlField = url;
+    }
+
+    m_StartProcess = ImGui::Button( "Start", ImVec2( 50, 25 ) );
+}
+
+void ImageScraper::FrontEnd::UpdateLogWindow( )
+{
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
+    ImGui::PushStyleVar( ImGuiStyleVar_ChildRounding, 5.0f );
+    ImGui::BeginChild( "OutputHeader", ImVec2( 0, 260 ), true, window_flags );
+    if( ImGui::BeginMenuBar( ) )
+    {
+        if( ImGui::BeginMenu( "Output" ) )
+        {
+            ImGui::EndMenu( );
+        }
+        ImGui::EndMenuBar( );
+    }
+    ImGui::BeginChild( "OutputContent", ImVec2( ImGui::GetContentRegionAvail( ).x * 0.5f, 260 ), false, window_flags );
+    for( int i = 0; i < m_LogContent.GetSize( ); i++ )
+    {
+        ImGui::Text( m_LogContent[ i ].c_str( ) );
+    }
+    ImGui::EndChild( );
+    ImGui::EndChild( );
+    ImGui::PopStyleVar( );
 }
 
 void ImageScraper::FrontEnd::SetInputState( const InputState& state )

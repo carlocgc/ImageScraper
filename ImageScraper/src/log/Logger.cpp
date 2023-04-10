@@ -22,14 +22,6 @@ std::string ImageScraper::Logger::TimeStamp( )
     return buffer;
 }
 
-void ImageScraper::Logger::Update( )
-{
-    for( auto logger : m_Loggers )
-    {
-        logger->Update( );
-    }
-}
-
 void ImageScraper::Logger::Log( LogLevel type, const char* message, ... )
 {
     char output[ LOG_MAX_SIZE ];
