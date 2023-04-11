@@ -8,27 +8,46 @@
 #include "log/Logger.h"
 #include "async/TaskManager.h"
 #include "ui/FrontEnd.h"
+#include "io/JsonFile.h"
+#include "utils/StringUtils.h"
+
+#include <string>
 
 using json = nlohmann::json;
 
-bool ImageScraper::RedditService::HandleUrl( const Config& config, FrontEnd& frontEnd, const std::string& url )
+const std::string ImageScraper::RedditService::DeviceId_Key = "reddit_device_id";
+
+ImageScraper::RedditService::RedditService( const std::string& userAgent, const std::string& caBundle, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<FrontEnd> frontEnd )
+    : Service( m_UserAgent, caBundle )
+    , m_AppConfig{ appConfig }
+    , m_FrontEnd{ frontEnd }
+{
+    if( !m_AppConfig->GetValue<std::string>( DeviceId_Key, m_DeviceId ) )
+    {
+        m_DeviceId = StringUtils::CreateGuid( 30 );
+        m_AppConfig->SetValue<std::string>( DeviceId_Key, m_DeviceId );
+        m_AppConfig->Serialise( );
+    }
+}
+
+bool ImageScraper::RedditService::HandleUrl( const std::string& url )
 {
     // TODO Check url for reddit address
     if( true )
     {
-        DownloadHotReddit( config, frontEnd, url );
+        DownloadHotReddit( url );
     }
 
     return true;
 }
 
-void ImageScraper::RedditService::DownloadHotReddit( const Config& config, FrontEnd& frontEnd, const std::string& subreddit )
+void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddit )
 {
     std::thread::id id = std::this_thread::get_id( );
     std::stringstream ss;
     ss << id;
     std::string outLog = ss.str( );
-    InfoLog( "[%s] Task being set up: invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
+    DebugLog( "[%s] Task being set up: invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
 
     auto complete = [ & ]( const std::string& log )
     {
@@ -36,8 +55,8 @@ void ImageScraper::RedditService::DownloadHotReddit( const Config& config, Front
         std::stringstream ss;
         ss << id;
         std::string outLog = ss.str( );
-        InfoLog( "[%s] Complete: invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
-        frontEnd.SetInputState( InputState::Free );
+        DebugLog( "[%s] Complete: invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
+        m_FrontEnd->SetInputState( InputState::Free );
     };
 
     auto fail = [ & ]( const std::string& log )
@@ -46,21 +65,21 @@ void ImageScraper::RedditService::DownloadHotReddit( const Config& config, Front
         std::stringstream ss;
         ss << id;
         std::string outLog = ss.str( );
-        InfoLog( "[%s] Fail: I am being invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
-        frontEnd.SetInputState( InputState::Free );
+        DebugLog( "[%s] Fail: I am being invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
+        m_FrontEnd->SetInputState( InputState::Free );
     };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ config, subreddit, complete, fail ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, subreddit, complete, fail ]( )
         {
             std::thread::id id = std::this_thread::get_id( );
             std::stringstream ss;
             ss << id;
             std::string outLog = ss.str( );
-            InfoLog( "[%s] Task Started: invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
+            DebugLog( "[%s] Task Started: invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
 
             RequestOptions options{ };
-            options.m_CaBundle = config.CaBundle( );
-            options.m_UserAgent = config.UserAgent( );
+            options.m_CaBundle = m_CaBundle;
+            options.m_UserAgent = m_UserAgent;
             options.m_Url = "https://www.reddit.com/r/" + subreddit + "/hot.json";
 
             RedditRequest request{ };
@@ -88,7 +107,7 @@ void ImageScraper::RedditService::DownloadHotReddit( const Config& config, Front
 
             if( urls.empty( ) )
             {
-                InfoLog( "[%s] No content to download, exiting...", __FUNCTION__ );
+                WarningLog( "[%s] No content to download, nothing was done...", __FUNCTION__ );
                 TaskManager::Instance( ).SubmitMain( complete, "Complete!!!" );
                 return;
             }
@@ -111,7 +130,7 @@ void ImageScraper::RedditService::DownloadHotReddit( const Config& config, Front
                 std::vector<char> buffer{ };
 
                 DownloadOptions options{ };
-                options.m_CaBundle = config.CaBundle( );
+                options.m_CaBundle = m_CaBundle;
                 options.m_Url = url;
                 options.m_BufferPtr = &buffer;
 

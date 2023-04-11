@@ -4,10 +4,11 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 
 namespace ImageScraper
 {
-    class Config;
+    class JsonFile;
     class FrontEnd;
     class Service;
 
@@ -17,8 +18,14 @@ namespace ImageScraper
         App( );
         int Run( );
 
+        static const std::string s_AppConfigFile;
+        static const std::string s_UserConfigFile;
+        static const std::string s_CaBundleFile;
+        static const std::string s_UserAgent;
+
     private:
-        std::shared_ptr<Config> m_Config{ nullptr };
+        std::shared_ptr<JsonFile> m_AppConfig{ nullptr };
+        std::shared_ptr<JsonFile> m_UserConfig{ nullptr };
         std::shared_ptr<FrontEnd> m_FrontEnd{ nullptr };
         std::vector<std::shared_ptr<Service>> m_Services{ };
     };

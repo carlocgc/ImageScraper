@@ -22,7 +22,6 @@ namespace ImageScraper
         ErrorLog( "[%s] GLFW Error %d: %s", error, description );
     }
 
-    class Config;
     class Service;
 
     enum class InputState : uint8_t
@@ -34,7 +33,7 @@ namespace ImageScraper
     class FrontEnd
     {
     public:
-        FrontEnd( std::shared_ptr<Config> config, int maxLogLines );
+        FrontEnd( int maxLogLines );
         ~FrontEnd( );
 
         bool Init( );
@@ -59,9 +58,7 @@ namespace ImageScraper
         void UpdateUrlInput( );
         void UpdateLogWindow( );
 
-        std::shared_ptr<Config> m_Config{ nullptr };
         GLFWwindow* m_WindowPtr{ nullptr };
-
         InputState m_InputState{ InputState::Free };
 
         // TODO Move all input logic into components

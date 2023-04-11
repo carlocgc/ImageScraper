@@ -3,9 +3,8 @@
 #include "services/Service.h"
 #include "config/Config.h"
 
-ImageScraper::FrontEnd::FrontEnd( std::shared_ptr<Config> config, int maxLogLines )
-    : m_Config{ config }
-    , m_LogContent{ static_cast<std::size_t>( maxLogLines ) }
+ImageScraper::FrontEnd::FrontEnd( int maxLogLines )
+    : m_LogContent{ static_cast<std::size_t>( maxLogLines ) }
 {
 }
 
@@ -115,6 +114,7 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
 
     if( m_UrlField.empty( ) )
     {
+        ErrorLog( "[%s] Empty Url!", __FUNCTION__, m_UrlField );
         return false;
     }
 
@@ -128,17 +128,14 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
 
     for( auto service : services )
     {
-        if( service->HandleUrl( *m_Config, *this, m_UrlField ) )
+        if( service->HandleUrl( m_UrlField ) )
         {
             m_UrlField.clear( );
             return true;
         }
-        else
-        {
-            ErrorLog( "[%s] Invalid Url: %s", __FUNCTION__, m_UrlField );
-            //TODO Show error in UI widgets
-        }
     }
+
+    ErrorLog( "[%s] Unhandled Url! : %s", __FUNCTION__, m_UrlField );
 
     return false;
 }

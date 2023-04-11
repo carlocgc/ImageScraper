@@ -8,22 +8,44 @@
 #include "async/TaskManager.h"
 #include "config/Config.h"
 #include "ui/FrontEnd.h"
+#include "io/JsonFile.h"
+
+#include <string>
 
 #define UI_MAX_LOG_LINES 10000
+
+const std::string ImageScraper::App::s_UserConfigFile = "config.json";
+const std::string ImageScraper::App::s_AppConfigFile = "ImageScraper/config.json";
+const std::string ImageScraper::App::s_CaBundleFile = "curl-ca-bundle.crt";
+const std::string ImageScraper::App::s_UserAgent = "Windows:ImageScraper:v0:/u/carlocgc";
 
 ImageScraper::App::App( )
 {
     Logger::AddLogger( std::make_shared<DevLogger>( ) );
     Logger::AddLogger( std::make_shared<ConsoleLogger>( ) );
 
-    m_Config = std::make_shared<Config>( );
-    m_FrontEnd = std::make_shared<FrontEnd>( m_Config, UI_MAX_LOG_LINES );
+    const std::string appConfigPath = ( std::filesystem::temp_directory_path( ) / s_AppConfigFile ).generic_string( );
+    m_AppConfig = std::make_shared<JsonFile>( appConfigPath );
+
+    const std::string userConfigPath = ( std::filesystem::current_path( ) / s_UserConfigFile ).generic_string( );
+    m_UserConfig = std::make_shared<JsonFile>( userConfigPath );
+
+    m_FrontEnd = std::make_shared<FrontEnd>( UI_MAX_LOG_LINES );
 
     Logger::AddLogger( std::make_shared<FrontEndLogger>( m_FrontEnd ) );
 
-    m_Services.push_back( std::make_shared<RedditService>( ) );
+    if( m_AppConfig->Deserialise( ) )
+    {
+        InfoLog( "[%s] App Config Loaded!", __FUNCTION__ );
+    }
 
-    m_Config->ReadFromFile( "config.json" );
+    if( m_UserConfig->Deserialise( ) )
+    {
+        InfoLog( "[%s] User Config Loaded!", __FUNCTION__ );
+    }
+
+    const std::string caBundlePath = ( std::filesystem::current_path( ) / s_CaBundleFile ).generic_string( );
+    m_Services.push_back( std::make_shared<RedditService>( s_UserAgent, caBundlePath, m_AppConfig, m_FrontEnd ) );
 }
 
 int ImageScraper::App::Run( )

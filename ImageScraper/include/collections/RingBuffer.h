@@ -26,8 +26,8 @@ namespace ImageScraper
                 Pop( );
             }
 
-            m_Buffer[ m_Tail ] = element;
-            m_Tail = ( m_Tail + 1 ) % m_Buffer.size( );
+            m_Buffer[ m_End ] = element;
+            m_End = ( m_End + 1 ) % m_Buffer.size( );
             m_Size++;
         }
 
@@ -38,18 +38,18 @@ namespace ImageScraper
                 return;
             }
 
-            m_Head = ( m_Head + 1 ) % m_Buffer.size( );
+            m_Start = ( m_Start + 1 ) % m_Buffer.size( );
             m_Size--;
         }
 
         T Front( ) const
         {
-            return m_Buffer[ m_Head ];
+            return m_Buffer[ m_Start ];
         }
 
         T Back( ) const
         {
-            return m_Buffer[ ( m_Tail + m_Buffer.size( ) - 1 ) % m_Buffer.size( ) ];
+            return m_Buffer[ ( m_End + m_Buffer.size( ) - 1 ) % m_Buffer.size( ) ];
         }
 
         bool IsFull( ) const
@@ -74,11 +74,43 @@ namespace ImageScraper
 
         void Clear( )
         {
-            m_Tail = 0;
-            m_Head = 0;
+            m_End = 0;
+            m_Start = 0;
             m_Size = 0;
             m_Buffer.clear( );
             m_Buffer.resize( m_Capacity );
+        }
+
+        typename std::vector<T>::iterator begin( )
+        {
+            if( m_Size == 0 )
+            {
+                return m_Buffer.end( );
+            }
+            else if( m_End > m_Start )
+            {
+                return m_Buffer.begin( ) + m_Start;
+            }
+            else
+            {
+                return m_Buffer.begin( ) + ( m_Start % m_Buffer.size() );
+            }
+        }
+
+        typename std::vector<T>::iterator end( )
+        {
+            if( m_Size == 0 )
+            {
+                return m_Buffer.end( );
+            }
+            else if( m_End > m_Start )
+            {
+                return m_Buffer.begin( ) + m_End;
+            }
+            else
+            {
+                return m_Buffer.begin( ) + m_Buffer.size();
+            }
         }
 
         T& operator[]( const int i )
@@ -88,14 +120,14 @@ namespace ImageScraper
                 throw std::out_of_range( "Index out of range" );
             }
 
-            return m_Buffer[ ( m_Head + i ) % m_Buffer.size( ) ];
+            return m_Buffer[ ( m_Start + i ) % m_Buffer.size( ) ];
         }
 
     private:
         std::vector<T> m_Buffer{ };
         std::size_t m_Capacity{ 0 };
         std::size_t m_Size{ 0 };
-        std::size_t m_Head{ 0 }; // Index of the oldest element
-        std::size_t m_Tail{ 0 }; // Index of the next "empty" location
+        std::size_t m_Start{ 0 }; // Index of the oldest element
+        std::size_t m_End{ 0 }; // Index of the next "empty" location
     };
 }

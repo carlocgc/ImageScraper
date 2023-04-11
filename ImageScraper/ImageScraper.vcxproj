@@ -204,6 +204,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClCompile Include="src\imgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\imgui\imgui_tables.cpp" />
     <ClCompile Include="src\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\io\JsonFile.cpp" />
     <ClCompile Include="src\log\FrontEndLogger.cpp" />
     <ClCompile Include="src\requests\DownloadRequest.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -259,6 +260,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\imgui\imstb_rectpack.h" />
     <ClInclude Include="include\imgui\imstb_textedit.h" />
     <ClInclude Include="include\imgui\imstb_truetype.h" />
+    <ClInclude Include="include\io\JsonFile.h" />
     <ClInclude Include="include\log\ConsoleLogger.h" />
     <ClInclude Include="include\log\DevLogger.h" />
     <ClInclude Include="include\log\FrontEndLogger.h" />
@@ -285,6 +287,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\utilspp\ThreadingSingle.hpp" />
     <ClInclude Include="include\utilspp\TypeList.hpp" />
     <ClInclude Include="include\utilspp\TypeTrait.hpp" />
+    <ClInclude Include="include\utils\StringUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="data\config.json" />
