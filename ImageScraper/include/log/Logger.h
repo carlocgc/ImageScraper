@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cassert>
 #include <vector>
+#include <mutex>
 
 namespace ImageScraper
 {
@@ -31,7 +32,7 @@ namespace ImageScraper
     public:
         static void AddLogger( std::shared_ptr<LoggerBase> logger )
         {
-            m_Loggers.push_back( logger );
+            s_Loggers.push_back( logger );
         }
 
         static void Log( LogLevel logLevel, const char* message, ... );
@@ -47,7 +48,8 @@ namespace ImageScraper
         Logger( ) = default;
 
         static std::string TimeStamp( );
-        static std::vector<std::shared_ptr<LoggerBase>> m_Loggers;
+        static std::vector<std::shared_ptr<LoggerBase>> s_Loggers;
+        static std::mutex s_LogMutex;
     };
 }
 

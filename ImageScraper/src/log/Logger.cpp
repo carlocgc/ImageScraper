@@ -5,7 +5,8 @@
 
 #define LOG_MAX_SIZE 1024
 
-std::vector<std::shared_ptr<ImageScraper::LoggerBase>> ImageScraper::Logger::m_Loggers;
+std::vector<std::shared_ptr<ImageScraper::LoggerBase>> ImageScraper::Logger::s_Loggers{ };
+std::mutex ImageScraper::Logger::s_LogMutex{ };
 
 std::string ImageScraper::Logger::TimeStamp( )
 {
@@ -68,7 +69,10 @@ void ImageScraper::Logger::Log( LogLevel logLevel, const char* message, ... )
         strcat_s( output, "\n" );
     }
 
-    for( auto logger : m_Loggers )
+    // TODO Add buffering rather than locking every line and only send to loggers rarely?
+    std::scoped_lock lock{ s_LogMutex };
+
+    for( auto logger : s_Loggers )
     {
         LogLine line{ logLevel, output };
         logger->Log( line );
