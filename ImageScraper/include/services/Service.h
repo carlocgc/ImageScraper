@@ -1,14 +1,18 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 namespace ImageScraper
 {
+    class JsonFile;
+
     class Service
     {
     public:
-        Service( const std::string& userAgent, const std::string& caBundle )
-            : m_UserAgent{ userAgent }
+        Service( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle )
+            : m_AppConfig{ appConfig }
+            , m_UserConfig{ userConfig }
             , m_CaBundle{ caBundle }
         {
         }
@@ -17,7 +21,8 @@ namespace ImageScraper
         virtual bool HandleUrl( const std::string& url ) = 0;
 
     protected:
-        std::string m_UserAgent;
-        std::string m_CaBundle;
+        std::shared_ptr<JsonFile> m_AppConfig{ nullptr };
+        std::shared_ptr<JsonFile> m_UserConfig{ nullptr };
+        std::string m_CaBundle{ };
     };
 }

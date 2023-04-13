@@ -44,7 +44,7 @@ ImageScraper::App::App( )
     }
 
     const std::string caBundlePath = ( std::filesystem::current_path( ) / s_CaBundleFile ).generic_string( );
-    m_Services.push_back( std::make_shared<RedditService>( s_UserAgent, caBundlePath, m_AppConfig, m_FrontEnd ) );
+    m_Services.push_back( std::make_shared<RedditService>( m_AppConfig, m_UserConfig, caBundlePath, m_FrontEnd ) );
 }
 
 int ImageScraper::App::Run( )

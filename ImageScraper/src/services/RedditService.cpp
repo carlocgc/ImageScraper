@@ -21,9 +21,8 @@ const std::string ImageScraper::RedditService::s_AppDataKey_DeviceId = "reddit_d
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientId = "reddit_client_id";
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientSecret = "reddit_client_secret";
 
-ImageScraper::RedditService::RedditService( const std::string& userAgent, const std::string& caBundle, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<FrontEnd> frontEnd )
-    : Service( m_UserAgent, caBundle )
-    , m_AppConfig{ appConfig }
+ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<FrontEnd> frontEnd )
+    : Service( appConfig, userConfig, caBundle )
     , m_FrontEnd{ frontEnd }
 {
     if( !m_AppConfig->GetValue<std::string>( s_AppDataKey_DeviceId, m_DeviceId ) )
@@ -36,6 +35,10 @@ ImageScraper::RedditService::RedditService( const std::string& userAgent, const 
 
     DebugLog( "[%s] Loaded Reddit device id: %s", __FUNCTION__, m_DeviceId.c_str( ) );
 
+    if( !m_AppConfig->GetValue<std::string>( s_UserDataKey_ClientId, m_ClientId ) )
+    {
+        WarningLog( "[%s] Could not find reddit client id, add client id to %s to be able to authenticate with the reddit api!", __FUNCTION__, m_UserConfig->GetFilePath().c_str( ) );
+    }
 }
 
 bool ImageScraper::RedditService::HandleUrl( const std::string& url )
@@ -76,7 +79,7 @@ void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddi
 
             RequestOptions options{ };
             options.m_CaBundle = m_CaBundle;
-            options.m_UserAgent = m_UserAgent;
+            options.m_UserAgent = s_UserAgent;
             options.m_Url = "https://www.reddit.com/r/" + subreddit + "/hot.json?limit=100";
 
             RedditRequest request{ };
