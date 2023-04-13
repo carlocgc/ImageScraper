@@ -147,27 +147,20 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);CURL_STATICLIB;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ffmpeg_sdk)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\Debug;%(AdditionalLibraryDirectories);$(ffmpeg_sdk)\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl-d_imp.lib;avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl-d_imp.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\Debug\libcurl-d.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\Debug\curl-ca-bundle.crt" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Debug\avcodec-60.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Debug\avdevice-60.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Debug\avfilter-9.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Debug\avformat-60.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Debug\avutil-58.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Debug\swresample-4.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Debug\swscale-7.dll" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Copy dependencies to target directory</Message>
@@ -181,7 +174,7 @@ xcopy "$(ProjectDir)lib\Debug\swscale-7.dll" "$(TargetDir)" /Y</Command>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CURL_STATICLIB;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ffmpeg_sdk)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -190,20 +183,13 @@ xcopy "$(ProjectDir)lib\Debug\swscale-7.dll" "$(TargetDir)" /Y</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\Release;$(ffmpeg_sdk)\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl_imp.lib;avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl_imp.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\Release\libcurl.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\Release\curl-ca-bundle.crt" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Release\avcodec-60.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Release\avdevice-60.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Release\avfilter-9.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Release\avformat-60.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Release\avutil-58.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Release\swresample-4.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Release\swscale-7.dll" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -217,7 +203,6 @@ xcopy "$(ProjectDir)lib\Release\swscale-7.dll" "$(TargetDir)" /Y</Command>
     <ClCompile Include="src\imgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\imgui\imgui_tables.cpp" />
     <ClCompile Include="src\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="src\io\FileConverter.cpp" />
     <ClCompile Include="src\io\JsonFile.cpp" />
     <ClCompile Include="src\log\FrontEndLogger.cpp" />
     <ClCompile Include="src\requests\DownloadRequest.cpp" />
@@ -274,7 +259,6 @@ xcopy "$(ProjectDir)lib\Release\swscale-7.dll" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\imgui\imstb_rectpack.h" />
     <ClInclude Include="include\imgui\imstb_textedit.h" />
     <ClInclude Include="include\imgui\imstb_truetype.h" />
-    <ClInclude Include="include\io\FileConverter.h" />
     <ClInclude Include="include\io\JsonFile.h" />
     <ClInclude Include="include\log\ConsoleLogger.h" />
     <ClInclude Include="include\log\DevLogger.h" />

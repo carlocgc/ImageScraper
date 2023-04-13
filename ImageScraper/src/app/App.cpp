@@ -9,7 +9,6 @@
 #include "config/Config.h"
 #include "ui/FrontEnd.h"
 #include "io/JsonFile.h"
-#include "io/FileConverter.h"
 
 #include <string>
 
@@ -35,8 +34,6 @@ ImageScraper::App::App( )
 
     Logger::AddLogger( std::make_shared<FrontEndLogger>( m_FrontEnd ) );
 
-    m_FileConverter = std::make_shared<FileConverter>( );
-
     if( m_AppConfig->Deserialise( ) )
     {
         InfoLog( "[%s] App Config Loaded!", __FUNCTION__ );
@@ -48,7 +45,7 @@ ImageScraper::App::App( )
     }
 
     const std::string caBundlePath = ( std::filesystem::current_path( ) / s_CaBundleFile ).generic_string( );
-    m_Services.push_back( std::make_shared<RedditService>( s_UserAgent, caBundlePath, m_AppConfig, m_FrontEnd, m_FileConverter ) );
+    m_Services.push_back( std::make_shared<RedditService>( s_UserAgent, caBundlePath, m_AppConfig, m_FrontEnd ) );
 }
 
 int ImageScraper::App::Run( )

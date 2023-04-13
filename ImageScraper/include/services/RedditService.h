@@ -14,7 +14,7 @@ namespace ImageScraper
     class RedditService : public Service
     {
     public:
-        RedditService( const std::string& userAgent, const std::string& caBundle, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<FrontEnd> frontEnd, std::shared_ptr<FileConverter> fileConverter );
+        RedditService( const std::string& userAgent, const std::string& caBundle, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<FrontEnd> frontEnd );
         bool HandleUrl( const std::string& url ) override;
 
     private:
@@ -24,7 +24,6 @@ namespace ImageScraper
 
         std::shared_ptr<JsonFile> m_AppConfig{ nullptr };
         std::shared_ptr<FrontEnd> m_FrontEnd{ nullptr };
-        std::shared_ptr<FileConverter> m_FileConverter{ nullptr };
 
         std::string m_DeviceId{ };
     };

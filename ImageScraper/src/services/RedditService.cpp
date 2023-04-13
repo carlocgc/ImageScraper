@@ -10,7 +10,6 @@
 #include "ui/FrontEnd.h"
 #include "io/JsonFile.h"
 #include "utils/StringUtils.h"
-#include "io/FileConverter.h"
 
 #include <string>
 #include <map>
@@ -19,11 +18,10 @@ using json = nlohmann::json;
 
 const std::string ImageScraper::RedditService::DeviceId_Key = "reddit_device_id";
 
-ImageScraper::RedditService::RedditService( const std::string& userAgent, const std::string& caBundle, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<FrontEnd> frontEnd, std::shared_ptr<FileConverter> fileConverter )
+ImageScraper::RedditService::RedditService( const std::string& userAgent, const std::string& caBundle, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<FrontEnd> frontEnd )
     : Service( m_UserAgent, caBundle )
     , m_AppConfig{ appConfig }
     , m_FrontEnd{ frontEnd }
-    , m_FileConverter{ fileConverter }
 {
     if( !m_AppConfig->GetValue<std::string>( DeviceId_Key, m_DeviceId ) )
     {
@@ -35,7 +33,8 @@ ImageScraper::RedditService::RedditService( const std::string& userAgent, const 
 
 bool ImageScraper::RedditService::HandleUrl( const std::string& url )
 {
-    // TODO Check url for reddit address
+    // TODO Input should be an options struct
+    // Service, url, limit, conversion preferences etc
     if( true )
     {
         DownloadHotReddit( url );
@@ -46,29 +45,17 @@ bool ImageScraper::RedditService::HandleUrl( const std::string& url )
 
 void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddit )
 {
-    std::thread::id id = std::this_thread::get_id( );
-    std::stringstream ss;
-    ss << id;
-    std::string outLog = ss.str( );
-    DebugLog( "[%s] Task being set up: invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
+    InfoLog( "[%s] Starting Reddit Hot Media Download!, Subreddit: %s", __FUNCTION__, subreddit );
 
-    auto complete = [ & ]( const std::string& log )
+    auto complete = [ & ]( int urlsProcessed )
     {
-        std::thread::id id = std::this_thread::get_id( );
-        std::stringstream ss;
-        ss << id;
-        std::string outLog = ss.str( );
-        DebugLog( "[%s] Complete: invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
+        InfoLog( "[%s] Task Complete!, Media Count: %d", __FUNCTION__, urlsProcessed );
         m_FrontEnd->SetInputState( InputState::Free );
     };
 
-    auto fail = [ & ]( const std::string& log )
+    auto fail = [ & ]( )
     {
-        std::thread::id id = std::this_thread::get_id( );
-        std::stringstream ss;
-        ss << id;
-        std::string outLog = ss.str( );
-        DebugLog( "[%s] Fail: I am being invoked from thread: %s", __FUNCTION__, outLog.c_str( ) );
+        ErrorLog( "[%s] Task Failed!, See log for details.", __FUNCTION__ );
         m_FrontEnd->SetInputState( InputState::Free );
     };
 
@@ -91,7 +78,7 @@ void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddi
             if( !result.m_Success )
             {
                 WarningLog( "[%s] RedditRequest failed with error: %i", __FUNCTION__, static_cast< uint16_t >( result.m_Error.m_ErrorCode ) );
-                TaskManager::Instance( ).SubmitMain( fail, "" );
+                TaskManager::Instance( ).SubmitMain( fail );
                 return;
             }
 
@@ -111,7 +98,7 @@ void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddi
             if( urls.empty( ) )
             {
                 WarningLog( "[%s] No content to download, nothing was done...", __FUNCTION__ );
-                TaskManager::Instance( ).SubmitMain( complete, "Complete!!!" );
+                TaskManager::Instance( ).SubmitMain( complete, 0 );
                 return;
             }
 
@@ -123,7 +110,7 @@ void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddi
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
                 ErrorLog( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );
-                TaskManager::Instance( ).SubmitMain( fail, "" );
+                TaskManager::Instance( ).SubmitMain( fail );
                 return;
             }
 
@@ -166,18 +153,9 @@ void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddi
                 outfile.close( );
 
                 InfoLog( "[%s] File written successfully: %s", __FUNCTION__, filepath.c_str( ) );
-
-                /*
-                const FileConverter::ConvertFlags flags = FileConverter::ConvertFlags::DeleteSource;
-                if( m_FileConverter->TryConvert( filepath, flags ) )
-                {
-                    InfoLog( "[%s] File was automatically converted: ", __FUNCTION__, filepath.c_str( ) );
-                }
-                */
-
             }
 
-            TaskManager::Instance( ).SubmitMain( complete, "Complete!!!" );
+            TaskManager::Instance( ).SubmitMain( complete, static_cast<int>( urls.size( ) ) );
         } );
 
     ( void )task;
