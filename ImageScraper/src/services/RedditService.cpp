@@ -128,8 +128,15 @@ void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddi
             }
 
             // Download images
-            for( const std::string& url : urls )
+            for( std::string& url : urls )
             {
+                const std::string newUrl = DownloadHelpers::RedirectToPreferredFileTypeUrl( url );
+
+                if( newUrl != "" )
+                {
+                    url = newUrl;
+                }
+
                 std::vector<char> buffer{ };
 
                 DownloadOptions options{ };
@@ -167,6 +174,7 @@ void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddi
                     InfoLog( "[%s] File was automatically converted: ", __FUNCTION__, filepath.c_str( ) );
                 }
                 */
+
             }
 
             TaskManager::Instance( ).SubmitMain( complete, "Complete!!!" );

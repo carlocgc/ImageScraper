@@ -70,6 +70,27 @@ namespace ImageScraper::DownloadHelpers
         return ext;
     }
 
+    static std::string RedirectToPreferredFileTypeUrl( const std::string& url )
+    {
+        const std::string ext = ExtractExtFromFile( url );
+
+        // TODO Add a map of unwanted types and preferred types
+        if( ext != "gifv" )
+        {
+            return "";
+        }
+
+        const std::size_t dotPos = url.find_last_of( "." );
+        if( dotPos == std::string::npos )
+        {
+            DebugLog( "[%s] %s did not contain a file name and ext", __FUNCTION__, url.c_str( ) );
+            return "";
+        }
+
+        // TODO add mapping for preferred file ext
+        const std::string newUrl = url.substr( 0, dotPos + 1 ) + "mp4";
+        return newUrl;
+    }
 
     static bool CreateDir( const std::string& dir )
     {

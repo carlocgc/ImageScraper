@@ -13,9 +13,8 @@ namespace ImageScraper
             DeleteSource = 2
         };
 
-        FileConverter( );
-
         bool TryConvert( const std::string& sourceFilePath, ConvertFlags convertFlags );
+        bool convert_gifv_to_gif( const std::string& input_file, const std::string& output_file );
 
         static const std::map<std::string, std::string> s_ConversionMappings;
     };
