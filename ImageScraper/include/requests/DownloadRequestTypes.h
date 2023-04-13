@@ -13,9 +13,9 @@ namespace ImageScraper
 
     enum class DownloadErrorCode : uint16_t
     {
-        None = 0,
-        Unknown = 1,
-        InvalidOptions = 2,
+        None,
+        Unknown,
+        InvalidOptions,
     };
 
     struct DownloadError

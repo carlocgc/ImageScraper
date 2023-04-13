@@ -37,41 +37,53 @@ namespace ImageScraper::DownloadHelpers
     {
         // TODO Remove query params and fragments
 
-        std::size_t slashPos = url.find_last_of( "/" );
+        const std::size_t slashPos = url.find_last_of( "/" );
         if( slashPos == std::string::npos )
         {
-            InfoLog( "[%s] %s did not contain a file name and ext", __FUNCTION__, url.c_str() );
+            DebugLog( "[%s] %s did not contain a file name and ext", __FUNCTION__, url.c_str() );
             return "";
         }
 
-        std::string filename = url.substr( slashPos + 1 );
+        const std::string filename = url.substr( slashPos + 1 );
 
-        std::size_t dotPos = filename.find_last_of( "." );
+        const std::size_t dotPos = filename.find_last_of( "." );
         if( dotPos == std::string::npos )
         {
-            InfoLog( "[%s] %s did not contain a file name and ext", __FUNCTION__, url.c_str( ) );
+            DebugLog( "[%s] %s did not contain a file name and ext", __FUNCTION__, url.c_str( ) );
             return "";
         }
 
         return filename;
     }
 
-    static std::string CreateFolder( const std::string& folderName )
+    static std::string ExtractExtFromFile( const std::string& file )
     {
-        std::filesystem::path folderPath = std::filesystem::current_path( ) / folderName;
-        std::string pathString = folderPath.generic_string( );
-
-        if( !std::filesystem::exists( folderPath ) )
+        const std::size_t dotPos = file.find_last_of( "." );
+        if( dotPos == std::string::npos )
         {
-            if( !std::filesystem::create_directory( folderPath ) )
+            DebugLog( "[%s] %s did not contain a file name and ext", __FUNCTION__, file .c_str( ) );
+            return "";
+        }
+
+        const std::string ext = file.substr( dotPos + 1 );
+
+        return ext;
+    }
+
+
+    static bool CreateDir( const std::string& dir )
+    {
+        if( !std::filesystem::exists( dir ) )
+        {
+            if( !std::filesystem::create_directories( dir ) )
             {
-                ErrorLog( "[%s] Failed to create folder, invalid path: %s", __FUNCTION__, pathString );
-                return "";
+                ErrorLog( "[%s] Failed to create directory, invalid path: %s", __FUNCTION__, dir );
+                return false;
             }
         }
 
-        InfoLog( "[%s] Successfully created folder: %s", __FUNCTION__, pathString.c_str() );
-        return pathString;
+        InfoLog( "[%s] Successfully created folder: %s", __FUNCTION__, dir.c_str() );
+        return true;
     }
 
     static bool IsResponseError( RequestResult& result )

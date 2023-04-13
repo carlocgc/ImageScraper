@@ -69,7 +69,7 @@ void ImageScraper::Logger::Log( LogLevel logLevel, const char* message, ... )
         strcat_s( output, "\n" );
     }
 
-    // TODO Add buffering rather than locking every line and only send to loggers rarely?
+    // TODO Add buffering rather than locking every line...
     std::scoped_lock lock{ s_LogMutex };
 
     for( auto logger : s_Loggers )

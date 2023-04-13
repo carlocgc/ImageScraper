@@ -20,13 +20,20 @@ namespace ImageScraper::RedditParser
             return false;
         }
 
+        const std::vector<std::string> targetExts{ ".jpg", ".jpeg", ".png", ".webm", ".webp", ".gif" };
+
         const std::string& url = data[ "url" ];
-        if( url.find( ".jpg" ) == std::string::npos && url.find( ".png" ) == std::string::npos )
+
+        for( const auto& ext : targetExts )
         {
-            return false;
+            const auto& pos = url.find( ext );
+            if( pos != std::string::npos )
+            {
+                out.push_back( url );
+                return true;
+            }
         }
 
-        out.push_back( url );
-        return true;
+        return false;
     }
 };

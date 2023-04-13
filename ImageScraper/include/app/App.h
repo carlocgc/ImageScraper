@@ -11,6 +11,7 @@ namespace ImageScraper
     class JsonFile;
     class FrontEnd;
     class Service;
+    class FileConverter;
 
     class App : public NonCopyMovable
     {
@@ -27,6 +28,8 @@ namespace ImageScraper
         std::shared_ptr<JsonFile> m_AppConfig{ nullptr };
         std::shared_ptr<JsonFile> m_UserConfig{ nullptr };
         std::shared_ptr<FrontEnd> m_FrontEnd{ nullptr };
+        std::shared_ptr<FileConverter> m_FileConverter{ nullptr };
+
         std::vector<std::shared_ptr<Service>> m_Services{ };
     };
 }

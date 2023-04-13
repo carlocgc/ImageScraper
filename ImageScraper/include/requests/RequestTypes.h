@@ -12,11 +12,11 @@ namespace ImageScraper
 
     enum class ResponseErrorCode : uint16_t
     {
-        None = 0,
-        Unknown = 1,
-        UrlNotFound = 2,
-        TooManyRequests = 3,
-        InvalidDirectory = 4,
+        None,
+        Unknown,
+        UrlNotFound,
+        TooManyRequests,
+        InvalidDirectory,
     };
 
     struct ResponseError

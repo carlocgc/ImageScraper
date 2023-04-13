@@ -10,17 +10,20 @@
 #include "ui/FrontEnd.h"
 #include "io/JsonFile.h"
 #include "utils/StringUtils.h"
+#include "io/FileConverter.h"
 
 #include <string>
+#include <map>
 
 using json = nlohmann::json;
 
 const std::string ImageScraper::RedditService::DeviceId_Key = "reddit_device_id";
 
-ImageScraper::RedditService::RedditService( const std::string& userAgent, const std::string& caBundle, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<FrontEnd> frontEnd )
+ImageScraper::RedditService::RedditService( const std::string& userAgent, const std::string& caBundle, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<FrontEnd> frontEnd, std::shared_ptr<FileConverter> fileConverter )
     : Service( m_UserAgent, caBundle )
     , m_AppConfig{ appConfig }
     , m_FrontEnd{ frontEnd }
+    , m_FileConverter{ fileConverter }
 {
     if( !m_AppConfig->GetValue<std::string>( DeviceId_Key, m_DeviceId ) )
     {
@@ -80,7 +83,7 @@ void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddi
             RequestOptions options{ };
             options.m_CaBundle = m_CaBundle;
             options.m_UserAgent = m_UserAgent;
-            options.m_Url = "https://www.reddit.com/r/" + subreddit + "/hot.json";
+            options.m_Url = "https://www.reddit.com/r/" + subreddit + "/hot.json?limit=100";
 
             RedditRequest request{ };
             RequestResult result = request.Perform( options );
@@ -115,9 +118,9 @@ void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddi
             InfoLog( "[%s] Starting downloading content, urls: %i", __FUNCTION__, urls.size( ) );
 
             // Create download directory
-            const std::string folder = "output";
-            const std::string dir = DownloadHelpers::CreateFolder( folder );
-            if( dir.empty( ) )
+            const std::filesystem::path dir = std::filesystem::current_path( ) / "Downloads" / "Reddit" / subreddit;
+            const std::string dirStr = dir.generic_string( );
+            if( !DownloadHelpers::CreateDir( dirStr ) )
             {
                 ErrorLog( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );
                 TaskManager::Instance( ).SubmitMain( fail, "" );
@@ -142,8 +145,8 @@ void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddi
                     continue;
                 }
 
-                std::string filename = DownloadHelpers::ExtractFileNameAndExtFromUrl( options.m_Url );
-                const std::string filepath = dir + "/" + filename;
+                const std::string filename = DownloadHelpers::ExtractFileNameAndExtFromUrl( options.m_Url );
+                const std::string filepath = dirStr + "/" + filename;
 
                 std::ofstream outfile{ filepath, std::ios::binary };
                 if( !outfile.is_open( ) )
@@ -156,8 +159,15 @@ void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddi
                 outfile.close( );
 
                 InfoLog( "[%s] File written successfully: %s", __FUNCTION__, filepath.c_str( ) );
-            }
 
+                /*
+                const FileConverter::ConvertFlags flags = FileConverter::ConvertFlags::DeleteSource;
+                if( m_FileConverter->TryConvert( filepath, flags ) )
+                {
+                    InfoLog( "[%s] File was automatically converted: ", __FUNCTION__, filepath.c_str( ) );
+                }
+                */
+            }
 
             TaskManager::Instance( ).SubmitMain( complete, "Complete!!!" );
         } );
