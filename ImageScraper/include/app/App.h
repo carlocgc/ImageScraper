@@ -21,8 +21,7 @@ namespace ImageScraper
 
         static const std::string s_AppConfigFile;
         static const std::string s_UserConfigFile;
-        static const std::string s_CaBundleFile;
-        static const std::string s_UserAgent;
+        static const std::string s_CaBundleFile;        
 
     private:
         std::shared_ptr<JsonFile> m_AppConfig{ nullptr };

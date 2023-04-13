@@ -17,7 +17,6 @@
 const std::string ImageScraper::App::s_UserConfigFile = "config.json";
 const std::string ImageScraper::App::s_AppConfigFile = "ImageScraper/config.json";
 const std::string ImageScraper::App::s_CaBundleFile = "curl-ca-bundle.crt";
-const std::string ImageScraper::App::s_UserAgent = "Windows:ImageScraper:v0:/u/carlocgc";
 
 ImageScraper::App::App( )
 {

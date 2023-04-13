@@ -16,19 +16,26 @@
 
 using json = nlohmann::json;
 
-const std::string ImageScraper::RedditService::DeviceId_Key = "reddit_device_id";
+const std::string ImageScraper::RedditService::s_UserAgent = "Windows:ImageScraper:v0:/u/carlocgc";
+const std::string ImageScraper::RedditService::s_AppDataKey_DeviceId = "reddit_device_id";
+const std::string ImageScraper::RedditService::s_UserDataKey_ClientId = "reddit_client_id";
+const std::string ImageScraper::RedditService::s_UserDataKey_ClientSecret = "reddit_client_secret";
 
 ImageScraper::RedditService::RedditService( const std::string& userAgent, const std::string& caBundle, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<FrontEnd> frontEnd )
     : Service( m_UserAgent, caBundle )
     , m_AppConfig{ appConfig }
     , m_FrontEnd{ frontEnd }
 {
-    if( !m_AppConfig->GetValue<std::string>( DeviceId_Key, m_DeviceId ) )
+    if( !m_AppConfig->GetValue<std::string>( s_AppDataKey_DeviceId, m_DeviceId ) )
     {
         m_DeviceId = StringUtils::CreateGuid( 30 );
-        m_AppConfig->SetValue<std::string>( DeviceId_Key, m_DeviceId );
+        m_AppConfig->SetValue<std::string>( s_AppDataKey_DeviceId, m_DeviceId );
         m_AppConfig->Serialise( );
+        DebugLog( "[%s] Created Reddit device id: %s", __FUNCTION__, m_DeviceId.c_str( ) );
     }
+
+    DebugLog( "[%s] Loaded Reddit device id: %s", __FUNCTION__, m_DeviceId.c_str( ) );
+
 }
 
 bool ImageScraper::RedditService::HandleUrl( const std::string& url )

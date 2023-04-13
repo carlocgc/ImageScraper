@@ -20,11 +20,16 @@ namespace ImageScraper
     private:
         void DownloadHotReddit( const std::string& subreddit );
 
-        static const std::string DeviceId_Key;
+        static const std::string s_UserAgent;
+
+        static const std::string s_AppDataKey_DeviceId;
+        static const std::string s_UserDataKey_ClientId;
+        static const std::string s_UserDataKey_ClientSecret;
 
         std::shared_ptr<JsonFile> m_AppConfig{ nullptr };
         std::shared_ptr<FrontEnd> m_FrontEnd{ nullptr };
 
         std::string m_DeviceId{ };
+        std::string m_ClientSecret{ };
     };
 }
