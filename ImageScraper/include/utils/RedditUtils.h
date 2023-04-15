@@ -1,23 +1,23 @@
 #pragma once
+
 #include <vector>
 #include <string>
-#include "nlohmann/json.hpp"
 
 using namespace nlohmann;
 
-namespace ImageScraper::RedditParser
+namespace ImageScraper::Reddit
 {
-    static bool GetImageUrlFromRedditPost( const json& post, std::vector<std::string>& out )
+    static void TryGetContentUrl( const json& post, std::vector<std::string>& out )
     {
         if( !post.contains( "data" ) )
         {
-            return false;
+            return;
         }
 
         const json& data = post[ "data" ];
         if( !data.contains( "url" ) )
         {
-            return false;
+            return;
         }
 
         const std::vector<std::string> targetExts{ ".jpg", ".jpeg", ".png", ".webm", ".webp", ".gif", ".gifv", ".mp4" };
@@ -30,20 +30,8 @@ namespace ImageScraper::RedditParser
             if( pos != std::string::npos )
             {
                 out.push_back( url );
-                return true;
+                return;
             }
         }
-
-        return false;
-    }
-
-    static std::string GetAccessTokenFromResponse( const json& response )
-    {
-        if( !response.contains( "access_token" ) )
-        {
-            return "";
-        }
-
-        return response[ "access_token" ];;
     }
 };

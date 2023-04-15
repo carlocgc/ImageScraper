@@ -4,7 +4,7 @@
 #include "requests/reddit/AuthenticationRequest.h"
 #include "requests/DownloadRequestTypes.h"
 #include "requests/DownloadRequest.h"
-#include "parsers/RedditParser.h"
+#include "utils/RedditUtils.h"
 #include "utils/DownloadUtils.h"
 #include "log/Logger.h"
 #include "async/TaskManager.h"
@@ -57,6 +57,22 @@ bool ImageScraper::RedditService::HandleUserInput( const UserInputOptions& optio
     return true;
 }
 
+const bool ImageScraper::RedditService::IsAuthenticated( ) const
+{
+    if( m_AuthAccessToken == "" )
+    {
+        return false;
+    }
+
+    const std::chrono::system_clock::time_point now = std::chrono::system_clock::now( );
+    if( m_TokenReceived + m_AuthExpireSeconds <= now )
+    {
+        return false;
+    }
+
+    return true;
+}
+
 void ImageScraper::RedditService::DownloadContent( const std::string& subreddit )
 {
     InfoLog( "[%s] Starting Reddit Hot Media Download!, Subreddit: %s", __FUNCTION__, subreddit.c_str( ) );
@@ -75,7 +91,7 @@ void ImageScraper::RedditService::DownloadContent( const std::string& subreddit 
 
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, subreddit, onComplete, onFail ]( )
         {
-            if( !IsAuthenticated( ) ) // TODO Check expire time
+            if( !IsAuthenticated( ) )
             {
                 RequestOptions authOptions{ };
                 authOptions.m_CaBundle = m_CaBundle;
@@ -91,18 +107,24 @@ void ImageScraper::RedditService::DownloadContent( const std::string& subreddit 
                     try
                     {
                         const Json authResponse = Json::parse( authResult.m_Response );
-                        m_AuthAccessToken = RedditParser::GetAccessTokenFromResponse( authResponse );
 
-                        // TODO Store expire time
-
-                        if( m_AuthAccessToken != "" )
+                        if( authResponse.contains( "access_token" ) )
                         {
-                            InfoLog( "[%s] Reddit authenticated successfully!", __FUNCTION__ );
-                            DebugLog( "[%s] Reddit access token: %s", __FUNCTION__, m_AuthAccessToken.c_str( ) );
+                            m_AuthAccessToken = authResponse[ "access_token" ];
+
+                            if( authResponse.contains( "expires_in" ) )
+                            {
+                                const int expireSeconds = authResponse[ "expires_in" ];
+                                m_AuthExpireSeconds = std::chrono::seconds{ expireSeconds };
+                                m_TokenReceived = std::chrono::system_clock::now( );
+
+                                InfoLog( "[%s] Reddit authenticated successfully!", __FUNCTION__ );
+                                DebugLog( "[%s] Reddit access token: %s", __FUNCTION__, m_AuthAccessToken.c_str( ) );
+                            }
                         }
                         else
                         {
-                            ErrorLog( "[%s] Failed to authenticate with Reddit API, Could not retrieve access token. Response %s", __FUNCTION__, authResult.m_Response.c_str() );
+                            ErrorLog( "[%s] Failed to authenticate with Reddit API, Could not retrieve access token. Response %s", __FUNCTION__, authResult.m_Response.c_str( ) );
                         }
                     }
                     catch( const nlohmann::json::exception& parseError )
@@ -127,7 +149,7 @@ void ImageScraper::RedditService::DownloadContent( const std::string& subreddit 
 
             if( !result.m_Success )
             {
-                WarningLog( "[%s] Failed to get subreddit data, error: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str() );
+                WarningLog( "[%s] Failed to get subreddit data, error: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
                 TaskManager::Instance( ).SubmitMain( onFail );
                 return;
             }
@@ -143,7 +165,7 @@ void ImageScraper::RedditService::DownloadContent( const std::string& subreddit 
 
             for( const json& post : posts )
             {
-                ImageScraper::RedditParser::GetImageUrlFromRedditPost( post, urls );
+                Reddit::TryGetContentUrl( post, urls );
             }
 
             if( urls.empty( ) )
@@ -188,7 +210,7 @@ void ImageScraper::RedditService::DownloadContent( const std::string& subreddit 
                 RequestResult result = request.Perform( options );
                 if( !result.m_Success )
                 {
-                    ErrorLog( "[%s] Download failed, error: %s, url: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ), url.c_str() );
+                    ErrorLog( "[%s] Download failed, error: %s, url: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ), url.c_str( ) );
                     continue;
                 }
 

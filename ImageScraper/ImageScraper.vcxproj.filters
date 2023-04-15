@@ -215,7 +215,7 @@
     <ClInclude Include="include\requests\RequestTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\parsers\RedditParser.h">
+    <ClInclude Include="include\utils\RedditUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\requests\DownloadRequestTypes.h">
