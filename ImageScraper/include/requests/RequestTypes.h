@@ -8,6 +8,8 @@ namespace ImageScraper
         std::string m_Url;
         std::string m_CaBundle;
         std::string m_UserAgent;
+        std::string m_ClientId;
+        std::string m_ClientSecret;
     };
 
     enum class ResponseErrorCode : uint16_t

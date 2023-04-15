@@ -7,6 +7,17 @@ namespace ImageScraper
 {
     class JsonFile;
 
+    enum class ContentProvider
+    {
+        Reddit
+    };
+
+    struct UserInputOptions
+    {
+        ContentProvider m_Provider;
+        std::string m_UserData;
+    };
+
     class Service
     {
     public:
@@ -18,7 +29,7 @@ namespace ImageScraper
         }
 
         virtual ~Service( ) = default;
-        virtual bool HandleUrl( const std::string& url ) = 0;
+        virtual bool HandleUserInput( const UserInputOptions& options ) = 0;
 
     protected:
         std::shared_ptr<JsonFile> m_AppConfig{ nullptr };

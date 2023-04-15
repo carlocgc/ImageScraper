@@ -30,30 +30,37 @@ ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig,
         m_DeviceId = StringUtils::CreateGuid( 30 );
         m_AppConfig->SetValue<std::string>( s_AppDataKey_DeviceId, m_DeviceId );
         m_AppConfig->Serialise( );
-        DebugLog( "[%s] Created Reddit device id: %s", __FUNCTION__, m_DeviceId.c_str( ) );
+        DebugLog( "[%s] Created new Reddit device id: %s", __FUNCTION__, m_DeviceId.c_str( ) );
     }
-
-    DebugLog( "[%s] Loaded Reddit device id: %s", __FUNCTION__, m_DeviceId.c_str( ) );
 
     if( !m_AppConfig->GetValue<std::string>( s_UserDataKey_ClientId, m_ClientId ) )
     {
-        WarningLog( "[%s] Could not find reddit client id, add client id to %s to be able to authenticate with the reddit api!", __FUNCTION__, m_UserConfig->GetFilePath().c_str( ) );
+        WarningLog( "[%s] Could not find reddit client id, add client id to %s to be able to authenticate with the reddit api!", __FUNCTION__, m_UserConfig->GetFilePath( ).c_str( ) );
+    }
+
+    if( !m_AppConfig->GetValue<std::string>( s_UserDataKey_ClientSecret, m_ClientSecret ) )
+    {
+        WarningLog( "[%s] Could not find reddit client secret, add client secret to %s to be able to authenticate with the reddit api!", __FUNCTION__, m_UserConfig->GetFilePath( ).c_str( ) );
     }
 }
 
-bool ImageScraper::RedditService::HandleUrl( const std::string& url )
+bool ImageScraper::RedditService::HandleUserInput( const UserInputOptions& options )
 {
-    // TODO Input should be an options struct
-    // Service, url, limit, conversion preferences etc
-    if( true )
+    if( options.m_Provider != ContentProvider::Reddit )
     {
-        DownloadHotReddit( url );
+        return false;
     }
 
+    DownloadContent( options.m_UserData );
     return true;
 }
 
-void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddit )
+void ImageScraper::RedditService::Authenticate( )
+{
+
+}
+
+void ImageScraper::RedditService::DownloadContent( const std::string& subreddit )
 {
     InfoLog( "[%s] Starting Reddit Hot Media Download!, Subreddit: %s", __FUNCTION__, subreddit );
 
@@ -165,7 +172,7 @@ void ImageScraper::RedditService::DownloadHotReddit( const std::string& subreddi
                 InfoLog( "[%s] File written successfully: %s", __FUNCTION__, filepath.c_str( ) );
             }
 
-            TaskManager::Instance( ).SubmitMain( complete, static_cast<int>( urls.size( ) ) );
+            TaskManager::Instance( ).SubmitMain( complete, static_cast< int >( urls.size( ) ) );
         } );
 
     ( void )task;

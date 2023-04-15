@@ -126,9 +126,13 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
         return true;
     }
 
+    UserInputOptions options;
+    options.m_Provider = ContentProvider::Reddit;
+    options.m_UserData = m_UrlField;
+
     for( auto service : services )
     {
-        if( service->HandleUrl( m_UrlField ) )
+        if( service->HandleUserInput( options ) )
         {
             m_UrlField.clear( );
             return true;

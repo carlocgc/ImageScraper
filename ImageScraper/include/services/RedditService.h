@@ -15,10 +15,11 @@ namespace ImageScraper
     {
     public:
         RedditService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<FrontEnd> frontEnd );
-        bool HandleUrl( const std::string& url ) override;
+        bool HandleUserInput( const UserInputOptions& options ) override;
 
     private:
-        void DownloadHotReddit( const std::string& subreddit );
+        void Authenticate( );
+        void DownloadContent( const std::string& subreddit );
 
         static const std::string s_UserAgent;
         static const std::string s_AppDataKey_DeviceId;
@@ -28,6 +29,7 @@ namespace ImageScraper
         std::string m_DeviceId{ };
         std::string m_ClientId{ };
         std::string m_ClientSecret{ };
+        std::string m_AccessToken{ };
 
         std::shared_ptr<FrontEnd> m_FrontEnd{ nullptr };
     };
