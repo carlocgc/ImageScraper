@@ -69,7 +69,7 @@
     <ClCompile Include="src\io\JsonFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\requests\reddit\AuthenticatonRequest.cpp">
+    <ClCompile Include="src\requests\reddit\AuthenticationRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -296,7 +296,7 @@
     <ClInclude Include="include\utils\EncryptionUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\requests\reddit\AuthenticatonRequest.h">
+    <ClInclude Include="include\requests\reddit\AuthenticationRequest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\cppcodec\data\access.hpp">

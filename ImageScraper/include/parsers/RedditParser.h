@@ -20,7 +20,7 @@ namespace ImageScraper::RedditParser
             return false;
         }
 
-        const std::vector<std::string> targetExts{ ".jpg", ".jpeg", ".png", ".webm", ".webp", ".gif" };
+        const std::vector<std::string> targetExts{ ".jpg", ".jpeg", ".png", ".webm", ".webp", ".gif", ".gifv", ".mp4" };
 
         const std::string& url = data[ "url" ];
 
@@ -35,5 +35,15 @@ namespace ImageScraper::RedditParser
         }
 
         return false;
+    }
+
+    static std::string GetAccessTokenFromResponse( const json& response )
+    {
+        if( !response.contains( "access_token" ) )
+        {
+            return "";
+        }
+
+        return response[ "access_token" ];;
     }
 };

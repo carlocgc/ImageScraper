@@ -4,8 +4,13 @@
 #include "requests/RequestTypes.h"
 #include "requests/reddit/FetchSubredditPostsRequest.h"
 
+const std::string ImageScraper::Reddit::FetchSubredditPostsRequest::s_BaseUrl = "https://www.reddit.com/r/";
+const std::string ImageScraper::Reddit::FetchSubredditPostsRequest::s_AuthBaseUrl = "https://oauth.reddit.com/r/";
+
 ImageScraper::RequestResult ImageScraper::Reddit::FetchSubredditPostsRequest::Perform( const RequestOptions& options )
 {
+    DebugLog( "[%s] FetchSubredditPostsRequest started!, Subreddit: %s", __FUNCTION__, options.m_Url.c_str( ) );
+
     RequestResult result{ };
 
     try
@@ -14,8 +19,23 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchSubredditPostsRequest::Pe
         curlpp::Easy request{ };
         std::ostringstream response;
 
+        const std::string queryParams = "/hot.json?limit=100"; // TODO make configurable in options
+        std::string url{ };
+
+        if( options.m_AccessToken != "" )
+        {
+            url = s_AuthBaseUrl + options.m_Url + queryParams;
+            std::string accessToken = options.m_AccessToken;
+            std::string authHeader = "Authorization: Bearer " + accessToken;
+            request.setOpt<curlpp::options::HttpHeader>( std::list<std::string>( { authHeader } ) );
+        }
+        else
+        {
+            url = s_BaseUrl + options.m_Url + queryParams;
+        }
+
         // Set the URL to retrieve
-        request.setOpt( new curlpp::options::Url( options.m_Url ) );
+        request.setOpt( new curlpp::options::Url( url ) );
 
         // Follow redirects if any
         request.setOpt( new curlpp::options::FollowLocation( true ) );
@@ -38,22 +58,24 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchSubredditPostsRequest::Pe
     {
         result.SetError( ResponseErrorCode::Unknown );
         result.m_Error.m_ErrorString = error.what( );
+        DebugLog( "[%s] FetchSubredditPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
     catch( curlpp::LogicError& error )
     {
         result.SetError( ResponseErrorCode::Unknown );
         result.m_Error.m_ErrorString = error.what( );
+        DebugLog( "[%s] FetchSubredditPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str() );
         return result;
     }
 
     if( DownloadHelpers::IsResponseError( result ) )
     {
-        ErrorLog( "[%s] Failed to fetch subreddit post data, error: %i", __FUNCTION__, static_cast< uint16_t >( result.m_Error.m_ErrorCode ) );
+        DebugLog( "[%s] FetchSubredditPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
-    InfoLog( "[%s] Fetched subreddit post data successfully!", __FUNCTION__ );
+    DebugLog( "[%s] FetchSubredditPostsRequest complete!", __FUNCTION__ );
     result.m_Success = true;
     return result;
 }

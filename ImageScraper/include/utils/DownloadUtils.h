@@ -1,9 +1,12 @@
 #pragma once
+
+#include "log/Logger.h"
+#include "requests/RequestTypes.h"
+#include "nlohmann/json.hpp"
+
 #include <string>
 #include <algorithm>
 #include <filesystem>
-#include "log/Logger.h"
-#include "requests/RequestTypes.h"
 
 namespace ImageScraper::DownloadHelpers
 {
@@ -98,24 +101,38 @@ namespace ImageScraper::DownloadHelpers
         {
             if( !std::filesystem::create_directories( dir ) )
             {
-                ErrorLog( "[%s] Failed to create directory, invalid path: %s", __FUNCTION__, dir );
+                ErrorLog( "[%s] Failed to create download folder, invalid path: %s", __FUNCTION__, dir );
                 return false;
             }
         }
 
-        InfoLog( "[%s] Successfully created folder: %s", __FUNCTION__, dir.c_str() );
+        InfoLog( "[%s] Created download folder: %s", __FUNCTION__, dir.c_str() );
         return true;
     }
 
     static bool IsResponseError( RequestResult& result )
     {
-        if( result.m_Response.find( "error" ) == std::string::npos )
+        using Json = nlohmann::json;
+
+        try
         {
-            return false;
+            Json payload = Json::parse( result.m_Response );
+
+            if( payload.contains( "error" ) )
+            {
+                // TODO Parse error properly
+                result.m_Error.m_ErrorCode = ResponseErrorCode::Unknown;
+                result.m_Error.m_ErrorString = "Response Error!";
+                return true;
+            }
+        }
+        catch( const Json::exception& ex )
+        {
+            result.m_Error.m_ErrorCode = ResponseErrorCode::Unknown;
+            result.m_Error.m_ErrorString = ex.what( );
+            return true;
         }
 
-        // TODO Parse response for error code
-        result.SetError( ResponseErrorCode::Unknown );
-        return true;
+        return false;
     }
 }

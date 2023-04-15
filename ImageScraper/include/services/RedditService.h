@@ -18,8 +18,8 @@ namespace ImageScraper
         bool HandleUserInput( const UserInputOptions& options ) override;
 
     private:
-        void Authenticate( );
         void DownloadContent( const std::string& subreddit );
+        bool IsAuthenticated( ) { return m_AuthAccessToken != ""; };
 
         static const std::string s_UserAgent;
         static const std::string s_AppDataKey_DeviceId;
@@ -29,7 +29,7 @@ namespace ImageScraper
         std::string m_DeviceId{ };
         std::string m_ClientId{ };
         std::string m_ClientSecret{ };
-        std::string m_AccessToken{ };
+        std::string m_AuthAccessToken{ };
 
         std::shared_ptr<FrontEnd> m_FrontEnd{ nullptr };
     };

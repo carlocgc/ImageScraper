@@ -6,7 +6,7 @@
 
 namespace ImageScraper::Reddit
 {
-    class RedditAuthenticatonRequest : public Request
+    class AuthenticationRequest : public Request
     {
     public:
         RequestResult Perform( const RequestOptions& options ) override;

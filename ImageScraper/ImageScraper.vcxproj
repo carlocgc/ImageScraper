@@ -209,7 +209,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\config\Config.cpp" />
     <ClCompile Include="src\log\Logger.cpp" />
-    <ClCompile Include="src\requests\reddit\AuthenticatonRequest.cpp" />
+    <ClCompile Include="src\requests\reddit\AuthenticationRequest.cpp" />
     <ClCompile Include="src\requests\reddit\FetchSubredditPostsRequest.cpp" />
     <ClCompile Include="src\services\RedditService.cpp" />
     <ClCompile Include="src\ui\FrontEnd.cpp" />
@@ -293,7 +293,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\parsers\RedditParser.h" />
     <ClInclude Include="include\requests\DownloadRequest.h" />
     <ClInclude Include="include\requests\DownloadRequestTypes.h" />
-    <ClInclude Include="include\requests\reddit\AuthenticatonRequest.h" />
+    <ClInclude Include="include\requests\reddit\AuthenticationRequest.h" />
     <ClInclude Include="include\services\RedditService.h" />
     <ClInclude Include="include\services\Service.h" />
     <ClInclude Include="include\ui\FrontEnd.h" />

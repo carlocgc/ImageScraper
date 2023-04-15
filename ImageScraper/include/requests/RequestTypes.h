@@ -10,6 +10,7 @@ namespace ImageScraper
         std::string m_UserAgent{ };
         std::string m_ClientId{ };
         std::string m_ClientSecret{ };
+        std::string m_AccessToken{ };
     };
 
     enum class ResponseErrorCode : uint16_t
