@@ -1,10 +1,10 @@
 #pragma once
-#include "Request.h"
+#include "requests/Request.h"
 #include "config/Config.h"
 
-namespace ImageScraper
+namespace ImageScraper::Reddit
 {
-    class RedditRequest final : public Request
+    class FetchSubredditPostsRequest final : public Request
     {
     public:
         RequestResult Perform( const RequestOptions& options ) override;

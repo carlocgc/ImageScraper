@@ -5,31 +5,63 @@ namespace ImageScraper
 {
     struct RequestOptions
     {
-        std::string m_Url;
-        std::string m_CaBundle;
-        std::string m_UserAgent;
-        std::string m_ClientId;
-        std::string m_ClientSecret;
+        std::string m_Url{ };
+        std::string m_CaBundle{ };
+        std::string m_UserAgent{ };
+        std::string m_ClientId{ };
+        std::string m_ClientSecret{ };
     };
 
     enum class ResponseErrorCode : uint16_t
     {
         None,
-        Unknown,
-        UrlNotFound,
+        InvalidOptions,
+        NotFound,
         TooManyRequests,
-        InvalidDirectory,
+        Unknown,
     };
 
     struct ResponseError
     {
-        ResponseErrorCode m_ErrorCode;
+        ResponseErrorCode m_ErrorCode{ ResponseErrorCode::None };
+        std::string m_ErrorString{ };
     };
+
+    inline std::string ResponseErrorCodeToString( ResponseErrorCode error )
+    {
+        switch( error )
+        {
+        case ImageScraper::ResponseErrorCode::None:
+            return "None";
+            break;
+        case ImageScraper::ResponseErrorCode::InvalidOptions:
+            return "Invalid Options";
+            break;
+        case ImageScraper::ResponseErrorCode::NotFound:
+            return "Not Found";
+            break;
+        case ImageScraper::ResponseErrorCode::TooManyRequests:
+            return "Too Many Requests";
+            break;
+        case ImageScraper::ResponseErrorCode::Unknown:
+            return "Unknown";
+            break;
+        default:
+            return "";
+            break;
+        }
+    }
 
     struct RequestResult
     {
         bool m_Success{ false };
-        std::string m_Response;
-        ResponseError m_Error{ ResponseErrorCode::None };
+        std::string m_Response{ };
+        ResponseError m_Error{ };
+
+        void SetError( ResponseErrorCode error )
+        {
+            m_Error.m_ErrorCode = error;
+            m_Error.m_ErrorString = ResponseErrorCodeToString( error );
+        }
     };
 }

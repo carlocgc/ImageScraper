@@ -111,12 +111,11 @@ namespace ImageScraper::DownloadHelpers
     {
         if( result.m_Response.find( "error" ) == std::string::npos )
         {
-            result.m_Error.m_ErrorCode = ResponseErrorCode::None;
             return false;
         }
 
         // TODO Parse response for error code
-        result.m_Error.m_ErrorCode = ResponseErrorCode::Unknown;
+        result.SetError( ResponseErrorCode::Unknown );
         return true;
     }
 }

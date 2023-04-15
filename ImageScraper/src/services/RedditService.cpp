@@ -1,6 +1,6 @@
 #include "services/RedditService.h"
 #include "requests/RequestTypes.h"
-#include "requests/RedditRequest.h"
+#include "requests/reddit/FetchSubredditPostsRequest.h"
 #include "requests/DownloadRequestTypes.h"
 #include "requests/DownloadRequest.h"
 #include "parsers/RedditParser.h"
@@ -14,6 +14,7 @@
 #include <string>
 #include <map>
 
+using namespace ImageScraper::Reddit;
 using json = nlohmann::json;
 
 const std::string ImageScraper::RedditService::s_UserAgent = "Windows:ImageScraper:v0:/u/carlocgc";
@@ -89,7 +90,7 @@ void ImageScraper::RedditService::DownloadContent( const std::string& subreddit 
             options.m_UserAgent = s_UserAgent;
             options.m_Url = "https://www.reddit.com/r/" + subreddit + "/hot.json?limit=100";
 
-            RedditRequest request{ };
+            FetchSubredditPostsRequest request{ };
             RequestResult result = request.Perform( options );
 
             if( !result.m_Success )
