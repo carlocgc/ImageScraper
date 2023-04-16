@@ -3,26 +3,11 @@
 #include <string>
 #include <memory>
 
+#include "services/ServiceOptionTypes.h"
+
 namespace ImageScraper
 {
     class JsonFile;
-
-    enum class ContentProvider
-    {
-        Reddit = 0,
-        Twitter = 1
-    };
-
-    struct UserInputOptions
-    {
-        ContentProvider m_Provider;
-
-        // Reddit
-        std::string m_SubredditName;
-
-        // Twitter
-        std::string m_TwitterHandle;
-    };
 
     class Service
     {

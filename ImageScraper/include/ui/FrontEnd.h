@@ -59,6 +59,8 @@ namespace ImageScraper
         void UpdateRedditOptions( );
         void UpdateTwitterOptions( );
 
+        void UpdateRunButton( );
+
         void UpdateLogWindow( );
 
         UserInputOptions BuildRedditInputOptions( );
@@ -68,6 +70,8 @@ namespace ImageScraper
 
         inline std::string ContentProviderToString( ContentProvider provider );
         inline ContentProvider ContentProviderFromString( const std::string& provider );
+        inline std::string RedditScopeToString( RedditScope scope );
+        inline RedditScope RedditScopeFromString( const std::string& scope );
 
         GLFWwindow* m_WindowPtr{ nullptr };
         InputState m_InputState{ InputState::Free };
@@ -79,6 +83,8 @@ namespace ImageScraper
 
         // Reddit options
         std::string m_SubredditName{ };
+        int m_RedditScope{ };
+        int m_RedditFetchLimit{ };
 
         // Twitter options
         std::string m_TwitterHandle{ };
@@ -95,6 +101,7 @@ namespace ImageScraper
         LogLevel m_LogLevel{ LogLevel::Error };
     };
 }
+
 
 
 

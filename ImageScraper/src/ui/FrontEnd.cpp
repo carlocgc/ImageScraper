@@ -4,7 +4,7 @@
 #include "config/Config.h"
 
 ImageScraper::FrontEnd::FrontEnd( int maxLogLines )
-    : m_LogContent{ static_cast<std::size_t>( maxLogLines ) }
+    : m_LogContent{ static_cast< std::size_t >( maxLogLines ) }
 {
 }
 
@@ -208,15 +208,9 @@ void ImageScraper::FrontEnd::UpdateProviderOptions( )
         return;
     }
 
-    if( ImGui::BeginChild( "ContentProvider", ImVec2( 500, 50 ), false ) )
+    if( ImGui::BeginChild( "ContentProvider", ImVec2( 500, 25 ), false ) )
     {
-        const std::string redditString = ContentProviderToString( ContentProvider::Reddit );
-        const std::string twitterString = ContentProviderToString( ContentProvider::Twitter );
-        const char* providerStrings[ 2 ];
-        providerStrings[ 0 ] = redditString.c_str( );
-        providerStrings[ 1 ] = twitterString.c_str( );
-
-        ImGui::Combo( "Content Provider", &m_ContentProvider, providerStrings, IM_ARRAYSIZE( providerStrings ) );
+        ImGui::Combo( "Content Provider", &m_ContentProvider, s_ContentProviderStrings, IM_ARRAYSIZE( s_ContentProviderStrings ) );
     }
 
     ImGui::EndChild( );
@@ -235,26 +229,28 @@ void ImageScraper::FrontEnd::UpdateProviderOptions( )
         break;
     }
 
-    if( ImGui::BeginChild( "RunButton", ImVec2( 300, 25), false ) )
-    {
-        m_StartProcess = ImGui::Button( "Run", ImVec2( 50, 25 ) );
-    }
-
-    ImGui::EndChild( );
+    UpdateRunButton( );
 
     ImGui::End( );
 }
 
 void ImageScraper::FrontEnd::UpdateRedditOptions( )
 {
-    if( ImGui::BeginChild( "Subreddit", ImVec2( 500, 50 ), false ) )
+    if( ImGui::BeginChild( "SubredditName", ImVec2( 500, 25 ), false ) )
     {
         char subreddit[ 64 ] = "";
         ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Enter Subreddit Name", subreddit, 64, flags, &FrontEnd::InputTextCallbackProxy, this ) )
+        if( ImGui::InputText( "Subreddit (e.g. Gifs)", subreddit, 64, flags, &FrontEnd::InputTextCallbackProxy, this ) )
         {
             m_SubredditName = subreddit;
         }
+    }
+
+    ImGui::EndChild( );
+
+    if( ImGui::BeginChild( "SubredditScope", ImVec2( 500, 25 ), false ) )
+    {
+        ImGui::Combo( "Scope", &m_RedditScope, s_RedditScopeStrings, IM_ARRAYSIZE( s_RedditScopeStrings ) );
     }
 
     ImGui::EndChild( );
@@ -262,14 +258,24 @@ void ImageScraper::FrontEnd::UpdateRedditOptions( )
 
 void ImageScraper::FrontEnd::UpdateTwitterOptions( )
 {
-    if( ImGui::BeginChild( "TwitterHandle", ImVec2( 500, 50 ), false ) )
+    if( ImGui::BeginChild( "TwitterHandle", ImVec2( 500, 25 ), false ) )
     {
         char twitterHandle[ 64 ] = "";
         ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Enter Twitter Handle", twitterHandle, 64, flags, &FrontEnd::InputTextCallbackProxy, this ) )
+        if( ImGui::InputText( "Twitter Handle", twitterHandle, 64, flags, &FrontEnd::InputTextCallbackProxy, this ) )
         {
             m_TwitterHandle = twitterHandle;
         }
+    }
+
+    ImGui::EndChild( );
+}
+
+void ImageScraper::FrontEnd::UpdateRunButton( )
+{
+    if( ImGui::BeginChild( "RunButton", ImVec2( 300, 0 ), false ) )
+    {
+        m_StartProcess = ImGui::Button( "Run", ImVec2( 50, 0 ) );
     }
 
     ImGui::EndChild( );
@@ -361,7 +367,7 @@ void ImageScraper::FrontEnd::UpdateLogWindow( )
                 continue;
             }
 
-            const char* item = m_LogContent[ i ].m_String.c_str();
+            const char* item = m_LogContent[ i ].m_String.c_str( );
             if( !m_Filter.PassFilter( item ) )
             {
                 continue;
@@ -447,7 +453,7 @@ void ImageScraper::FrontEnd::ClearInputFields( )
 
 std::string ImageScraper::FrontEnd::ContentProviderToString( ContentProvider provider )
 {
-    switch (provider)
+    switch( provider )
     {
     case ContentProvider::Reddit:
         return "Reddit";
@@ -464,17 +470,62 @@ std::string ImageScraper::FrontEnd::ContentProviderToString( ContentProvider pro
 ImageScraper::ContentProvider ImageScraper::FrontEnd::ContentProviderFromString( const std::string& provider )
 {
     if( provider == "Reddit" )
-    {
         return ContentProvider::Reddit;
-    }
     else if( provider == "Twitter" )
-    {
         return ContentProvider::Twitter;
-    }
     else
-    {
         return ContentProvider::Reddit;
+}
+
+std::string ImageScraper::FrontEnd::RedditScopeToString( RedditScope scope )
+{
+    switch( scope )
+    {
+    case ImageScraper::RedditScope::Best:
+        return "Best";
+        break;
+    case ImageScraper::RedditScope::Controversial:
+        return "Controversial";
+        break;
+    case ImageScraper::RedditScope::Hot:
+        return "Hot";
+        break;
+    case ImageScraper::RedditScope::New:
+        return "New";
+        break;
+    case ImageScraper::RedditScope::Random:
+        return "Random";
+        break;
+    case ImageScraper::RedditScope::Rising:
+        return "Rising";
+        break;
+    case ImageScraper::RedditScope::Top:
+        return "Top";
+        break;
+    default:
+        return "Best";
+        break;
     }
+}
+
+ImageScraper::RedditScope ImageScraper::FrontEnd::RedditScopeFromString( const std::string& scope )
+{
+    if( scope == "Best" )
+        return RedditScope::Best;
+    else if( scope == "Controversial" )
+        return RedditScope::Controversial;
+    else if( scope == "Hot" )
+        return RedditScope::Hot;
+    else if( scope == "New" )
+        return RedditScope::New;
+    else if( scope == "Random" )
+        return RedditScope::Random;
+    else if( scope == "Rising" )
+        return RedditScope::Rising;
+    else if( scope == "Top" )
+        return RedditScope::Top;
+    else
+        return RedditScope::Best;
 }
 
 void ImageScraper::FrontEnd::SetInputState( const InputState& state )

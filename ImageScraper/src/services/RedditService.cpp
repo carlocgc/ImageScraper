@@ -79,7 +79,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
     auto onComplete = [ & ]( int filesDownloaded )
     {
-        InfoLog( "[%s] Content download complete!, files downloaded: %d", __FUNCTION__, filesDownloaded );
+        InfoLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
         m_FrontEnd->SetInputState( InputState::Free );
     };
 
@@ -139,7 +139,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
             }
 
             RequestOptions options{ };
-            options.m_Url = subreddit; // TODO .m_Url as subreddit needs to change, the user input options should be provider specific?
+            options.m_Url = subreddit;
             options.m_CaBundle = m_CaBundle;
             options.m_UserAgent = s_UserAgent;
             options.m_AccessToken = m_AuthAccessToken;
