@@ -65,7 +65,7 @@ namespace ImageScraper
         UserInputOptions BuildRedditInputOptions( );
         UserInputOptions BuildTwitterInputOptions( );
 
-        void ClearInputFields( );
+        void ResetInputFields( );
 
         GLFWwindow* m_WindowPtr{ nullptr };
         InputState m_InputState{ InputState::Free };
@@ -76,7 +76,8 @@ namespace ImageScraper
 
         // Reddit options
         std::string m_SubredditName{ };
-        int m_RedditScope{ };
+        RedditScope m_RedditScope{ RedditScope::Hot };
+        RedditScopeTimeFrame m_RedditScopeTimeFrame{ RedditScopeTimeFrame::All };
         int m_RedditLimit{ };
 
         // Twitter options

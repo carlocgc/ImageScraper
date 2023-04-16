@@ -147,7 +147,7 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
     {
         if( service->HandleUserInput( inputOptions ) )
         {
-            ClearInputFields( );
+            ResetInputFields( );
             return true;
         }
     }
@@ -251,10 +251,28 @@ void ImageScraper::FrontEnd::UpdateRedditWidgets( )
 
     if( ImGui::BeginChild( "SubredditScope", ImVec2( 500, 25 ), false ) )
     {
-        ImGui::Combo( "Scope", &m_RedditScope, s_RedditScopeStrings, IM_ARRAYSIZE( s_RedditScopeStrings ) );
+        int redditScope = static_cast< int >( m_RedditScope );
+        ImGui::Combo( "Scope", &redditScope, s_RedditScopeStrings, IM_ARRAYSIZE( s_RedditScopeStrings ) );
+        m_RedditScope = static_cast< RedditScope >( redditScope );
     }
 
     ImGui::EndChild( );
+
+    RedditScope scope = static_cast< RedditScope >( m_RedditScope );
+
+    if( scope == RedditScope::Top ||
+        scope == RedditScope::Controversial ||
+        scope == RedditScope::Sort )
+    {
+        if( ImGui::BeginChild( "SubredditScopeTimeFrame", ImVec2( 500, 25 ), false ) )
+        {
+            int redditScopeTimeFrame = static_cast< int >( m_RedditScopeTimeFrame );
+            ImGui::Combo( "Time Frame", &redditScopeTimeFrame, s_RedditScopeTimeFrameStrings, IM_ARRAYSIZE( s_RedditScopeTimeFrameStrings ) );
+            m_RedditScopeTimeFrame = static_cast< RedditScopeTimeFrame >( redditScopeTimeFrame );
+        }
+
+        ImGui::EndChild( );
+    }
 
     if( ImGui::BeginChild( "RedditLimit", ImVec2( 500, 25 ), false ) )
     {
@@ -444,11 +462,18 @@ ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildRedditInputOptions( 
     UserInputOptions options{ };
     options.m_SubredditName = m_SubredditName;
 
-    std::string scope = s_RedditScopeStrings[ m_RedditScope ];
     auto toLower = [ ]( unsigned char ch ) { return std::tolower( ch ); };
-    std::transform( scope.begin( ), scope.end( ), scope.begin(), toLower );
+
+    std::string scope = s_RedditScopeStrings[ static_cast< int >( m_RedditScope ) ];
+    std::transform( scope.begin( ), scope.end( ), scope.begin( ), toLower );
 
     options.m_RedditScope = scope;
+
+    std::string scopeTimeFrame = s_RedditScopeTimeFrameStrings[ static_cast< int >( m_RedditScopeTimeFrame ) ];
+    std::transform( scopeTimeFrame.begin( ), scopeTimeFrame.end( ), scopeTimeFrame.begin( ), toLower );
+
+    options.m_RedditScopeTimeFrame = scopeTimeFrame;
+
     options.m_RedditLimit = std::to_string( m_RedditLimit );
 
     return options;
@@ -461,11 +486,9 @@ ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildTwitterInputOptions(
     return options;
 }
 
-void ImageScraper::FrontEnd::ClearInputFields( )
+void ImageScraper::FrontEnd::ResetInputFields( )
 {
     m_StartProcess = false;
-    m_SubredditName.clear( );
-    m_TwitterHandle.clear( );
 }
 
 void ImageScraper::FrontEnd::SetInputState( const InputState& state )

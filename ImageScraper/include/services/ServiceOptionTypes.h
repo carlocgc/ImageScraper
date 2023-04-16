@@ -6,7 +6,7 @@
 
 namespace ImageScraper
 {
-    enum class ContentProvider
+    enum class ContentProvider : uint16_t
     {
         Reddit = 0,
         Twitter = 1
@@ -18,7 +18,7 @@ namespace ImageScraper
         "Twitter",
     };
 
-    enum class RedditScope
+    enum class RedditScope : uint16_t
     {
         Best = 0,
         Controversial = 1,
@@ -26,10 +26,11 @@ namespace ImageScraper
         New = 3,
         Random = 4,
         Rising = 5,
-        Top = 6
+        Top = 6,
+        Sort = 7
     };
 
-    static const char* s_RedditScopeStrings[ 7 ]
+    static const char* s_RedditScopeStrings[ 8 ]
     {
         "Best",
         "Controversial",
@@ -37,7 +38,26 @@ namespace ImageScraper
         "New",
         "Random",
         "Rising",
-        "Top"
+        "Top",
+        "Sort"
+    };
+
+    enum class RedditScopeTimeFrame : uint16_t
+    {
+        Hour = 0,
+        Day = 1,
+        Week = 2,
+        Month = 3,
+        All = 4
+    };
+
+    static const char* s_RedditScopeTimeFrameStrings[ 5 ]
+    {
+        "Hour",
+        "Day",
+        "Week",
+        "Month",
+        "All"
     };
 
     struct UserInputOptions
@@ -47,6 +67,7 @@ namespace ImageScraper
         // Reddit
         std::string m_SubredditName;
         std::string m_RedditScope;
+        std::string m_RedditScopeTimeFrame;
         std::string m_RedditLimit;
 
         // Twitter
