@@ -84,7 +84,7 @@ namespace ImageScraper
         // Reddit options
         std::string m_SubredditName{ };
         int m_RedditScope{ };
-        int m_RedditFetchLimit{ };
+        int m_RedditLimit{ };
 
         // Twitter options
         std::string m_TwitterHandle{ };

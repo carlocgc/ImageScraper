@@ -215,7 +215,7 @@ void ImageScraper::FrontEnd::UpdateProviderOptions( )
 
     ImGui::EndChild( );
 
-    ContentProvider provider = static_cast< ContentProvider >( m_ContentProvider );
+    const ContentProvider provider = static_cast< ContentProvider >( m_ContentProvider );
 
     switch( provider )
     {
@@ -434,6 +434,9 @@ ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildRedditInputOptions( 
 {
     UserInputOptions options{ };
     options.m_SubredditName = m_SubredditName;
+    options.m_RedditScope = s_RedditScopeStrings[ m_RedditScope ];
+    options.m_RedditLimit = std::to_string( m_RedditLimit );
+
     return options;
 }
 

@@ -6,6 +6,7 @@ namespace ImageScraper
     struct RequestOptions
     {
         std::string m_Url{ };
+        std::string m_QueryParams{ };
         std::string m_CaBundle{ };
         std::string m_UserAgent{ };
         std::string m_ClientId{ };

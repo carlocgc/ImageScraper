@@ -43,7 +43,8 @@ namespace ImageScraper
 
         // Reddit
         std::string m_SubredditName;
-        RedditScope m_RedditScope;
+        std::string m_RedditScope;
+        std::string m_RedditLimit;
 
         // Twitter
         std::string m_TwitterHandle;

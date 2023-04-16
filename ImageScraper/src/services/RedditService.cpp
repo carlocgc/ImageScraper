@@ -89,7 +89,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
         m_FrontEnd->SetInputState( InputState::Free );
     };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, subreddit = inputOptions.m_SubredditName, onComplete, onFail ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, options = inputOptions, onComplete, onFail ]( )
         {
             if( !IsAuthenticated( ) )
             {
@@ -138,28 +138,28 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 }
             }
 
-            RequestOptions options{ };
-            options.m_Url = subreddit;
-            options.m_CaBundle = m_CaBundle;
-            options.m_UserAgent = s_UserAgent;
-            options.m_AccessToken = m_AuthAccessToken;
+            RequestOptions fetchOptions{ };
+            fetchOptions.m_QueryParams = "/" + options.m_RedditScope + ".json?limit=" + options.m_RedditLimit;
+            fetchOptions.m_CaBundle = m_CaBundle;
+            fetchOptions.m_UserAgent = s_UserAgent;
+            fetchOptions.m_AccessToken = m_AuthAccessToken;
 
-            FetchSubredditPostsRequest request{ };
-            RequestResult result = request.Perform( options );
+            FetchSubredditPostsRequest fetchRequest{ };
+            RequestResult fetchResult = fetchRequest.Perform( fetchOptions );
 
-            if( !result.m_Success )
+            if( !fetchResult.m_Success )
             {
-                WarningLog( "[%s] Failed to get subreddit data, error: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+                WarningLog( "[%s] Failed to get subreddit data, error: %s", __FUNCTION__, fetchResult.m_Error.m_ErrorString.c_str( ) );
                 TaskManager::Instance( ).SubmitMain( onFail );
                 return;
             }
 
             InfoLog( "[%s] Subreddit data fetched successfully.", __FUNCTION__ );
-            DebugLog( "[%s] Response: %s", __FUNCTION__, result.m_Response.c_str( ) );
+            DebugLog( "[%s] Response: %s", __FUNCTION__, fetchResult.m_Response.c_str( ) );
 
             // Parse response
-            json response = json::parse( result.m_Response );
-            const std::vector<json>& posts = response[ "data" ][ "children" ];
+            json fetchResponse = json::parse( fetchResult.m_Response );
+            const std::vector<json>& posts = fetchResponse[ "data" ][ "children" ];
 
             std::vector<std::string> urls{ };
 
@@ -176,7 +176,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
             }
 
             // Create download directory
-            const std::filesystem::path dir = std::filesystem::current_path( ) / "Downloads" / "Reddit" / subreddit;
+            const std::filesystem::path dir = std::filesystem::current_path( ) / "Downloads" / "Reddit" / options.m_SubredditName / options.m_RedditScope;
             const std::string dirStr = dir.generic_string( );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
