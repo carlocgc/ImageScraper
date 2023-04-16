@@ -2,6 +2,7 @@
 #include "log/Logger.h"
 #include "services/Service.h"
 #include "config/Config.h"
+#include <algorithm>
 
 ImageScraper::FrontEnd::FrontEnd( int maxLogLines )
     : m_LogContent{ static_cast< std::size_t >( maxLogLines ) }
@@ -93,11 +94,11 @@ void ImageScraper::FrontEnd::Update( )
     ImGui::BeginDisabled( m_InputState == InputState::Blocked );
 
     ShowDemoWindow( );
-    UpdateProviderOptions( );
+    UpdateProviderWidgets( );
 
     ImGui::EndDisabled( );
 
-    UpdateLogWindow( );
+    UpdateLogWindowWidgets( );
 }
 
 bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Service>>& services )
@@ -199,7 +200,7 @@ void ImageScraper::FrontEnd::ShowDemoWindow( )
     ImGui::ShowDemoWindow( &show );
 }
 
-void ImageScraper::FrontEnd::UpdateProviderOptions( )
+void ImageScraper::FrontEnd::UpdateProviderWidgets( )
 {
     ImGui::SetNextWindowSize( ImVec2( 640, 200 ), ImGuiCond_FirstUseEver );
     if( !ImGui::Begin( "Input", nullptr ) )
@@ -220,21 +221,21 @@ void ImageScraper::FrontEnd::UpdateProviderOptions( )
     switch( provider )
     {
     case ImageScraper::ContentProvider::Reddit:
-        UpdateRedditOptions( );
+        UpdateRedditWidgets( );
         break;
     case ImageScraper::ContentProvider::Twitter:
-        UpdateTwitterOptions( );
+        UpdateTwitterWidgets( );
         break;
     default:
         break;
     }
 
-    UpdateRunButton( );
+    UpdateRunButtonWidget( );
 
     ImGui::End( );
 }
 
-void ImageScraper::FrontEnd::UpdateRedditOptions( )
+void ImageScraper::FrontEnd::UpdateRedditWidgets( )
 {
     if( ImGui::BeginChild( "SubredditName", ImVec2( 500, 25 ), false ) )
     {
@@ -254,9 +255,17 @@ void ImageScraper::FrontEnd::UpdateRedditOptions( )
     }
 
     ImGui::EndChild( );
+
+    if( ImGui::BeginChild( "RedditLimit", ImVec2( 500, 25 ), false ) )
+    {
+        ImGui::InputInt( "Limit", &m_RedditLimit );
+        m_RedditLimit = std::clamp( m_RedditLimit, REDDIT_LIMIT_MIN, REDDIT_LIMIT_MAX );
+    }
+
+    ImGui::EndChild( );
 }
 
-void ImageScraper::FrontEnd::UpdateTwitterOptions( )
+void ImageScraper::FrontEnd::UpdateTwitterWidgets( )
 {
     if( ImGui::BeginChild( "TwitterHandle", ImVec2( 500, 25 ), false ) )
     {
@@ -271,17 +280,17 @@ void ImageScraper::FrontEnd::UpdateTwitterOptions( )
     ImGui::EndChild( );
 }
 
-void ImageScraper::FrontEnd::UpdateRunButton( )
+void ImageScraper::FrontEnd::UpdateRunButtonWidget( )
 {
     if( ImGui::BeginChild( "RunButton", ImVec2( 300, 0 ), false ) )
     {
-        m_StartProcess = ImGui::Button( "Run", ImVec2( 50, 0 ) );
+        m_StartProcess = ImGui::Button( "Run", ImVec2( 100, 40 ) );
     }
 
     ImGui::EndChild( );
 }
 
-void ImageScraper::FrontEnd::UpdateLogWindow( )
+void ImageScraper::FrontEnd::UpdateLogWindowWidgets( )
 {
     ImGui::SetNextWindowSize( ImVec2( 1280, 360 ), ImGuiCond_FirstUseEver );
     if( !ImGui::Begin( "Output", nullptr ) )
@@ -434,7 +443,12 @@ ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildRedditInputOptions( 
 {
     UserInputOptions options{ };
     options.m_SubredditName = m_SubredditName;
-    options.m_RedditScope = s_RedditScopeStrings[ m_RedditScope ];
+
+    std::string scope = s_RedditScopeStrings[ m_RedditScope ];
+    auto toLower = [ ]( unsigned char ch ) { return std::tolower( ch ); };
+    std::transform( scope.begin( ), scope.end( ), scope.begin(), toLower );
+
+    options.m_RedditScope = scope;
     options.m_RedditLimit = std::to_string( m_RedditLimit );
 
     return options;

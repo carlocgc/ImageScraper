@@ -75,7 +75,10 @@ const bool ImageScraper::RedditService::IsAuthenticated( ) const
 
 void ImageScraper::RedditService::DownloadContent( const UserInputOptions& inputOptions )
 {
-    InfoLog( "[%s] Starting Reddit content download!, Subreddit: %s", __FUNCTION__, inputOptions.m_SubredditName.c_str( ) );
+    InfoLog( "[%s] Starting Reddit media download!", __FUNCTION__ );
+    DebugLog( "[%s] Subreddit: %s", __FUNCTION__, inputOptions.m_SubredditName.c_str( ) );
+    DebugLog( "[%s] Scope: %s", __FUNCTION__, inputOptions.m_RedditScope.c_str( ) );
+    DebugLog( "[%s] Limit: %s", __FUNCTION__, inputOptions.m_RedditLimit.c_str( ) );
 
     auto onComplete = [ & ]( int filesDownloaded )
     {
@@ -139,7 +142,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
             }
 
             RequestOptions fetchOptions{ };
-            fetchOptions.m_QueryParams = "/" + options.m_RedditScope + ".json?limit=" + options.m_RedditLimit;
+            fetchOptions.m_QueryParams = options.m_SubredditName + '/' + options.m_RedditScope + ".json?limit=" + options.m_RedditLimit;
             fetchOptions.m_CaBundle = m_CaBundle;
             fetchOptions.m_UserAgent = s_UserAgent;
             fetchOptions.m_AccessToken = m_AuthAccessToken;

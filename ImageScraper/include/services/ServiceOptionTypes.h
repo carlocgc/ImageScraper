@@ -1,6 +1,9 @@
 #pragma once
 #include <string>
 
+#define REDDIT_LIMIT_MIN 25
+#define REDDIT_LIMIT_MAX 100
+
 namespace ImageScraper
 {
     enum class ContentProvider

@@ -9,7 +9,7 @@ const std::string ImageScraper::Reddit::FetchSubredditPostsRequest::s_AuthBaseUr
 
 ImageScraper::RequestResult ImageScraper::Reddit::FetchSubredditPostsRequest::Perform( const RequestOptions& options )
 {
-    DebugLog( "[%s] FetchSubredditPostsRequest started!, Subreddit: %s", __FUNCTION__, options.m_Url.c_str( ) );
+    DebugLog( "[%s] FetchSubredditPostsRequest started!", __FUNCTION__ );
 
     RequestResult result{ };
 
@@ -19,19 +19,19 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchSubredditPostsRequest::Pe
         curlpp::Easy request{ };
         std::ostringstream response;
 
-        const std::string queryParams = "/hot.json?limit=100"; // TODO make configurable in options
+        //const std::string queryParams = "/hot.json?limit=100"; // TODO make configurable in options
         std::string url{ };
 
         if( options.m_AccessToken != "" )
         {
-            url = s_AuthBaseUrl + options.m_Url + queryParams;
+            url = s_AuthBaseUrl + options.m_QueryParams;
             std::string accessToken = options.m_AccessToken;
             std::string authHeader = "Authorization: Bearer " + accessToken;
             request.setOpt<curlpp::options::HttpHeader>( std::list<std::string>( { authHeader } ) );
         }
         else
         {
-            url = s_BaseUrl + options.m_Url + queryParams;
+            url = s_BaseUrl + options.m_QueryParams;
         }
 
         // Set the URL to retrieve
@@ -48,6 +48,8 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchSubredditPostsRequest::Pe
 
         // Set the cert bundle for TLS/HTTPS
         request.setOpt( new curlpp::options::CaInfo( options.m_CaBundle ) );
+
+        DebugLog( "[%s] FetchSubredditPostsRequest, URL: %s", __FUNCTION__, url.c_str() );
 
         // Perform the request, blocks thread
         request.perform( );
