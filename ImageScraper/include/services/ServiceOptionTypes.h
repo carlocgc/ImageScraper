@@ -3,6 +3,9 @@
 
 #define REDDIT_LIMIT_MIN 25
 #define REDDIT_LIMIT_MAX 100
+#define SUBREDDIT_NAME_MAX_LENGTH 64
+
+#define TWITTER_HANDLE_MAX_LENGTH 64
 
 namespace ImageScraper
 {

@@ -15,14 +15,25 @@ namespace ImageScraper::Reddit
         }
 
         const json& data = post[ "data" ];
-        if( !data.contains( "url" ) )
+
+        std::string contentKey{ };
+
+        if( data.contains( "url" ) )
+        {
+            contentKey = "url";
+        }
+        else if( data.contains( "url_overridden_by_dest" ) )
+        {
+            contentKey = "url_overridden_by_dest";
+        }
+        else
         {
             return;
         }
 
         const std::vector<std::string> targetExts{ ".jpg", ".jpeg", ".png", ".webm", ".webp", ".gif", ".gifv", ".mp4" };
 
-        const std::string& url = data[ "url" ];
+        const std::string& url = data[ contentKey ];
 
         for( const auto& ext : targetExts )
         {

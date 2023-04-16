@@ -239,11 +239,12 @@ void ImageScraper::FrontEnd::UpdateRedditWidgets( )
 {
     if( ImGui::BeginChild( "SubredditName", ImVec2( 500, 25 ), false ) )
     {
-        char subreddit[ 64 ] = "";
+        char buffer[ SUBREDDIT_NAME_MAX_LENGTH ] = "";
+        strcpy_s( buffer, SUBREDDIT_NAME_MAX_LENGTH, m_SubredditName.c_str( ) );
         ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Subreddit (e.g. Gifs)", subreddit, 64, flags, &FrontEnd::InputTextCallbackProxy, this ) )
+        if( ImGui::InputText( "Subreddit (e.g. Gifs)", buffer, SUBREDDIT_NAME_MAX_LENGTH, flags, &FrontEnd::InputTextCallbackProxy, this ) )
         {
-            m_SubredditName = subreddit;
+            m_SubredditName = buffer;
         }
     }
 
@@ -287,11 +288,12 @@ void ImageScraper::FrontEnd::UpdateTwitterWidgets( )
 {
     if( ImGui::BeginChild( "TwitterHandle", ImVec2( 500, 25 ), false ) )
     {
-        char twitterHandle[ 64 ] = "";
+        char buffer[ TWITTER_HANDLE_MAX_LENGTH ] = "";
+        strcpy_s( buffer, TWITTER_HANDLE_MAX_LENGTH, m_TwitterHandle.c_str( ) );
         ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Twitter Handle", twitterHandle, 64, flags, &FrontEnd::InputTextCallbackProxy, this ) )
+        if( ImGui::InputText( "Twitter Handle", buffer, TWITTER_HANDLE_MAX_LENGTH, flags, &FrontEnd::InputTextCallbackProxy, this ) )
         {
-            m_TwitterHandle = twitterHandle;
+            m_TwitterHandle = buffer;
         }
     }
 

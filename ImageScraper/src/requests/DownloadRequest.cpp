@@ -4,6 +4,7 @@
 #include "curlpp/Options.hpp"
 #include "curlpp/cURLpp.hpp"
 #include "curlpp/Easy.hpp"
+
 #include <sstream>
 
 ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const DownloadOptions& options )
