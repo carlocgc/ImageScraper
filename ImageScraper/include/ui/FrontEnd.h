@@ -55,31 +55,24 @@ namespace ImageScraper
     private:
         void ShowDemoWindow( );
 
-        void UpdateProviderOptions( );
-        void UpdateRedditOptions( );
-        void UpdateTwitterOptions( );
-
-        void UpdateRunButton( );
-
-        void UpdateLogWindow( );
+        // TODO Move all input logic into components
+        void UpdateProviderWidgets( );
+        void UpdateRedditWidgets( );
+        void UpdateTwitterWidgets( );
+        void UpdateRunButtonWidget( );
+        void UpdateLogWindowWidgets( );
 
         UserInputOptions BuildRedditInputOptions( );
         UserInputOptions BuildTwitterInputOptions( );
 
         void ClearInputFields( );
 
-        inline std::string ContentProviderToString( ContentProvider provider );
-        inline ContentProvider ContentProviderFromString( const std::string& provider );
-        inline std::string RedditScopeToString( RedditScope scope );
-        inline RedditScope RedditScopeFromString( const std::string& scope );
-
         GLFWwindow* m_WindowPtr{ nullptr };
         InputState m_InputState{ InputState::Free };
 
-        // TODO Move all input logic into components
-
-        // Content Provider
+        // Generic options
         int m_ContentProvider{ };
+        bool m_StartProcess{ false };
 
         // Reddit options
         std::string m_SubredditName{ };
@@ -89,16 +82,13 @@ namespace ImageScraper
         // Twitter options
         std::string m_TwitterHandle{ };
 
-        // Generic options
-        bool m_StartProcess{ false };
-
         // Log window
         RingBuffer<LogLine> m_LogContent;
+        ImGuiTextFilter m_Filter;
+        LogLevel m_LogLevel{ LogLevel::Error };
         bool m_AutoScroll{ true };
         bool m_DebugLogging{ false };
         bool m_ScrollToBottom{ false };
-        ImGuiTextFilter m_Filter;
-        LogLevel m_LogLevel{ LogLevel::Error };
     };
 }
 
