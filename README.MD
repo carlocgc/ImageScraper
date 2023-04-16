@@ -6,9 +6,14 @@ ImageScraper
 
 A gui application that downloads media content from various web services like reddit.
 
-### Compile
+### Reddit
 
-Download FFMPEG binaries Download and install https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2021-11-30-12-21 (v4.4) to a folder
-Create env variable "ffmpeg_sdk" and set to root folder where "lib" and "include" folders are located.
+Create app, add client id and secret to config.json
+https://www.reddit.com/prefs/apps
 
-Build and run
+### Instagram
+
+Requires a facebook account (client id and secret) and a seperate instagram account as a tester (access token)
+Create app, add client id and secret to config.json
+Add instagram tester, generate access token and add to config.json
+https://www.youtube.com/watch?v=IEXDGIeIq_8
