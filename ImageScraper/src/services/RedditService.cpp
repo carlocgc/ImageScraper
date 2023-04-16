@@ -53,7 +53,7 @@ bool ImageScraper::RedditService::HandleUserInput( const UserInputOptions& optio
         return false;
     }
 
-    DownloadContent( options.m_UserData );
+    DownloadContent( options );
     return true;
 }
 
@@ -73,9 +73,9 @@ const bool ImageScraper::RedditService::IsAuthenticated( ) const
     return true;
 }
 
-void ImageScraper::RedditService::DownloadContent( const std::string& subreddit )
+void ImageScraper::RedditService::DownloadContent( const UserInputOptions& inputOptions )
 {
-    InfoLog( "[%s] Starting Reddit Hot Media Download!, Subreddit: %s", __FUNCTION__, subreddit.c_str( ) );
+    InfoLog( "[%s] Starting Reddit content download!, Subreddit: %s", __FUNCTION__, inputOptions.m_SubredditName.c_str( ) );
 
     auto onComplete = [ & ]( int filesDownloaded )
     {
@@ -89,7 +89,7 @@ void ImageScraper::RedditService::DownloadContent( const std::string& subreddit 
         m_FrontEnd->SetInputState( InputState::Free );
     };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, subreddit, onComplete, onFail ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, subreddit = inputOptions.m_SubredditName, onComplete, onFail ]( )
         {
             if( !IsAuthenticated( ) )
             {

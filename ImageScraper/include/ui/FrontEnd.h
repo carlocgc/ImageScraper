@@ -12,8 +12,9 @@
 #include <vector>
 #include <memory>
 
-#include "collections/RingBuffer.h"
 #include "log/Logger.h"
+#include "collections/RingBuffer.h"
+#include "services/Service.h"
 
 namespace ImageScraper
 {
@@ -21,8 +22,6 @@ namespace ImageScraper
     {
         ErrorLog( "[%s] GLFW Error %d: %s", error, description );
     }
-
-    class Service;
 
     enum class InputState : uint8_t
     {
@@ -55,19 +54,39 @@ namespace ImageScraper
 
     private:
         void ShowDemoWindow( );
-        void UpdateUrlInput( );
+
+        void UpdateProviderOptions( );
+        void UpdateRedditOptions( );
+        void UpdateTwitterOptions( );
+
         void UpdateLogWindow( );
+
+        UserInputOptions BuildRedditInputOptions( );
+        UserInputOptions BuildTwitterInputOptions( );
+
+        void ClearInputFields( );
+
+        inline std::string ContentProviderToString( ContentProvider provider );
+        inline ContentProvider ContentProviderFromString( const std::string& provider );
 
         GLFWwindow* m_WindowPtr{ nullptr };
         InputState m_InputState{ InputState::Free };
 
         // TODO Move all input logic into components
 
-        // Url input
-        std::string m_UrlField{ };
+        // Content Provider
+        int m_ContentProvider{ };
+
+        // Reddit options
+        std::string m_SubredditName{ };
+
+        // Twitter options
+        std::string m_TwitterHandle{ };
+
+        // Generic options
         bool m_StartProcess{ false };
 
-        // Log
+        // Log window
         RingBuffer<LogLine> m_LogContent;
         bool m_AutoScroll{ true };
         bool m_DebugLogging{ false };

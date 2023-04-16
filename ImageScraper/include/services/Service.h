@@ -9,13 +9,19 @@ namespace ImageScraper
 
     enum class ContentProvider
     {
-        Reddit
+        Reddit = 0,
+        Twitter = 1
     };
 
     struct UserInputOptions
     {
         ContentProvider m_Provider;
-        std::string m_UserData;
+
+        // Reddit
+        std::string m_SubredditName;
+
+        // Twitter
+        std::string m_TwitterHandle;
     };
 
     class Service

@@ -93,7 +93,7 @@ void ImageScraper::FrontEnd::Update( )
     ImGui::BeginDisabled( m_InputState == InputState::Blocked );
 
     ShowDemoWindow( );
-    UpdateUrlInput( );
+    UpdateProviderOptions( );
 
     ImGui::EndDisabled( );
 
@@ -112,34 +112,44 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
         return false;
     }
 
-    if( m_UrlField.empty( ) )
+    UserInputOptions inputOptions{ };
+
+    const ContentProvider provider = static_cast< ContentProvider >( m_ContentProvider );
+    switch( provider )
     {
-        ErrorLog( "[%s] Empty Url!", __FUNCTION__, m_UrlField );
+    case ImageScraper::ContentProvider::Reddit:
+
+        if( m_SubredditName.empty( ) )
+        {
+            return false;
+        }
+
+        inputOptions = BuildRedditInputOptions( );
+        break;
+    case ImageScraper::ContentProvider::Twitter:
+
+        if( m_TwitterHandle.empty( ) )
+        {
+            return false;
+        }
+
+        inputOptions = BuildTwitterInputOptions( );
+        break;
+    default:
         return false;
+        break;
     }
 
-    InfoLog( "[%s] Processing input: %s", __FUNCTION__, m_UrlField.c_str( ) );
-
-    if( m_UrlField == "exit" )
-    {
-        InfoLog( "[%s] Exiting...", __FUNCTION__ );
-        return true;
-    }
-
-    UserInputOptions options;
-    options.m_Provider = ContentProvider::Reddit;
-    options.m_UserData = m_UrlField;
+    DebugLog( "[%s] Processing input...", __FUNCTION__ );
 
     for( auto service : services )
     {
-        if( service->HandleUserInput( options ) )
+        if( service->HandleUserInput( inputOptions ) )
         {
-            m_UrlField.clear( );
+            ClearInputFields( );
             return true;
         }
     }
-
-    ErrorLog( "[%s] Unhandled Url! : %s", __FUNCTION__, m_UrlField );
 
     return false;
 }
@@ -189,7 +199,7 @@ void ImageScraper::FrontEnd::ShowDemoWindow( )
     ImGui::ShowDemoWindow( &show );
 }
 
-void ImageScraper::FrontEnd::UpdateUrlInput( )
+void ImageScraper::FrontEnd::UpdateProviderOptions( )
 {
     ImGui::SetNextWindowSize( ImVec2( 640, 200 ), ImGuiCond_FirstUseEver );
     if( !ImGui::Begin( "Input", nullptr ) )
@@ -198,17 +208,32 @@ void ImageScraper::FrontEnd::UpdateUrlInput( )
         return;
     }
 
-    if( ImGui::BeginChild( "UrlInput", ImVec2( 500, 50 ), false) )
+    if( ImGui::BeginChild( "ContentProvider", ImVec2( 500, 50 ), false ) )
     {
-        char url[ 64 ] = "";
-        ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Enter Subreddit", url, 64, flags, &FrontEnd::InputTextCallbackProxy, this ) )
-        {
-            m_UrlField = url;
-        }
+        const std::string redditString = ContentProviderToString( ContentProvider::Reddit );
+        const std::string twitterString = ContentProviderToString( ContentProvider::Twitter );
+        const char* providerStrings[ 2 ];
+        providerStrings[ 0 ] = redditString.c_str( );
+        providerStrings[ 1 ] = twitterString.c_str( );
+
+        ImGui::Combo( "Content Provider", &m_ContentProvider, providerStrings, IM_ARRAYSIZE( providerStrings ) );
     }
 
     ImGui::EndChild( );
+
+    ContentProvider provider = static_cast< ContentProvider >( m_ContentProvider );
+
+    switch( provider )
+    {
+    case ImageScraper::ContentProvider::Reddit:
+        UpdateRedditOptions( );
+        break;
+    case ImageScraper::ContentProvider::Twitter:
+        UpdateTwitterOptions( );
+        break;
+    default:
+        break;
+    }
 
     if( ImGui::BeginChild( "RunButton", ImVec2( 300, 25), false ) )
     {
@@ -218,6 +243,36 @@ void ImageScraper::FrontEnd::UpdateUrlInput( )
     ImGui::EndChild( );
 
     ImGui::End( );
+}
+
+void ImageScraper::FrontEnd::UpdateRedditOptions( )
+{
+    if( ImGui::BeginChild( "Subreddit", ImVec2( 500, 50 ), false ) )
+    {
+        char subreddit[ 64 ] = "";
+        ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
+        if( ImGui::InputText( "Enter Subreddit Name", subreddit, 64, flags, &FrontEnd::InputTextCallbackProxy, this ) )
+        {
+            m_SubredditName = subreddit;
+        }
+    }
+
+    ImGui::EndChild( );
+}
+
+void ImageScraper::FrontEnd::UpdateTwitterOptions( )
+{
+    if( ImGui::BeginChild( "TwitterHandle", ImVec2( 500, 50 ), false ) )
+    {
+        char twitterHandle[ 64 ] = "";
+        ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
+        if( ImGui::InputText( "Enter Twitter Handle", twitterHandle, 64, flags, &FrontEnd::InputTextCallbackProxy, this ) )
+        {
+            m_TwitterHandle = twitterHandle;
+        }
+    }
+
+    ImGui::EndChild( );
 }
 
 void ImageScraper::FrontEnd::UpdateLogWindow( )
@@ -367,6 +422,59 @@ void ImageScraper::FrontEnd::UpdateLogWindow( )
     ImGui::Separator( );
 
     ImGui::End( );
+}
+
+ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildRedditInputOptions( )
+{
+    UserInputOptions options{ };
+    options.m_SubredditName = m_SubredditName;
+    return options;
+}
+
+ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildTwitterInputOptions( )
+{
+    UserInputOptions options{ };
+    options.m_TwitterHandle = m_TwitterHandle;
+    return options;
+}
+
+void ImageScraper::FrontEnd::ClearInputFields( )
+{
+    m_StartProcess = false;
+    m_SubredditName.clear( );
+    m_TwitterHandle.clear( );
+}
+
+std::string ImageScraper::FrontEnd::ContentProviderToString( ContentProvider provider )
+{
+    switch (provider)
+    {
+    case ContentProvider::Reddit:
+        return "Reddit";
+        break;
+    case ContentProvider::Twitter:
+        return "Twitter";
+        break;
+    default:
+        return "Reddit";
+        break;
+    }
+}
+
+ImageScraper::ContentProvider ImageScraper::FrontEnd::ContentProviderFromString( const std::string& provider )
+{
+    if( provider == "Reddit" )
+    {
+        return ContentProvider::Reddit;
+    }
+    else if( provider == "Twitter" )
+    {
+        return ContentProvider::Twitter;
+    }
+    else
+    {
+        return ContentProvider::Reddit;
+    }
 }
 
 void ImageScraper::FrontEnd::SetInputState( const InputState& state )

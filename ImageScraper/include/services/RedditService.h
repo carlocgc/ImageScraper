@@ -22,7 +22,7 @@ namespace ImageScraper
 
     private:
         const bool IsAuthenticated( ) const;;
-        void DownloadContent( const std::string& subreddit );
+        void DownloadContent( const UserInputOptions& inputOptions );
 
         static const std::string s_UserAgent;
         static const std::string s_AppDataKey_DeviceId;
