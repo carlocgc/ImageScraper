@@ -19,19 +19,22 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchSubredditPostsRequest::Pe
         curlpp::Easy request{ };
         std::ostringstream response;
 
-        //const std::string queryParams = "/hot.json?limit=100"; // TODO make configurable in options
         std::string url{ };
+
+        std::string urlEnd{ };
+        urlEnd += options.m_UrlExt;
+        urlEnd += DownloadHelpers::CreateQueryParamString( options.m_QueryParams );
 
         if( options.m_AccessToken != "" )
         {
-            url = s_AuthBaseUrl + options.m_QueryParams;
+            url = s_AuthBaseUrl + urlEnd;
             std::string accessToken = options.m_AccessToken;
             std::string authHeader = "Authorization: Bearer " + accessToken;
             request.setOpt<curlpp::options::HttpHeader>( std::list<std::string>( { authHeader } ) );
         }
         else
         {
-            url = s_BaseUrl + options.m_QueryParams;
+            url = s_BaseUrl + urlEnd;
         }
 
         // Set the URL to retrieve

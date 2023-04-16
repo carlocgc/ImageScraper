@@ -142,7 +142,12 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
             }
 
             RequestOptions fetchOptions{ };
-            fetchOptions.m_QueryParams = options.m_SubredditName + '/' + options.m_RedditScope + ".json?limit=" + options.m_RedditLimit;
+            if( options.m_RedditScopeTimeFrame != "" )
+            {
+                fetchOptions.m_QueryParams.push_back( { "t", options.m_RedditScopeTimeFrame } );
+            }
+            fetchOptions.m_QueryParams.push_back( { "limit", options.m_RedditLimit } );
+            fetchOptions.m_UrlExt = options.m_SubredditName + '/' + options.m_RedditScope + ".json";
             fetchOptions.m_CaBundle = m_CaBundle;
             fetchOptions.m_UserAgent = s_UserAgent;
             fetchOptions.m_AccessToken = m_AuthAccessToken;
@@ -207,6 +212,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 DownloadOptions options{ };
                 options.m_CaBundle = m_CaBundle;
                 options.m_Url = url;
+                options.m_UserAgent = s_UserAgent;
                 options.m_BufferPtr = &buffer;
 
                 DownloadRequest request{ };

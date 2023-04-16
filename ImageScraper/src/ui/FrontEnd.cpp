@@ -469,10 +469,13 @@ ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildRedditInputOptions( 
 
     options.m_RedditScope = scope;
 
-    std::string scopeTimeFrame = s_RedditScopeTimeFrameStrings[ static_cast< int >( m_RedditScopeTimeFrame ) ];
-    std::transform( scopeTimeFrame.begin( ), scopeTimeFrame.end( ), scopeTimeFrame.begin( ), toLower );
+    if( m_RedditScope == RedditScope::Top || m_RedditScope == RedditScope::Controversial || m_RedditScope == RedditScope::Sort )
+    {
+        std::string scopeTimeFrame = s_RedditScopeTimeFrameStrings[ static_cast< int >( m_RedditScopeTimeFrame ) ];
+        std::transform( scopeTimeFrame.begin( ), scopeTimeFrame.end( ), scopeTimeFrame.begin( ), toLower );
 
-    options.m_RedditScopeTimeFrame = scopeTimeFrame;
+        options.m_RedditScopeTimeFrame = scopeTimeFrame;
+    }
 
     options.m_RedditLimit = std::to_string( m_RedditLimit );
 

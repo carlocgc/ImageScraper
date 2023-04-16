@@ -6,8 +6,9 @@ namespace ImageScraper
 {
     struct DownloadOptions
     {
-        std::string m_Url;
-        std::string m_CaBundle;
-        std::vector<char>* m_BufferPtr;
+        std::string m_Url{ };
+        std::string m_CaBundle{ };
+        std::string m_UserAgent{ };
+        std::vector<char>* m_BufferPtr{ };
     };
 }

@@ -32,6 +32,8 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
         request.setOpt( writeCallback );
         request.setOpt( new curlpp::options::CaInfo( options.m_CaBundle ) );
         request.setOpt( new curlpp::options::Url( options.m_Url ) );
+        request.setOpt( new curlpp::options::UserAgent( options.m_UserAgent ) );
+        request.setOpt( new curlpp::options::FollowLocation( true ) );
 
         request.perform( );
     }

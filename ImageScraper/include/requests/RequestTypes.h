@@ -1,12 +1,19 @@
 #pragma once
 #include <string>
+#include <vector>
 
 namespace ImageScraper
 {
+    struct QueryParam
+    {
+        std::string m_Key{ };
+        std::string m_Value{ };
+    };
+
     struct RequestOptions
     {
-        std::string m_Url{ };
-        std::string m_QueryParams{ };
+        std::string m_UrlExt{ };
+        std::vector<QueryParam> m_QueryParams{ };
         std::string m_CaBundle{ };
         std::string m_UserAgent{ };
         std::string m_ClientId{ };

@@ -110,6 +110,32 @@ namespace ImageScraper::DownloadHelpers
         return true;
     }
 
+    static std::string CreateQueryParamString( const std::vector<QueryParam>& params )
+    {
+        std::string paramString{ };
+
+        if( !params.empty( ) )
+        {
+            paramString += '?';
+        }
+
+        int paramCount = 0;
+
+        for( const auto& param : params )
+        {
+            if( paramCount++ > 0 )
+            {
+                paramString += '&';
+            }
+
+            paramString += param.m_Key;
+            paramString += '=';
+            paramString += param.m_Value;
+        }
+
+        return paramString;
+    }
+
     static bool IsResponseError( RequestResult& result )
     {
         using Json = nlohmann::json;
