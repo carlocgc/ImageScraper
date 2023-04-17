@@ -127,14 +127,14 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
 
         inputOptions = BuildRedditInputOptions( );
         break;
-    case ImageScraper::ContentProvider::Instagram:
+    case ImageScraper::ContentProvider::Tumblr:
 
-        if( m_InstagramUser.empty( ) )
+        if( m_TumblrUser.empty( ) )
         {
             return false;
         }
 
-        inputOptions = BuildInstagramInputOptions( );
+        inputOptions = BuildTumblrInputOptions( );
         break;
     default:
         return false;
@@ -217,8 +217,8 @@ void ImageScraper::FrontEnd::UpdateProviderWidgets( )
     case ImageScraper::ContentProvider::Reddit:
         UpdateRedditWidgets( );
         break;
-    case ImageScraper::ContentProvider::Instagram:
-        UpdateInstagramWidgets( );
+    case ImageScraper::ContentProvider::Tumblr:
+        UpdateTumblrWidgets( );
         break;
     default:
         break;
@@ -278,16 +278,16 @@ void ImageScraper::FrontEnd::UpdateRedditWidgets( )
     ImGui::EndChild( );
 }
 
-void ImageScraper::FrontEnd::UpdateInstagramWidgets( )
+void ImageScraper::FrontEnd::UpdateTumblrWidgets( )
 {
-    if( ImGui::BeginChild( "InstagramUser", ImVec2( 500, 25 ), false ) )
+    if( ImGui::BeginChild( "TumblrUser", ImVec2( 500, 25 ), false ) )
     {
-        char buffer[ INSTAGRAM_USER_MAX_LENGTH ] = "";
-        strcpy_s( buffer, INSTAGRAM_USER_MAX_LENGTH, m_InstagramUser.c_str( ) );
+        char buffer[ TUMBLR_USER_MAX_LENGTH ] = "";
+        strcpy_s( buffer, TUMBLR_USER_MAX_LENGTH, m_TumblrUser.c_str( ) );
         ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Instagram User", buffer, INSTAGRAM_USER_MAX_LENGTH, flags, nullptr, this ) )
+        if( ImGui::InputText( "Tumblr User", buffer, TUMBLR_USER_MAX_LENGTH, flags, nullptr, this ) )
         {
-            m_InstagramUser = buffer;
+            m_TumblrUser = buffer;
         }
     }
 
@@ -478,10 +478,10 @@ ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildRedditInputOptions( 
     return options;
 }
 
-ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildInstagramInputOptions( )
+ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildTumblrInputOptions( )
 {
     UserInputOptions options{ };
-    options.m_InstagramUser = m_InstagramUser;
+    options.m_TumblrUser = m_TumblrUser;
     return options;
 }
 

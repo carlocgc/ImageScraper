@@ -51,12 +51,12 @@ namespace ImageScraper
         // TODO Move all input logic into components
         void UpdateProviderWidgets( );
         void UpdateRedditWidgets( );
-        void UpdateInstagramWidgets( );
+        void UpdateTumblrWidgets( );
         void UpdateRunButtonWidget( );
         void UpdateLogWindowWidgets( );
 
         UserInputOptions BuildRedditInputOptions( );
-        UserInputOptions BuildInstagramInputOptions( );
+        UserInputOptions BuildTumblrInputOptions( );
 
         void ResetInputFields( );
 
@@ -73,8 +73,8 @@ namespace ImageScraper
         RedditScopeTimeFrame m_RedditScopeTimeFrame{ RedditScopeTimeFrame::All };
         int m_RedditLimit{ };
 
-        // Instagram options
-        std::string m_InstagramUser{ };
+        // Tumblr options
+        std::string m_TumblrUser{ };
 
         // Log window
         RingBuffer<LogLine> m_LogContent;

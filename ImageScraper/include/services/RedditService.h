@@ -10,7 +10,6 @@ namespace ImageScraper
 {
     class JsonFile;
     class FrontEnd;
-    class FileConverter;
 
     class RedditService : public Service
     {
@@ -19,10 +18,9 @@ namespace ImageScraper
         bool HandleUserInput( const UserInputOptions& options ) override;
 
     private:
-        const bool IsAuthenticated( ) const;;
+        const bool IsAuthenticated( ) const;
         void DownloadContent( const UserInputOptions& inputOptions );
 
-        static const std::string s_UserAgent;
         static const std::string s_AppDataKey_DeviceId;
         static const std::string s_UserDataKey_ClientId;
         static const std::string s_UserDataKey_ClientSecret;
@@ -34,7 +32,5 @@ namespace ImageScraper
         std::string m_AuthAccessToken{ };
         std::chrono::seconds m_AuthExpireSeconds{ };
         std::chrono::system_clock::time_point m_TokenReceived{ };
-
-        std::shared_ptr<FrontEnd> m_FrontEnd{ nullptr };
     };
 }

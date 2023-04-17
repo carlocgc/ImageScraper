@@ -18,14 +18,12 @@
 using namespace ImageScraper::Reddit;
 using json = nlohmann::json;
 
-const std::string ImageScraper::RedditService::s_UserAgent = "Windows:ImageScraper:v0:/u/carlocgc";
 const std::string ImageScraper::RedditService::s_AppDataKey_DeviceId = "reddit_device_id";
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientId = "reddit_client_id";
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientSecret = "reddit_client_secret";
 
 ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<FrontEnd> frontEnd )
-    : Service( appConfig, userConfig, caBundle )
-    , m_FrontEnd{ frontEnd }
+    : Service( appConfig, userConfig, caBundle, frontEnd )
 {
     if( !m_AppConfig->GetValue<std::string>( s_AppDataKey_DeviceId, m_DeviceId ) )
     {
@@ -98,7 +96,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
             {
                 RequestOptions authOptions{ };
                 authOptions.m_CaBundle = m_CaBundle;
-                authOptions.m_UserAgent = s_UserAgent;
+                authOptions.m_UserAgent = m_UserAgent;
                 authOptions.m_ClientId = m_ClientId;
                 authOptions.m_ClientSecret = m_ClientSecret;
 
@@ -150,7 +148,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
             fetchOptions.m_QueryParams.push_back( { "limit", options.m_RedditLimit } );
             fetchOptions.m_UrlExt = options.m_SubredditName + '/' + options.m_RedditScope + ".json";
             fetchOptions.m_CaBundle = m_CaBundle;
-            fetchOptions.m_UserAgent = s_UserAgent;
+            fetchOptions.m_UserAgent = m_UserAgent;
             fetchOptions.m_AccessToken = m_AuthAccessToken;
 
             FetchSubredditPostsRequest fetchRequest{ };
@@ -213,7 +211,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 DownloadOptions options{ };
                 options.m_CaBundle = m_CaBundle;
                 options.m_Url = url;
-                options.m_UserAgent = s_UserAgent;
+                options.m_UserAgent = m_UserAgent;
                 options.m_BufferPtr = &buffer;
 
                 DownloadRequest request{ };
