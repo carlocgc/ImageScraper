@@ -118,7 +118,8 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                             if( authResponse.contains( "expires_in" ) )
                             {
                                 const int expireSeconds = authResponse[ "expires_in" ];
-                                m_AuthExpireSeconds = std::chrono::seconds{ expireSeconds };
+                                const int expireDelta = 180; // 3 minutes
+                                m_AuthExpireSeconds = std::chrono::seconds{ expireSeconds - expireDelta };
                                 m_TokenReceived = std::chrono::system_clock::now( );
 
                                 InfoLog( "[%s] Reddit authenticated successfully!", __FUNCTION__ );

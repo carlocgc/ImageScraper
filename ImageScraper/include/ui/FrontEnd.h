@@ -45,25 +45,18 @@ namespace ImageScraper
         GLFWwindow* GetWindow( ) const { return m_WindowPtr; };
         LogLevel GetLogLevel( ) const { return m_LogLevel; };
 
-        int InputTextCallback( ImGuiInputTextCallbackData* data );
-        static int InputTextCallbackProxy( ImGuiInputTextCallbackData* data )
-        {
-            FrontEnd* frontEnd = reinterpret_cast< FrontEnd* >( data->UserData );
-            return frontEnd->InputTextCallback( data );
-        }
-
     private:
         void ShowDemoWindow( );
 
         // TODO Move all input logic into components
         void UpdateProviderWidgets( );
         void UpdateRedditWidgets( );
-        void UpdateTwitterWidgets( );
+        void UpdateInstagramWidgets( );
         void UpdateRunButtonWidget( );
         void UpdateLogWindowWidgets( );
 
         UserInputOptions BuildRedditInputOptions( );
-        UserInputOptions BuildTwitterInputOptions( );
+        UserInputOptions BuildInstagramInputOptions( );
 
         void ResetInputFields( );
 
@@ -80,12 +73,12 @@ namespace ImageScraper
         RedditScopeTimeFrame m_RedditScopeTimeFrame{ RedditScopeTimeFrame::All };
         int m_RedditLimit{ };
 
-        // Twitter options
-        std::string m_TwitterHandle{ };
+        // Instagram options
+        std::string m_InstagramUser{ };
 
         // Log window
         RingBuffer<LogLine> m_LogContent;
-        ImGuiTextFilter m_Filter;
+        ImGuiTextFilter m_Filter{ };
         LogLevel m_LogLevel{ LogLevel::Error };
         bool m_AutoScroll{ true };
         bool m_DebugLogging{ false };

@@ -5,20 +5,20 @@
 #define REDDIT_LIMIT_MAX 100
 #define SUBREDDIT_NAME_MAX_LENGTH 64
 
-#define TWITTER_HANDLE_MAX_LENGTH 64
+#define INSTAGRAM_USER_MAX_LENGTH 64
 
 namespace ImageScraper
 {
     enum class ContentProvider : uint16_t
     {
         Reddit = 0,
-        Twitter = 1
+        Instagram = 1
     };
 
     static const char* s_ContentProviderStrings[ 2 ]
     {
         "Reddit",
-        "Twitter",
+        "Instagram",
     };
 
     enum class RedditScope : uint16_t
@@ -73,7 +73,7 @@ namespace ImageScraper
         std::string m_RedditScopeTimeFrame;
         std::string m_RedditLimit;
 
-        // Twitter
-        std::string m_TwitterHandle;
+        // Instagram
+        std::string m_InstagramUser;
     };
 }

@@ -127,14 +127,14 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
 
         inputOptions = BuildRedditInputOptions( );
         break;
-    case ImageScraper::ContentProvider::Twitter:
+    case ImageScraper::ContentProvider::Instagram:
 
-        if( m_TwitterHandle.empty( ) )
+        if( m_InstagramUser.empty( ) )
         {
             return false;
         }
 
-        inputOptions = BuildTwitterInputOptions( );
+        inputOptions = BuildInstagramInputOptions( );
         break;
     default:
         return false;
@@ -188,12 +188,6 @@ void ImageScraper::FrontEnd::Log( const LogLine& line )
     m_LogContent.Push( line );
 }
 
-int ImageScraper::FrontEnd::InputTextCallback( ImGuiInputTextCallbackData* data )
-{
-    // Not implemented
-    return 0;
-}
-
 void ImageScraper::FrontEnd::ShowDemoWindow( )
 {
     bool show = true;
@@ -223,8 +217,8 @@ void ImageScraper::FrontEnd::UpdateProviderWidgets( )
     case ImageScraper::ContentProvider::Reddit:
         UpdateRedditWidgets( );
         break;
-    case ImageScraper::ContentProvider::Twitter:
-        UpdateTwitterWidgets( );
+    case ImageScraper::ContentProvider::Instagram:
+        UpdateInstagramWidgets( );
         break;
     default:
         break;
@@ -242,7 +236,7 @@ void ImageScraper::FrontEnd::UpdateRedditWidgets( )
         char buffer[ SUBREDDIT_NAME_MAX_LENGTH ] = "";
         strcpy_s( buffer, SUBREDDIT_NAME_MAX_LENGTH, m_SubredditName.c_str( ) );
         ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Subreddit (e.g. Gifs)", buffer, SUBREDDIT_NAME_MAX_LENGTH, flags, &FrontEnd::InputTextCallbackProxy, this ) )
+        if( ImGui::InputText( "Subreddit (e.g. Gifs)", buffer, SUBREDDIT_NAME_MAX_LENGTH, flags, nullptr, this ) )
         {
             m_SubredditName = buffer;
         }
@@ -284,16 +278,16 @@ void ImageScraper::FrontEnd::UpdateRedditWidgets( )
     ImGui::EndChild( );
 }
 
-void ImageScraper::FrontEnd::UpdateTwitterWidgets( )
+void ImageScraper::FrontEnd::UpdateInstagramWidgets( )
 {
-    if( ImGui::BeginChild( "TwitterHandle", ImVec2( 500, 25 ), false ) )
+    if( ImGui::BeginChild( "InstagramUser", ImVec2( 500, 25 ), false ) )
     {
-        char buffer[ TWITTER_HANDLE_MAX_LENGTH ] = "";
-        strcpy_s( buffer, TWITTER_HANDLE_MAX_LENGTH, m_TwitterHandle.c_str( ) );
+        char buffer[ INSTAGRAM_USER_MAX_LENGTH ] = "";
+        strcpy_s( buffer, INSTAGRAM_USER_MAX_LENGTH, m_InstagramUser.c_str( ) );
         ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Twitter Handle", buffer, TWITTER_HANDLE_MAX_LENGTH, flags, &FrontEnd::InputTextCallbackProxy, this ) )
+        if( ImGui::InputText( "Instagram User", buffer, INSTAGRAM_USER_MAX_LENGTH, flags, nullptr, this ) )
         {
-            m_TwitterHandle = buffer;
+            m_InstagramUser = buffer;
         }
     }
 
@@ -484,10 +478,10 @@ ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildRedditInputOptions( 
     return options;
 }
 
-ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildTwitterInputOptions( )
+ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildInstagramInputOptions( )
 {
     UserInputOptions options{ };
-    options.m_TwitterHandle = m_TwitterHandle;
+    options.m_InstagramUser = m_InstagramUser;
     return options;
 }
 
