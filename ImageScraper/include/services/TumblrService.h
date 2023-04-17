@@ -21,5 +21,3 @@ namespace ImageScraper
         std::string m_ApiKey{ };
     };
 }
-
-

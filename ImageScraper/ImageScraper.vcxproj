@@ -211,6 +211,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClCompile Include="src\log\Logger.cpp" />
     <ClCompile Include="src\requests\reddit\AuthenticationRequest.cpp" />
     <ClCompile Include="src\requests\reddit\FetchSubredditPostsRequest.cpp" />
+    <ClCompile Include="src\requests\tumblr\RetrievePublishedPostsRequest.cpp" />
     <ClCompile Include="src\services\TumblrService.cpp" />
     <ClCompile Include="src\services\RedditService.cpp" />
     <ClCompile Include="src\ui\FrontEnd.cpp" />
@@ -291,6 +292,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\log\DevLogger.h" />
     <ClInclude Include="include\log\FrontEndLogger.h" />
     <ClInclude Include="include\log\LoggerBase.h" />
+    <ClInclude Include="include\requests\tumblr\RetrievePublishedPostsRequest.h" />
     <ClInclude Include="include\services\TumblrService.h" />
     <ClInclude Include="include\services\ServiceOptionTypes.h" />
     <ClInclude Include="include\utils\RedditUtils.h" />
@@ -318,6 +320,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\utilspp\TypeTrait.hpp" />
     <ClInclude Include="include\utils\EncryptionUtils.h" />
     <ClInclude Include="include\utils\StringUtils.h" />
+    <ClInclude Include="include\utils\TumblrUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="data\config.json" />

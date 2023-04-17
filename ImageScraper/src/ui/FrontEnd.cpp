@@ -113,6 +113,8 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
         return false;
     }
 
+    DebugLog( "[%s] Started processing user input...", __FUNCTION__ );
+
     UserInputOptions inputOptions{ };
 
     const ContentProvider provider = static_cast< ContentProvider >( m_ContentProvider );
@@ -125,6 +127,7 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
             return false;
         }
 
+        DebugLog( "[%s] Building Reddit user input data", __FUNCTION__ );
         inputOptions = BuildRedditInputOptions( );
         break;
     case ImageScraper::ContentProvider::Tumblr:
@@ -134,24 +137,26 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
             return false;
         }
 
+        DebugLog( "[%s] Building Tumblr user input data", __FUNCTION__ );
         inputOptions = BuildTumblrInputOptions( );
         break;
     default:
+        DebugLog( "[%s] Invalid ContentProvider, check ContentProvider constant", __FUNCTION__ );
         return false;
         break;
     }
-
-    DebugLog( "[%s] Processing input...", __FUNCTION__ );
 
     for( auto service : services )
     {
         if( service->HandleUserInput( inputOptions ) )
         {
+            DebugLog( "[%s] User input handled!", __FUNCTION__ );
             ResetInputFields( );
             return true;
         }
     }
 
+    DebugLog( "[%s] User input not handled, check for missing services!", __FUNCTION__ );
     return false;
 }
 
@@ -456,6 +461,7 @@ void ImageScraper::FrontEnd::UpdateLogWindowWidgets( )
 ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildRedditInputOptions( )
 {
     UserInputOptions options{ };
+    options.m_Provider = ContentProvider::Reddit;
     options.m_SubredditName = m_SubredditName;
 
     auto toLower = [ ]( unsigned char ch ) { return std::tolower( ch ); };
@@ -481,6 +487,7 @@ ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildRedditInputOptions( 
 ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildTumblrInputOptions( )
 {
     UserInputOptions options{ };
+    options.m_Provider = ContentProvider::Tumblr;
     options.m_TumblrUser = m_TumblrUser;
     return options;
 }
