@@ -6,6 +6,7 @@
 #include "log/ConsoleLogger.h"
 #include "services/RedditService.h"
 #include "services/TumblrService.h"
+#include "services/FourChanService.h"
 #include "async/TaskManager.h"
 #include "config/Config.h"
 #include "ui/FrontEnd.h"
@@ -47,6 +48,7 @@ ImageScraper::App::App( )
     const std::string caBundlePath = ( std::filesystem::current_path( ) / s_CaBundleFile ).generic_string( );
     m_Services.push_back( std::make_shared<RedditService>( m_AppConfig, m_UserConfig, caBundlePath, m_FrontEnd ) );
     m_Services.push_back( std::make_shared<TumblrService>( m_AppConfig, m_UserConfig, caBundlePath, m_FrontEnd ) );
+    m_Services.push_back( std::make_shared<FourChanService>( m_AppConfig, m_UserConfig, caBundlePath, m_FrontEnd ) );
 }
 
 int ImageScraper::App::Run( )

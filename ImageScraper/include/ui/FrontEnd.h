@@ -52,11 +52,13 @@ namespace ImageScraper
         void UpdateProviderWidgets( );
         void UpdateRedditWidgets( );
         void UpdateTumblrWidgets( );
+        void UpdateFourChanWidgets( );
         void UpdateRunButtonWidget( );
         void UpdateLogWindowWidgets( );
 
         UserInputOptions BuildRedditInputOptions( );
         UserInputOptions BuildTumblrInputOptions( );
+        UserInputOptions BuildFourChanInputOptions( );
 
         void ResetInputFields( );
 
@@ -71,10 +73,15 @@ namespace ImageScraper
         std::string m_SubredditName{ };
         RedditScope m_RedditScope{ RedditScope::Hot };
         RedditScopeTimeFrame m_RedditScopeTimeFrame{ RedditScopeTimeFrame::All };
-        int m_RedditLimit{ };
+        int m_RedditLimit{ REDDIT_LIMIT_MAX };
 
         // Tumblr options
         std::string m_TumblrUser{ };
+
+        // 4chan options
+        std::string m_FourChanBoard{ };
+        int m_FourChanMaxThreads{ FOURCHAN_THREAD_MAX };
+        int m_FourChanMaxMediaItems{ FOURCHAN_MEDIA_MAX };
 
         // Log window
         RingBuffer<LogLine> m_LogContent;

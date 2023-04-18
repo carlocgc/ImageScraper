@@ -209,9 +209,12 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\config\Config.cpp" />
     <ClCompile Include="src\log\Logger.cpp" />
+    <ClCompile Include="src\requests\fourchan\GetThreadsRequest.cpp" />
+    <ClCompile Include="src\requests\fourchan\GetBoardsRequest.cpp" />
     <ClCompile Include="src\requests\reddit\AuthenticationRequest.cpp" />
     <ClCompile Include="src\requests\reddit\FetchSubredditPostsRequest.cpp" />
     <ClCompile Include="src\requests\tumblr\RetrievePublishedPostsRequest.cpp" />
+    <ClCompile Include="src\services\FourChanService.cpp" />
     <ClCompile Include="src\services\TumblrService.cpp" />
     <ClCompile Include="src\services\RedditService.cpp" />
     <ClCompile Include="src\ui\FrontEnd.cpp" />
@@ -292,7 +295,10 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\log\DevLogger.h" />
     <ClInclude Include="include\log\FrontEndLogger.h" />
     <ClInclude Include="include\log\LoggerBase.h" />
+    <ClInclude Include="include\requests\fourchan\GetThreadsRequest.h" />
+    <ClInclude Include="include\requests\fourchan\GetBoardsRequest.h" />
     <ClInclude Include="include\requests\tumblr\RetrievePublishedPostsRequest.h" />
+    <ClInclude Include="include\services\FourChanService.h" />
     <ClInclude Include="include\services\TumblrService.h" />
     <ClInclude Include="include\services\ServiceOptionTypes.h" />
     <ClInclude Include="include\utils\RedditUtils.h" />

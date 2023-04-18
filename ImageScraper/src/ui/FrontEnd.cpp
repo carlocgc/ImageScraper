@@ -140,6 +140,16 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
         DebugLog( "[%s] Building Tumblr user input data", __FUNCTION__ );
         inputOptions = BuildTumblrInputOptions( );
         break;
+    case ImageScraper::ContentProvider::FourChan:
+
+        if( m_FourChanBoard.empty( ) )
+        {
+            return false;
+        }
+
+        DebugLog( "[%s] Building 4chan user input data", __FUNCTION__ );
+        inputOptions = BuildFourChanInputOptions( );
+        break;
     default:
         DebugLog( "[%s] Invalid ContentProvider, check ContentProvider constant", __FUNCTION__ );
         return false;
@@ -225,6 +235,9 @@ void ImageScraper::FrontEnd::UpdateProviderWidgets( )
     case ImageScraper::ContentProvider::Tumblr:
         UpdateTumblrWidgets( );
         break;
+    case ImageScraper::ContentProvider::FourChan:
+        UpdateFourChanWidgets( );
+        break;
     default:
         break;
     }
@@ -238,10 +251,10 @@ void ImageScraper::FrontEnd::UpdateRedditWidgets( )
 {
     if( ImGui::BeginChild( "SubredditName", ImVec2( 500, 25 ), false ) )
     {
-        char buffer[ SUBREDDIT_NAME_MAX_LENGTH ] = "";
-        strcpy_s( buffer, SUBREDDIT_NAME_MAX_LENGTH, m_SubredditName.c_str( ) );
+        char buffer[ INPUT_STRING_MAX ] = "";
+        strcpy_s( buffer, INPUT_STRING_MAX, m_SubredditName.c_str( ) );
         ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Subreddit (e.g. Gifs)", buffer, SUBREDDIT_NAME_MAX_LENGTH, flags, nullptr, this ) )
+        if( ImGui::InputText( "Subreddit (e.g. Gifs)", buffer, INPUT_STRING_MAX, flags, nullptr, this ) )
         {
             m_SubredditName = buffer;
         }
@@ -287,16 +300,50 @@ void ImageScraper::FrontEnd::UpdateTumblrWidgets( )
 {
     if( ImGui::BeginChild( "TumblrUser", ImVec2( 500, 25 ), false ) )
     {
-        char buffer[ TUMBLR_USER_MAX_LENGTH ] = "";
-        strcpy_s( buffer, TUMBLR_USER_MAX_LENGTH, m_TumblrUser.c_str( ) );
+        char buffer[ INPUT_STRING_MAX ] = "";
+        strcpy_s( buffer, INPUT_STRING_MAX, m_TumblrUser.c_str( ) );
         ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Tumblr User", buffer, TUMBLR_USER_MAX_LENGTH, flags, nullptr, this ) )
+        if( ImGui::InputText( "Tumblr User", buffer, INPUT_STRING_MAX, flags, nullptr, this ) )
         {
             m_TumblrUser = buffer;
         }
     }
 
     ImGui::EndChild( );
+}
+
+void ImageScraper::FrontEnd::UpdateFourChanWidgets( )
+{
+    if( ImGui::BeginChild( "FourChanBoard", ImVec2( 500, 25 ), false ) )
+    {
+        char buffer[ INPUT_STRING_MAX ] = "";
+        strcpy_s( buffer, INPUT_STRING_MAX, m_FourChanBoard.c_str( ) );
+        ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
+        if( ImGui::InputText( "Board (e.g. v, sci )", buffer, INPUT_STRING_MAX, flags, nullptr, this ) )
+        {
+            m_FourChanBoard = buffer;
+        }
+    }
+
+    ImGui::EndChild( );
+
+    /*
+    if( ImGui::BeginChild( "FourChanThreadMax", ImVec2( 500, 25 ), false ) )
+    {
+        ImGui::InputInt( "Max Threads", &m_FourChanMaxThreads );
+        m_FourChanMaxThreads = std::clamp( m_FourChanMaxThreads, FOURCHAN_THREAD_MIN, FOURCHAN_THREAD_MAX );
+    }
+
+    ImGui::EndChild( );
+
+    if( ImGui::BeginChild( "FourChanMediaMax", ImVec2( 500, 25 ), false ) )
+    {
+        ImGui::InputInt( "Max Media Items", &m_FourChanMaxMediaItems );
+        m_FourChanMaxMediaItems = std::clamp( m_FourChanMaxMediaItems, FOURCHAN_MEDIA_MIN, FOURCHAN_MEDIA_MAX );
+    }
+
+    ImGui::EndChild( );
+    */
 }
 
 void ImageScraper::FrontEnd::UpdateRunButtonWidget( )
@@ -489,6 +536,16 @@ ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildTumblrInputOptions( 
     UserInputOptions options{ };
     options.m_Provider = ContentProvider::Tumblr;
     options.m_TumblrUser = m_TumblrUser;
+    return options;
+}
+
+ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildFourChanInputOptions( )
+{
+    UserInputOptions options{ };
+    options.m_Provider = ContentProvider::FourChan;
+    options.m_FourChanBoard = m_FourChanBoard;
+    options.m_FourChanMaxThreads = m_FourChanMaxThreads;
+    options.m_FourChanMaxMediaItems = m_FourChanMaxMediaItems;
     return options;
 }
 

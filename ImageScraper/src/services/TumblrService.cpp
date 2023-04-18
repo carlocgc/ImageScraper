@@ -102,6 +102,8 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
 
             InfoLog( "[%s] Started downloading content, urls: %i", __FUNCTION__, mediaUrls.size( ) );
 
+            std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
+
             // Download images
             for( std::string& url : mediaUrls )
             {
@@ -142,7 +144,9 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
                 outfile.close( );
 
                 ++filesDownloaded;
-                InfoLog( "[%s] Download complete: %s", __FUNCTION__, filepath.c_str( ) );
+                InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, mediaUrls.size( ), filepath.c_str( ) );
+
+                std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
             }
 
             TaskManager::Instance( ).SubmitMain( onComplete, filesDownloaded );

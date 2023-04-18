@@ -140,6 +140,8 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 }
             }
 
+            std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
+
             RequestOptions fetchOptions{ };
             if( options.m_RedditScopeTimeFrame != "" )
             {
@@ -196,6 +198,8 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
             InfoLog( "[%s] Started downloading content, urls: %i", __FUNCTION__, urls.size( ) );
 
+            std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
+
             // Download images
             for( std::string& url : urls )
             {
@@ -236,7 +240,9 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 outfile.close( );
 
                 ++filesDownloaded;
-                InfoLog( "[%s] Download complete: %s", __FUNCTION__, filepath.c_str( ) );
+                InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, urls.size( ), filepath.c_str( ) );
+
+                std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
             }
 
             TaskManager::Instance( ).SubmitMain( onComplete, filesDownloaded );
