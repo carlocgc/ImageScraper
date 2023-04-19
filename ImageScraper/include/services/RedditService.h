@@ -32,6 +32,9 @@ namespace ImageScraper
         std::string m_ClientId{ };
         std::string m_ClientSecret{ };
 
+        // Used for pagination
+        std::string m_AfterParam{ };
+
         std::string m_AuthAccessToken{ };
         std::chrono::seconds m_AuthExpireSeconds{ };
         std::chrono::system_clock::time_point m_TokenReceived{ };

@@ -287,15 +287,13 @@ void ImageScraper::FrontEnd::UpdateRedditWidgets( )
         ImGui::EndChild( );
     }
 
-    /*
-    if( ImGui::BeginChild( "RedditLimit", ImVec2( 500, 25 ), false ) )
+    if( ImGui::BeginChild( "RedditMaxMediaItems", ImVec2( 500, 25 ), false ) )
     {
-        ImGui::InputInt( "Limit", &m_RedditLimit );
-        m_RedditLimit = std::clamp( m_RedditLimit, REDDIT_LIMIT_MIN, REDDIT_LIMIT_MAX );
+        ImGui::InputInt( "Max Downloads", &m_RedditMaxMediaItems );
+        m_RedditMaxMediaItems = std::clamp( m_RedditMaxMediaItems, REDDIT_LIMIT_MIN, REDDIT_LIMIT_MAX );
     }
 
     ImGui::EndChild( );
-    */
 }
 
 void ImageScraper::FrontEnd::UpdateTumblrWidgets( )
@@ -528,7 +526,7 @@ ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildRedditInputOptions( 
         options.m_RedditScopeTimeFrame = scopeTimeFrame;
     }
 
-    options.m_RedditLimit = std::to_string( m_RedditLimit );
+    options.m_RedditMaxMediaItems = m_RedditMaxMediaItems;
 
     return options;
 }

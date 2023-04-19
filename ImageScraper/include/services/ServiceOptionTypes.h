@@ -2,12 +2,14 @@
 #include <string>
 
 #define INPUT_STRING_MAX 64
-#define REDDIT_LIMIT_MIN 25
-#define REDDIT_LIMIT_MAX 100
+#define REDDIT_LIMIT_MIN 1
+#define REDDIT_LIMIT_DEFAULT 1000
+#define REDDIT_LIMIT_MAX 10000
 #define FOURCHAN_THREAD_MIN 1
 #define FOURCHAN_THREAD_MAX 50
 #define FOURCHAN_MEDIA_MIN 1
-#define FOURCHAN_MEDIA_MAX 100
+#define FOURCHAN_MEDIA_DEFAULT 1000
+#define FOURCHAN_MEDIA_MAX 10000
 
 
 namespace ImageScraper
@@ -76,7 +78,7 @@ namespace ImageScraper
         std::string m_SubredditName;
         std::string m_RedditScope;
         std::string m_RedditScopeTimeFrame;
-        std::string m_RedditLimit;
+        int m_RedditMaxMediaItems;
 
         // Tumblr
         std::string m_TumblrUser;

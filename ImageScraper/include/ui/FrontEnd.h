@@ -73,7 +73,7 @@ namespace ImageScraper
         std::string m_SubredditName{ };
         RedditScope m_RedditScope{ RedditScope::Hot };
         RedditScopeTimeFrame m_RedditScopeTimeFrame{ RedditScopeTimeFrame::All };
-        int m_RedditLimit{ REDDIT_LIMIT_MAX };
+        int m_RedditMaxMediaItems{ REDDIT_LIMIT_DEFAULT };
 
         // Tumblr options
         std::string m_TumblrUser{ };
@@ -81,7 +81,7 @@ namespace ImageScraper
         // 4chan options
         std::string m_FourChanBoard{ };
         int m_FourChanMaxThreads{ FOURCHAN_THREAD_MAX };
-        int m_FourChanMaxMediaItems{ FOURCHAN_MEDIA_MAX };
+        int m_FourChanMaxMediaItems{ FOURCHAN_MEDIA_DEFAULT };
 
         // Log window
         RingBuffer<LogLine> m_LogContent;
