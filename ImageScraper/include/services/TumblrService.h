@@ -1,11 +1,15 @@
 #pragma once
 
 #include "services/Service.h"
+#include "nlohmann/json.hpp"
 
 #include <string>
 
+
 namespace ImageScraper
 {
+    using Json = nlohmann::json;
+
     class FrontEnd;
     class JsonFile;
 
@@ -17,6 +21,8 @@ namespace ImageScraper
 
     private:
         void DownloadContent( const UserInputOptions& inputOptions );
+        std::vector<std::string> GetMediaUrlsFromResponse( const Json& response );
+
         static const std::string s_UserDataKey_ApiKey;
         std::string m_ApiKey{ };
     };

@@ -325,7 +325,6 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\utilspp\TypeTrait.hpp" />
     <ClInclude Include="include\utils\EncryptionUtils.h" />
     <ClInclude Include="include\utils\StringUtils.h" />
-    <ClInclude Include="include\utils\TumblrUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="data\config.json" />

@@ -8,7 +8,6 @@
 #include "utils/DownloadUtils.h"
 #include "requests/DownloadRequestTypes.h"
 #include "requests/DownloadRequest.h"
-#include "utils/TumblrUtils.h"
 
 const std::string ImageScraper::TumblrService::s_UserDataKey_ApiKey = "tumblr_api_key";
 
@@ -79,7 +78,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
             // Parse response
             json response = json::parse( fetchResult.m_Response );
             std::vector<std::string> mediaUrls{ };
-            mediaUrls = Tumblr::GetMediaUrlsFromResponse( response );
+            mediaUrls = GetMediaUrlsFromResponse( response );
 
             if( mediaUrls.empty( ) )
             {
@@ -153,4 +152,32 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
         } );
 
     ( void )task;
+}
+
+std::vector<std::string> ImageScraper::TumblrService::GetMediaUrlsFromResponse( const Json& response )
+{
+    std::vector<std::string> mediaUrls{ };
+
+    for( const auto& post : response[ "response" ][ "posts" ] )
+    {
+        if( post[ "type" ] == "photo" )
+        {
+            for( const auto& photo : post[ "photos" ] )
+            {
+                if( photo.contains( "original_size" ) )
+                {
+                    mediaUrls.push_back( photo[ "original_size" ][ "url" ] );
+                }
+            }
+        }
+        else if( post[ "type" ] == "video" )
+        {
+            if( post.contains( "video_url" ) )
+            {
+                mediaUrls.push_back( post[ "video_url" ] );
+            }
+        }
+    }
+
+    return mediaUrls;
 }
