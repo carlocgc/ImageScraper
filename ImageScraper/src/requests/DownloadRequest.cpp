@@ -86,7 +86,7 @@ size_t ImageScraper::DownloadRequest::WriteCallback( char* contents, size_t size
     m_BufferPtr->insert( m_BufferPtr->begin( ) + m_BytesWritten, contents, contents + realsize );
     m_BytesWritten += realsize;
 
-    DebugLog( "[%s] DownloadRequest %i bytes written...", __FUNCTION__, static_cast< int >( m_BytesWritten ) );
+    DebugLog( "[%s] %i bytes written.", __FUNCTION__, static_cast< int >( m_BytesWritten ) );
     return realsize;
 }
 
