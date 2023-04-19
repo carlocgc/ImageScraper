@@ -111,6 +111,8 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
 
             int filesDownloaded = 0;
 
+            const int totalDownloads = static_cast< int >( mediaUrls.size( ) );
+
             InfoLog( "[%s] Started downloading content, urls: %i", __FUNCTION__, mediaUrls.size( ) );
 
             std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
@@ -142,7 +144,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
                 options.m_UserAgent = m_UserAgent;
                 options.m_BufferPtr = &buffer;
 
-                DownloadRequest request{ };
+                DownloadRequest request{ m_FrontEnd };
                 RequestResult result = request.Perform( options );
                 if( !result.m_Success )
                 {
@@ -164,7 +166,10 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
                 outfile.close( );
 
                 ++filesDownloaded;
-                InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, mediaUrls.size( ), filepath.c_str( ) );
+
+                m_FrontEnd->UpdateTotalDownloadsProgress( filesDownloaded, totalDownloads );
+
+                InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, totalDownloads, filepath.c_str( ) );
 
                 std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
             }

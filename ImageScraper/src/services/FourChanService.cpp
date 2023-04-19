@@ -157,6 +157,8 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
             int filesDownloaded = 0;
 
+            const int totalDownloads = static_cast< int >( mediaUrls.size( ) );
+
             std::vector<char> buffer{ };
 
             // Download everything
@@ -177,7 +179,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 downloadOptions.m_UserAgent = m_UserAgent;
                 downloadOptions.m_BufferPtr = &buffer;
 
-                DownloadRequest request{ };
+                DownloadRequest request{ m_FrontEnd };
                 RequestResult result = request.Perform( downloadOptions );
                 if( !result.m_Success )
                 {
@@ -202,7 +204,9 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
                 ++filesDownloaded;
 
-                InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, mediaUrls.size(), filepath.c_str( ) );
+                m_FrontEnd->UpdateTotalDownloadsProgress( filesDownloaded, totalDownloads );
+
+                InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, totalDownloads, filepath.c_str( ) );
             }
 
             TaskManager::Instance( ).SubmitMain( onComplete, filesDownloaded );

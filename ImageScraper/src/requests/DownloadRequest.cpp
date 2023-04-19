@@ -4,12 +4,18 @@
 #include "curlpp/Options.hpp"
 #include "curlpp/cURLpp.hpp"
 #include "curlpp/Easy.hpp"
+#include "ui/FrontEnd.h"
 
 #include <sstream>
+#include <cmath>
+
+ImageScraper::DownloadRequest::DownloadRequest( std::shared_ptr<FrontEnd> frontEnd ) : m_FrontEnd{ frontEnd }
+{
+}
 
 ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const DownloadOptions& options )
 {
-    DebugLog( "[%s] DownloadRequest started! URL: %s", __FUNCTION__, options.m_Url.c_str() );
+    DebugLog( "[%s] DownloadRequest started! URL: %s", __FUNCTION__, options.m_Url.c_str( ) );
 
     if( options.m_BufferPtr == nullptr )
     {
@@ -25,12 +31,21 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
         curlpp::Cleanup cleanup{ };
         curlpp::Easy request{ };
 
-        // Set the write callback
         using namespace std::placeholders;
-        curlpp::types::WriteFunctionFunctor functor = std::bind( &DownloadRequest::WriteCallback, this, _1, _2, _3 );
-        curlpp::options::WriteFunction* writeCallback = new curlpp::options::WriteFunction( functor );
 
+        // Set the write callback
+        curlpp::types::WriteFunctionFunctor writeFunc = std::bind( &DownloadRequest::WriteCallback, this, _1, _2, _3 );
+        curlpp::options::WriteFunction* writeCallback = new curlpp::options::WriteFunction( writeFunc );
         request.setOpt( writeCallback );
+
+        // Set the progress callback
+
+
+        curlpp::types::ProgressFunctionFunctor progressFunc = std::bind( &DownloadRequest::ProgressCallback, this, _1, _2, _3, _4 );
+        curlpp::options::ProgressFunction* progressCallback = new curlpp::options::ProgressFunction( progressFunc );
+        request.setOpt( progressCallback );
+        request.setOpt( new curlpp::options::NoProgress( false ) );
+
         request.setOpt( new curlpp::options::CaInfo( options.m_CaBundle ) );
         request.setOpt( new curlpp::options::Url( options.m_Url ) );
         request.setOpt( new curlpp::options::UserAgent( options.m_UserAgent ) );
@@ -73,4 +88,25 @@ size_t ImageScraper::DownloadRequest::WriteCallback( char* contents, size_t size
 
     DebugLog( "[%s] DownloadRequest %i bytes written...", __FUNCTION__, static_cast< int >( m_BytesWritten ) );
     return realsize;
+}
+
+int ImageScraper::DownloadRequest::ProgressCallback( double dltotal, double dlnow, double ultotal, double ulnow )
+{
+    if( m_FrontEnd )
+    {
+        const float current = static_cast< float >( dlnow );
+        const float total = static_cast< float >( dltotal );
+
+        if( !IsFloatZero( current ) && !IsFloatZero( total ) )
+        {
+            m_FrontEnd->UpdateCurrentDownloadProgress( current / total );
+        }
+    }
+
+    return 0;
+}
+
+bool ImageScraper::DownloadRequest::IsFloatZero( float value, float epsilon /*= 1e-6 */ )
+{
+    return std::abs( value ) < epsilon;
 }

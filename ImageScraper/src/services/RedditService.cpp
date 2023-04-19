@@ -262,7 +262,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 options.m_UserAgent = m_UserAgent;
                 options.m_BufferPtr = &buffer;
 
-                DownloadRequest request{ };
+                DownloadRequest request{ m_FrontEnd };
                 RequestResult result = request.Perform( options );
                 if( !result.m_Success )
                 {
