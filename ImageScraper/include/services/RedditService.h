@@ -18,6 +18,8 @@ namespace ImageScraper
     public:
         RedditService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<FrontEnd> frontEnd );
         bool HandleUserInput( const UserInputOptions& options ) override;
+    protected:
+        bool IsCancelled( ) override;
 
     private:
         const bool IsAuthenticated( ) const;

@@ -25,10 +25,14 @@ namespace ImageScraper
         virtual bool HandleUserInput( const UserInputOptions& options ) = 0;
 
     protected:
+        virtual bool IsCancelled( ) = 0;
+
         std::shared_ptr<JsonFile> m_AppConfig{ nullptr };
         std::shared_ptr<JsonFile> m_UserConfig{ nullptr };
         std::string m_UserAgent{ "Windows:ImageScraper:v0.1:carlocgc1@gmail.com" };
         std::string m_CaBundle{ };
         std::shared_ptr<FrontEnd> m_FrontEnd{ nullptr };
+
+
     };
 }

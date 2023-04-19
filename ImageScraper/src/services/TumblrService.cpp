@@ -37,6 +37,11 @@ bool ImageScraper::TumblrService::HandleUserInput( const UserInputOptions& optio
     return true;
 }
 
+bool ImageScraper::TumblrService::IsCancelled( )
+{
+    return m_FrontEnd->IsCancelled( );
+}
+
 void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& inputOptions )
 {
     InfoLog( "[%s] Starting Tumblr media download!", __FUNCTION__ );
@@ -56,6 +61,13 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
 
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, options = inputOptions, onComplete, onFail ]( )
         {
+            if( IsCancelled( ) )
+            {
+                InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
+                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                return;
+            }
+
             RequestOptions retrievePostsOptions{ };
             retrievePostsOptions.m_QueryParams.push_back( { "api_key", m_ApiKey } );
             retrievePostsOptions.m_UrlExt = options.m_TumblrUser + ".tumblr.com/posts";
@@ -106,6 +118,15 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
             // Download images
             for( std::string& url : mediaUrls )
             {
+                if( IsCancelled( ) )
+                {
+                    InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
+                    TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                    return;
+                }
+
+                std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
+
                 const std::string newUrl = DownloadHelpers::RedirectToPreferredFileTypeUrl( url );
 
                 if( newUrl != "" )

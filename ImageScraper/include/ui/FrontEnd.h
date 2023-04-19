@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <atomic>
 
 #include "log/Logger.h"
 #include "collections/RingBuffer.h"
@@ -42,6 +43,7 @@ namespace ImageScraper
         void SetInputState( const InputState& state );
         void Render( );
         void Log( const LogLine& line );
+        bool IsCancelled( ) { return m_Cancelled.load( ); }
         GLFWwindow* GetWindow( ) const { return m_WindowPtr; };
         LogLevel GetLogLevel( ) const { return m_LogLevel; };
 
@@ -53,14 +55,14 @@ namespace ImageScraper
         void UpdateRedditWidgets( );
         void UpdateTumblrWidgets( );
         void UpdateFourChanWidgets( );
-        void UpdateRunButtonWidget( );
+        void UpdateCommonWidgets( );
         void UpdateLogWindowWidgets( );
 
         UserInputOptions BuildRedditInputOptions( );
         UserInputOptions BuildTumblrInputOptions( );
         UserInputOptions BuildFourChanInputOptions( );
 
-        void ResetInputFields( );
+        void Reset( );
 
         GLFWwindow* m_WindowPtr{ nullptr };
         InputState m_InputState{ InputState::Free };
@@ -68,6 +70,9 @@ namespace ImageScraper
         // Generic options
         int m_ContentProvider{ };
         bool m_StartProcess{ false };
+        bool m_Running{ false };
+
+        std::atomic_bool m_Cancelled{ false };
 
         // Reddit options
         std::string m_SubredditName{ };

@@ -1,7 +1,7 @@
 #include "ui/FrontEnd.h"
 #include "log/Logger.h"
-#include "services/Service.h"
 #include "config/Config.h"
+
 #include <algorithm>
 
 ImageScraper::FrontEnd::FrontEnd( int maxLogLines )
@@ -91,14 +91,35 @@ void ImageScraper::FrontEnd::Update( )
 
     ImGui::DockSpaceOverViewport( );
 
-    ImGui::BeginDisabled( m_InputState == InputState::Blocked );
+    // Demo window start
 
     ShowDemoWindow( );
+
+    // Demo window End
+
+    // Input window start
+
+    ImGui::SetNextWindowSize( ImVec2( 640, 200 ), ImGuiCond_FirstUseEver );
+
+    if( !ImGui::Begin( "Input", nullptr ) )
+    {
+        ImGui::End( );
+        return;
+    }
+
     UpdateProviderWidgets( );
 
-    ImGui::EndDisabled( );
+    UpdateCommonWidgets( );
+
+    ImGui::End( );
+
+    // Input window end
+
+    // Log window start
 
     UpdateLogWindowWidgets( );
+
+    // Log window End
 }
 
 bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Service>>& services )
@@ -114,6 +135,9 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
     }
 
     DebugLog( "[%s] Started processing user input...", __FUNCTION__ );
+
+    m_StartProcess = false;
+    m_Running = true;
 
     UserInputOptions inputOptions{ };
 
@@ -161,7 +185,6 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
         if( service->HandleUserInput( inputOptions ) )
         {
             DebugLog( "[%s] User input handled!", __FUNCTION__ );
-            ResetInputFields( );
             return true;
         }
     }
@@ -211,12 +234,7 @@ void ImageScraper::FrontEnd::ShowDemoWindow( )
 
 void ImageScraper::FrontEnd::UpdateProviderWidgets( )
 {
-    ImGui::SetNextWindowSize( ImVec2( 640, 200 ), ImGuiCond_FirstUseEver );
-    if( !ImGui::Begin( "Input", nullptr ) )
-    {
-        ImGui::End( );
-        return;
-    }
+    ImGui::BeginDisabled( m_InputState == InputState::Blocked );
 
     if( ImGui::BeginChild( "ContentProvider", ImVec2( 500, 25 ), false ) )
     {
@@ -242,9 +260,7 @@ void ImageScraper::FrontEnd::UpdateProviderWidgets( )
         break;
     }
 
-    UpdateRunButtonWidget( );
-
-    ImGui::End( );
+    ImGui::EndDisabled( );
 }
 
 void ImageScraper::FrontEnd::UpdateRedditWidgets( )
@@ -346,14 +362,33 @@ void ImageScraper::FrontEnd::UpdateFourChanWidgets( )
     */
 }
 
-void ImageScraper::FrontEnd::UpdateRunButtonWidget( )
+void ImageScraper::FrontEnd::UpdateCommonWidgets( )
 {
-    if( ImGui::BeginChild( "RunButton", ImVec2( 300, 0 ), false ) )
+    if( !m_Running )
     {
-        m_StartProcess = ImGui::Button( "Run", ImVec2( 100, 40 ) );
-    }
+        if( ImGui::BeginChild( "RunButton", ImVec2( 300, 0 ), false ) )
+        {
+            m_StartProcess = ImGui::Button( "Run", ImVec2( 100, 40 ) );
+        }
 
-    ImGui::EndChild( );
+        ImGui::EndChild( );
+    }
+    else
+    {
+        ImGui::BeginDisabled( m_Cancelled.load( ) );
+
+        if( ImGui::BeginChild( "CancelButton", ImVec2( 300, 0 ), false ) )
+        {
+            if( ImGui::Button( "Cancel", ImVec2( 100, 40 ) ) )
+            {
+                m_Cancelled.store( true );
+            }
+        }
+
+        ImGui::EndChild( );
+
+        ImGui::EndDisabled( );
+    }
 }
 
 void ImageScraper::FrontEnd::UpdateLogWindowWidgets( )
@@ -549,12 +584,18 @@ ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildFourChanInputOptions
     return options;
 }
 
-void ImageScraper::FrontEnd::ResetInputFields( )
+void ImageScraper::FrontEnd::Reset( )
 {
-    m_StartProcess = false;
+    m_Running = false;
+    m_Cancelled.store( false );
 }
 
 void ImageScraper::FrontEnd::SetInputState( const InputState& state )
 {
     m_InputState = state;
+
+    if( m_InputState == InputState::Free )
+    {
+        Reset( );
+    }
 }

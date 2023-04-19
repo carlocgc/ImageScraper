@@ -54,6 +54,11 @@ bool ImageScraper::RedditService::HandleUserInput( const UserInputOptions& optio
     return true;
 }
 
+bool ImageScraper::RedditService::IsCancelled( )
+{
+    return m_FrontEnd->IsCancelled( );
+}
+
 const bool ImageScraper::RedditService::IsAuthenticated( ) const
 {
     if( m_AuthAccessToken == "" )
@@ -91,6 +96,13 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, options = inputOptions, onComplete, onFail ]( )
         {
+            if( IsCancelled( ) )
+            {
+                InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
+                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                return;
+            }
+
             if( !IsAuthenticated( ) )
             {
                 RequestOptions authOptions{ };
@@ -139,13 +151,20 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 }
             }
 
-            std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
-
             std::vector<std::string> mediaUrls{ };
             int pageNum = 1;
 
             do
             {
+                if( IsCancelled( ) )
+                {
+                    InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
+                    TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                    return;
+                }
+
+                std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
+
                 RequestOptions fetchOptions{ };
 
                 if( !options.m_RedditScopeTimeFrame.empty() )
@@ -188,8 +207,6 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 DebugLog( "[%s] Response: %s", __FUNCTION__, fetchResult.m_Response.c_str( ) );
 
                 ++pageNum;
-
-                std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
             }
             while( !m_AfterParam.empty( ) && static_cast<int>( mediaUrls.size() ) < options.m_RedditMaxMediaItems ); // Pagination not finished or limit reached
 
@@ -212,15 +229,22 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 return;
             }
 
-            int filesDownloaded = 0;
-
             InfoLog( "[%s] Started downloading content, urls: %i", __FUNCTION__, mediaUrls.size( ) );
 
-            std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
+            int filesDownloaded = 0;
 
             // Download images
             for( std::string& url : mediaUrls )
             {
+                if( IsCancelled( ) )
+                {
+                    InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
+                    TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                    return;
+                }
+
+                std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
+
                 const std::string newUrl = DownloadHelpers::RedirectToPreferredFileTypeUrl( url );
 
                 if( newUrl != "" )
@@ -259,8 +283,6 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
                 ++filesDownloaded;
                 InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, mediaUrls.size( ), filepath.c_str( ) );
-
-                std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
             }
 
             TaskManager::Instance( ).SubmitMain( onComplete, filesDownloaded );

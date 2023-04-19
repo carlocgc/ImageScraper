@@ -27,6 +27,11 @@ bool ImageScraper::FourChanService::HandleUserInput( const UserInputOptions& opt
     return false;
 }
 
+bool ImageScraper::FourChanService::IsCancelled( )
+{
+    return m_FrontEnd->IsCancelled( );
+}
+
 void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inputOptions )
 {
     InfoLog( "[%s] Starting 4chan media download!", __FUNCTION__ );
@@ -46,6 +51,13 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, options = inputOptions, onComplete, onFail ]( )
         {
+            if( IsCancelled( ) )
+            {
+                InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
+                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                return;
+            }
+
             // Get all board data
 
             RequestOptions getBoardOptions{ };
@@ -81,6 +93,15 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
             for( int i = 1; i <= pages; ++i )
             {
+                if( IsCancelled( ) )
+                {
+                    InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
+                    TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                    return;
+                }
+
+                std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
+
                 RequestOptions getThreadOptions{ };
                 getThreadOptions.m_CaBundle = m_CaBundle;
                 getThreadOptions.m_UserAgent = m_UserAgent;
@@ -112,8 +133,6 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 {
                     mediaUrls.push_back( "https://i.4cdn.org/" + options.m_FourChanBoard + "/" + filename );
                 }
-
-                std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
             }
 
             if( mediaUrls.empty( ) )
@@ -143,6 +162,15 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
             // Download everything
             for( std::string& url : mediaUrls )
             {
+                if( IsCancelled( ) )
+                {
+                    InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
+                    TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                    return;
+                }
+
+                std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
+
                 DownloadOptions downloadOptions{ };
                 downloadOptions.m_CaBundle = m_CaBundle;
                 downloadOptions.m_Url = url;
@@ -175,8 +203,6 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 ++filesDownloaded;
 
                 InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, mediaUrls.size(), filepath.c_str( ) );
-
-                std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
             }
 
             TaskManager::Instance( ).SubmitMain( onComplete, filesDownloaded );
