@@ -226,6 +226,19 @@ void ImageScraper::FrontEnd::Log( const LogLine& line )
     m_LogContent.Push( line );
 }
 
+void ImageScraper::FrontEnd::UpdateCurrentDownloadProgress( const float progress )
+{
+    m_CurrentDownloadProgress.store( progress, std::memory_order_relaxed );
+}
+
+void ImageScraper::FrontEnd::UpdateTotalDownloadsProgress( const int current, const int total )
+{
+    m_CurrentDownloadNum.store( current );
+    m_TotalDownloadsCount.store( total );
+    const float progress = static_cast< float >( current ) / static_cast< float >( total );
+    m_TotalProgress.store( progress );
+}
+
 void ImageScraper::FrontEnd::ShowDemoWindow( )
 {
     bool show = true;
@@ -426,7 +439,8 @@ void ImageScraper::FrontEnd::UpdateLogWindowWidgets( )
     ImGui::Separator( );
 
     // Reserve enough left-over height for 1 separator + 1 input text
-    const float footer_height_to_reserve = ImGui::GetStyle( ).ItemSpacing.y + ImGui::GetFrameHeightWithSpacing( );
+    // *2 to allow for progress bars
+    const float footer_height_to_reserve = ImGui::GetStyle( ).ItemSpacing.y + ImGui::GetFrameHeightWithSpacing( ) * 2;
     if( ImGui::BeginChild( "ScrollingRegion", ImVec2( 0, -footer_height_to_reserve ), false, ImGuiWindowFlags_HorizontalScrollbar ) )
     {
         if( ImGui::BeginPopupContextWindow( ) )
@@ -537,6 +551,21 @@ void ImageScraper::FrontEnd::UpdateLogWindowWidgets( )
 
     ImGui::Separator( );
 
+    const float progressLabelWidth = 150.f;
+
+    ImGui::ProgressBar( m_CurrentDownloadProgress, ImVec2( ImGui::GetStyle( ).ItemInnerSpacing.x - progressLabelWidth, 0.0f ) );
+    ImGui::SameLine( 0.0f, ImGui::GetStyle( ).ItemInnerSpacing.x );
+    ImGui::Text( "Current Download" );
+
+    char buf[ 32 ] = "";
+    if( m_Running )
+    {
+        sprintf_s( buf, 32, "%d/%d", m_CurrentDownloadNum.load( ), m_TotalDownloadsCount.load( ) );
+    }
+    ImGui::ProgressBar( m_TotalProgress, ImVec2( ImGui::GetStyle( ).ItemInnerSpacing.x - progressLabelWidth, 0.f ), buf );
+    ImGui::SameLine( 0.0f, ImGui::GetStyle( ).ItemInnerSpacing.x );
+    ImGui::Text( "Total Downloads" );
+
     ImGui::End( );
 }
 
@@ -588,6 +617,10 @@ void ImageScraper::FrontEnd::Reset( )
 {
     m_Running = false;
     m_Cancelled.store( false );
+    m_CurrentDownloadNum.store( 0 );
+    m_TotalDownloadsCount.store( 0 );
+    m_CurrentDownloadProgress.store( 0.f );
+    m_TotalProgress.store( 0.f );
 }
 
 void ImageScraper::FrontEnd::SetInputState( const InputState& state )

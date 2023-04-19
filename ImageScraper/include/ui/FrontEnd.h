@@ -44,6 +44,9 @@ namespace ImageScraper
         void Render( );
         void Log( const LogLine& line );
         bool IsCancelled( ) { return m_Cancelled.load( ); }
+        void UpdateCurrentDownloadProgress( const float progress );
+        void UpdateTotalDownloadsProgress( const int current, const int total );
+
         GLFWwindow* GetWindow( ) const { return m_WindowPtr; };
         LogLevel GetLogLevel( ) const { return m_LogLevel; };
 
@@ -95,6 +98,12 @@ namespace ImageScraper
         bool m_AutoScroll{ true };
         bool m_DebugLogging{ false };
         bool m_ScrollToBottom{ false };
+
+        // Progress
+        std::atomic<float> m_CurrentDownloadProgress{ 0.f };
+        std::atomic<float> m_TotalProgress{ 0.f };
+        std::atomic_int m_CurrentDownloadNum{ 0 };
+        std::atomic_int m_TotalDownloadsCount{ 0 };
     };
 }
 

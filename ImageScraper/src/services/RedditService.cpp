@@ -208,7 +208,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
                 ++pageNum;
             }
-            while( !m_AfterParam.empty( ) && static_cast<int>( mediaUrls.size() ) < options.m_RedditMaxMediaItems ); // Pagination not finished or limit reached
+            while( !m_AfterParam.empty( ) && static_cast<int>( mediaUrls.size() ) < options.m_RedditMaxMediaItems );
 
             if( mediaUrls.empty( ) )
             {
@@ -232,6 +232,8 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
             InfoLog( "[%s] Started downloading content, urls: %i", __FUNCTION__, mediaUrls.size( ) );
 
             int filesDownloaded = 0;
+
+            const int totalDownloads = static_cast<int>( mediaUrls.size( ) );
 
             // Download images
             for( std::string& url : mediaUrls )
@@ -282,7 +284,10 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 outfile.close( );
 
                 ++filesDownloaded;
-                InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, mediaUrls.size( ), filepath.c_str( ) );
+
+                m_FrontEnd->UpdateTotalDownloadsProgress( filesDownloaded, totalDownloads );
+
+                InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, totalDownloads, filepath.c_str( ) );
             }
 
             TaskManager::Instance( ).SubmitMain( onComplete, filesDownloaded );
