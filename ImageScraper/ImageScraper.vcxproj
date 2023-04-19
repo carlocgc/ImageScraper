@@ -301,7 +301,6 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\services\FourChanService.h" />
     <ClInclude Include="include\services\TumblrService.h" />
     <ClInclude Include="include\services\ServiceOptionTypes.h" />
-    <ClInclude Include="include\utils\RedditUtils.h" />
     <ClInclude Include="include\requests\DownloadRequest.h" />
     <ClInclude Include="include\requests\DownloadRequestTypes.h" />
     <ClInclude Include="include\requests\reddit\AuthenticationRequest.h" />

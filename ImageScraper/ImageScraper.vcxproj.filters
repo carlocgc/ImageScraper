@@ -230,9 +230,6 @@
     <ClInclude Include="include\requests\RequestTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\utils\RedditUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\requests\DownloadRequestTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>

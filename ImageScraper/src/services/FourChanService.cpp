@@ -68,7 +68,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
             // Get page count for board
 
             json getBoardsResponse = json::parse( getBoardResult.m_Response );
-            int pages = GetPageCountForBoard( options.m_FourChanBoard, getBoardsResponse );
+            const int pages = GetPageCountForBoard( options.m_FourChanBoard, getBoardsResponse );
 
             if( pages <= 0 )
             {
@@ -213,7 +213,7 @@ int ImageScraper::FourChanService::GetPageCountForBoard( const std::string& boar
     catch( const Json::exception& e )
     {
         const std::string error = e.what( );
-        ErrorLog( "[%s] GetPageCountForBoard Error parsing response!, error: %s", error.c_str( ) );
+        ErrorLog( "[%s] GetPageCountForBoard Error parsing response!, error: %s", __FUNCTION__, error.c_str( ) );
     }
 
     return pages;
@@ -254,7 +254,7 @@ std::vector<std::string> ImageScraper::FourChanService::GetFileNamesFromResponse
     catch( const Json::exception& e )
     {
         const std::string error = e.what( );
-        ErrorLog( "[%s] GetFileNamesFromResponse Error parsing response!, error: %s", error.c_str() );
+        ErrorLog( "[%s] GetFileNamesFromResponse Error parsing response!, error: %s", __FUNCTION__, error.c_str() );
     }
 
     return filenames;

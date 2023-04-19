@@ -287,6 +287,7 @@ void ImageScraper::FrontEnd::UpdateRedditWidgets( )
         ImGui::EndChild( );
     }
 
+    /*
     if( ImGui::BeginChild( "RedditLimit", ImVec2( 500, 25 ), false ) )
     {
         ImGui::InputInt( "Limit", &m_RedditLimit );
@@ -294,6 +295,7 @@ void ImageScraper::FrontEnd::UpdateRedditWidgets( )
     }
 
     ImGui::EndChild( );
+    */
 }
 
 void ImageScraper::FrontEnd::UpdateTumblrWidgets( )

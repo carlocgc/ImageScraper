@@ -4,7 +4,6 @@
 #include "requests/reddit/AuthenticationRequest.h"
 #include "requests/DownloadRequestTypes.h"
 #include "requests/DownloadRequest.h"
-#include "utils/RedditUtils.h"
 #include "utils/DownloadUtils.h"
 #include "log/Logger.h"
 #include "async/TaskManager.h"
@@ -16,7 +15,7 @@
 #include <map>
 
 using namespace ImageScraper::Reddit;
-using json = nlohmann::json;
+using Json = nlohmann::json;
 
 const std::string ImageScraper::RedditService::s_AppDataKey_DeviceId = "reddit_device_id";
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientId = "reddit_client_id";
@@ -129,7 +128,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                             ErrorLog( "[%s] Failed to authenticate with Reddit API, Could not retrieve access token. Response %s", __FUNCTION__, authResult.m_Response.c_str( ) );
                         }
                     }
-                    catch( const nlohmann::json::exception& parseError )
+                    catch( const Json::exception& parseError )
                     {
                         ErrorLog( "[%s] Failed to authenticate with Reddit API, error: %s", __FUNCTION__, parseError.what( ) );
                     }
@@ -167,15 +166,10 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
             DebugLog( "[%s] Response: %s", __FUNCTION__, fetchResult.m_Response.c_str( ) );
 
             // Parse response
-            json fetchResponse = json::parse( fetchResult.m_Response );
-            const std::vector<json>& posts = fetchResponse[ "data" ][ "children" ];
+            Json fetchResponse = Json::parse( fetchResult.m_Response );
 
             std::vector<std::string> urls{ };
-
-            for( const json& post : posts )
-            {
-                Reddit::TryGetContentUrl( post, urls );
-            }
+            urls = GetMediaUrls( fetchResponse );
 
             if( urls.empty( ) )
             {
@@ -249,4 +243,66 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
         } );
 
     ( void )task;
+}
+
+std::vector<std::string> ImageScraper::RedditService::GetMediaUrls( const Json& response )
+{
+    std::vector<std::string> mediaUrls{ };
+
+    if( !response.contains( "data" ) )
+    {
+        return mediaUrls;
+    }
+
+    try
+    {
+        const Json& data = response[ "data" ];
+
+        if( !data.contains( "children" ) )
+        {
+            return mediaUrls;
+        }
+
+        const std::vector<Json>& children = data[ "children" ];
+
+        for (const auto& post : children )
+        {
+            const Json& postData = post[ "data" ];
+
+            std::string contentKey{ };
+
+            if( postData.contains( "url" ) )
+            {
+                contentKey = "url";
+            }
+            else if( postData.contains( "url_overridden_by_dest" ) )
+            {
+                contentKey = "url_overridden_by_dest";
+            }
+            else
+            {
+                return mediaUrls;
+            }
+
+            const std::vector<std::string> targetExts{ ".jpg", ".jpeg", ".png", ".webm", ".webp", ".gif", ".gifv", ".mp4" };
+
+            const std::string& url = postData[ contentKey ];
+
+            for( const auto& ext : targetExts )
+            {
+                const auto& pos = url.find( ext );
+                if( pos != std::string::npos )
+                {
+                    mediaUrls.push_back( url );
+                }
+            }
+        }
+    }
+    catch( const Json::exception& e )
+    {
+        const std::string error = e.what( );
+        ErrorLog( "[%s] GetMediaUrls Error parsing data!, error: %s", __FUNCTION__, error.c_str( ) );
+    }
+
+    return mediaUrls;
 }

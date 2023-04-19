@@ -1,6 +1,6 @@
 #pragma once
-
 #include "services/Service.h"
+#include "nlohmann/json.hpp"
 
 #include <string>
 #include <memory>
@@ -8,6 +8,8 @@
 
 namespace ImageScraper
 {
+    using Json = nlohmann::json;
+
     class JsonFile;
     class FrontEnd;
 
@@ -20,6 +22,7 @@ namespace ImageScraper
     private:
         const bool IsAuthenticated( ) const;
         void DownloadContent( const UserInputOptions& inputOptions );
+        std::vector<std::string> GetMediaUrls( const Json& postData );
 
         static const std::string s_AppDataKey_DeviceId;
         static const std::string s_UserDataKey_ClientId;
