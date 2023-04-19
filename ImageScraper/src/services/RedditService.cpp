@@ -191,7 +191,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
                 std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
             }
-            while( !m_AfterParam.empty( ) || static_cast<int>( mediaUrls.size() ) < options.m_RedditMaxMediaItems ); // Pagination not finished or limit reached
+            while( !m_AfterParam.empty( ) && static_cast<int>( mediaUrls.size() ) < options.m_RedditMaxMediaItems ); // Pagination not finished or limit reached
 
             if( mediaUrls.empty( ) )
             {
