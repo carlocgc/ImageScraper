@@ -28,10 +28,28 @@ namespace ImageScraper
 
         static std::wstring Utf8ToWideString( const std::string& str, bool nullTerminated )
         {
+            if( str.empty( ) )
+            {
+                return std::wstring( );
+            }
+
             int required_size = MultiByteToWideChar( CP_UTF8, 0, str.c_str( ), -1, NULL, 0 );
             std::wstring wide_str( nullTerminated ? required_size : required_size - 1, L'\0' );
             MultiByteToWideChar( CP_UTF8, 0, str.c_str( ), -1, &wide_str[ 0 ], required_size );
             return wide_str;
+        }
+
+        static std::string WideStringToUtf8String( const std::wstring& wstr, bool nullTerminated )
+        {
+            if( wstr.empty( ) )
+            {
+                return std::string( );
+            }
+
+            int required_size = WideCharToMultiByte( CP_UTF8, 0, wstr.c_str( ), -1, nullptr, 0, nullptr, nullptr );
+            std::string utf8_string( nullTerminated ? required_size : required_size - 1, 0 );
+            WideCharToMultiByte( CP_UTF8, 0, wstr.c_str( ), -1, &utf8_string[ 0 ], required_size, nullptr, nullptr );
+            return utf8_string;
         }
 
     private:

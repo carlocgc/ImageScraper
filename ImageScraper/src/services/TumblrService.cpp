@@ -37,9 +37,10 @@ bool ImageScraper::TumblrService::HandleUserInput( const UserInputOptions& optio
     return true;
 }
 
-void ImageScraper::TumblrService::OpenSignInWindow( )
+bool ImageScraper::TumblrService::OpenExternalAuth( )
 {
     ErrorLog( "[%s] Sign in not implemented for this provider!", __FUNCTION__ );
+    return false;
 }
 
 bool ImageScraper::TumblrService::IsCancelled( )

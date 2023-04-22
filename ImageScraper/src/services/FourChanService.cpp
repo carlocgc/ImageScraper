@@ -27,9 +27,10 @@ bool ImageScraper::FourChanService::HandleUserInput( const UserInputOptions& opt
     return false;
 }
 
-void ImageScraper::FourChanService::OpenSignInWindow( )
+bool ImageScraper::FourChanService::OpenExternalAuth( )
 {
     ErrorLog( "[%s] Sign in not implemented for this provider!", __FUNCTION__ );
+    return false;
 }
 
 bool ImageScraper::FourChanService::IsCancelled( )

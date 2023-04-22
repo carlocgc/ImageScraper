@@ -388,7 +388,8 @@ void ImageScraper::FrontEnd::UpdateSignInButton( )
         std::shared_ptr<ImageScraper::Service> service = GetCurrentProvider( );
         if( service )
         {
-            service->OpenSignInWindow( );
+            bool success = service->OpenExternalAuth( );
+            ( void )success;
         }
     }
 

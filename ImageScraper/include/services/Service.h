@@ -24,7 +24,7 @@ namespace ImageScraper
 
         virtual ~Service( ) = default;
         virtual bool HandleUserInput( const UserInputOptions& options ) = 0;
-        virtual void OpenSignInWindow( ) = 0;
+        virtual bool OpenExternalAuth( ) = 0;
         ContentProvider GetContentProvider( ) { return m_ContentProvider; }
 
     protected:

@@ -56,7 +56,7 @@ bool ImageScraper::RedditService::HandleUserInput( const UserInputOptions& optio
     return true;
 }
 
-void ImageScraper::RedditService::SignIn( )
+bool ImageScraper::RedditService::OpenExternalAuth( )
 {
     std::wstring wurl = L"https://www.reddit.com/api/v1/authorize";
     wurl += L"?client_id=" + StringUtils::Utf8ToWideString( m_ClientId, false );
@@ -66,10 +66,16 @@ void ImageScraper::RedditService::SignIn( )
     wurl += L"&duration=permanent";
     wurl += L"&scope=identity,edit";
 
-    if( !ShellExecute( NULL, L"open", wurl.c_str(), NULL, NULL, SW_SHOWNORMAL ) )
+    if( ShellExecute( NULL, L"open", wurl.c_str(), NULL, NULL, SW_SHOWNORMAL ) )
     {
-        ErrorLog( "[%s] Could not open default browser, make sure a default browser is set in OS settings!", __FUNCTION__ );
+        const std::string url = StringUtils::WideStringToUtf8String( wurl, true );
+        InfoLog( "[%s] Opened external auth in browser!", __FUNCTION__);
+        DebugLog( "[%s] External auth url: %s", __FUNCTION__, url.c_str( ) );
+        return true;
     }
+
+    ErrorLog( "[%s] Could not open default browser, make sure a default browser is set in OS settings!", __FUNCTION__ );
+    return false;
 }
 
 bool ImageScraper::RedditService::IsCancelled( )
@@ -155,7 +161,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                         }
                         else
                         {
-                            ErrorLog( "[%s] Failed to authenticate with Reddit API, Could not retrieve access token. Response %s", __FUNCTION__, authResult.m_Response.c_str( ) );
+                            ErrorLog( "[%s] Failed to authenticate with Reddit API, Could not retrieve access token from respose. Response: %s", __FUNCTION__, authResult.m_Response.c_str( ) );
                         }
                     }
                     catch( const Json::exception& parseError )
