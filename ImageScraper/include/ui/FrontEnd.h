@@ -33,13 +33,11 @@ namespace ImageScraper
     class FrontEnd
     {
     public:
-        FrontEnd( int maxLogLines );
+        FrontEnd( const int maxLogLines );
         ~FrontEnd( );
 
-        bool Init( );
-        bool GetUserInput( std::string& out );
+        bool Init( const std::vector<std::shared_ptr<Service>>& services );
         void Update( );
-        bool HandleUserInput( std::vector<std::shared_ptr<Service>>& services );
         void SetInputState( const InputState& state );
         void Render( );
         void Log( const LogLine& line );
@@ -51,30 +49,33 @@ namespace ImageScraper
         LogLevel GetLogLevel( ) const { return m_LogLevel; };
 
     private:
-        void ShowDemoWindow( );
-
         // TODO Move all input logic into components
+        void ShowDemoWindow( );
+        void UpdateProviderOptionsWindow( );
         void UpdateProviderWidgets( );
         void UpdateRedditWidgets( );
         void UpdateTumblrWidgets( );
         void UpdateFourChanWidgets( );
-        void UpdateCommonWidgets( );
-        void UpdateLogWindowWidgets( );
+        void UpdateSignInButton( );
+        void UpdateRunCancelButton( );
+        void UpdateLogWindow( );
 
         UserInputOptions BuildRedditInputOptions( );
         UserInputOptions BuildTumblrInputOptions( );
         UserInputOptions BuildFourChanInputOptions( );
 
+        bool HandleUserInput( );
         void Reset( );
+        bool CanSignIn( ) const;
 
         GLFWwindow* m_WindowPtr{ nullptr };
         InputState m_InputState{ InputState::Free };
+        std::vector<std::shared_ptr<Service>> m_Services{ };
 
         // Generic options
         int m_ContentProvider{ };
         bool m_StartProcess{ false };
         bool m_Running{ false };
-
         std::atomic_bool m_Cancelled{ false };
 
         // Reddit options

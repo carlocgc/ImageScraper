@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-ImageScraper::FrontEnd::FrontEnd( int maxLogLines )
+ImageScraper::FrontEnd::FrontEnd( const int maxLogLines )
     : m_LogContent{ static_cast< std::size_t >( maxLogLines ) }
 {
 }
@@ -20,8 +20,10 @@ ImageScraper::FrontEnd::~FrontEnd( )
     glfwTerminate( );
 }
 
-bool ImageScraper::FrontEnd::Init( )
+bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& services )
 {
+    m_Services = services;
+
     glfwSetErrorCallback( GLFW_ErrorCallback );
     if( !glfwInit( ) )
     {
@@ -70,11 +72,6 @@ bool ImageScraper::FrontEnd::Init( )
     return true;
 }
 
-bool ImageScraper::FrontEnd::GetUserInput( std::string& out )
-{
-    return false;
-}
-
 void ImageScraper::FrontEnd::Update( )
 {
     // Poll and handle events (inputs, window resize, etc.)
@@ -95,34 +92,17 @@ void ImageScraper::FrontEnd::Update( )
 
     ShowDemoWindow( );
 
-    // Demo window End
+    UpdateProviderOptionsWindow( );
 
-    // Input window start
+    UpdateLogWindow( );
 
-    ImGui::SetNextWindowSize( ImVec2( 640, 200 ), ImGuiCond_FirstUseEver );
-
-    if( !ImGui::Begin( "Input", nullptr ) )
+    if( HandleUserInput( ) )
     {
-        ImGui::End( );
-        return;
+        SetInputState( InputState::Blocked );
     }
-
-    UpdateProviderWidgets( );
-
-    UpdateCommonWidgets( );
-
-    ImGui::End( );
-
-    // Input window end
-
-    // Log window start
-
-    UpdateLogWindowWidgets( );
-
-    // Log window End
 }
 
-bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Service>>& services )
+bool ImageScraper::FrontEnd::HandleUserInput( )
 {
     if( m_InputState == InputState::Blocked )
     {
@@ -180,7 +160,7 @@ bool ImageScraper::FrontEnd::HandleUserInput( std::vector<std::shared_ptr<Servic
         break;
     }
 
-    for( auto service : services )
+    for( auto service : m_Services )
     {
         if( service->HandleUserInput( inputOptions ) )
         {
@@ -243,6 +223,25 @@ void ImageScraper::FrontEnd::ShowDemoWindow( )
 {
     bool show = true;
     ImGui::ShowDemoWindow( &show );
+}
+
+void ImageScraper::FrontEnd::UpdateProviderOptionsWindow( )
+{
+    ImGui::SetNextWindowSize( ImVec2( 640, 200 ), ImGuiCond_FirstUseEver );
+
+    if( !ImGui::Begin( "Download Options", nullptr ) )
+    {
+        ImGui::End( );
+        return;
+    }
+
+    UpdateProviderWidgets( );
+
+    UpdateRunCancelButton( );
+
+    UpdateSignInButton( );
+
+    ImGui::End( );
 }
 
 void ImageScraper::FrontEnd::UpdateProviderWidgets( )
@@ -375,36 +374,43 @@ void ImageScraper::FrontEnd::UpdateFourChanWidgets( )
     */
 }
 
-void ImageScraper::FrontEnd::UpdateCommonWidgets( )
+void ImageScraper::FrontEnd::UpdateSignInButton( )
+{
+    if( !CanSignIn( ) )
+    {
+        return;
+    }
+
+    ImGui::BeginDisabled( m_Running );
+
+    if( ImGui::Button( "Sign In", ImVec2( 100, 40 ) ) )
+    {
+
+    }
+
+    ImGui::EndDisabled( );
+}
+
+void ImageScraper::FrontEnd::UpdateRunCancelButton( )
 {
     if( !m_Running )
     {
-        if( ImGui::BeginChild( "RunButton", ImVec2( 300, 0 ), false ) )
-        {
-            m_StartProcess = ImGui::Button( "Run", ImVec2( 100, 40 ) );
-        }
-
-        ImGui::EndChild( );
+        m_StartProcess = ImGui::Button( "Run", ImVec2( 100, 40 ) );
     }
     else
     {
         ImGui::BeginDisabled( m_Cancelled.load( ) );
 
-        if( ImGui::BeginChild( "CancelButton", ImVec2( 300, 0 ), false ) )
+        if( ImGui::Button( "Cancel", ImVec2( 100, 40 ) ) )
         {
-            if( ImGui::Button( "Cancel", ImVec2( 100, 40 ) ) )
-            {
-                m_Cancelled.store( true );
-            }
+            m_Cancelled.store( true );
         }
-
-        ImGui::EndChild( );
 
         ImGui::EndDisabled( );
     }
 }
 
-void ImageScraper::FrontEnd::UpdateLogWindowWidgets( )
+void ImageScraper::FrontEnd::UpdateLogWindow( )
 {
     ImGui::SetNextWindowSize( ImVec2( 1280, 360 ), ImGuiCond_FirstUseEver );
     if( !ImGui::Begin( "Output", nullptr ) )
@@ -452,30 +458,6 @@ void ImageScraper::FrontEnd::UpdateLogWindowWidgets( )
             ImGui::EndPopup( );
         }
 
-        // Display every line as a separate entry so we can change their color or add custom widgets.
-        // If you only want raw text you can use ImGui::TextUnformatted(log.begin(), log.end());
-        // NB- if you have thousands of entries this approach may be too inefficient and may require user-side clipping
-        // to only process visible items. The clipper will automatically measure the height of your first item and then
-        // "seek" to display only items in the visible area.
-        // To use the clipper we can replace your standard loop:
-        //      for (int i = 0; i < Items.Size; i++)
-        //   With:
-        //      ImGuiListClipper clipper;
-        //      clipper.Begin(Items.Size);
-        //      while (clipper.Step())
-        //         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-        // - That your items are evenly spaced (same height)
-        // - That you have cheap random access to your elements (you can access them given their index,
-        //   without processing all the ones before)
-        // You cannot this code as-is if a filter is active because it breaks the 'cheap random-access' property.
-        // We would need random-access on the post-filtered list.
-        // A typical application wanting coarse clipping and filtering may want to pre-compute an array of indices
-        // or offsets of items that passed the filtering test, recomputing this array when user changes the filter,
-        // and appending newly elements as they are inserted. This is left as a task to the user until we can manage
-        // to improve this example code!
-        // If your items are of variable height:
-        // - Split them into same height items would be simpler and facilitate random-seeking into your list.
-        // - Consider using manual call to IsRectVisible() and skipping extraneous decoration from your items.
         ImGui::PushStyleVar( ImGuiStyleVar_ItemSpacing, ImVec2( 4, 1 ) ); // Tighten spacing
 
         if( copy_to_clipboard )
@@ -621,6 +603,25 @@ void ImageScraper::FrontEnd::Reset( )
     m_TotalDownloadsCount.store( 0 );
     m_CurrentDownloadProgress.store( 0.f );
     m_TotalProgress.store( 0.f );
+}
+
+bool ImageScraper::FrontEnd::CanSignIn( ) const
+{
+    switch( static_cast< ContentProvider >( m_ContentProvider ) )
+    {
+    case ContentProvider::Reddit:
+        return true;
+        break;
+    case ContentProvider::Tumblr:
+        return false;
+        break;
+    case ContentProvider::FourChan:
+        return false;
+        break;
+    default:
+        return false;
+        break;
+    }
 }
 
 void ImageScraper::FrontEnd::SetInputState( const InputState& state )

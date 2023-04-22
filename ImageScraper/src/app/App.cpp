@@ -53,7 +53,7 @@ ImageScraper::App::App( )
 
 int ImageScraper::App::Run( )
 {
-    if( !m_FrontEnd || !m_FrontEnd->Init( ) )
+    if( !m_FrontEnd || !m_FrontEnd->Init( m_Services ) )
     {
         return 1;
     }
@@ -62,11 +62,6 @@ int ImageScraper::App::Run( )
     while( !glfwWindowShouldClose( m_FrontEnd->GetWindow( ) ) )
     {
         m_FrontEnd->Update( );
-
-        if( m_FrontEnd->HandleUserInput( m_Services ) )
-        {
-            m_FrontEnd->SetInputState( InputState::Blocked );
-        }
 
         TaskManager::Instance( ).Update( );
 
