@@ -56,13 +56,13 @@ bool ImageScraper::RedditService::HandleUserInput( const UserInputOptions& optio
     return true;
 }
 
-void ImageScraper::RedditService::OpenSignInWindow( )
+void ImageScraper::RedditService::SignIn( )
 {
     std::wstring wurl = L"https://www.reddit.com/api/v1/authorize";
     wurl += L"?client_id=" + StringUtils::Utf8ToWideString( m_ClientId, false );
     wurl += L"&response_type=code";
     wurl += L"&state=" + StringUtils::Utf8ToWideString( m_DeviceId, false );
-    wurl += L"&redirect_uri=http://localhost:8000";
+    wurl += L"&redirect_uri=http://localhost:8080";
     wurl += L"&duration=permanent";
     wurl += L"&scope=identity,edit";
 
