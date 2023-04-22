@@ -385,7 +385,11 @@ void ImageScraper::FrontEnd::UpdateSignInButton( )
 
     if( ImGui::Button( "Sign In", ImVec2( 100, 40 ) ) )
     {
-
+        std::shared_ptr<ImageScraper::Service> service = GetCurrentProvider( );
+        if( service )
+        {
+            service->OpenSignInWindow( );
+        }
     }
 
     ImGui::EndDisabled( );
@@ -622,6 +626,19 @@ bool ImageScraper::FrontEnd::CanSignIn( ) const
         return false;
         break;
     }
+}
+
+std::shared_ptr<ImageScraper::Service> ImageScraper::FrontEnd::GetCurrentProvider( )
+{
+    for( const auto& service : m_Services )
+    {
+        if( service->GetContentProvider( ) == static_cast<ContentProvider>( m_ContentProvider ) )
+        {
+            return service;
+        }
+    }
+
+    return nullptr;
 }
 
 void ImageScraper::FrontEnd::SetInputState( const InputState& state )

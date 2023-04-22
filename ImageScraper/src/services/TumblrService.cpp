@@ -12,7 +12,7 @@
 const std::string ImageScraper::TumblrService::s_UserDataKey_ApiKey = "tumblr_api_key";
 
 ImageScraper::TumblrService::TumblrService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<FrontEnd> frontEnd )
-    : Service( appConfig, userConfig, caBundle, frontEnd )
+    : Service( ContentProvider::Tumblr, appConfig, userConfig, caBundle, frontEnd )
 {
     if( !m_UserConfig->GetValue<std::string>( s_UserDataKey_ApiKey, m_ApiKey ) )
     {
@@ -35,6 +35,11 @@ bool ImageScraper::TumblrService::HandleUserInput( const UserInputOptions& optio
 
     DownloadContent( options );
     return true;
+}
+
+void ImageScraper::TumblrService::OpenSignInWindow( )
+{
+    ErrorLog( "[%s] Sign in not implemented for this provider!", __FUNCTION__ );
 }
 
 bool ImageScraper::TumblrService::IsCancelled( )

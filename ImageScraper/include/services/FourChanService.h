@@ -18,6 +18,7 @@ namespace ImageScraper
     public:
         FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<FrontEnd> frontEnd );
         bool HandleUserInput( const UserInputOptions& options ) override;
+        void OpenSignInWindow( ) override;
 
     protected:
         bool IsCancelled( ) override;

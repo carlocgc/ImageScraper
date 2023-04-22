@@ -3,6 +3,8 @@
 #include <string>
 #include <random>
 
+#include <Windows.h>
+
 namespace ImageScraper
 {
     class StringUtils
@@ -22,6 +24,14 @@ namespace ImageScraper
             }
 
             return guid;
+        }
+
+        static std::wstring Utf8ToWideString( const std::string& str, bool nullTerminated )
+        {
+            int required_size = MultiByteToWideChar( CP_UTF8, 0, str.c_str( ), -1, NULL, 0 );
+            std::wstring wide_str( nullTerminated ? required_size : required_size - 1, L'\0' );
+            MultiByteToWideChar( CP_UTF8, 0, str.c_str( ), -1, &wide_str[ 0 ], required_size );
+            return wide_str;
         }
 
     private:

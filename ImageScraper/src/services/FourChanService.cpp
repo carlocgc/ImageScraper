@@ -12,7 +12,7 @@
 #include <string>
 
 ImageScraper::FourChanService::FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<FrontEnd> frontEnd )
-    : Service( appConfig, userConfig, caBundle, frontEnd )
+    : Service( ContentProvider::FourChan, appConfig, userConfig, caBundle, frontEnd )
 {
 }
 
@@ -25,6 +25,11 @@ bool ImageScraper::FourChanService::HandleUserInput( const UserInputOptions& opt
     }
 
     return false;
+}
+
+void ImageScraper::FourChanService::OpenSignInWindow( )
+{
+    ErrorLog( "[%s] Sign in not implemented for this provider!", __FUNCTION__ );
 }
 
 bool ImageScraper::FourChanService::IsCancelled( )

@@ -67,6 +67,7 @@ namespace ImageScraper
         bool HandleUserInput( );
         void Reset( );
         bool CanSignIn( ) const;
+        std::shared_ptr<Service> GetCurrentProvider( );
 
         GLFWwindow* m_WindowPtr{ nullptr };
         InputState m_InputState{ InputState::Free };

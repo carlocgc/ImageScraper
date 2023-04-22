@@ -14,6 +14,8 @@
 #include <string>
 #include <map>
 
+#include <Shellapi.h>
+
 using namespace ImageScraper::Reddit;
 using Json = nlohmann::json;
 
@@ -22,7 +24,7 @@ const std::string ImageScraper::RedditService::s_UserDataKey_ClientId = "reddit_
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientSecret = "reddit_client_secret";
 
 ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<FrontEnd> frontEnd )
-    : Service( appConfig, userConfig, caBundle, frontEnd )
+    : Service( ContentProvider::Reddit, appConfig, userConfig, caBundle, frontEnd )
 {
     if( !m_AppConfig->GetValue<std::string>( s_AppDataKey_DeviceId, m_DeviceId ) )
     {
@@ -52,6 +54,22 @@ bool ImageScraper::RedditService::HandleUserInput( const UserInputOptions& optio
 
     DownloadContent( options );
     return true;
+}
+
+void ImageScraper::RedditService::OpenSignInWindow( )
+{
+    std::wstring wurl = L"https://www.reddit.com/api/v1/authorize";
+    wurl += L"?client_id=" + StringUtils::Utf8ToWideString( m_ClientId, false );
+    wurl += L"&response_type=code";
+    wurl += L"&state=" + StringUtils::Utf8ToWideString( m_DeviceId, false );
+    wurl += L"&redirect_uri=http://localhost:8000";
+    wurl += L"&duration=permanent";
+    wurl += L"&scope=identity,edit";
+
+    if( !ShellExecute( NULL, L"open", wurl.c_str(), NULL, NULL, SW_SHOWNORMAL ) )
+    {
+        ErrorLog( "[%s] Could not open default browser, make sure a default browser is set in OS settings!", __FUNCTION__ );
+    }
 }
 
 bool ImageScraper::RedditService::IsCancelled( )
