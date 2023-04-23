@@ -449,5 +449,6 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="data\config.json" />
+    <None Include="data\auth.html" />
   </ItemGroup>
 </Project>

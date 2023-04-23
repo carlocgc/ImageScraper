@@ -160,7 +160,8 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\Debug\libcurl-d.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\Debug\curl-ca-bundle.crt" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Copy dependencies to target directory</Message>
@@ -189,7 +190,8 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\Release\libcurl.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\Release\curl-ca-bundle.crt" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -333,6 +335,7 @@ xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\utils\StringUtils.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="data\auth.html" />
     <None Include="data\config.json" />
     <None Include="include\curlpp\Easy.inl" />
     <None Include="include\curlpp\Info.inl" />

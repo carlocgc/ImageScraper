@@ -2,6 +2,10 @@
 #include "async/TaskManager.h"
 #include "log/Logger.h"
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
 #include <winsock2.h>
 #include <WS2tcpip.h>
 
@@ -10,6 +14,19 @@ void ImageScraper::ListenServer::Init( std::vector<std::shared_ptr<Service>> ser
     m_Services = services;
     m_Port = port;
     m_Initialised = true;
+
+    std::stringstream htmlContent{ };
+    std::ifstream htmlFile( "auth.html" );
+    if( htmlFile.is_open( ) )
+    {
+        htmlContent << htmlFile.rdbuf( );
+        m_AuthHtml = htmlContent.str( );
+        htmlFile.close( );
+    }
+    else
+    {
+        m_AuthHtml = "<html><body><h1>Authorization complete!</h1></body></html>";
+    }
 }
 
 void ImageScraper::ListenServer::Start(  )
@@ -22,7 +39,7 @@ void ImageScraper::ListenServer::Start(  )
 
     auto OnMessageReceived = [ & ]( const std::string message )
     {
-        ErrorLog( "[%s] ListenServer message received, message: %s", __FUNCTION__, message.c_str( ) );
+        DebugLog( "[%s] ListenServer message received, message: %s", __FUNCTION__, message.c_str( ) );
 
         for (const auto& service : m_Services)
         {
@@ -139,11 +156,14 @@ void ImageScraper::ListenServer::Start(  )
 
                 DebugLog( "[%s] ListenServer bytes received!, bytes: %i, data: %s, ", __FUNCTION__, bytesReceived, response.c_str() );
 
+                const int contentLength = static_cast< int >( m_AuthHtml.length( ) );
+
                 std::string httpResponse = "HTTP/1.1 200 OK\r\n"
                     "Content-Type: text/html\r\n"
-                    "Content-Length: 48\r\n"
-                    "\r\n"
-                    "<html><body><h1>Authorization complete!</h1></body></html>";
+                    "Content-Length: " + std::to_string( contentLength ) + "\r\n"
+                    "\r\n";
+
+                httpResponse += m_AuthHtml;
 
                 int bytesSent = send( clientSocket, httpResponse.c_str( ), static_cast<int>( httpResponse.length( ) ), 0 );
                 if( bytesSent == SOCKET_ERROR )

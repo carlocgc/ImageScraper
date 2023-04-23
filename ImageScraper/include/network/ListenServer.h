@@ -23,6 +23,7 @@ namespace ImageScraper
         const int m_MaxRetries{ 20 };
         std::vector<std::shared_ptr<Service>> m_Services;
         std::atomic_bool m_Running{ false };
+        std::string m_AuthHtml{ };
     };
 
 }

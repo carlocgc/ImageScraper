@@ -101,7 +101,7 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
     const int signingInProvider = m_FrontEnd->GetSigningInProvider( );
     if( signingInProvider == INVALID_CONTENT_PROVIDER )
     {
-        ErrorLog( "[%s] Sign in failed, user cancelled!", __FUNCTION__ );
+        ErrorLog( "[%s] RedditService::HandleExternalAuth skipped, No signing in provider!", __FUNCTION__ );
         return false;
     }
 
@@ -115,13 +115,13 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
     std::size_t errorStart = response.find( errorKey );
     if( errorStart != std::string::npos )
     {
-        ErrorLog( "[%s] RedditService::HandleExternalAuth failed, response contained error!", __FUNCTION__ );
+        DebugLog( "[%s] RedditService::HandleExternalAuth failed, response contained error!", __FUNCTION__ );
         return false;
     }
 
     if( response.find( "favicon" ) != std::string::npos )
     {
-        // This is a ack response and we dont care, need a better way to send clean up connection in listrn server
+        DebugLog( "[%s] RedditService::HandleExternalAuth failed, invalid message!", __FUNCTION__ );
         return false;
     }
 
@@ -132,7 +132,7 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
     std::size_t codeStart = response.find( codeKey );
     if( codeStart == std::string::npos )
     {
-        ErrorLog( "[%s] RedditService::HandleExternalAuth failed, could not find auth code start!", __FUNCTION__ );
+        DebugLog( "[%s] RedditService::HandleExternalAuth failed, could not find auth code start!", __FUNCTION__ );
         return false;
     }
 
@@ -141,12 +141,13 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
     const std::size_t codeEnd = response.find( " ", codeStart );
     if( codeEnd == std::string::npos )
     {
-        ErrorLog( "[%s] RedditService::HandleExternalAuth failed, could not find auth code end!", __FUNCTION__ );
+        DebugLog( "[%s] RedditService::HandleExternalAuth failed, could not find auth code end!", __FUNCTION__ );
         return false;
     }
 
     const std::string authCode = response.substr( codeStart, codeEnd - codeStart );
-    InfoLog( "[%s] Auth code extracted from response, code: %s", __FUNCTION__, authCode.c_str( ) );
+    InfoLog( "[%s] Auth code received!", __FUNCTION__ );
+    DebugLog( "[%s] Auth code: %s", __FUNCTION__, authCode.c_str( ) );
 
     FetchAccessToken( authCode );
     return true;
@@ -183,9 +184,6 @@ const bool ImageScraper::RedditService::IsAuthenticated( ) const
 
 void ImageScraper::RedditService::FetchAccessToken( const std::string& authCode )
 {
-    InfoLog( "[%s] Reddit FetchAccessToken started!", __FUNCTION__ );
-    DebugLog( "[%s] authCode: %s", __FUNCTION__, authCode.c_str( ) );
-
     auto onComplete = [ & ]( )
     {
         m_FrontEnd->CompleteSignIn( ContentProvider::Reddit );
@@ -200,6 +198,9 @@ void ImageScraper::RedditService::FetchAccessToken( const std::string& authCode 
 
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, authCode, onComplete, onFail ]( )
         {
+            InfoLog( "[%s] Started OAuth process!", __FUNCTION__ );
+            DebugLog( "[%s] authCode: %s", __FUNCTION__, authCode.c_str( ) );
+
             RequestOptions fetchOptions{ };
 
             fetchOptions.m_QueryParams.push_back( { "code", authCode } );
@@ -214,7 +215,6 @@ void ImageScraper::RedditService::FetchAccessToken( const std::string& authCode 
 
             if( !fetchResult.m_Success )
             {
-                WarningLog( "[%s] Failed to fetch access token, error: %s", __FUNCTION__, fetchResult.m_Error.m_ErrorString.c_str( ) );
                 TaskManager::Instance( ).SubmitMain( onFail, fetchResult.m_Error.m_ErrorString );
                 return;
             }
@@ -240,11 +240,6 @@ void ImageScraper::RedditService::FetchAccessToken( const std::string& authCode 
 
 void ImageScraper::RedditService::DownloadContent( const UserInputOptions& inputOptions )
 {
-    InfoLog( "[%s] Starting Reddit media download!", __FUNCTION__ );
-    DebugLog( "[%s] Subreddit: %s", __FUNCTION__, inputOptions.m_SubredditName.c_str( ) );
-    DebugLog( "[%s] Scope: %s", __FUNCTION__, inputOptions.m_RedditScope.c_str( ) );
-    DebugLog( "[%s] Media Item Limit: %i", __FUNCTION__, inputOptions.m_RedditMaxMediaItems );
-
     auto onComplete = [ & ]( int filesDownloaded )
     {
         InfoLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
@@ -261,6 +256,11 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, options = inputOptions, onComplete, onFail ]( )
         {
+            InfoLog( "[%s] Starting Reddit media download!", __FUNCTION__ );
+            DebugLog( "[%s] Subreddit: %s", __FUNCTION__, options.m_SubredditName.c_str( ) );
+            DebugLog( "[%s] Scope: %s", __FUNCTION__, options.m_RedditScope.c_str( ) );
+            DebugLog( "[%s] Media Item Limit: %i", __FUNCTION__, options.m_RedditMaxMediaItems );
+
             if( IsCancelled( ) )
             {
                 InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
@@ -484,7 +484,7 @@ bool ImageScraper::RedditService::TryPerformAuthTokenRefresh( )
 
     if( !authResult.m_Success )
     {
-        ErrorLog( "[%s] Failed to refresh access token, error: %s", __FUNCTION__, authResult.m_Error.m_ErrorString );
+        ErrorLog( "[%s] Failed to refresh access token, error: %s", __FUNCTION__, authResult.m_Error.m_ErrorString.c_str() );
         return false;
     }
 
