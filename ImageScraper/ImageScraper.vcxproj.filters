@@ -87,6 +87,9 @@
     <ClCompile Include="src\requests\fourchan\GetThreadsRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\network\ListenServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\curlpp\cURLpp.hpp">
@@ -402,6 +405,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\requests\fourchan\GetThreadsRequest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\network\ListenServer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

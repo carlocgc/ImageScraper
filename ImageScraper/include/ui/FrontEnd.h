@@ -16,6 +16,9 @@
 #include "log/Logger.h"
 #include "collections/RingBuffer.h"
 #include "services/Service.h"
+#include <deque>
+
+#define INVALID_CONTENT_PROVIDER -1
 
 namespace ImageScraper
 {
@@ -41,9 +44,10 @@ namespace ImageScraper
         void SetInputState( const InputState& state );
         void Render( );
         void Log( const LogLine& line );
-        bool IsCancelled( ) { return m_Cancelled.load( ); }
+        bool IsCancelled( ) { return m_DownloadCancelled.load( ); }
         void UpdateCurrentDownloadProgress( const float progress );
         void UpdateTotalDownloadsProgress( const int current, const int total );
+        void CompleteSignIn( ContentProvider provider );
 
         GLFWwindow* GetWindow( ) const { return m_WindowPtr; };
         LogLevel GetLogLevel( ) const { return m_LogLevel; };
@@ -77,7 +81,8 @@ namespace ImageScraper
         int m_ContentProvider{ };
         bool m_StartProcess{ false };
         bool m_Running{ false };
-        std::atomic_bool m_Cancelled{ false };
+        std::atomic_bool m_DownloadCancelled{ false };
+        std::atomic<int> m_SigningInProvider{ INVALID_CONTENT_PROVIDER };
 
         // Reddit options
         std::string m_SubredditName{ };

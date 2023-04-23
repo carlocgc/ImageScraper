@@ -11,10 +11,12 @@
 #include "config/Config.h"
 #include "ui/FrontEnd.h"
 #include "io/JsonFile.h"
+#include "network/ListenServer.h"
 
 #include <string>
 
 #define UI_MAX_LOG_LINES 10000
+#define LISTEN_SERVER_PORT 8080
 
 const std::string ImageScraper::App::s_UserConfigFile = "config.json";
 const std::string ImageScraper::App::s_AppConfigFile = "ImageScraper/config.json";
@@ -49,14 +51,25 @@ ImageScraper::App::App( )
     m_Services.push_back( std::make_shared<RedditService>( m_AppConfig, m_UserConfig, caBundlePath, m_FrontEnd ) );
     m_Services.push_back( std::make_shared<TumblrService>( m_AppConfig, m_UserConfig, caBundlePath, m_FrontEnd ) );
     m_Services.push_back( std::make_shared<FourChanService>( m_AppConfig, m_UserConfig, caBundlePath, m_FrontEnd ) );
+
+    m_ListenServer = std::make_shared<ListenServer>( );
 }
 
 int ImageScraper::App::Run( )
 {
     if( !m_FrontEnd || !m_FrontEnd->Init( m_Services ) )
     {
+        ErrorLog( "[%s] Could not start FrontEnd!", __FUNCTION__ );
         return 1;
     }
+
+    if( !m_ListenServer )
+    {
+        ErrorLog( "[%s] Invalid ListenServer!", __FUNCTION__ );
+    }
+
+    m_ListenServer->Init( m_Services, LISTEN_SERVER_PORT );
+    m_ListenServer->Start( );
 
     // Main loop
     while( !glfwWindowShouldClose( m_FrontEnd->GetWindow( ) ) )
@@ -67,6 +80,8 @@ int ImageScraper::App::Run( )
 
         m_FrontEnd->Render( ); // TOOD dedicated UI thread
     }
+
+    m_ListenServer->Stop( );
 
     return 0;
 }

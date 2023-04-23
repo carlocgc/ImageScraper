@@ -219,6 +219,25 @@ void ImageScraper::FrontEnd::UpdateTotalDownloadsProgress( const int current, co
     m_TotalProgress.store( progress );
 }
 
+void ImageScraper::FrontEnd::CompleteSignIn( ContentProvider provider )
+{
+    const int signingInProvider = m_SigningInProvider.load( );
+
+    if( signingInProvider != static_cast< int >( provider ) )
+    {
+        ErrorLog( "[%s] Tried to complete sign in for an invalid provider!", __FUNCTION__ );
+        return;
+    }
+
+    if ( signingInProvider == INVALID_CONTENT_PROVIDER )
+    {
+        ErrorLog( "[%s] Tried to complete sign in when no sign in was started!", __FUNCTION__ );
+        return;
+    }
+
+    m_SigningInProvider.store( INVALID_CONTENT_PROVIDER );
+}
+
 void ImageScraper::FrontEnd::ShowDemoWindow( )
 {
     bool show = true;
@@ -381,19 +400,38 @@ void ImageScraper::FrontEnd::UpdateSignInButton( )
         return;
     }
 
-    ImGui::BeginDisabled( m_Running );
+    const int signingInProvider = m_SigningInProvider.load( );
 
-    if( ImGui::Button( "Sign In", ImVec2( 100, 40 ) ) )
+    if( signingInProvider != INVALID_CONTENT_PROVIDER && m_ContentProvider != signingInProvider )
     {
-        std::shared_ptr<ImageScraper::Service> service = GetCurrentProvider( );
-        if( service )
-        {
-            bool success = service->OpenExternalAuth( );
-            ( void )success;
-        }
+        // Cancel signing in process when moving between content providers
+        m_SigningInProvider.store( INVALID_CONTENT_PROVIDER );
     }
 
-    ImGui::EndDisabled( );
+    const bool signInStarted = signingInProvider == static_cast< uint16_t >( m_ContentProvider );
+
+    if( signInStarted )
+    {
+        if( ImGui::Button( "Cancel Sign In", ImVec2( 120, 40 ) ) )
+        {
+            m_SigningInProvider.store( INVALID_CONTENT_PROVIDER );
+        }
+    }
+    else
+    {
+        if( ImGui::Button( "Sign In", ImVec2( 100, 40 ) ) )
+        {
+            const std::shared_ptr<ImageScraper::Service> service = GetCurrentProvider( );
+
+            if( service )
+            {
+                bool success = service->OpenExternalAuth( );
+                ( void )success;
+
+                m_SigningInProvider.store( static_cast< int >( m_ContentProvider ) );
+            }
+        }
+    }
 }
 
 void ImageScraper::FrontEnd::UpdateRunCancelButton( )
@@ -404,11 +442,11 @@ void ImageScraper::FrontEnd::UpdateRunCancelButton( )
     }
     else
     {
-        ImGui::BeginDisabled( m_Cancelled.load( ) );
+        ImGui::BeginDisabled( m_DownloadCancelled.load( ) );
 
         if( ImGui::Button( "Cancel", ImVec2( 100, 40 ) ) )
         {
-            m_Cancelled.store( true );
+            m_DownloadCancelled.store( true );
         }
 
         ImGui::EndDisabled( );
@@ -603,7 +641,7 @@ ImageScraper::UserInputOptions ImageScraper::FrontEnd::BuildFourChanInputOptions
 void ImageScraper::FrontEnd::Reset( )
 {
     m_Running = false;
-    m_Cancelled.store( false );
+    m_DownloadCancelled.store( false );
     m_CurrentDownloadNum.store( 0 );
     m_TotalDownloadsCount.store( 0 );
     m_CurrentDownloadProgress.store( 0.f );
