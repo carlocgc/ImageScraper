@@ -51,6 +51,7 @@ namespace ImageScraper
 
         GLFWwindow* GetWindow( ) const { return m_WindowPtr; };
         LogLevel GetLogLevel( ) const { return m_LogLevel; };
+        int GetSigningInProvider( ) { return m_SigningInProvider.load(); };
 
     private:
         // TODO Move all input logic into components
@@ -71,6 +72,7 @@ namespace ImageScraper
         bool HandleUserInput( );
         void Reset( );
         bool CanSignIn( ) const;
+        void CancelSignIn( );
         std::shared_ptr<Service> GetCurrentProvider( );
 
         GLFWwindow* m_WindowPtr{ nullptr };

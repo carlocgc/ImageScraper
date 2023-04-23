@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <map>
 
 namespace ImageScraper
 {
@@ -23,42 +24,58 @@ namespace ImageScraper
 
     enum class ResponseErrorCode : uint16_t
     {
-        None,
-        InvalidOptions,
-        NotFound,
-        TooManyRequests,
-        Unknown,
+        OK = 200,
+        BadRequest = 400,
+        Unauthorized = 401,
+        Forbidden = 403,
+        NotFound = 404,
+        InternalServerError = 500
     };
 
     struct ResponseError
     {
-        ResponseErrorCode m_ErrorCode{ ResponseErrorCode::None };
+        ResponseErrorCode m_ErrorCode{ ResponseErrorCode::OK };
         std::string m_ErrorString{ };
     };
 
-    inline std::string ResponseErrorCodeToString( ResponseErrorCode error )
+    inline ResponseErrorCode ResponseErrorCodefromInt( int errorCode )
     {
-        switch( error )
+        static std::map<int, ResponseErrorCode> errorMap{
+            { 200, ResponseErrorCode::OK },
+            { 400, ResponseErrorCode::BadRequest },
+            { 401, ResponseErrorCode::Unauthorized },
+            { 403, ResponseErrorCode::Forbidden },
+            { 404, ResponseErrorCode::NotFound },
+            { 500, ResponseErrorCode::InternalServerError }
+        };
+
+        auto it = errorMap.find( errorCode );
+        if( it != errorMap.end( ) )
         {
-        case ImageScraper::ResponseErrorCode::None:
-            return "None";
-            break;
-        case ImageScraper::ResponseErrorCode::InvalidOptions:
-            return "Invalid Options";
-            break;
-        case ImageScraper::ResponseErrorCode::NotFound:
-            return "Not Found";
-            break;
-        case ImageScraper::ResponseErrorCode::TooManyRequests:
-            return "Too Many Requests";
-            break;
-        case ImageScraper::ResponseErrorCode::Unknown:
-            return "Unknown";
-            break;
-        default:
-            return "";
-            break;
+            return it->second;
         }
+
+        return ResponseErrorCode::InternalServerError;
+    }
+
+    inline std::string ResponseErrorCodeToString( ResponseErrorCode errorCode )
+    {
+        static std::map<ResponseErrorCode, std::string> errorMap{
+            { ResponseErrorCode::OK, "OK" },
+            { ResponseErrorCode::BadRequest, "Bad Request" },
+            { ResponseErrorCode::Unauthorized, "Unauthorized" },
+            { ResponseErrorCode::Forbidden, "Forbidden" },
+            { ResponseErrorCode::NotFound, "Not Found" },
+            { ResponseErrorCode::InternalServerError, "Internal Server Error" }
+        };
+
+        auto it = errorMap.find( errorCode );
+        if( it != errorMap.end( ) )
+        {
+            return it->second;
+        }
+
+        return "Unknown error";
     }
 
     struct RequestResult

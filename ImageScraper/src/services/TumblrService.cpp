@@ -43,6 +43,16 @@ bool ImageScraper::TumblrService::OpenExternalAuth( )
     return false;
 }
 
+bool ImageScraper::TumblrService::HandleExternalAuth( const std::string& response )
+{
+    return false;
+}
+
+bool ImageScraper::TumblrService::IsSignedIn( )
+{
+    return false;
+}
+
 bool ImageScraper::TumblrService::IsCancelled( )
 {
     return m_FrontEnd->IsCancelled( );

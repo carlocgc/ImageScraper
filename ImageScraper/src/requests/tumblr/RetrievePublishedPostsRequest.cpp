@@ -33,20 +33,20 @@ ImageScraper::RequestResult ImageScraper::Tumblr::RetrievePublishedPostsRequest:
     }
     catch( curlpp::RuntimeError& error )
     {
-        result.SetError( ResponseErrorCode::Unknown );
+        result.SetError( ResponseErrorCode::InternalServerError );
         result.m_Error.m_ErrorString = error.what( );
         DebugLog( "[%s] Tumblr::RetrievePublishedPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
     catch( curlpp::LogicError& error )
     {
-        result.SetError( ResponseErrorCode::Unknown );
+        result.SetError( ResponseErrorCode::InternalServerError );
         result.m_Error.m_ErrorString = error.what( );
         DebugLog( "[%s] Tumblr::RetrievePublishedPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
-    if( DownloadHelpers::IsResponseError( result ) )
+    if( DownloadHelpers::IsTumblrResponseError( result ) )
     {
         DebugLog( "[%s] Tumblr::RetrievePublishedPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;

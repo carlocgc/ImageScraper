@@ -1,12 +1,10 @@
 #pragma once
-#include "requests/Request.h"
-#include "requests/RequestTypes.h"
 
-#include <string>
+#include "requests/Request.h"
 
 namespace ImageScraper::Reddit
 {
-    class AuthenticationRequest : public Request
+    class RefreshAccessTokenRequest : public Request
     {
     public:
         RequestResult Perform( const RequestOptions& options ) override;
@@ -16,4 +14,3 @@ namespace ImageScraper::Reddit
         static const std::string s_AuthData;
     };
 }
-

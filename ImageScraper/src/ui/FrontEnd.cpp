@@ -404,13 +404,20 @@ void ImageScraper::FrontEnd::UpdateSignInButton( )
 
     if( signingInProvider != INVALID_CONTENT_PROVIDER && m_ContentProvider != signingInProvider )
     {
-        // Cancel signing in process when moving between content providers
-        m_SigningInProvider.store( INVALID_CONTENT_PROVIDER );
+        // Provider changed after sign in started so cancel it
+        CancelSignIn( );
     }
 
     const bool signInStarted = signingInProvider == static_cast< uint16_t >( m_ContentProvider );
 
-    if( signInStarted )
+    const std::shared_ptr<ImageScraper::Service> service = GetCurrentProvider( );
+    if( service && service->IsSignedIn( ) )
+    {
+        ImGui::BeginDisabled( true );
+        ImGui::Button( "Signed In", ImVec2( 120, 40 ) );
+        ImGui::EndDisabled( );
+    }
+    else if( signInStarted )
     {
         if( ImGui::Button( "Cancel Sign In", ImVec2( 120, 40 ) ) )
         {
@@ -421,8 +428,6 @@ void ImageScraper::FrontEnd::UpdateSignInButton( )
     {
         if( ImGui::Button( "Sign In", ImVec2( 100, 40 ) ) )
         {
-            const std::shared_ptr<ImageScraper::Service> service = GetCurrentProvider( );
-
             if( service )
             {
                 bool success = service->OpenExternalAuth( );
@@ -665,6 +670,11 @@ bool ImageScraper::FrontEnd::CanSignIn( ) const
         return false;
         break;
     }
+}
+
+void ImageScraper::FrontEnd::CancelSignIn( )
+{
+    m_SigningInProvider.store( INVALID_CONTENT_PROVIDER );
 }
 
 std::shared_ptr<ImageScraper::Service> ImageScraper::FrontEnd::GetCurrentProvider( )

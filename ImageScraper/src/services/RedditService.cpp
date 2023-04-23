@@ -1,7 +1,8 @@
 #include "services/RedditService.h"
 #include "requests/RequestTypes.h"
 #include "requests/reddit/FetchSubredditPostsRequest.h"
-#include "requests/reddit/AuthenticationRequest.h"
+#include "requests/reddit/AppOnlyAuthRequest.h"
+#include "requests/reddit/FetchAccessTokenRequest.h"
 #include "requests/DownloadRequestTypes.h"
 #include "requests/DownloadRequest.h"
 #include "utils/DownloadUtils.h"
@@ -10,16 +11,21 @@
 #include "ui/FrontEnd.h"
 #include "io/JsonFile.h"
 #include "utils/StringUtils.h"
+#include "curlpp/cURLpp.hpp"
+#include "requests/reddit/RefreshAccessTokenRequest.h"
 
 #include <string>
 #include <map>
+#include <mutex>
 
 #include <Shellapi.h>
 
 using namespace ImageScraper::Reddit;
 using Json = nlohmann::json;
 
+const std::string ImageScraper::RedditService::s_RedirectUrl = "http://localhost:8080";
 const std::string ImageScraper::RedditService::s_AppDataKey_DeviceId = "reddit_device_id";
+const std::string ImageScraper::RedditService::s_AppDataKey_RefreshToken = "reddit_refresh_token";
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientId = "reddit_client_id";
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientSecret = "reddit_client_secret";
 
@@ -32,6 +38,18 @@ ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig,
         m_AppConfig->SetValue<std::string>( s_AppDataKey_DeviceId, m_DeviceId );
         m_AppConfig->Serialise( );
         DebugLog( "[%s] Created new Reddit device id: %s", __FUNCTION__, m_DeviceId.c_str( ) );
+    }
+
+    {
+        std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
+        if( m_AppConfig->GetValue<std::string>( s_AppDataKey_RefreshToken, m_RefreshToken ) && m_RefreshToken != "" )
+        {
+            DebugLog( "[%s] Refresh token found!, m_RefreshToken: %s", __FUNCTION__, m_RefreshToken.c_str( ) );
+        }
+        else
+        {
+            DebugLog( "[%s] No refresh token found!", __FUNCTION__ );
+        }
     }
 
     if( !m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, m_ClientId ) )
@@ -62,20 +80,81 @@ bool ImageScraper::RedditService::OpenExternalAuth( )
     wurl += L"?client_id=" + StringUtils::Utf8ToWideString( m_ClientId, false );
     wurl += L"&response_type=code";
     wurl += L"&state=" + StringUtils::Utf8ToWideString( m_DeviceId, false );
-    wurl += L"&redirect_uri=http://localhost:8080";
+    wurl += L"&redirect_uri=" + StringUtils::Utf8ToWideString( s_RedirectUrl, false );
     wurl += L"&duration=permanent";
-    wurl += L"&scope=identity,edit";
+    wurl += L"&scope=identity,read";
 
-    if( ShellExecute( NULL, L"open", wurl.c_str(), NULL, NULL, SW_SHOWNORMAL ) )
+    if( ShellExecute( NULL, L"open", wurl.c_str( ), NULL, NULL, SW_SHOWNORMAL ) )
     {
         const std::string url = StringUtils::WideStringToUtf8String( wurl, true );
-        InfoLog( "[%s] Opened external auth in browser!", __FUNCTION__);
+        InfoLog( "[%s] Opened external auth in browser!", __FUNCTION__ );
         DebugLog( "[%s] External auth url: %s", __FUNCTION__, url.c_str( ) );
         return true;
     }
 
     ErrorLog( "[%s] Could not open default browser, make sure a default browser is set in OS settings!", __FUNCTION__ );
     return false;
+}
+
+bool ImageScraper::RedditService::HandleExternalAuth( const std::string& response )
+{
+    const int signingInProvider = m_FrontEnd->GetSigningInProvider( );
+    if( signingInProvider == INVALID_CONTENT_PROVIDER )
+    {
+        ErrorLog( "[%s] Sign in failed, user cancelled!", __FUNCTION__ );
+        return false;
+    }
+
+    if( static_cast< ContentProvider >( signingInProvider ) != m_ContentProvider )
+    {
+        DebugLog( "[%s] RedditService::HandleExternalAuth skipped, incorrect provider!", __FUNCTION__ );
+        return false;
+    }
+
+    const std::string errorKey = "error";
+    std::size_t errorStart = response.find( errorKey );
+    if( errorStart != std::string::npos )
+    {
+        ErrorLog( "[%s] RedditService::HandleExternalAuth failed, response contained error!", __FUNCTION__ );
+        return false;
+    }
+
+    if( response.find( "favicon" ) != std::string::npos )
+    {
+        // This is a ack response and we dont care, need a better way to send clean up connection in listrn server
+        return false;
+    }
+
+    // TODO check state matches device Id
+
+    const std::string codeKey = "code=";
+    const int codeKeyLength = static_cast< int >( codeKey.length( ) );
+    std::size_t codeStart = response.find( codeKey );
+    if( codeStart == std::string::npos )
+    {
+        ErrorLog( "[%s] RedditService::HandleExternalAuth failed, could not find auth code start!", __FUNCTION__ );
+        return false;
+    }
+
+    codeStart += codeKeyLength;
+
+    const std::size_t codeEnd = response.find( " ", codeStart );
+    if( codeEnd == std::string::npos )
+    {
+        ErrorLog( "[%s] RedditService::HandleExternalAuth failed, could not find auth code end!", __FUNCTION__ );
+        return false;
+    }
+
+    const std::string authCode = response.substr( codeStart, codeEnd - codeStart );
+    InfoLog( "[%s] Auth code extracted from response, code: %s", __FUNCTION__, authCode.c_str( ) );
+
+    FetchAccessToken( authCode );
+    return true;
+}
+
+bool ImageScraper::RedditService::IsSignedIn( )
+{
+    return m_RefreshToken != "";
 }
 
 bool ImageScraper::RedditService::IsCancelled( )
@@ -85,9 +164,12 @@ bool ImageScraper::RedditService::IsCancelled( )
 
 const bool ImageScraper::RedditService::IsAuthenticated( ) const
 {
-    if( m_AuthAccessToken == "" )
     {
-        return false;
+        std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
+        if( m_AccessToken == "" )
+        {
+            return false;
+        }
     }
 
     const std::chrono::system_clock::time_point now = std::chrono::system_clock::now( );
@@ -97,6 +179,63 @@ const bool ImageScraper::RedditService::IsAuthenticated( ) const
     }
 
     return true;
+}
+
+void ImageScraper::RedditService::FetchAccessToken( const std::string& authCode )
+{
+    InfoLog( "[%s] Reddit FetchAccessToken started!", __FUNCTION__ );
+    DebugLog( "[%s] authCode: %s", __FUNCTION__, authCode.c_str( ) );
+
+    auto onComplete = [ & ]( )
+    {
+        m_FrontEnd->CompleteSignIn( ContentProvider::Reddit );
+        InfoLog( "[%s] Reddit signed in successfully!", __FUNCTION__ );
+    };
+
+    auto onFail = [ & ]( const std::string error )
+    {
+        m_FrontEnd->CompleteSignIn( ContentProvider::Reddit );
+        ErrorLog( "[%s] Reddit sign in failed, error: %s", __FUNCTION__, error.c_str( ) );
+    };
+
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, authCode, onComplete, onFail ]( )
+        {
+            RequestOptions fetchOptions{ };
+
+            fetchOptions.m_QueryParams.push_back( { "code", authCode } );
+            fetchOptions.m_QueryParams.push_back( { "redirect_uri", curlpp::escape( s_RedirectUrl ) } );
+            fetchOptions.m_CaBundle = m_CaBundle;
+            fetchOptions.m_UserAgent = m_UserAgent;
+            fetchOptions.m_ClientId = m_ClientId;
+            fetchOptions.m_ClientSecret = m_ClientSecret;
+
+            FetchAccessTokenRequest fetchRequest{ };
+            RequestResult fetchResult = fetchRequest.Perform( fetchOptions );
+
+            if( !fetchResult.m_Success )
+            {
+                WarningLog( "[%s] Failed to fetch access token, error: %s", __FUNCTION__, fetchResult.m_Error.m_ErrorString.c_str( ) );
+                TaskManager::Instance( ).SubmitMain( onFail, fetchResult.m_Error.m_ErrorString );
+                return;
+            }
+
+            const Json response = Json::parse( fetchResult.m_Response );
+
+            if( !TryParseAccessTokenAndExpiry( response ) )
+            {
+                TaskManager::Instance( ).SubmitMain( onFail, "Could not parse access token and expiry" );
+                return;
+            }
+
+            if( !TryParseRefreshToken( response ) )
+            {
+                TaskManager::Instance( ).SubmitMain( onFail, "Could not parse refresh token" );
+                return;
+            }
+
+            TaskManager::Instance( ).SubmitMain( onComplete );
+        } );
+    ( void )task;
 }
 
 void ImageScraper::RedditService::DownloadContent( const UserInputOptions& inputOptions )
@@ -109,12 +248,14 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
     auto onComplete = [ & ]( int filesDownloaded )
     {
         InfoLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
+
         m_FrontEnd->SetInputState( InputState::Free );
     };
 
     auto onFail = [ & ]( )
     {
         ErrorLog( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
+
         m_FrontEnd->SetInputState( InputState::Free );
     };
 
@@ -129,50 +270,24 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
             if( !IsAuthenticated( ) )
             {
-                RequestOptions authOptions{ };
-                authOptions.m_CaBundle = m_CaBundle;
-                authOptions.m_UserAgent = m_UserAgent;
-                authOptions.m_ClientId = m_ClientId;
-                authOptions.m_ClientSecret = m_ClientSecret;
-
-                AuthenticationRequest authRequest{ };
-                RequestResult authResult = authRequest.Perform( authOptions );
-
-                if( authResult.m_Success )
+                if( m_RefreshToken != "" )
                 {
-                    try
+                    if( !TryPerformAuthTokenRefresh( ) )
                     {
-                        const Json authResponse = Json::parse( authResult.m_Response );
-
-                        if( authResponse.contains( "access_token" ) )
-                        {
-                            m_AuthAccessToken = authResponse[ "access_token" ];
-
-                            if( authResponse.contains( "expires_in" ) )
-                            {
-                                const int expireSeconds = authResponse[ "expires_in" ];
-                                const int expireDelta = 180; // 3 minutes
-                                m_AuthExpireSeconds = std::chrono::seconds{ expireSeconds - expireDelta };
-                                m_TokenReceived = std::chrono::system_clock::now( );
-
-                                InfoLog( "[%s] Reddit authenticated successfully!", __FUNCTION__ );
-                                DebugLog( "[%s] Reddit access token: %s", __FUNCTION__, m_AuthAccessToken.c_str( ) );
-                            }
-                        }
-                        else
-                        {
-                            ErrorLog( "[%s] Failed to authenticate with Reddit API, Could not retrieve access token from respose. Response: %s", __FUNCTION__, authResult.m_Response.c_str( ) );
-                        }
-                    }
-                    catch( const Json::exception& parseError )
-                    {
-                        ErrorLog( "[%s] Failed to authenticate with Reddit API, error: %s", __FUNCTION__, parseError.what( ) );
+                        ClearRefreshToken( );
                     }
                 }
                 else
                 {
-                    ErrorLog( "[%s] Failed to authenticate with Reddit API, error: %s", __FUNCTION__, authResult.m_Error.m_ErrorString );
+                    TryPerformAppOnlyAuth( );
                 }
+            }
+
+            if( !IsAuthenticated( ) )
+            {
+                ErrorLog( "[%s] Could not authenticate with reddit api", __FUNCTION__ );
+                TaskManager::Instance( ).SubmitMain( onFail );
+                return;
             }
 
             std::vector<std::string> mediaUrls{ };
@@ -191,7 +306,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
                 RequestOptions fetchOptions{ };
 
-                if( !options.m_RedditScopeTimeFrame.empty() )
+                if( !options.m_RedditScopeTimeFrame.empty( ) )
                 {
                     fetchOptions.m_QueryParams.push_back( { "t", options.m_RedditScopeTimeFrame } );
                 }
@@ -205,15 +320,18 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 fetchOptions.m_UrlExt = options.m_SubredditName + '/' + options.m_RedditScope + ".json";
                 fetchOptions.m_CaBundle = m_CaBundle;
                 fetchOptions.m_UserAgent = m_UserAgent;
-                fetchOptions.m_AccessToken = m_AuthAccessToken;
+                {
+                    std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
+                    fetchOptions.m_AccessToken = m_AccessToken;
+                }
 
                 FetchSubredditPostsRequest fetchRequest{ };
                 RequestResult fetchResult = fetchRequest.Perform( fetchOptions );
 
                 if( !fetchResult.m_Success )
                 {
-                    WarningLog( "[%s] Failed to fetch subreddit (page %i), error: %s", __FUNCTION__, pageNum, fetchResult.m_Error.m_ErrorString.c_str( ) );
-                    continue;;
+                    ErrorLog( "[%s] Failed to fetch subreddit (page %i), error: %s", __FUNCTION__, pageNum, fetchResult.m_Error.m_ErrorString.c_str( ) );
+                    continue;
                 }
 
                 Json pageResponse = Json::parse( fetchResult.m_Response );
@@ -232,7 +350,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
                 ++pageNum;
             }
-            while( !m_AfterParam.empty( ) && static_cast<int>( mediaUrls.size() ) < options.m_RedditMaxMediaItems );
+            while( !m_AfterParam.empty( ) && static_cast< int >( mediaUrls.size( ) ) < options.m_RedditMaxMediaItems );
 
             if( mediaUrls.empty( ) )
             {
@@ -257,7 +375,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
             int filesDownloaded = 0;
 
-            const int totalDownloads = static_cast<int>( mediaUrls.size( ) );
+            const int totalDownloads = static_cast< int >( mediaUrls.size( ) );
 
             // Download images
             for( std::string& url : mediaUrls )
@@ -320,6 +438,74 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
     ( void )task;
 }
 
+bool ImageScraper::RedditService::TryPerformAppOnlyAuth( )
+{
+    RequestOptions authOptions{ };
+    authOptions.m_CaBundle = m_CaBundle;
+    authOptions.m_UserAgent = m_UserAgent;
+    authOptions.m_ClientId = m_ClientId;
+    authOptions.m_ClientSecret = m_ClientSecret;
+
+    AppOnlyAuthRequest authRequest{ };
+    RequestResult authResult = authRequest.Perform( authOptions );
+
+    if( !authResult.m_Success )
+    {
+        ErrorLog( "[%s] Failed to authenticate with Reddit API, error: %s", __FUNCTION__, authResult.m_Error.m_ErrorString );
+        return false;
+    }
+
+    const Json authResponse = Json::parse( authResult.m_Response );
+
+    if( !TryParseAccessTokenAndExpiry( authResponse ) )
+    {
+        ErrorLog( "[%s] Reddit authentication failed!", __FUNCTION__ );
+        return false;
+    }
+
+    InfoLog( "[%s] Reddit authenticated successfully!", __FUNCTION__ );
+    return true;
+}
+
+bool ImageScraper::RedditService::TryPerformAuthTokenRefresh( )
+{
+    RequestOptions authOptions{ };
+    {
+        std::unique_lock<std::mutex> lock{ m_RefreshTokenMutex };
+        authOptions.m_QueryParams.push_back( { "refresh_token", m_RefreshToken } );
+    }
+    authOptions.m_CaBundle = m_CaBundle;
+    authOptions.m_UserAgent = m_UserAgent;
+    authOptions.m_ClientId = m_ClientId;
+    authOptions.m_ClientSecret = m_ClientSecret;
+
+    RefreshAccessTokenRequest authRequest{ };
+    RequestResult authResult = authRequest.Perform( authOptions );
+
+    if( !authResult.m_Success )
+    {
+        ErrorLog( "[%s] Failed to refresh access token, error: %s", __FUNCTION__, authResult.m_Error.m_ErrorString );
+        return false;
+    }
+
+    const Json authResponse = Json::parse( authResult.m_Response );
+
+    if( !TryParseAccessTokenAndExpiry( authResponse ) )
+    {
+        ErrorLog( "[%s] Could not parse access token or expiry!", __FUNCTION__ );
+        return false;
+    }
+
+    if( !TryParseRefreshToken( authResponse ) )
+    {
+        ErrorLog( "[%s] Could not parse refresh token!", __FUNCTION__ );
+        return false;
+    }
+
+    InfoLog( "[%s] Reddit access token refreshed successfully!", __FUNCTION__ );
+    return true;
+}
+
 std::vector<std::string> ImageScraper::RedditService::GetMediaUrls( const Json& response )
 {
     std::vector<std::string> mediaUrls{ };
@@ -340,7 +526,7 @@ std::vector<std::string> ImageScraper::RedditService::GetMediaUrls( const Json& 
 
         const std::vector<Json>& children = data[ "children" ];
 
-        for (const auto& post : children )
+        for( const auto& post : children )
         {
             const Json& postData = post[ "data" ];
 
@@ -379,7 +565,7 @@ std::vector<std::string> ImageScraper::RedditService::GetMediaUrls( const Json& 
         }
         else
         {
-            m_AfterParam.clear();
+            m_AfterParam.clear( );
         }
     }
     catch( const Json::exception& e )
@@ -389,4 +575,82 @@ std::vector<std::string> ImageScraper::RedditService::GetMediaUrls( const Json& 
     }
 
     return mediaUrls;
+}
+
+bool ImageScraper::RedditService::TryParseAccessTokenAndExpiry( const Json& response )
+{
+    if( !response.contains( "access_token" ) )
+    {
+        ErrorLog( "[%s] Response did not contain access token!", __FUNCTION__ );
+        return false;
+    }
+
+    if( !response.contains( "expires_in" ) )
+    {
+        ErrorLog( "[%s] Response did not contain token expire seconds!", __FUNCTION__ );
+        return false;
+    }
+
+    std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
+
+    try
+    {
+        m_AccessToken = response[ "access_token" ];
+
+        const int expireSeconds = response[ "expires_in" ];
+        const int expireDelta = 180; // 3 minutes
+        m_AuthExpireSeconds = std::chrono::seconds{ expireSeconds - expireDelta };
+        m_TokenReceived = std::chrono::system_clock::now( );
+    }
+    catch( const Json::exception& ex )
+    {
+        std::string error = ex.what( );
+        ErrorLog( "[%s] could not parse access token response, error: %s", __FUNCTION__, error.c_str( ) );
+        return false;
+    }
+
+    DebugLog( "[%s] Reddit access token: %s", __FUNCTION__, m_AccessToken.c_str( ) );
+    DebugLog( "[%s] Reddit access token expires in %i seconds!", __FUNCTION__, m_AuthExpireSeconds );
+    return true;
+}
+
+bool ImageScraper::RedditService::TryParseRefreshToken( const Json& response )
+{
+    if( !response.contains( "refresh_token" ) )
+    {
+        ErrorLog( "[%s] Response did not contain refresh token!", __FUNCTION__ );
+        return false;
+    }
+
+    std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
+
+    try
+    {
+        m_RefreshToken = response[ "refresh_token" ];
+    }
+    catch( const Json::exception& ex )
+    {
+        std::string error = ex.what( );
+        ErrorLog( "[%s] could not parse refresh token response, error: %s", __FUNCTION__, error.c_str( ) );
+        return false;
+    }
+
+    m_AppConfig->SetValue( s_AppDataKey_RefreshToken, m_RefreshToken );
+    m_AppConfig->Serialise( );
+
+    DebugLog( "[%s] Reddit access token: %s", __FUNCTION__, m_RefreshToken.c_str( ) );
+    return true;
+}
+
+void ImageScraper::RedditService::ClearRefreshToken( )
+{
+    m_RefreshToken.clear();
+    m_AppConfig->SetValue( s_AppDataKey_RefreshToken, m_RefreshToken );
+    m_AppConfig->Serialise( );
+}
+
+void ImageScraper::RedditService::ClearAccessToken( )
+{
+    m_AccessToken.clear( );
+    m_AuthExpireSeconds = std::chrono::seconds{ 0 };
 }

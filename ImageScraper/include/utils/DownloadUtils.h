@@ -10,6 +10,8 @@
 
 namespace ImageScraper::DownloadHelpers
 {
+    using Json = nlohmann::json;
+
     static std::string UrlToSafeString( const std::string& url )
     {
         // Remove scheme and colon
@@ -136,25 +138,83 @@ namespace ImageScraper::DownloadHelpers
         return paramString;
     }
 
-    static bool IsResponseError( RequestResult& result )
+    static bool IsRedditResponseError( RequestResult& result )
     {
-        using Json = nlohmann::json;
-
         try
         {
             Json payload = Json::parse( result.m_Response );
 
             if( payload.contains( "error" ) )
             {
-                // TODO Parse error properly
-                result.m_Error.m_ErrorCode = ResponseErrorCode::Unknown;
-                result.m_Error.m_ErrorString = "Response Error!";
+                const int errorCode = payload[ "error" ];
+                result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( errorCode );
                 return true;
+            }
+
+            if( payload.contains( "message" ) )
+            {
+                result.m_Error.m_ErrorString = payload[ "message" ];
             }
         }
         catch( const Json::exception& ex )
         {
-            result.m_Error.m_ErrorCode = ResponseErrorCode::Unknown;
+            result.m_Error.m_ErrorCode = ResponseErrorCode::InternalServerError;
+            result.m_Error.m_ErrorString = ex.what( );
+            return true;
+        }
+
+        return false;
+    }
+
+    static bool IsTumblrResponseError( RequestResult& result )
+    {
+        try
+        {
+            Json payload = Json::parse( result.m_Response );
+
+            if( payload.contains( "error" ) )
+            {
+                const int errorCode = payload[ "error" ];
+                result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( errorCode );
+                return true;
+            }
+
+            if( payload.contains( "message" ) )
+            {
+                result.m_Error.m_ErrorString = payload[ "message" ];
+            }
+        }
+        catch( const Json::exception& ex )
+        {
+            result.m_Error.m_ErrorCode = ResponseErrorCode::InternalServerError;
+            result.m_Error.m_ErrorString = ex.what( );
+            return true;
+        }
+
+        return false;
+    }
+
+    static bool IsFourChanResponseError( RequestResult& result )
+    {
+        try
+        {
+            Json payload = Json::parse( result.m_Response );
+
+            if( payload.contains( "error" ) )
+            {
+                const int errorCode = payload[ "error" ];
+                result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( errorCode );
+                return true;
+            }
+
+            if( payload.contains( "message" ) )
+            {
+                result.m_Error.m_ErrorString = payload[ "message" ];
+            }
+        }
+        catch( const Json::exception& ex )
+        {
+            result.m_Error.m_ErrorCode = ResponseErrorCode::InternalServerError;
             result.m_Error.m_ErrorString = ex.what( );
             return true;
         }

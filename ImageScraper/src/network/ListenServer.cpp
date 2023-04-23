@@ -20,23 +20,33 @@ void ImageScraper::ListenServer::Start(  )
         return;
     }
 
-    auto OnMessageReceived = [ & ]( const std::string& message )
+    auto OnMessageReceived = [ & ]( const std::string message )
     {
         ErrorLog( "[%s] ListenServer message received, message: %s", __FUNCTION__, message.c_str( ) );
-        // TODO send message to services
+
+        for (const auto& service : m_Services)
+        {
+            if( service->HandleExternalAuth( message ) )
+            {
+                DebugLog( "[%s] ListenServer auth response handled!", __FUNCTION__ );
+                return;
+            }
+        }
+
+        DebugLog( "[%s] ListenServer auth response not handled!", __FUNCTION__ );
     };
 
-    auto OnError = [ & ]( const std::string& error )
+    auto OnError = [ & ]( const std::string error )
     {
-        ErrorLog( "[%s] ListenServer failed, error: %s", __FUNCTION__, error.c_str( ) );
+        DebugLog( "[%s] ListenServer failed, error: %s", __FUNCTION__, error.c_str( ) );
 
         if( m_CurrentRetries >= m_MaxRetries )
         {
-            ErrorLog( "[%s] ListenServer max retries reached!", __FUNCTION__ );
+            DebugLog( "[%s] ListenServer max retries reached!", __FUNCTION__ );
             return;
         }
 
-        ErrorLog( "[%s] ListenServer retrying startup: %i/%i !", __FUNCTION__, m_CurrentRetries, m_MaxRetries );
+        DebugLog( "[%s] ListenServer retrying startup: %i/%i !", __FUNCTION__, m_CurrentRetries, m_MaxRetries );
         ++m_CurrentRetries;
         Start( );
     };
@@ -120,17 +130,14 @@ void ImageScraper::ListenServer::Start(  )
                     return;
                 }
 
-                InfoLog( "[%s] ListenServer connection establised!", __FUNCTION__ );
+                DebugLog( "[%s] ListenServer connection establised!", __FUNCTION__ );
 
                 // Now receive and process the HTTP response from the browser
                 char buffer[ 4096 ];
                 int bytesReceived = recv( clientSocket, buffer, sizeof( buffer ), 0 );
                 std::string response( buffer, bytesReceived );
 
-                InfoLog( "[%s] ListenServer bytes received!, bytes: %i, data: %s, ", __FUNCTION__, bytesReceived, response.c_str() );
-
-                auto messageTask = TaskManager::Instance( ).SubmitMain( OnMessageReceived, response );
-                ( void )messageTask;
+                DebugLog( "[%s] ListenServer bytes received!, bytes: %i, data: %s, ", __FUNCTION__, bytesReceived, response.c_str() );
 
                 std::string httpResponse = "HTTP/1.1 200 OK\r\n"
                     "Content-Type: text/html\r\n"
@@ -141,12 +148,16 @@ void ImageScraper::ListenServer::Start(  )
                 int bytesSent = send( clientSocket, httpResponse.c_str( ), static_cast<int>( httpResponse.length( ) ), 0 );
                 if( bytesSent == SOCKET_ERROR )
                 {
-                    ErrorLog( "[%s] ListenServer failed to send http response.", __FUNCTION__ );
+                    DebugLog( "[%s] ListenServer failed to send http response.", __FUNCTION__ );
                     DebugLog( "[%s] ListenServer Response: ", __FUNCTION__, response.c_str( ) );
                 }
 
-                InfoLog( "[%s] ListenServer sent http response successfully!", __FUNCTION__ );
+                DebugLog( "[%s] ListenServer sent http response successfully!", __FUNCTION__ );
+
                 DebugLog( "[%s] ListenServer Response: ", __FUNCTION__, response.c_str( ) );
+
+                auto messageTask = TaskManager::Instance( ).SubmitMain( OnMessageReceived, response );
+                ( void )messageTask;
 
                 closesocket( clientSocket );
             }

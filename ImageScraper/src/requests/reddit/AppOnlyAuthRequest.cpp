@@ -1,28 +1,28 @@
-#include "requests/reddit/AuthenticationRequest.h"
+#include "requests/reddit/AppOnlyAuthRequest.h"
 #include "utils/DownloadUtils.h"
 #include "curlpp/Options.hpp"
 #include "cppcodec/base64_rfc4648.hpp"
 
-const std::string ImageScraper::Reddit::AuthenticationRequest::s_AuthUrl = "https://www.reddit.com/api/v1/access_token";
-const std::string ImageScraper::Reddit::AuthenticationRequest::s_AuthData = "grant_type=client_credentials";
+const std::string ImageScraper::Reddit::AppOnlyAuthRequest::s_AuthUrl = "https://www.reddit.com/api/v1/access_token";
+const std::string ImageScraper::Reddit::AppOnlyAuthRequest::s_AuthData = "grant_type=client_credentials";
 
-ImageScraper::RequestResult ImageScraper::Reddit::AuthenticationRequest::Perform( const RequestOptions& options )
+ImageScraper::RequestResult ImageScraper::Reddit::AppOnlyAuthRequest::Perform( const RequestOptions& options )
 {
-    DebugLog( "[%s] AuthenticationRequest started!", __FUNCTION__ );
+    DebugLog( "[%s] AppOnlyAuthRequest started!", __FUNCTION__ );
 
     RequestResult result{ };
 
     if( options.m_ClientId == "" )
     {
-        result.SetError( ResponseErrorCode::InvalidOptions );
-        DebugLog( "[%s] AuthenticationRequest failed, Client ID not provided.", __FUNCTION__ );
+        result.SetError( ResponseErrorCode::InternalServerError );
+        DebugLog( "[%s] AppOnlyAuthRequest failed, Client ID not provided.", __FUNCTION__ );
         return result;
     }
 
     if( options.m_ClientSecret == "" )
     {
-        result.SetError( ResponseErrorCode::InvalidOptions );
-        DebugLog( "[%s] AuthenticationRequest failed, Client Secret not provided.", __FUNCTION__ );
+        result.SetError( ResponseErrorCode::InternalServerError );
+        DebugLog( "[%s] AppOnlyAuthRequest failed, Client Secret not provided.", __FUNCTION__ );
         return result;
     }
 
@@ -52,27 +52,27 @@ ImageScraper::RequestResult ImageScraper::Reddit::AuthenticationRequest::Perform
     }
     catch( curlpp::RuntimeError& error )
     {
-        result.SetError( ResponseErrorCode::Unknown );
+        result.SetError( ResponseErrorCode::InternalServerError );
         result.m_Error.m_ErrorString = error.what( );
-        DebugLog( "[%s] AuthenticationRequest failed!", __FUNCTION__, result.m_Error.m_ErrorString.c_str() );
+        DebugLog( "[%s] AppOnlyAuthRequest failed!", __FUNCTION__, result.m_Error.m_ErrorString.c_str() );
         return result;
 
     }
     catch( curlpp::LogicError& error )
     {
-        result.SetError( ResponseErrorCode::Unknown );
+        result.SetError( ResponseErrorCode::InternalServerError );
         result.m_Error.m_ErrorString = error.what( );
-        DebugLog( "[%s] AuthenticationRequest failed!", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        DebugLog( "[%s] AppOnlyAuthRequest failed!", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
-    if( DownloadHelpers::IsResponseError( result ) )
+    if( DownloadHelpers::IsRedditResponseError( result ) )
     {
-        DebugLog( "[%s] AuthenticationRequest failed!", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        DebugLog( "[%s] AppOnlyAuthRequest failed!", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
-    DebugLog( "[%s] AuthenticationRequest complete!", __FUNCTION__ );
+    DebugLog( "[%s] AppOnlyAuthRequest complete!", __FUNCTION__ );
     result.m_Success = true;
     return result;
 }

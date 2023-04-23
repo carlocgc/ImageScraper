@@ -19,7 +19,7 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
 
     if( options.m_BufferPtr == nullptr )
     {
-        m_Result.SetError( ResponseErrorCode::InvalidOptions );
+        m_Result.SetError( ResponseErrorCode::InternalServerError );
         DebugLog( "[%s] DownloadRequest failed! error: %s", __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ) );
         return m_Result;
     }
@@ -55,14 +55,14 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
     }
     catch( curlpp::RuntimeError& e )
     {
-        m_Result.SetError( ResponseErrorCode::Unknown );
+        m_Result.SetError( ResponseErrorCode::InternalServerError );
         m_Result.m_Error.m_ErrorString = e.what( );
         DebugLog( "[%s] DownloadRequest failed! error: %s", __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ) );
         return m_Result;
     }
     catch( curlpp::LogicError& e )
     {
-        m_Result.SetError( ResponseErrorCode::Unknown );
+        m_Result.SetError( ResponseErrorCode::InternalServerError );
         m_Result.m_Error.m_ErrorString = e.what( );
         DebugLog( "[%s] DownloadRequest failed! error: %s", __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ) );
         return m_Result;
@@ -78,7 +78,7 @@ size_t ImageScraper::DownloadRequest::WriteCallback( char* contents, size_t size
     if( !m_BufferPtr )
     {
         ErrorLog( "[%s] DownloadRequest failed, buffer invalid!", __FUNCTION__ );
-        m_Result.SetError( ResponseErrorCode::InvalidOptions );
+        m_Result.SetError( ResponseErrorCode::InternalServerError );
         return 0;
     }
 

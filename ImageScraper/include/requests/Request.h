@@ -1,5 +1,5 @@
 #pragma once
-#include "RequestTypes.h"
+#include "requests/RequestTypes.h"
 #include "config/Config.h"
 #include <curlpp/Easy.hpp>
 #include <curlpp/cURLpp.hpp>

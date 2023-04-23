@@ -69,7 +69,7 @@
     <ClCompile Include="src\io\JsonFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\requests\reddit\AuthenticationRequest.cpp">
+    <ClCompile Include="src\requests\reddit\AppOnlyAuthRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\services\TumblrService.cpp">
@@ -88,6 +88,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\network\ListenServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\requests\reddit\FetchAccessTokenRequest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\requests\reddit\RefreshAccessTokenRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -311,7 +317,7 @@
     <ClInclude Include="include\utils\EncryptionUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\requests\reddit\AuthenticationRequest.h">
+    <ClInclude Include="include\requests\reddit\AppOnlyAuthRequest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\cppcodec\data\access.hpp">
@@ -408,6 +414,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\network\ListenServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\requests\reddit\FetchAccessTokenRequest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\requests\reddit\RefreshAccessTokenRequest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

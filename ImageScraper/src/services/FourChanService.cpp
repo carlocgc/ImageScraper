@@ -33,6 +33,16 @@ bool ImageScraper::FourChanService::OpenExternalAuth( )
     return false;
 }
 
+bool ImageScraper::FourChanService::HandleExternalAuth( const std::string& response )
+{
+    return false;
+}
+
+bool ImageScraper::FourChanService::IsSignedIn( )
+{
+    return false;
+}
+
 bool ImageScraper::FourChanService::IsCancelled( )
 {
     return m_FrontEnd->IsCancelled( );

@@ -52,6 +52,8 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchSubredditPostsRequest::Pe
         // Set the cert bundle for TLS/HTTPS
         request.setOpt( new curlpp::options::CaInfo( options.m_CaBundle ) );
 
+        request.setOpt( new curlpp::options::Verbose( true ) );
+
         DebugLog( "[%s] FetchSubredditPostsRequest, URL: %s", __FUNCTION__, url.c_str() );
 
         // Perform the request, blocks thread
@@ -61,20 +63,20 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchSubredditPostsRequest::Pe
     }
     catch( curlpp::RuntimeError& error )
     {
-        result.SetError( ResponseErrorCode::Unknown );
+        result.SetError( ResponseErrorCode::InternalServerError );
         result.m_Error.m_ErrorString = error.what( );
         DebugLog( "[%s] FetchSubredditPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
     catch( curlpp::LogicError& error )
     {
-        result.SetError( ResponseErrorCode::Unknown );
+        result.SetError( ResponseErrorCode::InternalServerError );
         result.m_Error.m_ErrorString = error.what( );
         DebugLog( "[%s] FetchSubredditPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str() );
         return result;
     }
 
-    if( DownloadHelpers::IsResponseError( result ) )
+    if( DownloadHelpers::IsRedditResponseError( result ) )
     {
         DebugLog( "[%s] FetchSubredditPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;

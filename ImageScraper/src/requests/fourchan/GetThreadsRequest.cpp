@@ -32,20 +32,20 @@ ImageScraper::RequestResult ImageScraper::FourChan::GetThreadsRequest::Perform( 
     }
     catch( curlpp::RuntimeError& error )
     {
-        result.SetError( ResponseErrorCode::Unknown );
+        result.SetError( ResponseErrorCode::InternalServerError );
         result.m_Error.m_ErrorString = error.what( );
         DebugLog( "[%s] FourChan::GetThreadsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
     catch( curlpp::LogicError& error )
     {
-        result.SetError( ResponseErrorCode::Unknown );
+        result.SetError( ResponseErrorCode::InternalServerError );
         result.m_Error.m_ErrorString = error.what( );
         DebugLog( "[%s] FourChan::GetThreadsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
-    if( DownloadHelpers::IsResponseError( result ) )
+    if( DownloadHelpers::IsFourChanResponseError( result ) )
     {
         DebugLog( "[%s] FourChan::GetThreadsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
