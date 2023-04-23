@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,6 +10,7 @@
             background-color: #000000;
             color: #fff;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -24,9 +26,22 @@
             border-radius: 5px;
             box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.16);
         }
+
+        .logo {
+            width: 100px;
+            margin-bottom: 20px;
+        }
+
+        .app-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
+    <img class="logo" src="https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png" alt="Reddit Logo">
+    <div class="app-name">Image Scraper</div>
     <h1>Authorization Complete!</h1>
 </body>
 </html>
