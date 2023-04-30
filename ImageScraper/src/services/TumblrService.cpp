@@ -48,7 +48,7 @@ bool ImageScraper::TumblrService::HandleExternalAuth( const std::string& respons
     return false;
 }
 
-bool ImageScraper::TumblrService::IsSignedIn( )
+bool ImageScraper::TumblrService::IsSignedIn( ) const
 {
     return false;
 }

@@ -29,7 +29,7 @@ namespace ImageScraper
         virtual bool HandleUserInput( const UserInputOptions& options ) = 0;
         virtual bool OpenExternalAuth( ) = 0;
         virtual bool HandleExternalAuth( const std::string& response ) = 0;
-        virtual bool IsSignedIn( ) = 0;
+        virtual bool IsSignedIn( ) const = 0;
         virtual void Authenticate( AuthenticateCallback callback ) = 0;
         ContentProvider GetContentProvider( ) { return m_ContentProvider; }
 
@@ -42,6 +42,5 @@ namespace ImageScraper
         std::string m_UserAgent{ "Windows:ImageScraper:v0.1:carlocgc1@gmail.com" };
         std::string m_CaBundle{ };
         std::shared_ptr<FrontEnd> m_FrontEnd{ nullptr };
-        bool m_IsAuthenticated{ false };
     };
 }

@@ -38,7 +38,7 @@ bool ImageScraper::FourChanService::HandleExternalAuth( const std::string& respo
     return false;
 }
 
-bool ImageScraper::FourChanService::IsSignedIn( )
+bool ImageScraper::FourChanService::IsSignedIn( ) const
 {
     return false;
 }

@@ -14,9 +14,11 @@
 #include "network/ListenServer.h"
 
 #include <string>
+#include <chrono>
 
 #define UI_MAX_LOG_LINES 10000
 #define LISTEN_SERVER_PORT 8080
+#define MIN_FRAME_TIME_MS 16
 
 const std::string ImageScraper::App::s_UserConfigFile = "config.json";
 const std::string ImageScraper::App::s_AppConfigFile = "ImageScraper/config.json";
@@ -76,11 +78,18 @@ int ImageScraper::App::Run( )
     // Main loop
     while( !glfwWindowShouldClose( m_FrontEnd->GetWindow( ) ) )
     {
+        auto startTime = std::chrono::high_resolution_clock::now( );
+
         m_FrontEnd->Update( );
 
         TaskManager::Instance( ).Update( );
 
         m_FrontEnd->Render( ); // TOOD dedicated UI thread
+
+        auto endTime = std::chrono::high_resolution_clock::now( );
+        auto nextTime = startTime + std::chrono::milliseconds( MIN_FRAME_TIME_MS );
+
+        std::this_thread::sleep_until( nextTime );
     }
 
     m_ListenServer->Stop( );

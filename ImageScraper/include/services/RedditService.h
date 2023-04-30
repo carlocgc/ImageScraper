@@ -21,7 +21,7 @@ namespace ImageScraper
         bool HandleUserInput( const UserInputOptions& options ) override;
         bool OpenExternalAuth( ) override;
         bool HandleExternalAuth( const std::string& response ) override;
-        bool IsSignedIn( ) override;
+        bool IsSignedIn( ) const override;
         void Authenticate( AuthenticateCallback callback ) override;
 
     protected:

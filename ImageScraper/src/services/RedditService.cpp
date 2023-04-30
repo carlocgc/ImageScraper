@@ -153,9 +153,10 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
     return true;
 }
 
-bool ImageScraper::RedditService::IsSignedIn( )
+bool ImageScraper::RedditService::IsSignedIn( ) const
 {
-    return m_RefreshToken != "";
+    std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
+    return !m_AccessToken.empty( );
 }
 
 void ImageScraper::RedditService::Authenticate( AuthenticateCallback callback )
@@ -192,12 +193,10 @@ bool ImageScraper::RedditService::IsCancelled( )
 
 const bool ImageScraper::RedditService::IsAuthenticated( ) const
 {
+
+    if( !IsSignedIn( ) )
     {
-        std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
-        if( m_AccessToken == "" )
-        {
-            return false;
-        }
+        return false;
     }
 
     const std::chrono::system_clock::time_point now = std::chrono::system_clock::now( );
@@ -689,6 +688,7 @@ void ImageScraper::RedditService::ClearRefreshToken( )
 
 void ImageScraper::RedditService::ClearAccessToken( )
 {
+    std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
     m_AccessToken.clear( );
     m_AuthExpireSeconds = std::chrono::seconds{ 0 };
 }
