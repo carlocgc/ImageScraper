@@ -521,6 +521,7 @@ bool ImageScraper::RedditService::TryPerformAuthTokenRefresh( )
     if( !authResult.m_Success )
     {
         ErrorLog( "[%s] Failed to refresh access token, error: %s", __FUNCTION__, authResult.m_Error.m_ErrorString.c_str( ) );
+        ClearRefreshToken( );
         return false;
     }
 
@@ -680,6 +681,7 @@ bool ImageScraper::RedditService::TryParseRefreshToken( const Json& response )
 
 void ImageScraper::RedditService::ClearRefreshToken( )
 {
+    std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
     m_RefreshToken.clear( );
     m_AppConfig->SetValue( s_AppDataKey_RefreshToken, m_RefreshToken );
     m_AppConfig->Serialise( );
