@@ -4,6 +4,7 @@
 
 #include <string>
 #include <memory>
+#include <functional>
 
 namespace ImageScraper
 {
@@ -13,6 +14,8 @@ namespace ImageScraper
     class Service
     {
     public:
+        using AuthenticateCallback = std::function<void( ContentProvider, bool )>;
+
         Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<FrontEnd> frontEnd )
             : m_ContentProvider{ provider }
             , m_AppConfig{ appConfig }
@@ -27,6 +30,7 @@ namespace ImageScraper
         virtual bool OpenExternalAuth( ) = 0;
         virtual bool HandleExternalAuth( const std::string& response ) = 0;
         virtual bool IsSignedIn( ) = 0;
+        virtual void Authenticate( AuthenticateCallback callback ) = 0;
         ContentProvider GetContentProvider( ) { return m_ContentProvider; }
 
     protected:

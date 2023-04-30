@@ -71,6 +71,8 @@ int ImageScraper::App::Run( )
     m_ListenServer->Init( m_Services, LISTEN_SERVER_PORT );
     m_ListenServer->Start( );
 
+    AuthenticateServices( );
+
     // Main loop
     while( !glfwWindowShouldClose( m_FrontEnd->GetWindow( ) ) )
     {
@@ -84,4 +86,29 @@ int ImageScraper::App::Run( )
     m_ListenServer->Stop( );
 
     return 0;
+}
+
+void ImageScraper::App::AuthenticateServices( )
+{
+    m_FrontEnd->SetInputState( InputState::Blocked );
+
+    auto callback = [ & ]( ContentProvider provider, bool success )
+    {
+        if( !success )
+        {
+            DebugLog( "[%s] %s failed to autheticate!", __FUNCTION__, s_ContentProviderStrings[ static_cast<uint8_t>( provider ) ] );
+        }
+
+        m_AuthenticatingCount--;
+        if( m_AuthenticatingCount <= 0 )
+        {
+            m_FrontEnd->SetInputState( InputState::Free );
+        }
+    };
+
+    for( auto service : m_Services )
+    {
+        ++m_AuthenticatingCount;
+        service->Authenticate( callback );
+    }
 }

@@ -158,6 +158,33 @@ bool ImageScraper::RedditService::IsSignedIn( )
     return m_RefreshToken != "";
 }
 
+void ImageScraper::RedditService::Authenticate( AuthenticateCallback callback )
+{
+    auto onComplete = [ &, completeCallback = callback ]( )
+    {
+        completeCallback( m_ContentProvider, true );
+        DebugLog( "[%s] Reddit autheticated successfully!", __FUNCTION__ );
+    };
+
+    auto onFail = [ &, completeCallback = callback ]( )
+    {
+        completeCallback( m_ContentProvider, false );
+        DebugLog( "[%s] Reddit authetication failed", __FUNCTION__ );
+    };
+
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, onComplete, onFail ]( )
+        {
+            if( TryPerformAuthTokenRefresh( ) )
+            {
+                onComplete( );
+            }
+            else
+            {
+                onFail( );
+            }
+        } );
+}
+
 bool ImageScraper::RedditService::IsCancelled( )
 {
     return m_FrontEnd->IsCancelled( );
@@ -470,10 +497,19 @@ bool ImageScraper::RedditService::TryPerformAppOnlyAuth( )
 bool ImageScraper::RedditService::TryPerformAuthTokenRefresh( )
 {
     RequestOptions authOptions{ };
+
     {
         std::unique_lock<std::mutex> lock{ m_RefreshTokenMutex };
+
+        if( m_RefreshToken.empty( ) )
+        {
+            DebugLog( "[%s] Reddit access token not found!", __FUNCTION__ );
+            return false;
+        }
+
         authOptions.m_QueryParams.push_back( { "refresh_token", m_RefreshToken } );
     }
+
     authOptions.m_CaBundle = m_CaBundle;
     authOptions.m_UserAgent = m_UserAgent;
     authOptions.m_ClientId = m_ClientId;
@@ -484,7 +520,7 @@ bool ImageScraper::RedditService::TryPerformAuthTokenRefresh( )
 
     if( !authResult.m_Success )
     {
-        ErrorLog( "[%s] Failed to refresh access token, error: %s", __FUNCTION__, authResult.m_Error.m_ErrorString.c_str() );
+        ErrorLog( "[%s] Failed to refresh access token, error: %s", __FUNCTION__, authResult.m_Error.m_ErrorString.c_str( ) );
         return false;
     }
 
@@ -644,7 +680,7 @@ bool ImageScraper::RedditService::TryParseRefreshToken( const Json& response )
 
 void ImageScraper::RedditService::ClearRefreshToken( )
 {
-    m_RefreshToken.clear();
+    m_RefreshToken.clear( );
     m_AppConfig->SetValue( s_AppDataKey_RefreshToken, m_RefreshToken );
     m_AppConfig->Serialise( );
 }

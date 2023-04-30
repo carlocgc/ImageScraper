@@ -43,6 +43,11 @@ bool ImageScraper::FourChanService::IsSignedIn( )
     return false;
 }
 
+void ImageScraper::FourChanService::Authenticate( AuthenticateCallback callback )
+{
+    callback( m_ContentProvider, true );
+}
+
 bool ImageScraper::FourChanService::IsCancelled( )
 {
     return m_FrontEnd->IsCancelled( );

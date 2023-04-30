@@ -30,7 +30,7 @@ namespace ImageScraper
     enum class InputState : uint8_t
     {
         Free,
-        Blocked,
+        Blocked
     };
 
     class FrontEnd

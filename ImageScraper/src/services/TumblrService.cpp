@@ -53,6 +53,11 @@ bool ImageScraper::TumblrService::IsSignedIn( )
     return false;
 }
 
+void ImageScraper::TumblrService::Authenticate( AuthenticateCallback callback )
+{
+    callback( m_ContentProvider, true );
+}
+
 bool ImageScraper::TumblrService::IsCancelled( )
 {
     return m_FrontEnd->IsCancelled( );

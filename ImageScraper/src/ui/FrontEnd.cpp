@@ -104,7 +104,7 @@ void ImageScraper::FrontEnd::Update( )
 
 bool ImageScraper::FrontEnd::HandleUserInput( )
 {
-    if( m_InputState == InputState::Blocked )
+    if( m_InputState >= InputState::Blocked )
     {
         return false;
     }
@@ -265,7 +265,7 @@ void ImageScraper::FrontEnd::UpdateProviderOptionsWindow( )
 
 void ImageScraper::FrontEnd::UpdateProviderWidgets( )
 {
-    ImGui::BeginDisabled( m_InputState == InputState::Blocked );
+    ImGui::BeginDisabled( m_InputState >= InputState::Blocked );
 
     if( ImGui::BeginChild( "ContentProvider", ImVec2( 500, 25 ), false ) )
     {

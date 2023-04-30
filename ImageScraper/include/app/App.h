@@ -25,12 +25,16 @@ namespace ImageScraper
         static const std::string s_CaBundleFile;
 
     private:
+        void AuthenticateServices( );
+
         std::shared_ptr<JsonFile> m_AppConfig{ nullptr };
         std::shared_ptr<JsonFile> m_UserConfig{ nullptr };
         std::shared_ptr<FrontEnd> m_FrontEnd{ nullptr };
         std::shared_ptr<ListenServer> m_ListenServer{ nullptr };
 
         std::vector<std::shared_ptr<Service>> m_Services{ };
+
+        int m_AuthenticatingCount{ 0 };
     };
 }
 
