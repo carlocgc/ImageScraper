@@ -4,5 +4,7 @@
   "tumblr_api_key": "m0gvJKhZeGQFIS8edpMGD16x3MyVrQxtrPfwIKRns4XvVlgldc",
   "instagram_client_id": "176879648598743",
   "instagram_client_secret": "f7247f45d1bdcc612b2303c70ea91a11",
-  "instagram_access_token": "IGQVJYSU9fM2JGN29LZAGwyRUpxTkJzWmF6ODBEcUIxa2JRYk91a185UklmS2VYRmRaS3d2UU5vWVRfeFRvQjhyVVE1bEczY0xxaTBZATmFONkt4MTA3ZAkVjSXV6WWI5RWFoTWJkaThMV3Y1WURPY0s0UQZDZD"
+  "instagram_access_token": "IGQVJYSU9fM2JGN29LZAGwyRUpxTkJzWmF6ODBEcUIxa2JRYk91a185UklmS2VYRmRaS3d2UU5vWVRfeFRvQjhyVVE1bEczY0xxaTBZATmFONkt4MTA3ZAkVjSXV6WWI5RWFoTWJkaThMV3Y1WURPY0s0UQZDZD",
+  "discord_client_id": "1202634951535886387",
+  "discord_client_secret": "WNbn5ZqO0u0zZhIjt0KST8X-LelWO5Ji"
 }
