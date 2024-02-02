@@ -14,10 +14,10 @@ ImageScraper::ThreadPool::ThreadPool( int numThreads )
                         std::unique_lock<std::mutex> lock( m_QueueMutexes[ i ] );
                         m_Conditions[ i ].wait( lock, [ this, i ]
                             {
-                                return m_Stop || !m_TaskQueues[ i ].empty( );
+                                return m_Stopping.load() || !m_TaskQueues[ i ].empty( );
                             } );
 
-                        if( m_Stop || m_TaskQueues[ i ].empty( ) )
+                        if( m_Stopping.load() || m_TaskQueues[ i ].empty( ) )
                         {
                             return;
                         }
@@ -37,7 +37,7 @@ ImageScraper::ThreadPool::~ThreadPool( )
 {
     {
         std::unique_lock<std::mutex> lock( m_StopMutex );
-        m_Stop = true;
+        m_Stopping.store( true );
     }
 
     for( auto& [key, cond] : m_Conditions )
@@ -58,7 +58,7 @@ void ImageScraper::ThreadPool::Update( )
     {
         std::unique_lock<std::mutex> lock( m_MainMutex );
 
-        if( m_Stop || m_MainQueue.empty( ) )
+        if( m_Stopping.load() || m_MainQueue.empty( ) )
         {
             return;
         }

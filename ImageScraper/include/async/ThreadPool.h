@@ -96,7 +96,7 @@ namespace ImageScraper
         std::condition_variable m_MainCondtion{ };
 
         std::mutex m_StopMutex{ };
-        bool m_Stop{ false };
+        std::atomic<bool> m_Stopping{ false };
     };
 }
 
