@@ -7,6 +7,18 @@ ImageScraper::ThreadPool::~ThreadPool( )
 
 void ImageScraper::ThreadPool::Start( int numThreads )
 {
+    if( m_IsRunning )
+    {
+        return;
+    }
+
+    if( m_Stopping.load( ) )
+    {
+        return;
+    }
+
+    m_IsRunning = true;
+
     for( int i = 0; i < numThreads; ++i )
     {
         m_Threads.emplace_back( [ this, i ]
@@ -24,6 +36,7 @@ void ImageScraper::ThreadPool::Start( int numThreads )
 
                         if( m_Stopping.load( ) || m_TaskQueues[ i ].empty( ) )
                         {
+                            lock.unlock( );
                             return;
                         }
 
@@ -60,7 +73,12 @@ void ImageScraper::ThreadPool::Update( )
 
 void ImageScraper::ThreadPool::Stop( )
 {
-    if( !m_IsRunning || m_Stopping.load() )
+    if( !m_IsRunning )
+    {
+        return;
+    }
+
+    if( m_Stopping.load( ) )
     {
         return;
     }
@@ -69,7 +87,7 @@ void ImageScraper::ThreadPool::Stop( )
 
     for( auto& [key, cond] : m_Conditions )
     {
-        cond.notify_all( );
+        cond.notify_all( );        
     }
 
     for( auto& thread : m_Threads )
