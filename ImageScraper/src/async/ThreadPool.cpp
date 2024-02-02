@@ -1,6 +1,11 @@
 #include "async/ThreadPool.h"
 
-ImageScraper::ThreadPool::ThreadPool( int numThreads )
+ImageScraper::ThreadPool::~ThreadPool( )
+{
+    Stop( );
+}
+
+void ImageScraper::ThreadPool::Start( int numThreads )
 {
     for( int i = 0; i < numThreads; ++i )
     {
@@ -14,10 +19,10 @@ ImageScraper::ThreadPool::ThreadPool( int numThreads )
                         std::unique_lock<std::mutex> lock( m_QueueMutexes[ i ] );
                         m_Conditions[ i ].wait( lock, [ this, i ]
                             {
-                                return m_Stopping.load() || !m_TaskQueues[ i ].empty( );
+                                return m_Stopping.load( ) || !m_TaskQueues[ i ].empty( );
                             } );
 
-                        if( m_Stopping.load() || m_TaskQueues[ i ].empty( ) )
+                        if( m_Stopping.load( ) || m_TaskQueues[ i ].empty( ) )
                         {
                             return;
                         }
@@ -33,24 +38,6 @@ ImageScraper::ThreadPool::ThreadPool( int numThreads )
     }
 }
 
-ImageScraper::ThreadPool::~ThreadPool( )
-{
-    {
-        std::unique_lock<std::mutex> lock( m_StopMutex );
-        m_Stopping.store( true );
-    }
-
-    for( auto& [key, cond] : m_Conditions )
-    {
-        cond.notify_all( );
-    }
-
-    for( auto& thread : m_Threads )
-    {
-        thread.join( );
-    }
-}
-
 void ImageScraper::ThreadPool::Update( )
 {
     std::function<void( )> task;
@@ -58,7 +45,7 @@ void ImageScraper::ThreadPool::Update( )
     {
         std::unique_lock<std::mutex> lock( m_MainMutex );
 
-        if( m_Stopping.load() || m_MainQueue.empty( ) )
+        if( m_Stopping.load( ) || m_MainQueue.empty( ) )
         {
             return;
         }
@@ -69,4 +56,27 @@ void ImageScraper::ThreadPool::Update( )
     }
 
     task( );
+}
+
+void ImageScraper::ThreadPool::Stop( )
+{
+    if( !m_IsRunning || m_Stopping.load() )
+    {
+        return;
+    }
+
+    m_Stopping.store( true );    
+
+    for( auto& [key, cond] : m_Conditions )
+    {
+        cond.notify_all( );
+    }
+
+    for( auto& thread : m_Threads )
+    {
+        thread.join( );
+    }
+
+    m_IsRunning = false;
+    m_Stopping.store( false );
 }

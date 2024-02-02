@@ -3,7 +3,7 @@
 #include "traits/TypeTraits.h"
 #include "async/ThreadPool.h"
 
-#define THREAD_POOL_MAX_THREADS 3
+
 
 namespace ImageScraper
 {
@@ -12,7 +12,7 @@ namespace ImageScraper
     public:
         static ThreadPool& Instance( )
         {
-            static ThreadPool instance{ THREAD_POOL_MAX_THREADS };
+            static ThreadPool instance{ };
             return instance;
         }
 

@@ -14,7 +14,12 @@ The program also displays log output to the user.
 
 int main( int argc, char* argv[ ] )
 {
-    ImageScraper::App app{ };
-    int result = app.Run( );
+    int result = EXIT_SUCCESS;
+
+    {
+        ImageScraper::App app{ };
+        result = app.Run( );
+    }
+
     return result;
 }

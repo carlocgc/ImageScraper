@@ -19,6 +19,7 @@
 #define UI_MAX_LOG_LINES 10000
 #define LISTEN_SERVER_PORT 8080
 #define MIN_FRAME_TIME_MS 16
+#define THREAD_POOL_MAX_THREADS 3
 
 const std::string ImageScraper::App::s_UserConfigFile = "config.json";
 const std::string ImageScraper::App::s_AppConfigFile = "ImageScraper/config.json";
@@ -62,13 +63,16 @@ int ImageScraper::App::Run( )
     if( !m_FrontEnd || !m_FrontEnd->Init( m_Services ) )
     {
         ErrorLog( "[%s] Could not start FrontEnd!", __FUNCTION__ );
-        return 1;
+        return EXIT_FAILURE;
     }
 
     if( !m_ListenServer )
     {
         ErrorLog( "[%s] Invalid ListenServer!", __FUNCTION__ );
+        return EXIT_FAILURE;
     }
+
+    TaskManager::Instance( ).Start( THREAD_POOL_MAX_THREADS );
 
     m_ListenServer->Init( m_Services, LISTEN_SERVER_PORT );
     m_ListenServer->Start( );
@@ -94,7 +98,9 @@ int ImageScraper::App::Run( )
 
     m_ListenServer->Stop( );
 
-    return 0;
+    TaskManager::Instance( ).Stop( );
+
+    return EXIT_SUCCESS;
 }
 
 void ImageScraper::App::AuthenticateServices( )
@@ -105,7 +111,7 @@ void ImageScraper::App::AuthenticateServices( )
     {
         if( !success )
         {
-            DebugLog( "[%s] %s failed to autheticate!", __FUNCTION__, s_ContentProviderStrings[ static_cast<uint8_t>( provider ) ] );
+            DebugLog( "[%s] %s failed to authenticate!", __FUNCTION__, s_ContentProviderStrings[ static_cast<uint8_t>( provider ) ] );
         }
 
         m_AuthenticatingCount--;
