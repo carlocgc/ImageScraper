@@ -1,7 +1,24 @@
 #include "async/ThreadPool.h"
 
-ImageScraper::ThreadPool::ThreadPool( int numThreads )
+ImageScraper::ThreadPool::~ThreadPool( )
 {
+    Stop( );
+}
+
+void ImageScraper::ThreadPool::Start( int numThreads )
+{
+    if( m_IsRunning )
+    {
+        return;
+    }
+
+    if( m_Stopping.load( ) )
+    {
+        return;
+    }
+
+    m_IsRunning = true;
+
     for( int i = 0; i < numThreads; ++i )
     {
         m_Threads.emplace_back( [ this, i ]
@@ -14,11 +31,12 @@ ImageScraper::ThreadPool::ThreadPool( int numThreads )
                         std::unique_lock<std::mutex> lock( m_QueueMutexes[ i ] );
                         m_Conditions[ i ].wait( lock, [ this, i ]
                             {
-                                return m_Stop || !m_TaskQueues[ i ].empty( );
+                                return m_Stopping.load( ) || !m_TaskQueues[ i ].empty( );
                             } );
 
-                        if( m_Stop || m_TaskQueues[ i ].empty( ) )
+                        if( m_Stopping.load( ) || m_TaskQueues[ i ].empty( ) )
                         {
+                            lock.unlock( );
                             return;
                         }
 
@@ -33,24 +51,6 @@ ImageScraper::ThreadPool::ThreadPool( int numThreads )
     }
 }
 
-ImageScraper::ThreadPool::~ThreadPool( )
-{
-    {
-        std::unique_lock<std::mutex> lock( m_StopMutex );
-        m_Stop = true;
-    }
-
-    for( auto& [key, cond] : m_Conditions )
-    {
-        cond.notify_all( );
-    }
-
-    for( auto& thread : m_Threads )
-    {
-        thread.join( );
-    }
-}
-
 void ImageScraper::ThreadPool::Update( )
 {
     std::function<void( )> task;
@@ -58,7 +58,7 @@ void ImageScraper::ThreadPool::Update( )
     {
         std::unique_lock<std::mutex> lock( m_MainMutex );
 
-        if( m_Stop || m_MainQueue.empty( ) )
+        if( m_Stopping.load( ) || m_MainQueue.empty( ) )
         {
             return;
         }
@@ -69,4 +69,32 @@ void ImageScraper::ThreadPool::Update( )
     }
 
     task( );
+}
+
+void ImageScraper::ThreadPool::Stop( )
+{
+    if( !m_IsRunning )
+    {
+        return;
+    }
+
+    if( m_Stopping.load( ) )
+    {
+        return;
+    }
+
+    m_Stopping.store( true );    
+
+    for( auto& [key, cond] : m_Conditions )
+    {
+        cond.notify_all( );        
+    }
+
+    for( auto& thread : m_Threads )
+    {
+        thread.join( );
+    }
+
+    m_IsRunning = false;
+    m_Stopping.store( false );
 }

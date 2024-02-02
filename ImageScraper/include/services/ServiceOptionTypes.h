@@ -1,10 +1,13 @@
 #pragma once
 #include <string>
 
+#define CONTENT_PROVIDERS_COUNT 4
 #define INPUT_STRING_MAX 64
 #define REDDIT_LIMIT_MIN 1
 #define REDDIT_LIMIT_DEFAULT 1000
 #define REDDIT_LIMIT_MAX 10000
+#define REDDIT_SCOPES_COUNT 8
+#define REDDIT_SCOPE_TIMEFRAMES_COUNT 5
 #define FOURCHAN_THREAD_MIN 1
 #define FOURCHAN_THREAD_MAX 50
 #define FOURCHAN_MEDIA_MIN 1
@@ -18,14 +21,17 @@ namespace ImageScraper
     {
         Reddit = 0,
         Tumblr = 1,
-        FourChan = 2
+        FourChan = 2,
+        Discord = 3,
+        Count = CONTENT_PROVIDERS_COUNT
     };
 
-    static const char* s_ContentProviderStrings[ 3 ]
+    static const char* s_ContentProviderStrings[ CONTENT_PROVIDERS_COUNT ]
     {
         "Reddit",
         "Tumblr",
-        "4chan"
+        "4chan",
+        "Discord"
     };
 
     enum class RedditScope : uint16_t
@@ -37,10 +43,11 @@ namespace ImageScraper
         Random = 4,
         Rising = 5,
         Top = 6,
-        Sort = 7
+        Sort = 7,
+        Count = REDDIT_SCOPES_COUNT
     };
 
-    static const char* s_RedditScopeStrings[ 8 ]
+    static const char* s_RedditScopeStrings[ REDDIT_SCOPES_COUNT ]
     {
         "Best",
         "Controversial",
@@ -58,10 +65,11 @@ namespace ImageScraper
         Day = 1,
         Week = 2,
         Month = 3,
-        All = 4
+        All = 4,
+        Count = REDDIT_SCOPE_TIMEFRAMES_COUNT
     };
 
-    static const char* s_RedditScopeTimeFrameStrings[ 5 ]
+    static const char* s_RedditScopeTimeFrameStrings[ REDDIT_SCOPE_TIMEFRAMES_COUNT ]
     {
         "Hour",
         "Day",

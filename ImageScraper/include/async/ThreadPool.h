@@ -1,6 +1,7 @@
 #pragma once
 
 #include "log/Logger.h"
+#include "traits/TypeTraits.h"
 
 #include <map>
 #include <thread>
@@ -13,11 +14,13 @@ namespace ImageScraper
 {
     using ThreadContext = uint16_t;
 
-    class ThreadPool
+    class ThreadPool : public NonCopyMovable
     {
     public:
-        ThreadPool( int numThreads );
+        ThreadPool( ) = default;
         ~ThreadPool( );
+
+        void Start( int numThreads );
 
         /// <summary>
         /// Submit callable to be executed on the given thread context
@@ -85,6 +88,8 @@ namespace ImageScraper
         /// </summary>
         void Update( );
 
+        void Stop( );
+
     private:
         std::vector<std::thread> m_Threads{ };
         std::map<ThreadContext, std::queue<std::function<void( )>>> m_TaskQueues{ };
@@ -96,8 +101,7 @@ namespace ImageScraper
         std::condition_variable m_MainCondtion{ };
 
         std::mutex m_StopMutex{ };
-        bool m_Stop{ false };
+        std::atomic<bool> m_Stopping{ false };
+        bool m_IsRunning{ false };
     };
 }
-
-

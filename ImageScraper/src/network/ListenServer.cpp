@@ -133,7 +133,7 @@ void ImageScraper::ListenServer::Start(  )
 
             InfoLog( "[%s] ListenServer started successfully, waiting for connections!", __FUNCTION__ );
 
-            while( m_Running )
+            while( m_Running.load() )
             {
                 sockaddr_storage clientAddr;
                 int addrSize = sizeof( clientAddr );
