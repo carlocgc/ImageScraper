@@ -1,0 +1,7 @@
+{
+  "reddit_client_id": "YOUR_KEY_HERE",
+  "reddit_client_secret": "YOUR_KEY_HERE",
+  "tumblr_api_key": "YOUR_KEY_HERE",
+  "discord_client_id": "YOUR_KEY_HERE",
+  "discord_client_secret": "YOUR_KEY_HERE"
+}
