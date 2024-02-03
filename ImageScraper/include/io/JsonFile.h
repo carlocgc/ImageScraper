@@ -36,6 +36,7 @@ namespace ImageScraper
 
         const Json& GetJson( ) const { return m_Json; };
         const std::string& GetFilePath( ) const { return m_FilePath; }
+        void CreateFile( );
 
 
     private:
