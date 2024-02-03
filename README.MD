@@ -4,16 +4,19 @@ ImageScraper
 
 ### Description
 
-A gui application that downloads media content from various web services like reddit.
+A gui application that downloads media content like images and gifs from social platforms.
 
 ### Reddit
 
-Create app, add client id and secret to config.json
+Create app, add client id and secret to /ImageScraper/data/config.json
 https://www.reddit.com/prefs/apps
 
-### Instagram
+### Tumblr
 
-Requires a facebook account (client id and secret) and a seperate instagram account as a tester (access token)
-Create app, add client id and secret to config.json
-Add instagram tester, generate access token and add to config.json
-https://www.youtube.com/watch?v=IEXDGIeIq_8
+Create app, add Oauth Consumer Key to /ImageScraper/data/config.json
+https://www.tumblr.com/oauth/apps
+
+## Discord
+
+Create app, add client id and secret to /ImageScraper/data/config.json
+https://discord.com/developers/applications
