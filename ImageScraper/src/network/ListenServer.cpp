@@ -5,6 +5,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <thread>
+#include <chrono>
 
 #include <winsock2.h>
 #include <WS2tcpip.h>
@@ -29,7 +31,7 @@ void ImageScraper::ListenServer::Init( std::vector<std::shared_ptr<Service>> ser
     }
 }
 
-void ImageScraper::ListenServer::Start(  )
+void ImageScraper::ListenServer::Start( )
 {
     if( !m_Initialised )
     {
@@ -38,35 +40,35 @@ void ImageScraper::ListenServer::Start(  )
     }
 
     auto OnMessageReceived = [ & ]( const std::string message )
-    {
-        DebugLog( "[%s] ListenServer message received, message: %s", __FUNCTION__, message.c_str( ) );
-
-        for (const auto& service : m_Services)
         {
-            if( service->HandleExternalAuth( message ) )
-            {
-                DebugLog( "[%s] ListenServer auth response handled!", __FUNCTION__ );
-                return;
-            }
-        }
+            DebugLog( "[%s] ListenServer message received, message: %s", __FUNCTION__, message.c_str( ) );
 
-        DebugLog( "[%s] ListenServer auth response not handled!", __FUNCTION__ );
-    };
+            for( const auto& service : m_Services )
+            {
+                if( service->HandleExternalAuth( message ) )
+                {
+                    DebugLog( "[%s] ListenServer auth response handled!", __FUNCTION__ );
+                    return;
+                }
+            }
+
+            DebugLog( "[%s] ListenServer auth response not handled!", __FUNCTION__ );
+        };
 
     auto OnError = [ & ]( const std::string error )
-    {
-        DebugLog( "[%s] ListenServer failed, error: %s", __FUNCTION__, error.c_str( ) );
-
-        if( m_CurrentRetries >= m_MaxRetries )
         {
-            DebugLog( "[%s] ListenServer max retries reached!", __FUNCTION__ );
-            return;
-        }
+            DebugLog( "[%s] ListenServer failed, error: %s", __FUNCTION__, error.c_str( ) );
 
-        DebugLog( "[%s] ListenServer retrying startup: %i/%i !", __FUNCTION__, m_CurrentRetries, m_MaxRetries );
-        ++m_CurrentRetries;
-        Start( );
-    };
+            if( m_CurrentRetries >= m_MaxRetries )
+            {
+                DebugLog( "[%s] ListenServer max retries reached!", __FUNCTION__ );
+                return;
+            }
+
+            DebugLog( "[%s] ListenServer retrying startup: %i/%i !", __FUNCTION__, m_CurrentRetries, m_MaxRetries );
+            ++m_CurrentRetries;
+            Start( );
+        };
 
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_ListenServer, [ &, OnMessageReceived, OnError ]( )
         {
@@ -77,7 +79,7 @@ void ImageScraper::ListenServer::Start(  )
             {
                 WSACleanup( );
                 std::string errorString{ };
-                auto errorTask = TaskManager::Instance().SubmitMain( OnError, "WSAStartup failed" );
+                auto errorTask = TaskManager::Instance( ).SubmitMain( OnError, "WSAStartup failed" );
                 ( void )errorTask;
                 return;
             }
@@ -92,7 +94,7 @@ void ImageScraper::ListenServer::Start(  )
 
             addrinfo* serverInfo;
 
-            if( getaddrinfo( NULL, port.c_str(), &hints, &serverInfo ) != 0 )
+            if( getaddrinfo( NULL, port.c_str( ), &hints, &serverInfo ) != 0 )
             {
                 WSACleanup( );
                 auto errorTask = TaskManager::Instance( ).SubmitMain( OnError, "getaddrinfo failed" );
@@ -122,6 +124,17 @@ void ImageScraper::ListenServer::Start(  )
 
             freeaddrinfo( serverInfo );
 
+            // Set the socket to non-blocking mode
+            u_long nonBlocking = 1;
+            if( ioctlsocket( listenSocket, FIONBIO, &nonBlocking ) == SOCKET_ERROR )
+            {
+                closesocket( listenSocket );
+                WSACleanup( );
+                auto errorTask = TaskManager::Instance( ).SubmitMain( OnError, "error setting non-blocking mode." );
+                ( void )errorTask;
+                return;
+            }
+
             if( listen( listenSocket, SOMAXCONN ) == SOCKET_ERROR )
             {
                 closesocket( listenSocket );
@@ -133,8 +146,33 @@ void ImageScraper::ListenServer::Start(  )
 
             InfoLog( "[%s] ListenServer started successfully, waiting for connections!", __FUNCTION__ );
 
-            while( m_Running.load() )
+            while( m_Running.load( ) )
             {
+                fd_set readSet;
+                FD_ZERO( &readSet );
+                FD_SET( listenSocket, &readSet );
+
+                timeval timeout;
+                timeout.tv_sec = 0;
+                timeout.tv_usec = 100000; // 100ms
+
+                int result = select( 0, &readSet, nullptr, nullptr, &timeout );
+                if( result == SOCKET_ERROR )
+                {
+                    closesocket( listenSocket );
+                    WSACleanup( );
+                    auto errorTask = TaskManager::Instance( ).SubmitMain( OnError, "select failed" );
+                    ( void )errorTask;
+                    return;
+                }
+
+                if( result <= 0 )
+                {
+                    // No incoming connections
+                    std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+                    continue;
+                }
+
                 sockaddr_storage clientAddr;
                 int addrSize = sizeof( clientAddr );
                 SOCKET clientSocket = accept( listenSocket, ( sockaddr* )&clientAddr, &addrSize );
@@ -154,7 +192,7 @@ void ImageScraper::ListenServer::Start(  )
                 int bytesReceived = recv( clientSocket, buffer, sizeof( buffer ), 0 );
                 std::string response( buffer, bytesReceived );
 
-                DebugLog( "[%s] ListenServer bytes received!, bytes: %i, data: %s, ", __FUNCTION__, bytesReceived, response.c_str() );
+                DebugLog( "[%s] ListenServer bytes received!, bytes: %i, data: %s, ", __FUNCTION__, bytesReceived, response.c_str( ) );
 
                 const int contentLength = static_cast< int >( m_AuthHtml.length( ) );
 
@@ -165,7 +203,7 @@ void ImageScraper::ListenServer::Start(  )
 
                 httpResponse += m_AuthHtml;
 
-                int bytesSent = send( clientSocket, httpResponse.c_str( ), static_cast<int>( httpResponse.length( ) ), 0 );
+                int bytesSent = send( clientSocket, httpResponse.c_str( ), static_cast< int >( httpResponse.length( ) ), 0 );
                 if( bytesSent == SOCKET_ERROR )
                 {
                     DebugLog( "[%s] ListenServer failed to send http response.", __FUNCTION__ );
@@ -196,7 +234,7 @@ void ImageScraper::ListenServer::Stop( )
 
 void ImageScraper::ListenServer::Reset( )
 {
-    if ( m_Running.load() )
+    if( m_Running.load( ) )
     {
         return;
     }
