@@ -185,7 +185,7 @@ void ImageScraper::ListenServer::Start( )
                     return;
                 }
 
-                DebugLog( "[%s] ListenServer connection establised!", __FUNCTION__ );
+                DebugLog( "[%s] ListenServer connection established!", __FUNCTION__ );
 
                 // Now receive and process the HTTP response from the browser
                 char buffer[ 4096 ];
@@ -206,11 +206,12 @@ void ImageScraper::ListenServer::Start( )
                 int bytesSent = send( clientSocket, httpResponse.c_str( ), static_cast< int >( httpResponse.length( ) ), 0 );
                 if( bytesSent == SOCKET_ERROR )
                 {
-                    DebugLog( "[%s] ListenServer failed to send http response.", __FUNCTION__ );
-                    DebugLog( "[%s] ListenServer Response: ", __FUNCTION__, response.c_str( ) );
+                    WarningLog( "[%s] ListenServer failed to send http response.", __FUNCTION__ );                    
                 }
-
-                DebugLog( "[%s] ListenServer sent http response successfully!", __FUNCTION__ );
+                else
+                {
+                    DebugLog( "[%s] ListenServer sent http response successfully!", __FUNCTION__ );
+                }                
 
                 DebugLog( "[%s] ListenServer Response: ", __FUNCTION__, response.c_str( ) );
 
