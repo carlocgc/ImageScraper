@@ -10,7 +10,7 @@ A gui application that downloads images and gifs from social platforms.
 ### Development Environment
 
 
-Set debugging working directory to `$(ProjectDir)$(TargetDir)` for all configurations
+Set debugging working directory to `$(TargetDir)` for all configurations and platforms
   
 
 ### Reddit
