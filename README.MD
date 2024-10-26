@@ -46,3 +46,11 @@ Add client id and secret to `/ImageScraper/data/config.json`
   
 
 No setup required  
+
+
+### Updating Curl certificate
+
+  
+
+The latest curl certificate can be obtained from:  
+https://curl.se/ca/cacert.pem  
