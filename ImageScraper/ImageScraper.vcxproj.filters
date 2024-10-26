@@ -96,6 +96,9 @@
     <ClCompile Include="src\requests\reddit\RefreshAccessTokenRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\services\DiscordService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\curlpp\cURLpp.hpp">
@@ -420,6 +423,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\requests\reddit\RefreshAccessTokenRequest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\services\DiscordService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
