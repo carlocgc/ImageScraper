@@ -2,8 +2,10 @@
 
   
 
-A gui based windows application that downloads media from social platforms.
-It features OAuth2 authentication and multi threaded downloads.
+A gui based windows application that downloads media from social platforms.  
+It features OAuth2 authentication and multi threaded downloads.  
+
+![Screenshot](/ImageScraper/data/screenshot.png?raw=true)  
 
 ## Setup
 
@@ -11,12 +13,12 @@ It features OAuth2 authentication and multi threaded downloads.
 ### Development
 
 
-Set debugging working directory to `$(TargetDir)` for all configurations and platforms
+Set debugging working directory to `$(TargetDir)` for all configurations and platforms  
   
 
 ### Reddit
 
-
+  
 
 Create web app: https://www.reddit.com/prefs/apps  
 Add redirect uri for the web app: http://localhost:8080  
