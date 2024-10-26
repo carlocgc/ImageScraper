@@ -9,11 +9,6 @@ It features OAuth2 authentication and multi threaded downloads.
 
 ## Setup
 
-
-### Development
-
-
-Set debugging working directory to `$(TargetDir)` for all configurations and platforms  
   
 
 ### Reddit
@@ -22,7 +17,7 @@ Set debugging working directory to `$(TargetDir)` for all configurations and pla
 
 Create web app: https://www.reddit.com/prefs/apps  
 Add redirect uri for the web app: http://localhost:8080  
-Add client id and secret to `/ImageScraper/data/config.json`  
+Add client id and secret to `/ImageScraper/config.json`  
 
 
 ### Tumblr
@@ -30,7 +25,7 @@ Add client id and secret to `/ImageScraper/data/config.json`
   
 
 Create app: https://www.tumblr.com/oauth/apps  
-Add OAuth Consumer Key to `/ImageScraper/data/config.json`  
+Add OAuth Consumer Key to `/ImageScraper/config.json`  
 
 
 ### Discord
@@ -38,7 +33,7 @@ Add OAuth Consumer Key to `/ImageScraper/data/config.json`
   
 
 Create app: https://discord.com/developers/applications  
-Add client id and secret to `/ImageScraper/data/config.json`  
+Add client id and secret to `/ImageScraper/config.json`  
 
 
 ### 4Chan
@@ -48,7 +43,11 @@ Add client id and secret to `/ImageScraper/data/config.json`
 No setup required  
 
 
-### Updating Curl certificate
+## Development
+
+  
+
+Set debugging working directory to `$(TargetDir)` for all configurations and platforms  
 
   
 
