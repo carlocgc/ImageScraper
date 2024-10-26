@@ -11,7 +11,7 @@ It features OAuth2 authentication and multi threaded downloads.
 
   
 
-### Reddit
+### ![Reddit](https://img.shields.io/badge/Reddit-%23FF4500.svg?style=for-the-badge&logo=Reddit&logoColor=white)
 
   
 
@@ -20,21 +20,12 @@ Add redirect uri for the web app: http://localhost:8080
 Add client id and secret to `/ImageScraper/config.json`  
 
 
-### Tumblr
+### ![Tumblr](https://img.shields.io/badge/Tumblr-%2336465D.svg?style=for-the-badge&logo=Tumblr&logoColor=white)
 
   
 
 Create app: https://www.tumblr.com/oauth/apps  
 Add OAuth Consumer Key to `/ImageScraper/config.json`  
-
-
-### Discord
-
-  
-
-Create app: https://discord.com/developers/applications  
-Add client id and secret to `/ImageScraper/config.json`  
-
 
 ### 4Chan
 
