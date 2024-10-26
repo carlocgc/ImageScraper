@@ -2,12 +2,13 @@
 
   
 
-A gui application that downloads images and gifs from social platforms.  
+A gui based windows application that downloads media from social platforms.
+It features OAuth2 authentication and multi threaded downloads.
 
 ## Setup
 
 
-### Development Environment
+### Development
 
 
 Set debugging working directory to `$(TargetDir)` for all configurations and platforms
@@ -15,10 +16,10 @@ Set debugging working directory to `$(TargetDir)` for all configurations and pla
 
 ### Reddit
 
-  
+
 
 Create web app: https://www.reddit.com/prefs/apps  
-Add redirect uri for the created web app: http://localhost:8080  
+Add redirect uri for the web app: http://localhost:8080  
 Add client id and secret to `/ImageScraper/data/config.json`  
 
 
