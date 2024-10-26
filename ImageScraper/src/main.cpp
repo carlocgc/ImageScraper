@@ -1,12 +1,8 @@
 /*
 Project Name: ImageScraper
-Author: Carlo Mongiello
-Date: 2023
-
-Description:
-The purpose of this program is to scrape media content from a website URL, including social media feeds, and store it locally.
-The program allows for asynchronous downloading of all media at the specified URL, with a graphical user interface (GUI) that allows the user to input the URL and configure options.
-The program also displays log output to the user.
+Copyright (c) 2023 Carlo Mongiello
+Developed by Carlo Mongiello
+See LICENSE.txt for copyright and licensing details (standard MIT License).
 */
 
 #include "app/App.h"
@@ -14,7 +10,7 @@ The program also displays log output to the user.
 
 int main( int argc, char* argv[ ] )
 {
-    int result = EXIT_SUCCESS;
+    int result = EXIT_FAILURE;
 
     {
         ImageScraper::App app{ };
