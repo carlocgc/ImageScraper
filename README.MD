@@ -47,6 +47,8 @@ No setup required
 
   
 
+Perform the setup steps above using `/ImageScraper/data/config.json`  
+
 Set debugging working directory to `$(TargetDir)` for all configurations and platforms  
 
   
