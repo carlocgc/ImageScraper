@@ -2,8 +2,8 @@
 
   
 
-A gui based windows application that downloads media from social platforms.  
-It features OAuth2 authentication and multi threaded downloads.  
+A Windows GUI application that downloads media from social platforms  
+featuring OAuth2 authentication and multi threaded downloads.  
 
 ![Screenshot](/ImageScraper/data/screenshot.png?raw=true)  
 
