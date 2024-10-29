@@ -61,7 +61,9 @@ https://curl.se/ca/cacert.pem
 
 ## Credit
 
-https://github.com/glfw/glfw
-https://github.com/ocornut/imgui
-https://github.com/nlohmann/json
-https://curl.se/libcurl/
+  
+
+https://github.com/glfw/glfw  
+https://github.com/ocornut/imgui  
+https://github.com/nlohmann/json  
+https://curl.se/libcurl/  
