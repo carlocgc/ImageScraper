@@ -3,7 +3,6 @@
   
 
 A Windows GUI application that downloads media from social platforms  
-featuring OAuth2 authentication and multi threaded downloads.  
 
 ![Screenshot](/ImageScraper/data/screenshot.png?raw=true)  
 
@@ -33,6 +32,17 @@ Add OAuth Consumer Key to `/ImageScraper/config.json`
 
 No setup required  
 
+## Features
+
+  
+
+* Full OAuth2 flow - User authentication (Reddit)  
+* Native sockets & curl - Web requests  
+* Multi-threaded downloads  
+* GLFW - Window rendering  
+* Dear imgui - User interface  
+
+  
 
 ## Development
 
