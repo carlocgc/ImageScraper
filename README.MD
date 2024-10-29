@@ -37,10 +37,11 @@ No setup required
   
 
 * Full OAuth2 flow - User authentication (Reddit)  
-* Native sockets & curl - Web requests  
 * Multi-threaded downloads  
+* libcurl - Web requests  
 * GLFW - Window rendering  
-* Dear imgui - User interface  
+* Dear ImGui - User interface  
+* JSON for Modern C++ (nlohmann) - Serialisation
 
   
 
@@ -56,3 +57,11 @@ Set debugging working directory to `$(TargetDir)` for all configurations and pla
 
 The latest curl certificate can be obtained from:  
 https://curl.se/ca/cacert.pem  
+
+
+## Credit
+
+https://github.com/glfw/glfw
+https://github.com/ocornut/imgui
+https://github.com/nlohmann/json
+https://curl.se/libcurl/
