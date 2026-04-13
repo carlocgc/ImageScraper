@@ -34,7 +34,7 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 3 );
     glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 0 );
 
-    m_WindowPtr = glfwCreateWindow( 1280, 720, "Image Scraper", NULL, NULL );
+    m_WindowPtr = glfwCreateWindow( 1600, 900, "Image Scraper", NULL, NULL );
     if( m_WindowPtr == NULL )
     {
         return false;

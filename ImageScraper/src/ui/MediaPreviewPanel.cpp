@@ -116,12 +116,19 @@ void ImageScraper::MediaPreviewPanel::Update( )
     {
         if( m_GifState == GifState::StaticFrame )
         {
-            KickFullGifDecode( );
+            if( m_Textures.size( ) > 1 )
+            {
+                // Full frames already in GPU memory — resume directly
+                m_GifState = GifState::Playing;
+            }
+            else
+            {
+                KickFullGifDecode( );
+            }
         }
         else if( m_GifState == GifState::Playing )
         {
             m_GifState     = GifState::StaticFrame;
-            m_CurrentFrame = 0;
             m_FrameAccumMs = 0.0f;
         }
     }
@@ -176,8 +183,8 @@ void ImageScraper::MediaPreviewPanel::Update( )
             DrawBadge( ImVec2( contentScreenMax.x - sz.x - k_Pad, badgeY ), statusMsg.c_str( ) );
         }
 
-        // Bottom-left: frame counter while playing
-        if( m_GifState == GifState::Playing && m_Textures.size( ) > 1 )
+        // Bottom-left: frame counter while playing or paused on a loaded GIF
+        if( ( m_GifState == GifState::Playing || m_GifState == GifState::StaticFrame ) && m_Textures.size( ) > 1 )
         {
             char buf[ 32 ];
             snprintf( buf, sizeof( buf ), "Frame %d / %d", m_CurrentFrame + 1, static_cast<int>( m_Textures.size( ) ) );

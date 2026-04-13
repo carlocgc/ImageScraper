@@ -129,12 +129,13 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\Release</AdditionalLibraryDirectories>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;curlpp.lib;Asyncgc.lib</AdditionalDependencies>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl.dll" "$(TargetDir)" /Y
@@ -191,12 +192,13 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\Release</AdditionalLibraryDirectories>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl_imp.lib;Crypt32.lib;ws2_32.lib</AdditionalDependencies>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl.dll" "$(TargetDir)" /Y
