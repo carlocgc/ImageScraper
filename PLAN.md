@@ -1,0 +1,46 @@
+# ImageScraper — Improvement Plan
+
+## Phase 1 — Unit Test Foundation
+> Goal: Catch 3rd party API breakage and provide a regression net before any refactoring.
+
+- [ ] Select and integrate a test framework (Google Test or Catch2) — **requires dependency approval**
+- [ ] Tests for JSON response parsing in each request class (Reddit, Tumblr, FourChan)
+- [ ] Tests for `RequestResult` / `ResponseErrorCode` error mapping
+- [ ] Tests for Reddit auth state machine (token refresh, expiry, app-only vs user auth)
+- [ ] Tests for `ThreadPool` task submission and context routing
+
+---
+
+## Phase 2 — Request Layer
+> Goal: Centralise HTTP logic, eliminate per-class curlpp boilerplate, add robustness.
+> **Depends on: Phase 1**
+
+- [ ] Design HTTP client abstraction over curlpp (mockable interface for unit tests)
+- [ ] Centralised retry logic with configurable attempts and backoff
+- [ ] Rate limit handling (429 responses — back off and retry)
+- [ ] Configurable timeout per request type
+- [ ] Migrate existing request classes (Reddit, Tumblr, FourChan) to use new abstraction
+- [ ] Update unit tests to use mocked HTTP client
+
+---
+
+## Phase 3 — Threading Model
+> Goal: Parallelise downloads, improve cancellation, unblock UI callback throughput.
+> **Depends on: Phase 1**
+
+- [ ] Increase network thread count and benchmark throughput
+- [ ] Per-task cancellation support (cancel individual downloads cleanly)
+- [ ] Process multiple UI callbacks per frame (remove single-task-per-frame limit)
+- [ ] Evaluate dedicated download thread pool separate from API request threads
+
+---
+
+## Phase 4 — New Platforms
+> Goal: Expand supported platforms leveraging the improved request and threading layers.
+> **Depends on: Phase 2, Phase 3**
+
+- [ ] Discord — implement stub (`DiscordService` already exists, throws `logic_error`)
+- [ ] X (Twitter) — new service + request classes
+- [ ] Bluesky — new service + request classes
+- [ ] Mastodon — new service + request classes (federated, needs instance URL input)
+- [ ] Update `config.template.json` and `UserInputOptions` for each new platform
