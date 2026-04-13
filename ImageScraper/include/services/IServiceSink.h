@@ -30,7 +30,7 @@ namespace ImageScraper
         // Called when OAuth sign-in for the given provider completes (success or failure)
         virtual void OnSignInComplete( ContentProvider provider ) = 0;
 
-        // Called after each file is successfully written to disk — filepath is the absolute path
-        virtual void OnFileDownloaded( const std::string& filepath ) = 0;
+        // Called after each file is successfully written to disk
+        virtual void OnFileDownloaded( const std::string& filepath, const std::string& sourceUrl ) = 0;
     };
 }

@@ -186,7 +186,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
                 outfile.write( buffer.data( ), buffer.size( ) );
                 outfile.close( );
 
-                m_Sink->OnFileDownloaded( filepath );
+                m_Sink->OnFileDownloaded( filepath, url );
 
                 ++filesDownloaded;
 

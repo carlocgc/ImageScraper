@@ -14,6 +14,7 @@
 #include "ui/LogPanel.h"
 #include "ui/DownloadOptionsPanel.h"
 #include "ui/MediaPreviewPanel.h"
+#include "ui/DownloadHistoryPanel.h"
 
 #include <stdio.h>
 #include <string>
@@ -49,7 +50,7 @@ namespace ImageScraper
         void OnTotalDownloadProgress( int current, int total ) override;
         int  GetSigningInProvider( ) override;
         void OnSignInComplete( ContentProvider provider ) override;
-        void OnFileDownloaded( const std::string& filepath ) override;
+        void OnFileDownloaded( const std::string& filepath, const std::string& sourceUrl ) override;
 
     private:
         void ShowDemoWindow( );
@@ -60,5 +61,6 @@ namespace ImageScraper
         std::unique_ptr<LogPanel>             m_LogPanel{ };
         std::unique_ptr<DownloadOptionsPanel> m_DownloadOptionsPanel{ };
         std::unique_ptr<MediaPreviewPanel>    m_MediaPreviewPanel{ };
+        std::unique_ptr<DownloadHistoryPanel> m_DownloadHistoryPanel{ };
     };
 }

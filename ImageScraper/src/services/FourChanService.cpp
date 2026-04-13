@@ -221,7 +221,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 outfile.write( buffer.data( ), buffer.size( ) );
                 outfile.close( );
 
-                m_Sink->OnFileDownloaded( filepath );
+                m_Sink->OnFileDownloaded( filepath, url );
 
                 buffer.clear( );
 
