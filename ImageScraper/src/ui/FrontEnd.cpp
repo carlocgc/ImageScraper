@@ -134,8 +134,10 @@ ImageScraper::LogLevel ImageScraper::FrontEnd::GetLogLevel( ) const
 
 void ImageScraper::FrontEnd::ShowDemoWindow( )
 {
+#ifdef _DEBUG
     bool show = true;
     ImGui::ShowDemoWindow( &show );
+#endif
 }
 
 // IServiceSink
