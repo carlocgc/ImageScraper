@@ -262,3 +262,6 @@ __pycache__/
 
 # Sensitive configuration — contains real API credentials, never commit
 ImageScraper/data/config.json
+
+# Claude Code memory and session data
+.claude/
