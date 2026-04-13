@@ -21,7 +21,8 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
 {
     m_DownloadOptionsPanel = std::make_unique<DownloadOptionsPanel>( services );
     m_MediaPreviewPanel    = std::make_unique<MediaPreviewPanel>( );
-    m_DownloadHistoryPanel = std::make_unique<DownloadHistoryPanel>( );
+    m_DownloadHistoryPanel = std::make_unique<DownloadHistoryPanel>(
+        [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->OnFileDownloaded( filepath ); } );
 
     glfwSetErrorCallback( GLFW_ErrorCallback );
     if( !glfwInit( ) )

@@ -6,6 +6,7 @@
 
 #include <string>
 #include <mutex>
+#include <functional>
 
 namespace ImageScraper
 {
@@ -20,7 +21,9 @@ namespace ImageScraper
     class DownloadHistoryPanel : public IUiPanel
     {
     public:
-        DownloadHistoryPanel( );
+        using PreviewCallback = std::function<void( const std::string& filepath )>;
+
+        explicit DownloadHistoryPanel( PreviewCallback onPreviewRequested );
         void Update( ) override;
 
         // Thread-safe — may be called from a worker thread
@@ -34,9 +37,10 @@ namespace ImageScraper
 
         static constexpr int k_Capacity = 200;
 
-        RingBuffer<DownloadHistoryEntry> m_History{ k_Capacity };
+        PreviewCallback                   m_OnPreviewRequested{ };
+        RingBuffer<DownloadHistoryEntry>  m_History{ k_Capacity };
 
-        std::mutex                              m_PendingMutex{ };
-        std::vector<DownloadHistoryEntry>       m_Pending{ };
+        std::mutex                        m_PendingMutex{ };
+        std::vector<DownloadHistoryEntry> m_Pending{ };
     };
 }

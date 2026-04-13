@@ -12,7 +12,8 @@
 #include <sstream>
 #include <iomanip>
 
-ImageScraper::DownloadHistoryPanel::DownloadHistoryPanel( )
+ImageScraper::DownloadHistoryPanel::DownloadHistoryPanel( PreviewCallback onPreviewRequested )
+    : m_OnPreviewRequested{ std::move( onPreviewRequested ) }
 {
 }
 
@@ -61,19 +62,21 @@ void ImageScraper::DownloadHistoryPanel::Update( )
             ImGui::TextUnformatted( entry.m_Timestamp.c_str( ) );
 
             ImGui::TableSetColumnIndex( 1 );
-            const bool clicked = ImGui::Selectable(
-                entry.m_FileName.c_str( ),
-                false,
-                ImGuiSelectableFlags_SpanAllColumns );
+            ImGui::Selectable( entry.m_FileName.c_str( ), false, ImGuiSelectableFlags_SpanAllColumns );
 
-            if( clicked )
+            if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && m_OnPreviewRequested )
+            {
+                m_OnPreviewRequested( entry.m_FilePath );
+            }
+
+            if( ImGui::IsItemClicked( ImGuiMouseButton_Right ) )
             {
                 OpenInExplorer( entry.m_FilePath );
             }
 
             if( ImGui::IsItemHovered( ) )
             {
-                ImGui::SetTooltip( "%s\nClick to reveal in Explorer", entry.m_FilePath.c_str( ) );
+                ImGui::SetTooltip( "%s\nLeft click: preview  |  Right click: reveal in Explorer", entry.m_FilePath.c_str( ) );
             }
 
             ImGui::TableSetColumnIndex( 2 );

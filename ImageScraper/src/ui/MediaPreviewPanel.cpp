@@ -42,21 +42,32 @@ void ImageScraper::MediaPreviewPanel::Update( )
         }
     }
 
+    // Reserve a line at the bottom for the GIF frame counter
+    const bool isGif = m_Textures.size( ) > 1;
+    const float counterH = isGif ? ImGui::GetTextLineHeightWithSpacing( ) : 0.0f;
+
     // Scale image to fit the available content region while preserving aspect ratio
     const ImVec2 avail = ImGui::GetContentRegionAvail( );
     float drawW = static_cast<float>( m_Width );
     float drawH = static_cast<float>( m_Height );
+    const float availH = avail.y - counterH;
 
     if( drawW > avail.x )
     {
         drawH = drawH * ( avail.x / drawW );
         drawW = avail.x;
     }
-    if( drawH > avail.y )
+    if( drawH > availH )
     {
-        drawW = drawW * ( avail.y / drawH );
-        drawH = avail.y;
+        drawW = drawW * ( availH / drawH );
+        drawH = availH;
     }
+
+    // Centre the image in the available region
+    const float offsetX = ( avail.x - drawW ) * 0.5f;
+    const float offsetY = ( availH - drawH ) * 0.5f;
+    const ImVec2 imageCursor{ ImGui::GetCursorPosX( ) + offsetX, ImGui::GetCursorPosY( ) + offsetY };
+    ImGui::SetCursorPos( imageCursor );
 
     const GLuint tex = m_Textures[ m_CurrentFrame ];
     ImGui::Image( reinterpret_cast<ImTextureID>( static_cast<uintptr_t>( tex ) ), ImVec2( drawW, drawH ) );
@@ -66,8 +77,10 @@ void ImageScraper::MediaPreviewPanel::Update( )
         ImGui::SetTooltip( "%s", m_CurrentFilePath.c_str( ) );
     }
 
-    if( m_Textures.size( ) > 1 )
+    if( isGif )
     {
+        // Pin the counter to the bottom-left of the content area
+        ImGui::SetCursorPos( ImVec2( imageCursor.x - offsetX, imageCursor.y - offsetY + availH ) );
         ImGui::Text( "Frame %d / %d", m_CurrentFrame + 1, static_cast<int>( m_Textures.size( ) ) );
     }
 
