@@ -2,6 +2,8 @@
 
 #include "services/ServiceOptionTypes.h"
 
+#include <string>
+
 namespace ImageScraper
 {
     inline constexpr int INVALID_CONTENT_PROVIDER = -1;
@@ -27,5 +29,8 @@ namespace ImageScraper
 
         // Called when OAuth sign-in for the given provider completes (success or failure)
         virtual void OnSignInComplete( ContentProvider provider ) = 0;
+
+        // Called after each file is successfully written to disk — filepath is the absolute path
+        virtual void OnFileDownloaded( const std::string& filepath ) = 0;
     };
 }

@@ -248,6 +248,8 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
     <ClCompile Include="src\ui\RedditPanel.cpp" />
     <ClCompile Include="src\ui\TumblrPanel.cpp" />
     <ClCompile Include="src\ui\FourChanPanel.cpp" />
+    <ClCompile Include="src\ui\MediaPreviewPanel.cpp" />
+    <ClCompile Include="src\stb\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\app\App.h" />
@@ -353,6 +355,8 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\ui\RedditPanel.h" />
     <ClInclude Include="include\ui\TumblrPanel.h" />
     <ClInclude Include="include\ui\FourChanPanel.h" />
+    <ClInclude Include="include\ui\MediaPreviewPanel.h" />
+    <ClInclude Include="include\stb\stb_image.h" />
     <ClInclude Include="include\utils\DownloadUtils.h" />
     <ClInclude Include="include\utils\RedditUtils.h" />
     <ClInclude Include="include\utils\TumblrUtils.h" />
