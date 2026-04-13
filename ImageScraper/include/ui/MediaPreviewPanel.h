@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <atomic>
+#include <memory>
 
 namespace ImageScraper
 {
@@ -20,23 +22,43 @@ namespace ImageScraper
         void OnFileDownloaded( const std::string& filepath );
 
     private:
-        void LoadPending( );
-        void LoadStaticImage( const unsigned char* data, int width, int height );
-        void LoadGif( const unsigned char* data, int width, int height, int frames, const int* delays );
-        void FreeTextures( );
-        bool IsGif( const std::string& filepath ) const;
+        // Holds decoded pixel data produced on a background thread
+        struct DecodedImage
+        {
+            std::vector<unsigned char> m_PixelData;     // RGBA, all frames contiguous
+            std::vector<int>           m_FrameDelaysMs;
+            int         m_Width{ 0 };
+            int         m_Height{ 0 };
+            int         m_Frames{ 1 };
+            std::string m_FilePath;
+        };
 
+        void KickDecodeIfNeeded( );
+        void UploadDecoded( const DecodedImage& decoded );
+        void FreeTextures( );
+
+        static std::unique_ptr<DecodedImage> DecodeFile( const std::string& filepath );
+        static bool IsGif( const std::string& filepath );
+
+        // Latest path posted by OnFileDownloaded (worker thread → Update)
+        std::mutex  m_PathMutex{ };
+        std::string m_LatestPath{ };
+        bool        m_HasLatestPath{ false };
+
+        // Decoded result posted by the decode task (worker thread → Update)
+        std::mutex                       m_DecodedMutex{ };
+        std::unique_ptr<DecodedImage>    m_PendingDecoded{ };
+
+        std::atomic_bool m_IsDecoding{ false };
+        std::string      m_LoadingFileName{ };   // set on main thread when decode kicks off
+
+        // Current display state — only touched on the main thread
         std::vector<GLuint> m_Textures{ };
         std::vector<int>    m_FrameDelaysMs{ };
         int   m_Width{ 0 };
         int   m_Height{ 0 };
         int   m_CurrentFrame{ 0 };
         float m_FrameAccumMs{ 0.0f };
-
         std::string m_CurrentFilePath{ };
-
-        std::mutex  m_PendingMutex{ };
-        std::string m_PendingFilePath{ };
-        bool        m_HasPending{ false };
     };
 }
