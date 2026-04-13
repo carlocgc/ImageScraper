@@ -173,6 +173,10 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
     <PreBuildEvent>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Message>Running unit tests</Message>
+      <Command>"$(SolutionDir)bin\ImageScraperTests\$(Platform)\$(Configuration)\ImageScraperTests.exe"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -203,6 +207,10 @@ xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Message>Running unit tests</Message>
+      <Command>"$(SolutionDir)bin\ImageScraperTests\$(Platform)\$(Configuration)\ImageScraperTests.exe"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\app\App.cpp" />

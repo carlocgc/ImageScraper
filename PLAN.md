@@ -3,11 +3,14 @@
 ## Phase 1 — Unit Test Foundation
 > Goal: Catch 3rd party API breakage and provide a regression net before any refactoring.
 
-- [ ] Select and integrate a test framework (Google Test or Catch2) — **requires dependency approval**
+- [x] Select and integrate a test framework — Catch2 v3.14.0 vendored (no external tools required)
+- [x] Run tests automatically on every main project build (post-build event, Option 1)
 - [ ] Tests for JSON response parsing in each request class (Reddit, Tumblr, FourChan)
 - [ ] Tests for `RequestResult` / `ResponseErrorCode` error mapping
 - [ ] Tests for Reddit auth state machine (token refresh, expiry, app-only vs user auth)
 - [ ] Tests for `ThreadPool` task submission and context routing
+- [ ] Run tests as post-build event on the test project itself (Option 2)
+- [ ] CI pipeline via GitHub Actions — build and run tests on every push/PR (Option 4)
 
 ---
 
