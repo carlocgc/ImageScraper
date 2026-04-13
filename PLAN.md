@@ -25,13 +25,13 @@
 - [x] `IsTumblrResponseError` — valid response, error field, invalid JSON
 - [x] `IsFourChanResponseError` — valid response, error field, invalid JSON
 
-### Service JSON parsing (private methods — requires refactor to test)
-- [ ] Reddit: `TryParseAccessTokenAndExpiry` — valid token response, missing fields
-- [ ] Reddit: `TryParseRefreshToken` — valid response, missing field
-- [ ] Reddit: `GetMediaUrls` — filters by extension, handles pagination field
-- [ ] Tumblr: `GetMediaUrlsFromResponse` — photo posts, video posts, mixed
-- [ ] FourChan: `GetPageCountForBoard` — matching board, missing board
-- [ ] FourChan: `GetFileNamesFromResponse` — valid threads, empty threads
+### Service JSON parsing (extracted to testable utility headers)
+- [x] Reddit: `ParseAccessToken` — valid response, missing access_token, missing expires_in
+- [x] Reddit: `ParseRefreshToken` — valid response, missing field
+- [x] Reddit: `GetMediaUrls` — filters by extension, url vs url_overridden_by_dest, pagination, early bail behaviour documented
+- [x] Tumblr: `GetMediaUrlsFromResponse` — photo posts, video posts, mixed, missing fields
+- [x] FourChan: `GetPageCountForBoard` — matching board, missing board, missing boards field
+- [x] FourChan: `GetFileNamesFromResponse` — valid threads, empty threads, missing fields, multi-thread
 
 ### Threading
 - [ ] `ThreadPool` — task submission and execution on correct context

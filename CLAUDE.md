@@ -17,6 +17,18 @@ Do NOT add third-party libraries or dependencies without explicit user approval.
 
 If a task would benefit from a new dependency, propose it and wait for approval before proceeding.
 
+Do NOT modify any vendored dependency code without explicit approval. This includes anything under:
+
+- `ImageScraper/include/imgui/`
+- `ImageScraper/include/nlohmann/`
+- `ImageScraper/include/curl/`
+- `ImageScraper/include/GLFW/`
+- `ImageScraper/src/imgui/`
+- `ImageScraperTests/include/catch2/`
+- `ImageScraperTests/src/catch2/`
+
+If a bug or limitation in a dependency needs working around, implement the workaround in project code and flag it to the user.
+
 ---
 
 ## Sensitive Information
@@ -36,5 +48,18 @@ End users create their config by copying the template:
 ```bash
 cp ImageScraper/data/config.template.json ImageScraper/data/config.json
 ```
+
+---
+
+## Project Files
+
+Whenever a new `.h` or `.cpp` file is created, it must be added to `ImageScraper\ImageScraper.vcxproj`:
+
+- Header files → `<ClInclude Include="..." />`
+- Source files → `<ClCompile Include="..." />`
+
+Likewise, any new test files added to `ImageScraperTests` must be added to `ImageScraperTests\ImageScraperTests.vcxproj` as `<ClCompile Include="..." />`.
+
+Files that are only `#include`d will compile correctly but won't appear in Solution Explorer, making them easy to lose track of.
 
 ---
