@@ -42,10 +42,11 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         ImGuiTableFlags_ScrollY |
         ImGuiTableFlags_SizingStretchProp;
 
-    if( ImGui::BeginTable( "HistoryTable", 3, tableFlags ) )
+    if( ImGui::BeginTable( "HistoryTable", 4, tableFlags ) )
     {
         ImGui::TableSetupScrollFreeze( 0, 1 );
-        ImGui::TableSetupColumn( "Time",       ImGuiTableColumnFlags_WidthFixed, 90.0f );
+        ImGui::TableSetupColumn( "Time",       ImGuiTableColumnFlags_WidthFixed,   90.0f );
+        ImGui::TableSetupColumn( "Size",       ImGuiTableColumnFlags_WidthFixed,   70.0f );
         ImGui::TableSetupColumn( "Filename",   ImGuiTableColumnFlags_WidthStretch, 0.35f );
         ImGui::TableSetupColumn( "Source URL", ImGuiTableColumnFlags_WidthStretch, 0.65f );
         ImGui::TableHeadersRow( );
@@ -62,6 +63,9 @@ void ImageScraper::DownloadHistoryPanel::Update( )
             ImGui::TextUnformatted( entry.m_Timestamp.c_str( ) );
 
             ImGui::TableSetColumnIndex( 1 );
+            ImGui::TextUnformatted( entry.m_FileSize.c_str( ) );
+
+            ImGui::TableSetColumnIndex( 2 );
             ImGui::Selectable( entry.m_FileName.c_str( ), false, ImGuiSelectableFlags_SpanAllColumns );
 
             if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && m_OnPreviewRequested )
@@ -79,7 +83,7 @@ void ImageScraper::DownloadHistoryPanel::Update( )
                 ImGui::SetTooltip( "%s\nLeft click: preview  |  Right click: reveal in Explorer", entry.m_FilePath.c_str( ) );
             }
 
-            ImGui::TableSetColumnIndex( 2 );
+            ImGui::TableSetColumnIndex( 3 );
             ImGui::TextUnformatted( entry.m_SourceUrl.c_str( ) );
         }
 
@@ -94,6 +98,7 @@ void ImageScraper::DownloadHistoryPanel::OnFileDownloaded( const std::string& fi
     DownloadHistoryEntry entry;
     entry.m_FilePath  = filepath;
     entry.m_FileName  = ExtractFileName( filepath );
+    entry.m_FileSize  = FormatFileSize( filepath );
     entry.m_SourceUrl = sourceUrl;
     entry.m_Timestamp = FormatTimestamp( );
 
@@ -142,4 +147,29 @@ std::string ImageScraper::DownloadHistoryPanel::FormatTimestamp( )
 std::string ImageScraper::DownloadHistoryPanel::ExtractFileName( const std::string& filepath )
 {
     return std::filesystem::path( filepath ).filename( ).string( );
+}
+
+std::string ImageScraper::DownloadHistoryPanel::FormatFileSize( const std::string& filepath )
+{
+    std::error_code ec;
+    const auto bytes = std::filesystem::file_size( filepath, ec );
+    if( ec )
+    {
+        return "?";
+    }
+
+    std::ostringstream ss;
+    if( bytes < 1024 )
+    {
+        ss << bytes << " B";
+    }
+    else if( bytes < 1024 * 1024 )
+    {
+        ss << std::fixed << std::setprecision( 1 ) << ( bytes / 1024.0 ) << " KB";
+    }
+    else
+    {
+        ss << std::fixed << std::setprecision( 1 ) << ( bytes / ( 1024.0 * 1024.0 ) ) << " MB";
+    }
+    return ss.str( );
 }

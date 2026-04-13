@@ -14,6 +14,7 @@ namespace ImageScraper
     {
         std::string m_FilePath;
         std::string m_FileName;
+        std::string m_FileSize;
         std::string m_SourceUrl;
         std::string m_Timestamp;
     };
@@ -34,6 +35,7 @@ namespace ImageScraper
         static void OpenInExplorer( const std::string& filepath );
         static std::string FormatTimestamp( );
         static std::string ExtractFileName( const std::string& filepath );
+        static std::string FormatFileSize( const std::string& filepath );
 
         static constexpr int k_Capacity = 200;
 
