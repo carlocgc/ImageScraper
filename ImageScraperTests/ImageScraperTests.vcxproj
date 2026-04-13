@@ -95,7 +95,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\catch2\catch_amalgamated.cpp" />
+    <ClCompile Include="..\ImageScraper\src\log\Logger.cpp" />
     <ClCompile Include="src\tests\SanityTests.cpp" />
+    <ClCompile Include="src\tests\RequestTypesTests.cpp" />
+    <ClCompile Include="src\tests\DownloadUtilsTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\catch2\catch_amalgamated.hpp" />
