@@ -52,7 +52,7 @@
 - [x] `RetryHttpClient` — decorator with exponential backoff and 429 rate limit handling
 - [x] Migrate `GetBoardsRequest` to use new abstraction (proof of concept)
 - [x] Migrate remaining request classes (GetThreadsRequest, AppOnlyAuthRequest, FetchAccessTokenRequest, RefreshAccessTokenRequest, FetchSubredditPostsRequest, RetrievePublishedPostsRequest)
-- [ ] Update unit tests to use mocked `IHttpClient`
+- [x] Update unit tests to use mocked `IHttpClient`
 
 ---
 
