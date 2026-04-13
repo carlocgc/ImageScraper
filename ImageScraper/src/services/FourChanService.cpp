@@ -8,6 +8,7 @@
 #include "requests/DownloadRequestTypes.h"
 #include "requests/DownloadRequest.h"
 #include "utils/DownloadUtils.h"
+#include "utils/FourChanUtils.h"
 
 #include <string>
 
@@ -238,75 +239,10 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
 int ImageScraper::FourChanService::GetPageCountForBoard( const std::string& boardId, const Json& response )
 {
-    int pages = 0;
-
-    if( !response.contains( "boards" ) )
-    {
-        return pages;
-    }
-
-    try
-    {
-        for( const auto& board : response[ "boards" ] )
-        {
-            if( !board.contains( "board" ) || board[ "board" ] != boardId )
-            {
-                continue;
-            }
-
-            if( board.contains( "pages" ) )
-            {
-                pages = board[ "pages" ];
-                break;
-            }
-        }
-    }
-    catch( const Json::exception& e )
-    {
-        const std::string error = e.what( );
-        ErrorLog( "[%s] GetPageCountForBoard Error parsing response!, error: %s", __FUNCTION__, error.c_str( ) );
-    }
-
-    return pages;
+    return FourChanUtils::GetPageCountForBoard( boardId, response );
 }
 
 std::vector<std::string> ImageScraper::FourChanService::GetFileNamesFromResponse( const Json& response )
 {
-    std::vector<std::string> filenames{ };
-
-    if( !response.contains( "threads" ) )
-    {
-        return filenames;
-    }
-
-    try
-    {
-        for( const auto& thread : response[ "threads" ] )
-        {
-            if( !thread.contains( "posts" ) )
-            {
-                continue;
-            }
-
-            for( const auto& post : thread[ "posts" ] )
-            {
-                if( !post.contains( "tim" ) || !post.contains( "ext" ) )
-                {
-                    continue;
-                }
-
-                const uint64_t time = post[ "tim" ].get<uint64_t>( );
-                const std::string ext = post[ "ext" ].get<std::string>( );
-
-                filenames.push_back( std::to_string( time ) + ext );
-            }
-        }
-    }
-    catch( const Json::exception& e )
-    {
-        const std::string error = e.what( );
-        ErrorLog( "[%s] GetFileNamesFromResponse Error parsing response!, error: %s", __FUNCTION__, error.c_str() );
-    }
-
-    return filenames;
+    return FourChanUtils::GetFileNamesFromResponse( response );
 }

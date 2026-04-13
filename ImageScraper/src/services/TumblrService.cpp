@@ -6,6 +6,7 @@
 #include "requests/RequestTypes.h"
 #include "requests/tumblr/RetrievePublishedPostsRequest.h"
 #include "utils/DownloadUtils.h"
+#include "utils/TumblrUtils.h"
 #include "requests/DownloadRequestTypes.h"
 #include "requests/DownloadRequest.h"
 
@@ -203,28 +204,5 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
 
 std::vector<std::string> ImageScraper::TumblrService::GetMediaUrlsFromResponse( const Json& response )
 {
-    std::vector<std::string> mediaUrls{ };
-
-    for( const auto& post : response[ "response" ][ "posts" ] )
-    {
-        if( post[ "type" ] == "photo" )
-        {
-            for( const auto& photo : post[ "photos" ] )
-            {
-                if( photo.contains( "original_size" ) )
-                {
-                    mediaUrls.push_back( photo[ "original_size" ][ "url" ] );
-                }
-            }
-        }
-        else if( post[ "type" ] == "video" )
-        {
-            if( post.contains( "video_url" ) )
-            {
-                mediaUrls.push_back( post[ "video_url" ] );
-            }
-        }
-    }
-
-    return mediaUrls;
+    return TumblrUtils::GetMediaUrlsFromResponse( response );
 }

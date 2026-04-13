@@ -6,6 +6,7 @@
 #include "requests/DownloadRequestTypes.h"
 #include "requests/DownloadRequest.h"
 #include "utils/DownloadUtils.h"
+#include "utils/RedditUtils.h"
 #include "log/Logger.h"
 #include "async/TaskManager.h"
 #include "ui/FrontEnd.h"
@@ -544,137 +545,43 @@ bool ImageScraper::RedditService::TryPerformAuthTokenRefresh( )
 
 std::vector<std::string> ImageScraper::RedditService::GetMediaUrls( const Json& response )
 {
-    std::vector<std::string> mediaUrls{ };
-
-    if( !response.contains( "data" ) )
-    {
-        return mediaUrls;
-    }
-
-    try
-    {
-        const Json& data = response[ "data" ];
-
-        if( !data.contains( "children" ) )
-        {
-            return mediaUrls;
-        }
-
-        const std::vector<Json>& children = data[ "children" ];
-
-        for( const auto& post : children )
-        {
-            const Json& postData = post[ "data" ];
-
-            std::string contentKey{ };
-
-            if( postData.contains( "url" ) )
-            {
-                contentKey = "url";
-            }
-            else if( postData.contains( "url_overridden_by_dest" ) )
-            {
-                contentKey = "url_overridden_by_dest";
-            }
-            else
-            {
-                return mediaUrls;
-            }
-
-            const std::vector<std::string> targetExts{ ".jpg", ".jpeg", ".png", ".webm", ".webp", ".gif", ".gifv", ".mp4" };
-
-            const std::string& url = postData[ contentKey ];
-
-            for( const auto& ext : targetExts )
-            {
-                const auto& pos = url.find( ext );
-                if( pos != std::string::npos )
-                {
-                    mediaUrls.push_back( url );
-                }
-            }
-        }
-
-        if( data.contains( "after" ) && !data[ "after" ].is_null( ) )
-        {
-            m_AfterParam = data[ "after" ];
-        }
-        else
-        {
-            m_AfterParam.clear( );
-        }
-    }
-    catch( const Json::exception& e )
-    {
-        const std::string error = e.what( );
-        ErrorLog( "[%s] GetMediaUrls Error parsing data!, error: %s", __FUNCTION__, error.c_str( ) );
-    }
-
-    return mediaUrls;
+    RedditUtils::MediaUrlsData result = RedditUtils::GetMediaUrls( response );
+    m_AfterParam = result.m_AfterParam;
+    return result.m_Urls;
 }
 
 bool ImageScraper::RedditService::TryParseAccessTokenAndExpiry( const Json& response )
 {
-    if( !response.contains( "access_token" ) )
+    auto result = RedditUtils::ParseAccessToken( response );
+    if( !result.has_value( ) )
     {
-        ErrorLog( "[%s] Response did not contain access token!", __FUNCTION__ );
-        return false;
-    }
-
-    if( !response.contains( "expires_in" ) )
-    {
-        ErrorLog( "[%s] Response did not contain token expire seconds!", __FUNCTION__ );
         return false;
     }
 
     std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
-
-    try
-    {
-        m_AccessToken = response[ "access_token" ];
-
-        const int expireSeconds = response[ "expires_in" ];
-        const int expireDelta = 180; // 3 minutes
-        m_AuthExpireSeconds = std::chrono::seconds{ expireSeconds - expireDelta };
-        m_TokenReceived = std::chrono::system_clock::now( );
-    }
-    catch( const Json::exception& ex )
-    {
-        std::string error = ex.what( );
-        ErrorLog( "[%s] could not parse access token response, error: %s", __FUNCTION__, error.c_str( ) );
-        return false;
-    }
+    m_AccessToken = result->m_Token;
+    const int expireDelta = 180; // 3 minutes
+    m_AuthExpireSeconds = std::chrono::seconds{ result->m_ExpireSeconds - expireDelta };
+    m_TokenReceived = std::chrono::system_clock::now( );
 
     DebugLog( "[%s] Reddit access token: %s", __FUNCTION__, m_AccessToken.c_str( ) );
-    DebugLog( "[%s] Reddit access token expires in %i seconds!", __FUNCTION__, m_AuthExpireSeconds );
     return true;
 }
 
 bool ImageScraper::RedditService::TryParseRefreshToken( const Json& response )
 {
-    if( !response.contains( "refresh_token" ) )
+    auto result = RedditUtils::ParseRefreshToken( response );
+    if( !result.has_value( ) )
     {
-        ErrorLog( "[%s] Response did not contain refresh token!", __FUNCTION__ );
         return false;
     }
 
     std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
-
-    try
-    {
-        m_RefreshToken = response[ "refresh_token" ];
-    }
-    catch( const Json::exception& ex )
-    {
-        std::string error = ex.what( );
-        ErrorLog( "[%s] could not parse refresh token response, error: %s", __FUNCTION__, error.c_str( ) );
-        return false;
-    }
-
+    m_RefreshToken = result.value( );
     m_AppConfig->SetValue( s_AppDataKey_RefreshToken, m_RefreshToken );
     m_AppConfig->Serialise( );
 
-    DebugLog( "[%s] Reddit access token: %s", __FUNCTION__, m_RefreshToken.c_str( ) );
+    DebugLog( "[%s] Reddit refresh token: %s", __FUNCTION__, m_RefreshToken.c_str( ) );
     return true;
 }
 

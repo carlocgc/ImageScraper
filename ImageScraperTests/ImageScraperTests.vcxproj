@@ -99,6 +99,9 @@
     <ClCompile Include="src\tests\SanityTests.cpp" />
     <ClCompile Include="src\tests\RequestTypesTests.cpp" />
     <ClCompile Include="src\tests\DownloadUtilsTests.cpp" />
+    <ClCompile Include="src\tests\RedditUtilsTests.cpp" />
+    <ClCompile Include="src\tests\TumblrUtilsTests.cpp" />
+    <ClCompile Include="src\tests\FourChanUtilsTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\catch2\catch_amalgamated.hpp" />
