@@ -66,9 +66,9 @@
 - [x] Implement `IServiceSink` on `FrontEnd`
 
 ### Panel abstraction
-- [ ] Define `IUiPanel` interface — `Update()`, `GetTitle()` — so new windows can be added without touching `FrontEnd`
-- [ ] Extract `LogPanel` from `FrontEnd` — owns log buffer, filter, auto-scroll, progress bars
-- [ ] Extract `DownloadOptionsPanel` from `FrontEnd` — owns provider combo, run/cancel/sign-in buttons
+- [x] Define `IUiPanel` interface — `Update()` — so new windows can be added without touching `FrontEnd`; `InputState` moved here from `FrontEnd`
+- [x] Extract `LogPanel` from `FrontEnd` — owns log buffer, filter, auto-scroll, progress bars
+- [x] Extract `DownloadOptionsPanel` from `FrontEnd` — owns provider combo, run/cancel/sign-in buttons
 
 ### Per-provider panel classes
 - [ ] Define `IProviderPanel` interface — `Update()`, `CanSignIn()`, `BuildInputOptions()`, `GetContentProvider()`
