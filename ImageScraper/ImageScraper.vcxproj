@@ -245,6 +245,9 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
     <ClCompile Include="src\ui\FrontEnd.cpp" />
     <ClCompile Include="src\ui\LogPanel.cpp" />
     <ClCompile Include="src\ui\DownloadOptionsPanel.cpp" />
+    <ClCompile Include="src\ui\RedditPanel.cpp" />
+    <ClCompile Include="src\ui\TumblrPanel.cpp" />
+    <ClCompile Include="src\ui\FourChanPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\app\App.h" />
@@ -344,8 +347,12 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\services\Service.h" />
     <ClInclude Include="include\ui\FrontEnd.h" />
     <ClInclude Include="include\ui\IUiPanel.h" />
+    <ClInclude Include="include\ui\IProviderPanel.h" />
     <ClInclude Include="include\ui\LogPanel.h" />
     <ClInclude Include="include\ui\DownloadOptionsPanel.h" />
+    <ClInclude Include="include\ui\RedditPanel.h" />
+    <ClInclude Include="include\ui\TumblrPanel.h" />
+    <ClInclude Include="include\ui\FourChanPanel.h" />
     <ClInclude Include="include\utils\DownloadUtils.h" />
     <ClInclude Include="include\utils\RedditUtils.h" />
     <ClInclude Include="include\utils\TumblrUtils.h" />

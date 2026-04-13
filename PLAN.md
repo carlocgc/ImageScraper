@@ -71,11 +71,11 @@
 - [x] Extract `DownloadOptionsPanel` from `FrontEnd` — owns provider combo, run/cancel/sign-in buttons
 
 ### Per-provider panel classes
-- [ ] Define `IProviderPanel` interface — `Update()`, `CanSignIn()`, `BuildInputOptions()`, `GetContentProvider()`
-- [ ] Extract `RedditPanel` — owns subreddit name, scope, time frame, max items state
-- [ ] Extract `TumblrPanel` — owns tumblr user state
-- [ ] Extract `FourChanPanel` — owns board, max threads, max media state
-- [ ] `DownloadOptionsPanel` holds a list of `IProviderPanel` — new platforms add a panel, not a FrontEnd edit
+- [x] Define `IProviderPanel` interface — `Update()`, `CanSignIn()`, `IsReadyToRun()`, `BuildInputOptions()`, `GetContentProvider()`
+- [x] Extract `RedditPanel` — owns subreddit name, scope, time frame, max items state
+- [x] Extract `TumblrPanel` — owns tumblr user state
+- [x] Extract `FourChanPanel` — owns board, max threads, max media state
+- [x] `DownloadOptionsPanel` holds a list of `IProviderPanel` — new platforms add a panel, not a FrontEnd edit
 
 ### New windows
 - [ ] `MediaPreviewPanel` — loads last downloaded image into an OpenGL texture (stb_image) and renders it in a dockable ImGui window; supports static images and animated GIFs (frame stepping)

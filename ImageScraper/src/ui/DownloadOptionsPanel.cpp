@@ -1,12 +1,15 @@
 #include "ui/DownloadOptionsPanel.h"
+#include "ui/RedditPanel.h"
+#include "ui/TumblrPanel.h"
+#include "ui/FourChanPanel.h"
 #include "log/Logger.h"
-#include "config/Config.h"
-
-#include <algorithm>
 
 ImageScraper::DownloadOptionsPanel::DownloadOptionsPanel( const std::vector<std::shared_ptr<Service>>& services )
     : m_Services{ services }
 {
+    m_ProviderPanels.push_back( std::make_unique<RedditPanel>( ) );
+    m_ProviderPanels.push_back( std::make_unique<TumblrPanel>( ) );
+    m_ProviderPanels.push_back( std::make_unique<FourChanPanel>( ) );
 }
 
 void ImageScraper::DownloadOptionsPanel::Update( )
@@ -75,110 +78,18 @@ void ImageScraper::DownloadOptionsPanel::UpdateProviderWidgets( )
 
     ImGui::EndChild( );
 
-    const ContentProvider provider = static_cast<ContentProvider>( m_ContentProvider );
-
-    switch( provider )
+    if( IProviderPanel* panel = GetActivePanel( ) )
     {
-    case ContentProvider::Reddit:
-        UpdateRedditWidgets( );
-        break;
-    case ContentProvider::Tumblr:
-        UpdateTumblrWidgets( );
-        break;
-    case ContentProvider::FourChan:
-        UpdateFourChanWidgets( );
-        break;
-    default:
-        break;
+        panel->Update( );
     }
 
     ImGui::EndDisabled( );
 }
 
-void ImageScraper::DownloadOptionsPanel::UpdateRedditWidgets( )
-{
-    if( ImGui::BeginChild( "SubredditName", ImVec2( 500, 25 ), false ) )
-    {
-        char buffer[ INPUT_STRING_MAX ] = "";
-        strcpy_s( buffer, INPUT_STRING_MAX, m_SubredditName.c_str( ) );
-        ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Subreddit (e.g. Gifs)", buffer, INPUT_STRING_MAX, flags, nullptr, this ) )
-        {
-            m_SubredditName = buffer;
-        }
-    }
-
-    ImGui::EndChild( );
-
-    if( ImGui::BeginChild( "SubredditScope", ImVec2( 500, 25 ), false ) )
-    {
-        int redditScope = static_cast<int>( m_RedditScope );
-        ImGui::Combo( "Scope", &redditScope, s_RedditScopeStrings, IM_ARRAYSIZE( s_RedditScopeStrings ) );
-        m_RedditScope = static_cast<RedditScope>( redditScope );
-    }
-
-    ImGui::EndChild( );
-
-    const RedditScope scope = static_cast<RedditScope>( m_RedditScope );
-
-    if( scope == RedditScope::Top ||
-        scope == RedditScope::Controversial ||
-        scope == RedditScope::Sort )
-    {
-        if( ImGui::BeginChild( "SubredditScopeTimeFrame", ImVec2( 500, 25 ), false ) )
-        {
-            int redditScopeTimeFrame = static_cast<int>( m_RedditScopeTimeFrame );
-            ImGui::Combo( "Time Frame", &redditScopeTimeFrame, s_RedditScopeTimeFrameStrings, IM_ARRAYSIZE( s_RedditScopeTimeFrameStrings ) );
-            m_RedditScopeTimeFrame = static_cast<RedditScopeTimeFrame>( redditScopeTimeFrame );
-        }
-
-        ImGui::EndChild( );
-    }
-
-    if( ImGui::BeginChild( "RedditMaxMediaItems", ImVec2( 500, 25 ), false ) )
-    {
-        ImGui::InputInt( "Max Downloads", &m_RedditMaxMediaItems );
-        m_RedditMaxMediaItems = std::clamp( m_RedditMaxMediaItems, REDDIT_LIMIT_MIN, REDDIT_LIMIT_MAX );
-    }
-
-    ImGui::EndChild( );
-}
-
-void ImageScraper::DownloadOptionsPanel::UpdateTumblrWidgets( )
-{
-    if( ImGui::BeginChild( "TumblrUser", ImVec2( 500, 25 ), false ) )
-    {
-        char buffer[ INPUT_STRING_MAX ] = "";
-        strcpy_s( buffer, INPUT_STRING_MAX, m_TumblrUser.c_str( ) );
-        ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Tumblr User", buffer, INPUT_STRING_MAX, flags, nullptr, this ) )
-        {
-            m_TumblrUser = buffer;
-        }
-    }
-
-    ImGui::EndChild( );
-}
-
-void ImageScraper::DownloadOptionsPanel::UpdateFourChanWidgets( )
-{
-    if( ImGui::BeginChild( "FourChanBoard", ImVec2( 500, 25 ), false ) )
-    {
-        char buffer[ INPUT_STRING_MAX ] = "";
-        strcpy_s( buffer, INPUT_STRING_MAX, m_FourChanBoard.c_str( ) );
-        ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Board (e.g. v, sci )", buffer, INPUT_STRING_MAX, flags, nullptr, this ) )
-        {
-            m_FourChanBoard = buffer;
-        }
-    }
-
-    ImGui::EndChild( );
-}
-
 void ImageScraper::DownloadOptionsPanel::UpdateSignInButton( )
 {
-    if( !CanSignIn( ) )
+    IProviderPanel* panel = GetActivePanel( );
+    if( !panel || !panel->CanSignIn( ) )
     {
         return;
     }
@@ -192,7 +103,7 @@ void ImageScraper::DownloadOptionsPanel::UpdateSignInButton( )
 
     const bool signInStarted = signingInProvider == static_cast<int>( m_ContentProvider );
 
-    const std::shared_ptr<Service> service = GetCurrentProvider( );
+    const std::shared_ptr<Service> service = GetCurrentService( );
     if( service && service->IsSignedIn( ) )
     {
         ImGui::BeginDisabled( true );
@@ -254,41 +165,21 @@ bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
     DebugLog( "[%s] Started processing user input...", __FUNCTION__ );
 
     m_StartProcess = false;
-    m_Running = true;
+    m_Running      = true;
 
-    UserInputOptions inputOptions{ };
-
-    const ContentProvider provider = static_cast<ContentProvider>( m_ContentProvider );
-    switch( provider )
+    IProviderPanel* panel = GetActivePanel( );
+    if( !panel )
     {
-    case ContentProvider::Reddit:
-        if( m_SubredditName.empty( ) )
-        {
-            return false;
-        }
-        DebugLog( "[%s] Building Reddit user input data", __FUNCTION__ );
-        inputOptions = BuildRedditInputOptions( );
-        break;
-    case ContentProvider::Tumblr:
-        if( m_TumblrUser.empty( ) )
-        {
-            return false;
-        }
-        DebugLog( "[%s] Building Tumblr user input data", __FUNCTION__ );
-        inputOptions = BuildTumblrInputOptions( );
-        break;
-    case ContentProvider::FourChan:
-        if( m_FourChanBoard.empty( ) )
-        {
-            return false;
-        }
-        DebugLog( "[%s] Building 4chan user input data", __FUNCTION__ );
-        inputOptions = BuildFourChanInputOptions( );
-        break;
-    default:
         DebugLog( "[%s] Invalid ContentProvider, check ContentProvider constant", __FUNCTION__ );
         return false;
     }
+
+    if( !panel->IsReadyToRun( ) )
+    {
+        return false;
+    }
+
+    const UserInputOptions inputOptions = panel->BuildInputOptions( );
 
     for( auto service : m_Services )
     {
@@ -309,71 +200,33 @@ void ImageScraper::DownloadOptionsPanel::Reset( )
     m_DownloadCancelled.store( false );
 }
 
-bool ImageScraper::DownloadOptionsPanel::CanSignIn( ) const
-{
-    switch( static_cast<ContentProvider>( m_ContentProvider ) )
-    {
-    case ContentProvider::Reddit:
-        return true;
-    default:
-        return false;
-    }
-}
-
 void ImageScraper::DownloadOptionsPanel::CancelSignIn( )
 {
     m_SigningInProvider.store( INVALID_CONTENT_PROVIDER );
 }
 
-std::shared_ptr<ImageScraper::Service> ImageScraper::DownloadOptionsPanel::GetCurrentProvider( )
+ImageScraper::IProviderPanel* ImageScraper::DownloadOptionsPanel::GetActivePanel( ) const
 {
-    for( const auto& service : m_Services )
+    const ContentProvider provider = static_cast<ContentProvider>( m_ContentProvider );
+    for( const auto& panel : m_ProviderPanels )
     {
-        if( service->GetContentProvider( ) == static_cast<ContentProvider>( m_ContentProvider ) )
+        if( panel->GetContentProvider( ) == provider )
         {
-            return service;
+            return panel.get( );
         }
     }
     return nullptr;
 }
 
-ImageScraper::UserInputOptions ImageScraper::DownloadOptionsPanel::BuildRedditInputOptions( )
+std::shared_ptr<ImageScraper::Service> ImageScraper::DownloadOptionsPanel::GetCurrentService( ) const
 {
-    UserInputOptions options{ };
-    options.m_Provider = ContentProvider::Reddit;
-    options.m_SubredditName = m_SubredditName;
-
-    auto toLower = [ ]( unsigned char ch ) { return std::tolower( ch ); };
-
-    std::string scope = s_RedditScopeStrings[ static_cast<int>( m_RedditScope ) ];
-    std::transform( scope.begin( ), scope.end( ), scope.begin( ), toLower );
-    options.m_RedditScope = scope;
-
-    if( m_RedditScope == RedditScope::Top || m_RedditScope == RedditScope::Controversial || m_RedditScope == RedditScope::Sort )
+    const ContentProvider provider = static_cast<ContentProvider>( m_ContentProvider );
+    for( const auto& service : m_Services )
     {
-        std::string scopeTimeFrame = s_RedditScopeTimeFrameStrings[ static_cast<int>( m_RedditScopeTimeFrame ) ];
-        std::transform( scopeTimeFrame.begin( ), scopeTimeFrame.end( ), scopeTimeFrame.begin( ), toLower );
-        options.m_RedditScopeTimeFrame = scopeTimeFrame;
+        if( service->GetContentProvider( ) == provider )
+        {
+            return service;
+        }
     }
-
-    options.m_RedditMaxMediaItems = m_RedditMaxMediaItems;
-    return options;
-}
-
-ImageScraper::UserInputOptions ImageScraper::DownloadOptionsPanel::BuildTumblrInputOptions( )
-{
-    UserInputOptions options{ };
-    options.m_Provider = ContentProvider::Tumblr;
-    options.m_TumblrUser = m_TumblrUser;
-    return options;
-}
-
-ImageScraper::UserInputOptions ImageScraper::DownloadOptionsPanel::BuildFourChanInputOptions( )
-{
-    UserInputOptions options{ };
-    options.m_Provider = ContentProvider::FourChan;
-    options.m_FourChanBoard = m_FourChanBoard;
-    options.m_FourChanMaxThreads = m_FourChanMaxThreads;
-    options.m_FourChanMaxMediaItems = m_FourChanMaxMediaItems;
-    return options;
+    return nullptr;
 }
