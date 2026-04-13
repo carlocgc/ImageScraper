@@ -330,6 +330,7 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\requests\reddit\FetchAccessTokenRequest.h" />
     <ClInclude Include="include\requests\reddit\RefreshAccessTokenRequest.h" />
     <ClInclude Include="include\requests\tumblr\RetrievePublishedPostsRequest.h" />
+    <ClInclude Include="include\services\IServiceSink.h" />
     <ClInclude Include="include\services\DiscordService.h" />
     <ClInclude Include="include\services\FourChanService.h" />
     <ClInclude Include="include\services\TumblrService.h" />

@@ -10,13 +10,12 @@ namespace ImageScraper
 {
     using Json = nlohmann::json;
 
-    class FrontEnd;
     class JsonFile;
 
     class TumblrService : public Service
     {
     public:
-        TumblrService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<FrontEnd> frontEnd );
+        TumblrService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<IServiceSink> sink );
         bool HandleUserInput( const UserInputOptions& options ) override;
         bool OpenExternalAuth( ) override;
         bool HandleExternalAuth( const std::string& response ) override;

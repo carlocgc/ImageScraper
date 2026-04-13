@@ -1,6 +1,5 @@
 #include "services/FourChanService.h"
 #include "async/TaskManager.h"
-#include "ui/FrontEnd.h"
 #include "log/Logger.h"
 #include "requests/RequestTypes.h"
 #include "requests/fourchan/GetBoardsRequest.h"
@@ -12,8 +11,8 @@
 
 #include <string>
 
-ImageScraper::FourChanService::FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<FrontEnd> frontEnd )
-    : Service( ContentProvider::FourChan, appConfig, userConfig, caBundle, frontEnd )
+ImageScraper::FourChanService::FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<IServiceSink> sink )
+    : Service( ContentProvider::FourChan, appConfig, userConfig, caBundle, sink )
 {
 }
 
@@ -51,7 +50,7 @@ void ImageScraper::FourChanService::Authenticate( AuthenticateCallback callback 
 
 bool ImageScraper::FourChanService::IsCancelled( )
 {
-    return m_FrontEnd->IsCancelled( );
+    return m_Sink->IsCancelled( );
 }
 
 void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inputOptions )
@@ -62,13 +61,13 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
     auto onComplete = [ & ]( int filesDownloaded )
     {
         InfoLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
-        m_FrontEnd->SetInputState( InputState::Free );
+        m_Sink->OnRunComplete( );
     };
 
     auto onFail = [ & ]( )
     {
         ErrorLog( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
-        m_FrontEnd->SetInputState( InputState::Free );
+        m_Sink->OnRunComplete( );
     };
 
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, options = inputOptions, onComplete, onFail ]( )
@@ -201,7 +200,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 downloadOptions.m_UserAgent = m_UserAgent;
                 downloadOptions.m_BufferPtr = &buffer;
 
-                DownloadRequest request{ m_FrontEnd };
+                DownloadRequest request{ m_Sink };
                 RequestResult result = request.Perform( downloadOptions );
                 if( !result.m_Success )
                 {
@@ -226,7 +225,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
                 ++filesDownloaded;
 
-                m_FrontEnd->UpdateTotalDownloadsProgress( filesDownloaded, totalDownloads );
+                m_Sink->OnTotalDownloadProgress( filesDownloaded, totalDownloads );
 
                 InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, totalDownloads, filepath.c_str( ) );
             }

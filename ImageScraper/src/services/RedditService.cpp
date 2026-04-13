@@ -9,7 +9,6 @@
 #include "utils/RedditUtils.h"
 #include "log/Logger.h"
 #include "async/TaskManager.h"
-#include "ui/FrontEnd.h"
 #include "io/JsonFile.h"
 #include "utils/StringUtils.h"
 #include "curlpp/cURLpp.hpp"
@@ -30,8 +29,8 @@ const std::string ImageScraper::RedditService::s_AppDataKey_RefreshToken = "redd
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientId = "reddit_client_id";
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientSecret = "reddit_client_secret";
 
-ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<FrontEnd> frontEnd )
-    : Service( ContentProvider::Reddit, appConfig, userConfig, caBundle, frontEnd )
+ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<IServiceSink> sink )
+    : Service( ContentProvider::Reddit, appConfig, userConfig, caBundle, sink )
 {
     if( !m_AppConfig->GetValue<std::string>( s_AppDataKey_DeviceId, m_DeviceId ) )
     {
@@ -99,7 +98,7 @@ bool ImageScraper::RedditService::OpenExternalAuth( )
 
 bool ImageScraper::RedditService::HandleExternalAuth( const std::string& response )
 {
-    const int signingInProvider = m_FrontEnd->GetSigningInProvider( );
+    const int signingInProvider = m_Sink->GetSigningInProvider( );
     if( signingInProvider == INVALID_CONTENT_PROVIDER )
     {
         ErrorLog( "[%s] RedditService::HandleExternalAuth skipped, No signing in provider!", __FUNCTION__ );
@@ -189,7 +188,7 @@ void ImageScraper::RedditService::Authenticate( AuthenticateCallback callback )
 
 bool ImageScraper::RedditService::IsCancelled( )
 {
-    return m_FrontEnd->IsCancelled( );
+    return m_Sink->IsCancelled( );
 }
 
 const bool ImageScraper::RedditService::IsAuthenticated( ) const
@@ -213,13 +212,13 @@ void ImageScraper::RedditService::FetchAccessToken( const std::string& authCode 
 {
     auto onComplete = [ & ]( )
     {
-        m_FrontEnd->CompleteSignIn( ContentProvider::Reddit );
+        m_Sink->OnSignInComplete( ContentProvider::Reddit );
         InfoLog( "[%s] Reddit signed in successfully!", __FUNCTION__ );
     };
 
     auto onFail = [ & ]( const std::string error )
     {
-        m_FrontEnd->CompleteSignIn( ContentProvider::Reddit );
+        m_Sink->OnSignInComplete( ContentProvider::Reddit );
         ErrorLog( "[%s] Reddit sign in failed, error: %s", __FUNCTION__, error.c_str( ) );
     };
 
@@ -271,14 +270,14 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
     {
         InfoLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
 
-        m_FrontEnd->SetInputState( InputState::Free );
+        m_Sink->OnRunComplete( );
     };
 
     auto onFail = [ & ]( )
     {
         ErrorLog( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
 
-        m_FrontEnd->SetInputState( InputState::Free );
+        m_Sink->OnRunComplete( );
     };
 
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, options = inputOptions, onComplete, onFail ]( )
@@ -431,7 +430,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 options.m_UserAgent = m_UserAgent;
                 options.m_BufferPtr = &buffer;
 
-                DownloadRequest request{ m_FrontEnd };
+                DownloadRequest request{ m_Sink };
                 RequestResult result = request.Perform( options );
                 if( !result.m_Success )
                 {
@@ -454,7 +453,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
                 ++filesDownloaded;
 
-                m_FrontEnd->UpdateTotalDownloadsProgress( filesDownloaded, totalDownloads );
+                m_Sink->OnTotalDownloadProgress( filesDownloaded, totalDownloads );
 
                 InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, totalDownloads, filepath.c_str( ) );
             }

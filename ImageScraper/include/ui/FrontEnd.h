@@ -16,9 +16,8 @@
 #include "log/Logger.h"
 #include "collections/RingBuffer.h"
 #include "services/Service.h"
+#include "services/IServiceSink.h"
 #include <deque>
-
-#define INVALID_CONTENT_PROVIDER -1
 
 namespace ImageScraper
 {
@@ -33,7 +32,7 @@ namespace ImageScraper
         Blocked
     };
 
-    class FrontEnd
+    class FrontEnd : public IServiceSink
     {
     public:
         FrontEnd( const int maxLogLines );
@@ -44,14 +43,17 @@ namespace ImageScraper
         void SetInputState( const InputState& state );
         void Render( );
         void Log( const LogLine& line );
-        bool IsCancelled( ) { return m_DownloadCancelled.load( ); }
-        void UpdateCurrentDownloadProgress( const float progress );
-        void UpdateTotalDownloadsProgress( const int current, const int total );
-        void CompleteSignIn( ContentProvider provider );
 
         GLFWwindow* GetWindow( ) const { return m_WindowPtr; };
         LogLevel GetLogLevel( ) const { return m_LogLevel; };
-        int GetSigningInProvider( ) { return m_SigningInProvider.load(); };
+
+        // IServiceSink
+        bool IsCancelled( ) override { return m_DownloadCancelled.load( ); }
+        void OnRunComplete( ) override;
+        void OnCurrentDownloadProgress( float progress ) override;
+        void OnTotalDownloadProgress( int current, int total ) override;
+        int GetSigningInProvider( ) override { return m_SigningInProvider.load( ); }
+        void OnSignInComplete( ContentProvider provider ) override;
 
     private:
         // TODO Move all input logic into components

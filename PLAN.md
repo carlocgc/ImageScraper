@@ -56,9 +56,40 @@
 
 ---
 
-## Phase 3 — Threading Model
+## Phase 3 — UI Refactor & New Windows
+> Goal: Break up the FrontEnd monolith, decouple services from the UI, and add new panels without modifying core files.
+> **Depends on: Phase 2**
+
+### Decouple services from FrontEnd
+- [x] Define `IServiceSink` interface — `IsCancelled`, `OnRunComplete`, `OnCurrentDownloadProgress`, `OnTotalDownloadProgress`, `GetSigningInProvider`, `OnSignInComplete`
+- [x] Replace `shared_ptr<FrontEnd>` in `Service` base class and `DownloadRequest` with `shared_ptr<IServiceSink>`
+- [x] Implement `IServiceSink` on `FrontEnd`
+
+### Panel abstraction
+- [ ] Define `IUiPanel` interface — `Update()`, `GetTitle()` — so new windows can be added without touching `FrontEnd`
+- [ ] Extract `LogPanel` from `FrontEnd` — owns log buffer, filter, auto-scroll, progress bars
+- [ ] Extract `DownloadOptionsPanel` from `FrontEnd` — owns provider combo, run/cancel/sign-in buttons
+
+### Per-provider panel classes
+- [ ] Define `IProviderPanel` interface — `Update()`, `CanSignIn()`, `BuildInputOptions()`, `GetContentProvider()`
+- [ ] Extract `RedditPanel` — owns subreddit name, scope, time frame, max items state
+- [ ] Extract `TumblrPanel` — owns tumblr user state
+- [ ] Extract `FourChanPanel` — owns board, max threads, max media state
+- [ ] `DownloadOptionsPanel` holds a list of `IProviderPanel` — new platforms add a panel, not a FrontEnd edit
+
+### New windows
+- [ ] `MediaPreviewPanel` — loads last downloaded image into an OpenGL texture (stb_image) and renders it in a dockable ImGui window; supports static images and animated GIFs (frame stepping)
+- [ ] `DownloadHistoryPanel` — ring buffer of completed downloads showing filename, source URL, and timestamp; clicking an entry opens it in explorer
+
+### Code quality
+- [ ] Replace `#define INVALID_CONTENT_PROVIDER` and `#define` UI constants with `constexpr`
+- [ ] `Reset()` should be called explicitly rather than implicitly from `SetInputState`
+
+---
+
+## Phase 4 — Threading Model
 > Goal: Parallelise downloads, improve cancellation, unblock UI callback throughput.
-> **Depends on: Phase 1**
+> **Depends on: Phase 2**
 
 - [ ] Increase network thread count and benchmark throughput
 - [ ] Per-task cancellation support (cancel individual downloads cleanly)
@@ -67,9 +98,9 @@
 
 ---
 
-## Phase 4 — New Platforms
+## Phase 5 — New Platforms
 > Goal: Expand supported platforms leveraging the improved request and threading layers.
-> **Depends on: Phase 2, Phase 3**
+> **Depends on: Phase 3, Phase 4**
 
 - [ ] Discord — implement stub (`DiscordService` already exists, throws `logic_error`)
 - [ ] X (Twitter) — new service + request classes

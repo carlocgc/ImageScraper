@@ -1,7 +1,6 @@
 #include "services/TumblrService.h"
 #include "io/JsonFile.h"
 #include "log/Logger.h"
-#include "ui/FrontEnd.h"
 #include "async/TaskManager.h"
 #include "requests/RequestTypes.h"
 #include "requests/tumblr/RetrievePublishedPostsRequest.h"
@@ -12,8 +11,8 @@
 
 const std::string ImageScraper::TumblrService::s_UserDataKey_ApiKey = "tumblr_api_key";
 
-ImageScraper::TumblrService::TumblrService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<FrontEnd> frontEnd )
-    : Service( ContentProvider::Tumblr, appConfig, userConfig, caBundle, frontEnd )
+ImageScraper::TumblrService::TumblrService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<IServiceSink> sink )
+    : Service( ContentProvider::Tumblr, appConfig, userConfig, caBundle, sink )
 {
     if( !m_UserConfig->GetValue<std::string>( s_UserDataKey_ApiKey, m_ApiKey ) )
     {
@@ -61,7 +60,7 @@ void ImageScraper::TumblrService::Authenticate( AuthenticateCallback callback )
 
 bool ImageScraper::TumblrService::IsCancelled( )
 {
-    return m_FrontEnd->IsCancelled( );
+    return m_Sink->IsCancelled( );
 }
 
 void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& inputOptions )
@@ -72,13 +71,13 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
     auto onComplete = [ & ]( int filesDownloaded )
     {
         InfoLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
-        m_FrontEnd->SetInputState( InputState::Free );
+        m_Sink->OnRunComplete( );
     };
 
     auto onFail = [ & ]( )
     {
         ErrorLog( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
-        m_FrontEnd->SetInputState( InputState::Free );
+        m_Sink->OnRunComplete( );
     };
 
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, options = inputOptions, onComplete, onFail ]( )
@@ -166,7 +165,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
                 options.m_UserAgent = m_UserAgent;
                 options.m_BufferPtr = &buffer;
 
-                DownloadRequest request{ m_FrontEnd };
+                DownloadRequest request{ m_Sink };
                 RequestResult result = request.Perform( options );
                 if( !result.m_Success )
                 {
@@ -189,7 +188,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
 
                 ++filesDownloaded;
 
-                m_FrontEnd->UpdateTotalDownloadsProgress( filesDownloaded, totalDownloads );
+                m_Sink->OnTotalDownloadProgress( filesDownloaded, totalDownloads );
 
                 InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, totalDownloads, filepath.c_str( ) );
 

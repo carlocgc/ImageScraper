@@ -10,13 +10,12 @@ namespace ImageScraper
 {
     using Json = nlohmann::json;
 
-    class FrontEnd;
     class JsonFile;
 
     class FourChanService : public Service
     {
     public:
-        FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<FrontEnd> frontEnd );
+        FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<IServiceSink> sink );
         bool HandleUserInput( const UserInputOptions& options ) override;
         bool OpenExternalAuth( ) override;
         bool HandleExternalAuth( const std::string& response ) override;

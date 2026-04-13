@@ -1,17 +1,16 @@
 #pragma once
 #include "requests/DownloadRequestTypes.h"
 #include "requests/RequestTypes.h"
+#include "services/IServiceSink.h"
 
 #include <fstream>
 
 namespace ImageScraper
 {
-    class FrontEnd;
-
     class DownloadRequest
     {
     public:
-        DownloadRequest( std::shared_ptr<FrontEnd> frontEnd );
+        DownloadRequest( std::shared_ptr<IServiceSink> sink );
         RequestResult Perform( const DownloadOptions& options );
         size_t WriteCallback( char* contents, size_t size, size_t nmemb );
         int ProgressCallback( double dltotal, double dlnow, double ultotal, double ulnow );
@@ -22,6 +21,6 @@ namespace ImageScraper
         std::vector<char>* m_BufferPtr{ nullptr };
         size_t m_BytesWritten{ 0 };
         RequestResult m_Result{ };
-        std::shared_ptr<FrontEnd> m_FrontEnd{ nullptr };
+        std::shared_ptr<IServiceSink> m_Sink{ nullptr };
     };
 }

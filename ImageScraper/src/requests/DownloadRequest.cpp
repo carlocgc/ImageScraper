@@ -4,12 +4,11 @@
 #include "curlpp/Options.hpp"
 #include "curlpp/cURLpp.hpp"
 #include "curlpp/Easy.hpp"
-#include "ui/FrontEnd.h"
 
 #include <sstream>
 #include <cmath>
 
-ImageScraper::DownloadRequest::DownloadRequest( std::shared_ptr<FrontEnd> frontEnd ) : m_FrontEnd{ frontEnd }
+ImageScraper::DownloadRequest::DownloadRequest( std::shared_ptr<IServiceSink> sink ) : m_Sink{ sink }
 {
 }
 
@@ -92,14 +91,14 @@ size_t ImageScraper::DownloadRequest::WriteCallback( char* contents, size_t size
 
 int ImageScraper::DownloadRequest::ProgressCallback( double dltotal, double dlnow, double ultotal, double ulnow )
 {
-    if( m_FrontEnd )
+    if( m_Sink )
     {
         const float current = static_cast< float >( dlnow );
         const float total = static_cast< float >( dltotal );
 
         if( !IsFloatZero( current ) && !IsFloatZero( total ) )
         {
-            m_FrontEnd->UpdateCurrentDownloadProgress( current / total );
+            m_Sink->OnCurrentDownloadProgress( current / total );
         }
     }
 

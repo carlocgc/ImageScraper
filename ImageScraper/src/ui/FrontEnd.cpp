@@ -206,12 +206,17 @@ void ImageScraper::FrontEnd::Log( const LogLine& line )
     m_LogContent.Push( line );
 }
 
-void ImageScraper::FrontEnd::UpdateCurrentDownloadProgress( const float progress )
+void ImageScraper::FrontEnd::OnRunComplete( )
+{
+    SetInputState( InputState::Free );
+}
+
+void ImageScraper::FrontEnd::OnCurrentDownloadProgress( float progress )
 {
     m_CurrentDownloadProgress.store( progress, std::memory_order_relaxed );
 }
 
-void ImageScraper::FrontEnd::UpdateTotalDownloadsProgress( const int current, const int total )
+void ImageScraper::FrontEnd::OnTotalDownloadProgress( int current, int total )
 {
     m_CurrentDownloadNum.store( current );
     m_TotalDownloadsCount.store( total );
@@ -219,7 +224,7 @@ void ImageScraper::FrontEnd::UpdateTotalDownloadsProgress( const int current, co
     m_TotalProgress.store( progress );
 }
 
-void ImageScraper::FrontEnd::CompleteSignIn( ContentProvider provider )
+void ImageScraper::FrontEnd::OnSignInComplete( ContentProvider provider )
 {
     const int signingInProvider = m_SigningInProvider.load( );
 
