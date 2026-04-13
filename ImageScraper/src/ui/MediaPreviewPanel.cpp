@@ -59,9 +59,16 @@ void ImageScraper::MediaPreviewPanel::Update( )
             if( m_GifState == GifState::Playing && m_Textures.size( ) > 1 )
             {
                 m_FrameAccumMs += ImGui::GetIO( ).DeltaTime * 1000.0f;
-                const int delayMs = m_FrameDelaysMs.empty( ) ? 100 : m_FrameDelaysMs[ m_CurrentFrame ];
-                if( m_FrameAccumMs >= static_cast<float>( delayMs ) )
+
+                // Use a while loop so the accumulator can catch up by advancing
+                // multiple frames in one update when delta time exceeds frame delay
+                while( true )
                 {
+                    const int delayMs = m_FrameDelaysMs.empty( ) ? 100 : m_FrameDelaysMs[ m_CurrentFrame ];
+                    if( m_FrameAccumMs < static_cast<float>( delayMs ) )
+                    {
+                        break;
+                    }
                     m_FrameAccumMs -= static_cast<float>( delayMs );
                     m_CurrentFrame = ( m_CurrentFrame + 1 ) % static_cast<int>( m_Textures.size( ) );
                 }
@@ -176,6 +183,35 @@ void ImageScraper::MediaPreviewPanel::Update( )
             snprintf( buf, sizeof( buf ), "Frame %d / %d", m_CurrentFrame + 1, static_cast<int>( m_Textures.size( ) ) );
             DrawBadge( ImVec2( contentScreenMin.x + k_Pad, contentScreenMax.y - lineH - k_Pad - k_BadgePad * 2 ), buf );
         }
+
+        // Bottom: indeterminate loading bar during full GIF decode
+        if( m_IsDecoding && m_GifState == GifState::LoadingFullFrames )
+        {
+            constexpr float k_BarH  = 4.0f;
+            constexpr float k_SegW  = 0.3f;  // segment width as fraction of bar width
+
+            const float barW  = contentScreenMax.x - contentScreenMin.x;
+            const float barY0 = contentScreenMax.y - k_BarH;
+            const float barY1 = contentScreenMax.y;
+            const float segW  = barW * k_SegW;
+
+            // Ping-pong: t goes 0→1→0 smoothly
+            const float t     = static_cast<float>( fabs( sin( ImGui::GetTime( ) * 1.5 ) ) );
+            const float segX0 = contentScreenMin.x + ( barW - segW ) * t;
+            const float segX1 = segX0 + segW;
+
+            // Track
+            dl->AddRectFilled(
+                ImVec2( contentScreenMin.x, barY0 ),
+                ImVec2( contentScreenMax.x, barY1 ),
+                IM_COL32( 0, 0, 0, 120 ) );
+
+            // Animated segment
+            dl->AddRectFilled(
+                ImVec2( segX0, barY0 ),
+                ImVec2( segX1, barY1 ),
+                IM_COL32( 100, 180, 255, 220 ) );
+        }
     }
 }
 
@@ -188,7 +224,7 @@ void ImageScraper::MediaPreviewPanel::OnFileDownloaded( const std::string& filep
 
 void ImageScraper::MediaPreviewPanel::KickDecodeIfNeeded( )
 {
-    if( m_IsDecoding )
+    if( m_IsDecoding || m_GifState == GifState::Playing )
     {
         return;
     }
@@ -361,7 +397,7 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
         decoded->m_FrameDelaysMs.reserve( static_cast<size_t>( frames ) );
         for( int i = 0; i < frames; ++i )
         {
-            const int delayMs = delays ? delays[ i ] * 10 : 100;
+            const int delayMs = delays ? delays[ i ] : 100;  // stb stores delays in ms already
             decoded->m_FrameDelaysMs.push_back( std::max( delayMs, 20 ) );
         }
 
