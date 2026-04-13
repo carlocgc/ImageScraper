@@ -34,16 +34,20 @@ void ImageScraper::MediaPreviewPanel::Update( )
 
     ImGui::SetNextWindowSize( ImVec2( 480, 480 ), ImGuiCond_FirstUseEver );
 
-    // Capture parent window rect before rendering content (needed to position overlay)
-    ImVec2 overlayAnchor{ 0.0f, 0.0f };
-    bool windowOpen = false;
+    // Capture content-region screen coords for the text overlays
+    ImVec2 contentScreenMin{ 0.0f, 0.0f };
+    ImVec2 contentScreenMax{ 0.0f, 0.0f };
+    bool   windowOpen = false;
 
     if( ImGui::Begin( "Media Preview", nullptr ) )
     {
         windowOpen = true;
-        overlayAnchor = ImVec2(
-            ImGui::GetWindowPos( ).x + ImGui::GetWindowSize( ).x,
-            ImGui::GetWindowPos( ).y );
+
+        const ImVec2 winPos = ImGui::GetWindowPos( );
+        contentScreenMin = ImVec2( winPos.x + ImGui::GetWindowContentRegionMin( ).x,
+                                   winPos.y + ImGui::GetWindowContentRegionMin( ).y );
+        contentScreenMax = ImVec2( winPos.x + ImGui::GetWindowContentRegionMax( ).x,
+                                   winPos.y + ImGui::GetWindowContentRegionMax( ).y );
 
         if( m_Textures.empty( ) )
         {
@@ -107,40 +111,32 @@ void ImageScraper::MediaPreviewPanel::Update( )
     }
     ImGui::End( );
 
-    // Overlay — top-right corner of the panel, always on top, non-interactive
+    // Text overlays drawn directly on the foreground (no window, no background — FPS-counter style)
     if( windowOpen )
     {
-        constexpr float k_Padding = 6.0f;
-        constexpr ImGuiWindowFlags k_OverlayFlags =
-            ImGuiWindowFlags_NoDecoration  |
-            ImGuiWindowFlags_NoDocking     |
-            ImGuiWindowFlags_AlwaysAutoResize |
-            ImGuiWindowFlags_NoSavedSettings  |
-            ImGuiWindowFlags_NoFocusOnAppearing |
-            ImGuiWindowFlags_NoNav         |
-            ImGuiWindowFlags_NoMove        |
-            ImGuiWindowFlags_NoMouseInputs;
+        constexpr float k_Pad = 6.0f;
+        ImDrawList* dl = ImGui::GetForegroundDrawList( );
+        const ImU32 colText    = ImGui::GetColorU32( ImGuiCol_Text );
+        const ImU32 colDisabled = ImGui::GetColorU32( ImGuiCol_TextDisabled );
 
-        ImGui::SetNextWindowPos(
-            ImVec2( overlayAnchor.x - k_Padding, overlayAnchor.y + k_Padding ),
-            ImGuiCond_Always,
-            ImVec2( 1.0f, 0.0f ) );   // pivot: top-right
-        ImGui::SetNextWindowBgAlpha( 0.65f );
-
-        if( ImGui::Begin( "##media_overlay", nullptr, k_OverlayFlags ) )
+        // Top-left: name of the currently displayed file
+        if( !m_CurrentFilePath.empty( ) )
         {
-            if( !m_CurrentFilePath.empty( ) )
-            {
-                const std::string displayName = std::filesystem::path( m_CurrentFilePath ).filename( ).string( );
-                ImGui::TextUnformatted( displayName.c_str( ) );
-            }
-
-            if( m_IsDecoding )
-            {
-                ImGui::TextDisabled( "Loading: %s", m_LoadingFileName.c_str( ) );
-            }
+            const std::string name = std::filesystem::path( m_CurrentFilePath ).filename( ).string( );
+            dl->AddText( ImVec2( contentScreenMin.x + k_Pad, contentScreenMin.y + k_Pad ),
+                         colText, name.c_str( ) );
         }
-        ImGui::End( );
+
+        // Bottom-right: loading indicator
+        if( m_IsDecoding )
+        {
+            const std::string msg = "Loading: " + m_LoadingFileName;
+            const ImVec2 textSize = ImGui::CalcTextSize( msg.c_str( ) );
+            dl->AddText(
+                ImVec2( contentScreenMax.x - textSize.x - k_Pad,
+                        contentScreenMax.y - textSize.y - k_Pad ),
+                colDisabled, msg.c_str( ) );
+        }
     }
 }
 
