@@ -51,7 +51,7 @@ void ImageScraper::MediaPreviewPanel::Update( )
 
         if( m_Textures.empty( ) )
         {
-            ImGui::TextDisabled( m_IsDecoding ? "Loading..." : "No media loaded yet" );
+            ImGui::TextDisabled( "No media loaded yet" );
         }
         else
         {
@@ -67,32 +67,26 @@ void ImageScraper::MediaPreviewPanel::Update( )
                 }
             }
 
-            // Reserve a line at the bottom for the GIF frame counter when playing
-            const bool showFrameCounter = m_GifState == GifState::Playing && m_Textures.size( ) > 1;
-            const float counterH = showFrameCounter ? ImGui::GetTextLineHeightWithSpacing( ) : 0.0f;
-
-            // Scale image to fit the available content region while preserving aspect ratio
+            // Scale image to fill the full content region
             const ImVec2 avail = ImGui::GetContentRegionAvail( );
             float drawW = static_cast<float>( m_Width );
             float drawH = static_cast<float>( m_Height );
-            const float availH = avail.y - counterH;
 
             if( drawW > avail.x )
             {
                 drawH = drawH * ( avail.x / drawW );
                 drawW = avail.x;
             }
-            if( drawH > availH )
+            if( drawH > avail.y )
             {
-                drawW = drawW * ( availH / drawH );
-                drawH = availH;
+                drawW = drawW * ( avail.y / drawH );
+                drawH = avail.y;
             }
 
             // Centre the image in the available region
             const float offsetX = ( avail.x - drawW ) * 0.5f;
-            const float offsetY = ( availH - drawH ) * 0.5f;
-            const ImVec2 imageCursor{ ImGui::GetCursorPosX( ) + offsetX, ImGui::GetCursorPosY( ) + offsetY };
-            ImGui::SetCursorPos( imageCursor );
+            const float offsetY = ( avail.y - drawH ) * 0.5f;
+            ImGui::SetCursorPos( ImVec2( ImGui::GetCursorPosX( ) + offsetX, ImGui::GetCursorPosY( ) + offsetY ) );
 
             const GLuint tex = m_Textures[ m_CurrentFrame ];
             ImGui::Image( reinterpret_cast<ImTextureID>( static_cast<uintptr_t>( tex ) ), ImVec2( drawW, drawH ) );
@@ -105,12 +99,6 @@ void ImageScraper::MediaPreviewPanel::Update( )
             if( ImGui::IsItemHovered( ) )
             {
                 ImGui::SetTooltip( "%s", m_CurrentFilePath.c_str( ) );
-            }
-
-            if( showFrameCounter )
-            {
-                ImGui::SetCursorPos( ImVec2( imageCursor.x - offsetX, imageCursor.y - offsetY + availH ) );
-                ImGui::Text( "Frame %d / %d", m_CurrentFrame + 1, static_cast<int>( m_Textures.size( ) ) );
             }
         }
     }
@@ -131,25 +119,38 @@ void ImageScraper::MediaPreviewPanel::Update( )
         }
     }
 
-    // Foreground text overlays — FPS-counter style, no window or background
+    // Foreground badge overlays
     if( windowOpen )
     {
-        constexpr float k_Pad = 6.0f;
-        ImDrawList* dl         = ImGui::GetForegroundDrawList( );
-        const ImU32 colText    = ImGui::GetColorU32( ImGuiCol_Text );
-        const ImU32 colDisabled = ImGui::GetColorU32( ImGuiCol_TextDisabled );
+        constexpr float k_Pad      = 6.0f;
+        constexpr float k_BadgePad = 3.0f;
+        ImDrawList* dl             = ImGui::GetForegroundDrawList( );
+        const ImU32 colText        = ImGui::GetColorU32( ImGuiCol_Text );
+        const ImU32 colBadgeBg     = IM_COL32( 0, 0, 0, 140 );
+        const float lineH          = ImGui::GetTextLineHeight( );
 
-        // Top-left: name of the currently displayed file
+        auto DrawBadge = [ & ]( ImVec2 pos, const char* text )
+        {
+            const ImVec2 sz = ImGui::CalcTextSize( text );
+            dl->AddRectFilled(
+                ImVec2( pos.x - k_BadgePad, pos.y - k_BadgePad ),
+                ImVec2( pos.x + sz.x + k_BadgePad, pos.y + sz.y + k_BadgePad ),
+                colBadgeBg, 3.0f );
+            dl->AddText( pos, colText, text );
+        };
+
+        const float badgeY = contentScreenMin.y + k_Pad;
+
+        // Top-left: filename
         if( !m_CurrentFilePath.empty( ) )
         {
             const std::string name = std::filesystem::path( m_CurrentFilePath ).filename( ).string( );
-            dl->AddText( ImVec2( contentScreenMin.x + k_Pad, contentScreenMin.y + k_Pad ),
-                         colText, name.c_str( ) );
+            DrawBadge( ImVec2( contentScreenMin.x + k_Pad, badgeY ), name.c_str( ) );
         }
 
-        // Bottom-right: context-sensitive status
+        // Top-right: context-sensitive status
         std::string statusMsg;
-        if( m_IsDecoding )
+        if( m_IsDecoding && m_GifState == GifState::LoadingFullFrames )
         {
             statusMsg = "Loading: " + m_LoadingFileName;
         }
@@ -157,14 +158,23 @@ void ImageScraper::MediaPreviewPanel::Update( )
         {
             statusMsg = "Click to play";
         }
+        else if( m_GifState == GifState::Playing )
+        {
+            statusMsg = "Click to pause";
+        }
 
         if( !statusMsg.empty( ) )
         {
-            const ImVec2 textSize = ImGui::CalcTextSize( statusMsg.c_str( ) );
-            dl->AddText(
-                ImVec2( contentScreenMax.x - textSize.x - k_Pad,
-                        contentScreenMax.y - textSize.y - k_Pad ),
-                colDisabled, statusMsg.c_str( ) );
+            const ImVec2 sz = ImGui::CalcTextSize( statusMsg.c_str( ) );
+            DrawBadge( ImVec2( contentScreenMax.x - sz.x - k_Pad, badgeY ), statusMsg.c_str( ) );
+        }
+
+        // Bottom-left: frame counter while playing
+        if( m_GifState == GifState::Playing && m_Textures.size( ) > 1 )
+        {
+            char buf[ 32 ];
+            snprintf( buf, sizeof( buf ), "Frame %d / %d", m_CurrentFrame + 1, static_cast<int>( m_Textures.size( ) ) );
+            DrawBadge( ImVec2( contentScreenMin.x + k_Pad, contentScreenMax.y - lineH - k_Pad - k_BadgePad * 2 ), buf );
         }
     }
 }
