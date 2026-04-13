@@ -173,7 +173,7 @@ void ImageScraper::RedditService::Authenticate( AuthenticateCallback callback )
         DebugLog( "[%s] Reddit authetication failed", __FUNCTION__ );
     };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, onComplete, onFail ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ &, onComplete, onFail ]( )
         {
             if( TryPerformAuthTokenRefresh( ) )
             {
@@ -222,7 +222,7 @@ void ImageScraper::RedditService::FetchAccessToken( const std::string& authCode 
         ErrorLog( "[%s] Reddit sign in failed, error: %s", __FUNCTION__, error.c_str( ) );
     };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, authCode, onComplete, onFail ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ &, authCode, onComplete, onFail ]( )
         {
             InfoLog( "[%s] Started OAuth process!", __FUNCTION__ );
             DebugLog( "[%s] authCode: %s", __FUNCTION__, authCode.c_str( ) );
@@ -280,7 +280,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
         m_Sink->OnRunComplete( );
     };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, options = inputOptions, onComplete, onFail ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ &, options = inputOptions, onComplete, onFail ]( )
         {
             InfoLog( "[%s] Starting Reddit media download!", __FUNCTION__ );
             DebugLog( "[%s] Subreddit: %s", __FUNCTION__, options.m_SubredditName.c_str( ) );

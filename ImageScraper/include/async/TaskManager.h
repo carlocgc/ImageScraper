@@ -16,9 +16,8 @@ namespace ImageScraper
             return instance;
         }
 
-        static const ThreadContext s_UIContext = 0;
-        static const ThreadContext s_NetworkContext = 1;
-        static const ThreadContext s_ListenServer = 2;
+        static const ThreadContext s_ServiceContext = 0;
+        static const ThreadContext s_ListenServer = 1;
 
     private:
         TaskManager( ) = default;

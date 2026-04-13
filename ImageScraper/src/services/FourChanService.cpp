@@ -70,7 +70,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
         m_Sink->OnRunComplete( );
     };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ &, options = inputOptions, onComplete, onFail ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ &, options = inputOptions, onComplete, onFail ]( )
         {
             if( IsCancelled( ) )
             {

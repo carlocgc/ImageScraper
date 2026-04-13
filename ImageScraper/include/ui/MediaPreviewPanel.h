@@ -9,6 +9,7 @@
 #include <mutex>
 #include <atomic>
 #include <memory>
+#include <future>
 
 namespace ImageScraper
 {
@@ -22,6 +23,8 @@ namespace ImageScraper
         void OnFileDownloaded( const std::string& filepath );
 
     private:
+        enum class GifState { None, StaticFrame, LoadingFullFrames, Playing };
+
         // Holds decoded pixel data produced on a background thread
         struct DecodedImage
         {
@@ -34,10 +37,11 @@ namespace ImageScraper
         };
 
         void KickDecodeIfNeeded( );
+        void KickFullGifDecode( );
         void UploadDecoded( const DecodedImage& decoded );
         void FreeTextures( );
 
-        static std::unique_ptr<DecodedImage> DecodeFile( const std::string& filepath );
+        static std::unique_ptr<DecodedImage> DecodeFile( const std::string& filepath, bool firstFrameOnly );
         static bool IsGif( const std::string& filepath );
 
         // Latest path posted by OnFileDownloaded (worker thread → Update)
@@ -46,19 +50,21 @@ namespace ImageScraper
         bool        m_HasLatestPath{ false };
 
         // Decoded result posted by the decode task (worker thread → Update)
-        std::mutex                       m_DecodedMutex{ };
-        std::unique_ptr<DecodedImage>    m_PendingDecoded{ };
+        std::mutex                    m_DecodedMutex{ };
+        std::unique_ptr<DecodedImage> m_PendingDecoded{ };
 
-        std::atomic_bool m_IsDecoding{ false };
-        std::string      m_LoadingFileName{ };   // set on main thread when decode kicks off
+        std::atomic_bool    m_IsDecoding{ false };
+        std::future<void>   m_DecodeFuture{ };
+        std::string         m_LoadingFileName{ };  // set on main thread when decode kicks off
 
         // Current display state — only touched on the main thread
         std::vector<GLuint> m_Textures{ };
         std::vector<int>    m_FrameDelaysMs{ };
-        int   m_Width{ 0 };
-        int   m_Height{ 0 };
-        int   m_CurrentFrame{ 0 };
-        float m_FrameAccumMs{ 0.0f };
+        int         m_Width{ 0 };
+        int         m_Height{ 0 };
+        int         m_CurrentFrame{ 0 };
+        float       m_FrameAccumMs{ 0.0f };
         std::string m_CurrentFilePath{ };
+        GifState    m_GifState{ GifState::None };
     };
 }

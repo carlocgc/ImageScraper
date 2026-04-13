@@ -19,7 +19,7 @@
 #define UI_MAX_LOG_LINES 10000
 #define LISTEN_SERVER_PORT 8080
 #define MIN_FRAME_TIME_MS 16
-#define THREAD_POOL_MAX_THREADS 3
+#define THREAD_POOL_MAX_THREADS 2
 
 const std::string ImageScraper::App::s_UserConfigFile = "config.json";
 const std::string ImageScraper::App::s_AppConfigFile = "ImageScraper/config.json";

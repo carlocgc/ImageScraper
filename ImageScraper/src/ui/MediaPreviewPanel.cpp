@@ -1,6 +1,5 @@
 #define NOMINMAX
 #include "ui/MediaPreviewPanel.h"
-#include "async/TaskManager.h"
 #include "log/Logger.h"
 #include "stb/stb_image.h"
 
@@ -15,7 +14,7 @@ ImageScraper::MediaPreviewPanel::~MediaPreviewPanel( )
 
 void ImageScraper::MediaPreviewPanel::Update( )
 {
-    // Upload any newly decoded image (fast — just GPU buffer copies, main thread only)
+    // Upload any newly decoded image (GPU buffer copies — main thread only)
     {
         std::unique_ptr<DecodedImage> decoded;
         {
@@ -29,15 +28,16 @@ void ImageScraper::MediaPreviewPanel::Update( )
         }
     }
 
-    // If a new path arrived and we're not already decoding, kick off a background decode
+    // Kick a fast first-frame decode when a new file arrives
     KickDecodeIfNeeded( );
 
-    ImGui::SetNextWindowSize( ImVec2( 480, 480 ), ImGuiCond_FirstUseEver );
-
-    // Capture content-region screen coords for the text overlays
+    // Capture content-region screen coords before rendering (needed for foreground text)
     ImVec2 contentScreenMin{ 0.0f, 0.0f };
     ImVec2 contentScreenMax{ 0.0f, 0.0f };
     bool   windowOpen = false;
+    bool   imageClicked = false;
+
+    ImGui::SetNextWindowSize( ImVec2( 480, 480 ), ImGuiCond_FirstUseEver );
 
     if( ImGui::Begin( "Media Preview", nullptr ) )
     {
@@ -55,8 +55,8 @@ void ImageScraper::MediaPreviewPanel::Update( )
         }
         else
         {
-            // Advance GIF frame
-            if( m_Textures.size( ) > 1 )
+            // Advance GIF frame only while playing
+            if( m_GifState == GifState::Playing && m_Textures.size( ) > 1 )
             {
                 m_FrameAccumMs += ImGui::GetIO( ).DeltaTime * 1000.0f;
                 const int delayMs = m_FrameDelaysMs.empty( ) ? 100 : m_FrameDelaysMs[ m_CurrentFrame ];
@@ -67,9 +67,9 @@ void ImageScraper::MediaPreviewPanel::Update( )
                 }
             }
 
-            // Reserve a line at the bottom for the GIF frame counter
-            const bool isGif = m_Textures.size( ) > 1;
-            const float counterH = isGif ? ImGui::GetTextLineHeightWithSpacing( ) : 0.0f;
+            // Reserve a line at the bottom for the GIF frame counter when playing
+            const bool showFrameCounter = m_GifState == GifState::Playing && m_Textures.size( ) > 1;
+            const float counterH = showFrameCounter ? ImGui::GetTextLineHeightWithSpacing( ) : 0.0f;
 
             // Scale image to fit the available content region while preserving aspect ratio
             const ImVec2 avail = ImGui::GetContentRegionAvail( );
@@ -97,12 +97,17 @@ void ImageScraper::MediaPreviewPanel::Update( )
             const GLuint tex = m_Textures[ m_CurrentFrame ];
             ImGui::Image( reinterpret_cast<ImTextureID>( static_cast<uintptr_t>( tex ) ), ImVec2( drawW, drawH ) );
 
+            if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) )
+            {
+                imageClicked = true;
+            }
+
             if( ImGui::IsItemHovered( ) )
             {
                 ImGui::SetTooltip( "%s", m_CurrentFilePath.c_str( ) );
             }
 
-            if( isGif )
+            if( showFrameCounter )
             {
                 ImGui::SetCursorPos( ImVec2( imageCursor.x - offsetX, imageCursor.y - offsetY + availH ) );
                 ImGui::Text( "Frame %d / %d", m_CurrentFrame + 1, static_cast<int>( m_Textures.size( ) ) );
@@ -111,11 +116,26 @@ void ImageScraper::MediaPreviewPanel::Update( )
     }
     ImGui::End( );
 
-    // Text overlays drawn directly on the foreground (no window, no background — FPS-counter style)
+    // Handle click — toggle play/pause for GIFs
+    if( imageClicked )
+    {
+        if( m_GifState == GifState::StaticFrame )
+        {
+            KickFullGifDecode( );
+        }
+        else if( m_GifState == GifState::Playing )
+        {
+            m_GifState     = GifState::StaticFrame;
+            m_CurrentFrame = 0;
+            m_FrameAccumMs = 0.0f;
+        }
+    }
+
+    // Foreground text overlays — FPS-counter style, no window or background
     if( windowOpen )
     {
         constexpr float k_Pad = 6.0f;
-        ImDrawList* dl = ImGui::GetForegroundDrawList( );
+        ImDrawList* dl         = ImGui::GetForegroundDrawList( );
         const ImU32 colText    = ImGui::GetColorU32( ImGuiCol_Text );
         const ImU32 colDisabled = ImGui::GetColorU32( ImGuiCol_TextDisabled );
 
@@ -127,15 +147,24 @@ void ImageScraper::MediaPreviewPanel::Update( )
                          colText, name.c_str( ) );
         }
 
-        // Bottom-right: loading indicator
+        // Bottom-right: context-sensitive status
+        std::string statusMsg;
         if( m_IsDecoding )
         {
-            const std::string msg = "Loading: " + m_LoadingFileName;
-            const ImVec2 textSize = ImGui::CalcTextSize( msg.c_str( ) );
+            statusMsg = "Loading: " + m_LoadingFileName;
+        }
+        else if( m_GifState == GifState::StaticFrame )
+        {
+            statusMsg = "Click to play";
+        }
+
+        if( !statusMsg.empty( ) )
+        {
+            const ImVec2 textSize = ImGui::CalcTextSize( statusMsg.c_str( ) );
             dl->AddText(
                 ImVec2( contentScreenMax.x - textSize.x - k_Pad,
                         contentScreenMax.y - textSize.y - k_Pad ),
-                colDisabled, msg.c_str( ) );
+                colDisabled, statusMsg.c_str( ) );
         }
     }
 }
@@ -166,11 +195,38 @@ void ImageScraper::MediaPreviewPanel::KickDecodeIfNeeded( )
     }
 
     m_LoadingFileName = std::filesystem::path( filepath ).filename( ).string( );
-    m_IsDecoding = true;
+    m_IsDecoding      = true;
 
-    TaskManager::Instance( ).Submit( TaskManager::s_NetworkContext, [ this, filepath ]( )
+    // Always decode only the first frame — fast for both images and GIFs
+    m_DecodeFuture = std::async( std::launch::async, [ this, filepath ]( )
     {
-        auto decoded = DecodeFile( filepath );
+        auto decoded = DecodeFile( filepath, true );
+
+        {
+            std::lock_guard<std::mutex> lock( m_DecodedMutex );
+            m_PendingDecoded = std::move( decoded );
+        }
+
+        m_IsDecoding = false;
+    } );
+}
+
+void ImageScraper::MediaPreviewPanel::KickFullGifDecode( )
+{
+    if( m_IsDecoding )
+    {
+        return;
+    }
+
+    m_GifState        = GifState::LoadingFullFrames;
+    m_LoadingFileName = std::filesystem::path( m_CurrentFilePath ).filename( ).string( );
+    m_IsDecoding      = true;
+
+    const std::string filepath = m_CurrentFilePath;
+
+    m_DecodeFuture = std::async( std::launch::async, [ this, filepath ]( )
+    {
+        auto decoded = DecodeFile( filepath, false );
 
         {
             std::lock_guard<std::mutex> lock( m_DecodedMutex );
@@ -187,6 +243,7 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( const DecodedImage& decoded
 
     if( decoded.m_PixelData.empty( ) )
     {
+        m_GifState = GifState::None;
         return;
     }
 
@@ -213,6 +270,19 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( const DecodedImage& decoded
                       decoded.m_PixelData.data( ) + i * frameBytes );
         m_Textures.push_back( textureId );
     }
+
+    if( decoded.m_Frames > 1 )
+    {
+        m_GifState = GifState::Playing;
+    }
+    else if( IsGif( decoded.m_FilePath ) )
+    {
+        m_GifState = GifState::StaticFrame;
+    }
+    else
+    {
+        m_GifState = GifState::None;
+    }
 }
 
 void ImageScraper::MediaPreviewPanel::FreeTextures( )
@@ -231,9 +301,8 @@ void ImageScraper::MediaPreviewPanel::FreeTextures( )
 
 // static
 std::unique_ptr<ImageScraper::MediaPreviewPanel::DecodedImage>
-ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath )
+ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool firstFrameOnly )
 {
-    // Read file into memory
     std::ifstream file( filepath, std::ios::binary | std::ios::ate );
     if( !file.is_open( ) )
     {
@@ -250,15 +319,16 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath )
         return nullptr;
     }
 
-    auto decoded       = std::make_unique<DecodedImage>( );
+    auto decoded        = std::make_unique<DecodedImage>( );
     decoded->m_FilePath = filepath;
 
-    if( IsGif( filepath ) )
+    // Full GIF decode — all frames with delays
+    if( !firstFrameOnly && IsGif( filepath ) )
     {
-        int* delays  = nullptr;
-        int  width   = 0;
-        int  height  = 0;
-        int  frames  = 0;
+        int* delays   = nullptr;
+        int  width    = 0;
+        int  height   = 0;
+        int  frames   = 0;
         int  channels = 0;
 
         unsigned char* data = stbi_load_gif_from_memory(
@@ -286,13 +356,11 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath )
         }
 
         stbi_image_free( data );
-        if( delays )
-        {
-            free( delays );
-        }
+        if( delays ) { free( delays ); }
     }
     else
     {
+        // Single frame — covers static images and first-frame-only GIF preview
         int width = 0, height = 0, channels = 0;
         unsigned char* data = stbi_load_from_memory(
             fileData.data( ), static_cast<int>( fileData.size( ) ),
@@ -319,10 +387,7 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath )
 bool ImageScraper::MediaPreviewPanel::IsGif( const std::string& filepath )
 {
     const auto dot = filepath.rfind( '.' );
-    if( dot == std::string::npos )
-    {
-        return false;
-    }
+    if( dot == std::string::npos ) { return false; }
     std::string ext = filepath.substr( dot + 1 );
     std::transform( ext.begin( ), ext.end( ), ext.begin( ),
         []( unsigned char c ) { return static_cast<char>( std::tolower( c ) ); } );
