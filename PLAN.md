@@ -80,6 +80,8 @@
 ### New windows
 - [x] `MediaPreviewPanel` — loads last downloaded image into an OpenGL texture (stb_image) and renders it in a dockable ImGui window; supports static images and animated GIFs (frame stepping)
 - [x] `DownloadHistoryPanel` — ring buffer of completed downloads showing filename, source URL, and timestamp; clicking an entry opens it in explorer
+- [ ] `DownloadProgressPanel` — extract current and total download progress bars out of `LogPanel` into a dedicated dockable panel; `LogPanel` retains log lines only
+- [ ] `MediaPreviewPanel` video support — webm and mp4 playback via an appropriate decoding library (e.g. libav / FFmpeg); seamless alongside existing stb_image path for images and GIFs
 
 ### Code quality
 - [ ] Replace `#define INVALID_CONTENT_PROVIDER` and `#define` UI constants with `constexpr`
@@ -91,6 +93,7 @@
 > Goal: Parallelise downloads, improve cancellation, unblock UI callback throughput.
 > **Depends on: Phase 2**
 
+- [ ] Immediate cancellation — interrupt the in-flight curl transfer on cancel rather than waiting for the current download to complete; requires surfacing a curl abort mechanism through `IHttpClient` and `DownloadRequest`
 - [ ] Increase network thread count and benchmark throughput
 - [ ] Per-task cancellation support (cancel individual downloads cleanly)
 - [ ] Process multiple UI callbacks per frame (remove single-task-per-frame limit)
