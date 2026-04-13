@@ -5,10 +5,39 @@
 
 - [x] Select and integrate a test framework — Catch2 v3.14.0 vendored (no external tools required)
 - [x] Run tests automatically on every main project build (post-build event, Option 1)
-- [ ] Tests for JSON response parsing in each request class (Reddit, Tumblr, FourChan)
-- [ ] Tests for `RequestResult` / `ResponseErrorCode` error mapping
-- [ ] Tests for Reddit auth state machine (token refresh, expiry, app-only vs user auth)
-- [ ] Tests for `ThreadPool` task submission and context routing
+
+### RequestTypes
+- [x] `ResponseErrorCodefromInt` — known HTTP codes map correctly
+- [x] `ResponseErrorCodefromInt` — unknown codes fall back to InternalServerError
+- [x] `ResponseErrorCodeToString` — all codes return correct strings
+- [x] `RequestResult::SetError` — sets code and string together
+- [x] `RequestResult` — correct default state
+
+### DownloadUtils — URL helpers
+- [x] `CreateQueryParamString` — empty, single, multiple params
+- [x] `ExtractFileNameAndExtFromUrl` — valid URL, no slash, no extension
+- [x] `ExtractExtFromFile` — valid file, no extension
+- [x] `UrlToSafeString` — scheme stripping, slash replacement, query/fragment removal
+- [x] `RedirectToPreferredFileTypeUrl` — gifv → mp4, non-gifv → empty
+
+### DownloadUtils — Response error detection
+- [x] `IsRedditResponseError` — valid response, error field, message field, invalid JSON
+- [x] `IsTumblrResponseError` — valid response, error field, invalid JSON
+- [x] `IsFourChanResponseError` — valid response, error field, invalid JSON
+
+### Service JSON parsing (private methods — requires refactor to test)
+- [ ] Reddit: `TryParseAccessTokenAndExpiry` — valid token response, missing fields
+- [ ] Reddit: `TryParseRefreshToken` — valid response, missing field
+- [ ] Reddit: `GetMediaUrls` — filters by extension, handles pagination field
+- [ ] Tumblr: `GetMediaUrlsFromResponse` — photo posts, video posts, mixed
+- [ ] FourChan: `GetPageCountForBoard` — matching board, missing board
+- [ ] FourChan: `GetFileNamesFromResponse` — valid threads, empty threads
+
+### Threading
+- [ ] `ThreadPool` — task submission and execution on correct context
+- [ ] `ThreadPool` — concurrent tasks complete without data races
+
+### Future workflow improvements
 - [ ] Run tests as post-build event on the test project itself (Option 2)
 - [ ] CI pipeline via GitHub Actions — build and run tests on every push/PR (Option 4)
 
