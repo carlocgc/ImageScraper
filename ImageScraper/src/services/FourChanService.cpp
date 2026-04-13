@@ -153,6 +153,15 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 for( const auto& filename : filenames )
                 {
                     mediaUrls.push_back( "https://i.4cdn.org/" + options.m_FourChanBoard + "/" + filename );
+                    if( static_cast<int>( mediaUrls.size( ) ) >= options.m_FourChanMaxMediaItems )
+                    {
+                        break;
+                    }
+                }
+
+                if( static_cast<int>( mediaUrls.size( ) ) >= options.m_FourChanMaxMediaItems )
+                {
+                    break;
                 }
             }
 

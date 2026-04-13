@@ -1,5 +1,7 @@
 #include "ui/FourChanPanel.h"
 
+#include <algorithm>
+
 void ImageScraper::FourChanPanel::Update( )
 {
     if( ImGui::BeginChild( "FourChanBoard", ImVec2( 500, 25 ), false ) )
@@ -11,6 +13,14 @@ void ImageScraper::FourChanPanel::Update( )
         {
             m_FourChanBoard = buffer;
         }
+    }
+
+    ImGui::EndChild( );
+
+    if( ImGui::BeginChild( "FourChanMaxMediaItems", ImVec2( 500, 25 ), false ) )
+    {
+        ImGui::InputInt( "Max Downloads", &m_FourChanMaxMediaItems );
+        m_FourChanMaxMediaItems = std::clamp( m_FourChanMaxMediaItems, FOURCHAN_MEDIA_MIN, FOURCHAN_MEDIA_MAX );
     }
 
     ImGui::EndChild( );

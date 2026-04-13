@@ -111,7 +111,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
             // Parse response
             json response = json::parse( fetchResult.m_Response );
             std::vector<std::string> mediaUrls{ };
-            mediaUrls = GetMediaUrlsFromResponse( response );
+            mediaUrls = GetMediaUrlsFromResponse( response, options.m_TumblrMaxMediaItems );
 
             if( mediaUrls.empty( ) )
             {
@@ -203,7 +203,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
     ( void )task;
 }
 
-std::vector<std::string> ImageScraper::TumblrService::GetMediaUrlsFromResponse( const Json& response )
+std::vector<std::string> ImageScraper::TumblrService::GetMediaUrlsFromResponse( const Json& response, int maxItems )
 {
-    return TumblrUtils::GetMediaUrlsFromResponse( response );
+    return TumblrUtils::GetMediaUrlsFromResponse( response, maxItems );
 }

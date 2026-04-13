@@ -8,6 +8,9 @@
 #define REDDIT_LIMIT_MAX 10000
 #define REDDIT_SCOPES_COUNT 8
 #define REDDIT_SCOPE_TIMEFRAMES_COUNT 5
+#define TUMBLR_LIMIT_MIN 1
+#define TUMBLR_LIMIT_DEFAULT 1000
+#define TUMBLR_LIMIT_MAX 10000
 #define FOURCHAN_THREAD_MIN 1
 #define FOURCHAN_THREAD_MAX 50
 #define FOURCHAN_MEDIA_MIN 1
@@ -90,6 +93,7 @@ namespace ImageScraper
 
         // Tumblr
         std::string m_TumblrUser;
+        int m_TumblrMaxMediaItems;
 
         // 4chan
         std::string m_FourChanBoard;

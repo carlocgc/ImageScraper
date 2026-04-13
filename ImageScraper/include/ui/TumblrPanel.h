@@ -18,5 +18,6 @@ namespace ImageScraper
 
     private:
         std::string m_TumblrUser{ };
+        int         m_TumblrMaxMediaItems{ TUMBLR_LIMIT_DEFAULT };
     };
 }

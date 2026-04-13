@@ -27,7 +27,7 @@ namespace ImageScraper
 
     private:
         void DownloadContent( const UserInputOptions& inputOptions );
-        std::vector<std::string> GetMediaUrlsFromResponse( const Json& response );
+        std::vector<std::string> GetMediaUrlsFromResponse( const Json& response, int maxItems );
 
         static const std::string s_UserDataKey_ApiKey;
         std::string m_ApiKey{ };

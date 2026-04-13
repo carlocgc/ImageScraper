@@ -10,7 +10,7 @@ namespace ImageScraper::TumblrUtils
 {
     using Json = nlohmann::json;
 
-    inline std::vector<std::string> GetMediaUrlsFromResponse( const Json& response )
+    inline std::vector<std::string> GetMediaUrlsFromResponse( const Json& response, int maxItems )
     {
         std::vector<std::string> mediaUrls{ };
 
@@ -23,6 +23,10 @@ namespace ImageScraper::TumblrUtils
                     if( photo.contains( "original_size" ) )
                     {
                         mediaUrls.push_back( photo[ "original_size" ][ "url" ] );
+                        if( static_cast<int>( mediaUrls.size( ) ) >= maxItems )
+                        {
+                            return mediaUrls;
+                        }
                     }
                 }
             }
@@ -31,6 +35,10 @@ namespace ImageScraper::TumblrUtils
                 if( post.contains( "video_url" ) )
                 {
                     mediaUrls.push_back( post[ "video_url" ] );
+                    if( static_cast<int>( mediaUrls.size( ) ) >= maxItems )
+                    {
+                        return mediaUrls;
+                    }
                 }
             }
         }
