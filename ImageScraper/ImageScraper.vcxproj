@@ -225,6 +225,8 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
     <ClCompile Include="src\io\JsonFile.cpp" />
     <ClCompile Include="src\log\FrontEndLogger.cpp" />
     <ClCompile Include="src\network\ListenServer.cpp" />
+    <ClCompile Include="src\network\CurlHttpClient.cpp" />
+    <ClCompile Include="src\network\RetryHttpClient.cpp" />
     <ClCompile Include="src\requests\DownloadRequest.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\config\Config.cpp" />
@@ -319,6 +321,10 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\log\FrontEndLogger.h" />
     <ClInclude Include="include\log\LoggerBase.h" />
     <ClInclude Include="include\network\ListenServer.h" />
+    <ClInclude Include="include\network\HttpClientTypes.h" />
+    <ClInclude Include="include\network\IHttpClient.h" />
+    <ClInclude Include="include\network\CurlHttpClient.h" />
+    <ClInclude Include="include\network\RetryHttpClient.h" />
     <ClInclude Include="include\requests\fourchan\GetThreadsRequest.h" />
     <ClInclude Include="include\requests\fourchan\GetBoardsRequest.h" />
     <ClInclude Include="include\requests\reddit\FetchAccessTokenRequest.h" />

@@ -1,10 +1,22 @@
 #include "requests/reddit/AppOnlyAuthRequest.h"
+#include "network/CurlHttpClient.h"
+#include "network/RetryHttpClient.h"
 #include "utils/DownloadUtils.h"
-#include "curlpp/Options.hpp"
+#include "log/Logger.h"
 #include "cppcodec/base64_rfc4648.hpp"
 
 const std::string ImageScraper::Reddit::AppOnlyAuthRequest::s_AuthUrl = "https://www.reddit.com/api/v1/access_token";
 const std::string ImageScraper::Reddit::AppOnlyAuthRequest::s_AuthData = "grant_type=client_credentials";
+
+ImageScraper::Reddit::AppOnlyAuthRequest::AppOnlyAuthRequest( )
+    : m_HttpClient( std::make_shared<RetryHttpClient>( std::make_shared<CurlHttpClient>( ) ) )
+{
+}
+
+ImageScraper::Reddit::AppOnlyAuthRequest::AppOnlyAuthRequest( std::shared_ptr<IHttpClient> client )
+    : m_HttpClient( std::move( client ) )
+{
+}
 
 ImageScraper::RequestResult ImageScraper::Reddit::AppOnlyAuthRequest::Perform( const RequestOptions& options )
 {
@@ -28,47 +40,32 @@ ImageScraper::RequestResult ImageScraper::Reddit::AppOnlyAuthRequest::Perform( c
 
     const std::string credentials = options.m_ClientId + ":" + options.m_ClientSecret;
     const std::string encodedCredentials = cppcodec::base64_rfc4648::encode( credentials );
-    const std::string authHeader = "Basic " + encodedCredentials;
 
-    try
+    HttpRequest request{ };
+    request.m_Url = s_AuthUrl;
+    request.m_UserAgent = options.m_UserAgent;
+    request.m_CaBundle = options.m_CaBundle;
+    request.m_Body = s_AuthData;
+    request.m_Headers = {
+        "Content-Type: application/x-www-form-urlencoded",
+        "Authorization: Basic " + encodedCredentials
+    };
+
+    const HttpResponse response = m_HttpClient->Post( request );
+
+    if( !response.m_Success )
     {
-        curlpp::Cleanup cleanup{ };
-        curlpp::Easy request{ };
-        std::ostringstream response;
-
-        request.setOpt( new curlpp::options::Url( s_AuthUrl ) );
-        request.setOpt( new curlpp::options::CaInfo( options.m_CaBundle ) );
-        request.setOpt( new curlpp::options::Verbose( false ) );
-        request.setOpt( new curlpp::options::UserAgent( options.m_UserAgent ) );
-        request.setOpt( new curlpp::options::HttpHeader( { "Content-Type: application/x-www-form-urlencoded", "Authorization: " + authHeader } ) );
-        request.setOpt( new curlpp::options::PostFields( s_AuthData ) );
-        request.setOpt( new curlpp::options::PostFieldSize( static_cast<long>( s_AuthData.length( ) ) ) );
-        request.setOpt( new curlpp::options::WriteStream( &response ) );
-
-        // Blocks
-        request.perform( );
-
-        result.m_Response = response.str( );
-    }
-    catch( curlpp::RuntimeError& error )
-    {
-        result.SetError( ResponseErrorCode::InternalServerError );
-        result.m_Error.m_ErrorString = error.what( );
-        DebugLog( "[%s] AppOnlyAuthRequest failed!", __FUNCTION__, result.m_Error.m_ErrorString.c_str() );
-        return result;
-
-    }
-    catch( curlpp::LogicError& error )
-    {
-        result.SetError( ResponseErrorCode::InternalServerError );
-        result.m_Error.m_ErrorString = error.what( );
-        DebugLog( "[%s] AppOnlyAuthRequest failed!", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );
+        result.m_Error.m_ErrorString = response.m_Error;
+        DebugLog( "[%s] AppOnlyAuthRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
+
+    result.m_Response = response.m_Body;
 
     if( DownloadHelpers::IsRedditResponseError( result ) )
     {
-        DebugLog( "[%s] AppOnlyAuthRequest failed!", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        DebugLog( "[%s] AppOnlyAuthRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 

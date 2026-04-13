@@ -1,9 +1,20 @@
 #include "requests/tumblr/RetrievePublishedPostsRequest.h"
+#include "network/CurlHttpClient.h"
+#include "network/RetryHttpClient.h"
 #include "utils/DownloadUtils.h"
 #include "log/Logger.h"
-#include "curlpp/Options.hpp"
 
 const std::string ImageScraper::Tumblr::RetrievePublishedPostsRequest::s_BaseUrl = "https://api.tumblr.com/v2/blog/";
+
+ImageScraper::Tumblr::RetrievePublishedPostsRequest::RetrievePublishedPostsRequest( )
+    : m_HttpClient( std::make_shared<RetryHttpClient>( std::make_shared<CurlHttpClient>( ) ) )
+{
+}
+
+ImageScraper::Tumblr::RetrievePublishedPostsRequest::RetrievePublishedPostsRequest( std::shared_ptr<IHttpClient> client )
+    : m_HttpClient( std::move( client ) )
+{
+}
 
 ImageScraper::RequestResult ImageScraper::Tumblr::RetrievePublishedPostsRequest::Perform( const RequestOptions& options )
 {
@@ -11,40 +22,26 @@ ImageScraper::RequestResult ImageScraper::Tumblr::RetrievePublishedPostsRequest:
 
     RequestResult result{ };
 
-    try
+    const std::string url = s_BaseUrl + options.m_UrlExt + DownloadHelpers::CreateQueryParamString( options.m_QueryParams );
+
+    HttpRequest request{ };
+    request.m_Url = url;
+    request.m_UserAgent = options.m_UserAgent;
+    request.m_CaBundle = options.m_CaBundle;
+
+    DebugLog( "[%s] Tumblr::RetrievePublishedPostsRequest, URL: %s", __FUNCTION__, url.c_str( ) );
+
+    const HttpResponse response = m_HttpClient->Get( request );
+
+    if( !response.m_Success )
     {
-        curlpp::Cleanup cleanup{ };
-        curlpp::Easy request{ };
-        std::ostringstream response;
-        const std::string url = s_BaseUrl + options.m_UrlExt + DownloadHelpers::CreateQueryParamString( options.m_QueryParams );
-
-        request.setOpt( new curlpp::options::Url( url ) );
-        request.setOpt( new curlpp::options::FollowLocation( true ) );
-        request.setOpt( new curlpp::options::UserAgent( options.m_UserAgent ) );
-        request.setOpt( new curlpp::options::WriteStream( &response ) );
-        request.setOpt( new curlpp::options::CaInfo( options.m_CaBundle ) );
-
-        DebugLog( "[%s] Tumblr::RetrievePublishedPostsRequest, URL: %s", __FUNCTION__, url.c_str( ) );
-
-        // blocks
-        request.perform( );
-
-        result.m_Response = response.str( );
-    }
-    catch( curlpp::RuntimeError& error )
-    {
-        result.SetError( ResponseErrorCode::InternalServerError );
-        result.m_Error.m_ErrorString = error.what( );
+        result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );
+        result.m_Error.m_ErrorString = response.m_Error;
         DebugLog( "[%s] Tumblr::RetrievePublishedPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
-    catch( curlpp::LogicError& error )
-    {
-        result.SetError( ResponseErrorCode::InternalServerError );
-        result.m_Error.m_ErrorString = error.what( );
-        DebugLog( "[%s] Tumblr::RetrievePublishedPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
-        return result;
-    }
+
+    result.m_Response = response.m_Body;
 
     if( DownloadHelpers::IsTumblrResponseError( result ) )
     {

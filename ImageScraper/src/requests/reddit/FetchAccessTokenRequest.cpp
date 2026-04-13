@@ -1,11 +1,22 @@
 #include "requests/reddit/FetchAccessTokenRequest.h"
-#include "log/Logger.h"
+#include "network/CurlHttpClient.h"
+#include "network/RetryHttpClient.h"
 #include "utils/DownloadUtils.h"
-#include "curlpp/Options.hpp"
+#include "log/Logger.h"
 #include "cppcodec/base64_rfc4648.hpp"
 
 const std::string ImageScraper::Reddit::FetchAccessTokenRequest::s_AuthUrl = "https://www.reddit.com/api/v1/access_token";
 const std::string ImageScraper::Reddit::FetchAccessTokenRequest::s_AuthData = "grant_type=authorization_code";
+
+ImageScraper::Reddit::FetchAccessTokenRequest::FetchAccessTokenRequest( )
+    : m_HttpClient( std::make_shared<RetryHttpClient>( std::make_shared<CurlHttpClient>( ) ) )
+{
+}
+
+ImageScraper::Reddit::FetchAccessTokenRequest::FetchAccessTokenRequest( std::shared_ptr<IHttpClient> client )
+    : m_HttpClient( std::move( client ) )
+{
+}
 
 ImageScraper::RequestResult ImageScraper::Reddit::FetchAccessTokenRequest::Perform( const RequestOptions& options )
 {
@@ -27,64 +38,40 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchAccessTokenRequest::Perfo
         return result;
     }
 
-    try
+    std::string postData = s_AuthData;
+    for( const auto& [key, value] : options.m_QueryParams )
     {
-        curlpp::Cleanup cleanup{ };
-        curlpp::Easy request{ };
-        std::ostringstream response;
-
-        // Set up the URL
-        request.setOpt( new curlpp::options::Url( s_AuthUrl ) );
-
-        // Use POST method
-        request.setOpt( new curlpp::options::Post( true ) );
-
-        // Set up the POST fields
-        std::string postData = s_AuthData;
-        for (const auto& [key, value] : options.m_QueryParams )
-        {
-            postData += "&" + key + "=" + value;
-        }
-        request.setOpt( new curlpp::options::PostFields( postData ) );
-        request.setOpt( new curlpp::options::PostFieldSize( static_cast<int>( postData.length( ) ) ) );
-
-        // Set up HTTP Basic Auth
-        std::string authCredentials = options.m_ClientId + ":" + options.m_ClientSecret;
-        std::string authHeaderValue = "Basic " + cppcodec::base64_rfc4648::encode( authCredentials );;
-        std::list<std::string> headers;
-        headers.push_back( "Authorization: " + authHeaderValue );
-        headers.push_back( "Content-Type: application/x-www-form-urlencoded" );
-        headers.push_back( "User-Agent: " + options.m_UserAgent );
-        request.setOpt( new curlpp::options::HttpHeader( headers ) );
-        request.setOpt( new curlpp::options::CaInfo( options.m_CaBundle ) );
-        request.setOpt( new curlpp::options::Verbose( false ) );
-
-        // Set up output stream
-        request.setOpt( new curlpp::options::WriteStream( &response ) );
-
-        // Blocks
-        request.perform( );
-
-        result.m_Response = response.str( );
+        postData += "&" + key + "=" + value;
     }
-    catch( curlpp::RuntimeError& error )
+
+    const std::string authCredentials = options.m_ClientId + ":" + options.m_ClientSecret;
+    const std::string authHeaderValue = "Basic " + cppcodec::base64_rfc4648::encode( authCredentials );
+
+    HttpRequest request{ };
+    request.m_Url = s_AuthUrl;
+    request.m_UserAgent = options.m_UserAgent;
+    request.m_CaBundle = options.m_CaBundle;
+    request.m_Body = postData;
+    request.m_Headers = {
+        "Authorization: " + authHeaderValue,
+        "Content-Type: application/x-www-form-urlencoded"
+    };
+
+    const HttpResponse response = m_HttpClient->Post( request );
+
+    if( !response.m_Success )
     {
-        result.SetError( ResponseErrorCode::InternalServerError );
-        result.m_Error.m_ErrorString = error.what( );
-        DebugLog( "[%s] FetchAccessTokenRequest failed!", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );
+        result.m_Error.m_ErrorString = response.m_Error;
+        DebugLog( "[%s] FetchAccessTokenRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
-    catch( curlpp::LogicError& error )
-    {
-        result.SetError( ResponseErrorCode::InternalServerError );
-        result.m_Error.m_ErrorString = error.what( );
-        DebugLog( "[%s] FetchAccessTokenRequest failed!", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
-        return result;
-    }
+
+    result.m_Response = response.m_Body;
 
     if( DownloadHelpers::IsRedditResponseError( result ) )
     {
-        DebugLog( "[%s] FetchAccessTokenRequest failed!", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        DebugLog( "[%s] FetchAccessTokenRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 

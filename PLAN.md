@@ -47,12 +47,12 @@
 > Goal: Centralise HTTP logic, eliminate per-class curlpp boilerplate, add robustness.
 > **Depends on: Phase 1**
 
-- [ ] Design HTTP client abstraction over curlpp (mockable interface for unit tests)
-- [ ] Centralised retry logic with configurable attempts and backoff
-- [ ] Rate limit handling (429 responses — back off and retry)
-- [ ] Configurable timeout per request type
-- [ ] Migrate existing request classes (Reddit, Tumblr, FourChan) to use new abstraction
-- [ ] Update unit tests to use mocked HTTP client
+- [x] Design HTTP client abstraction over curlpp (`IHttpClient`, `HttpRequest`, `HttpResponse`)
+- [x] `CurlHttpClient` — curlpp implementation with timeout support
+- [x] `RetryHttpClient` — decorator with exponential backoff and 429 rate limit handling
+- [x] Migrate `GetBoardsRequest` to use new abstraction (proof of concept)
+- [x] Migrate remaining request classes (GetThreadsRequest, AppOnlyAuthRequest, FetchAccessTokenRequest, RefreshAccessTokenRequest, FetchSubredditPostsRequest, RetrievePublishedPostsRequest)
+- [ ] Update unit tests to use mocked `IHttpClient`
 
 ---
 
