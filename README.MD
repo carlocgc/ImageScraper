@@ -16,7 +16,7 @@ A Windows GUI application that downloads media from social platforms
 
 Create web app: https://www.reddit.com/prefs/apps  
 Add redirect uri for the web app: http://localhost:8080  
-Add client id and secret to `/ImageScraper/config.json`  
+Add client id and secret to `/ImageScraper/config.json` (copied from `config.template.json`)  
 
 
 ### ![Tumblr](https://img.shields.io/badge/Tumblr-%2336465D.svg?style=for-the-badge&logo=Tumblr&logoColor=white)
@@ -24,7 +24,7 @@ Add client id and secret to `/ImageScraper/config.json`
   
 
 Create app: https://www.tumblr.com/oauth/apps  
-Add OAuth Consumer Key to `/ImageScraper/config.json`  
+Add OAuth Consumer Key to `/ImageScraper/config.json` (copied from `config.template.json`)  
 
 ### 4Chan
 
@@ -49,7 +49,7 @@ No setup required
 
   
 
-Perform the setup steps above using `/ImageScraper/data/config.json`  
+Copy `/ImageScraper/data/config.template.json` to `/ImageScraper/data/config.json` and fill in your credentials  
 
 Set debugging working directory to `$(TargetDir)` for all configurations and platforms  
 
