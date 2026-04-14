@@ -159,6 +159,7 @@
 ## Packaging & Distribution
 
 - [ ] CRT bundling review — investigate whether the MSVC C runtime (`msvcp`/`vcruntime` DLLs) can and should be statically linked or embedded so the release exe is fully self-contained; weigh exe size vs. eliminating the redistributable dependency
+- [ ] GitHub CI — investigate Actions workflows for: (1) running tests on every push/PR (extends Phase 1 item), (2) nightly builds on a schedule, (3) automated tagged release builds that produce a versioned artefact (zip / installer); assess Windows MSVC runner availability, secret handling for any signing step, and artefact retention policy
 
 ---
 
