@@ -110,11 +110,11 @@
 - [x] `Reset()` should be called explicitly rather than implicitly from `SetInputState` — removed side effect from `SetInputState`; `OnRunComplete` now calls `Reset()` explicitly; `FrontEnd::OnRunComplete` delegates to `DownloadOptionsPanel::OnRunComplete` directly
 
 ### Authentication & Session Management
-- [x] Reddit sign-out — fire-and-forget token revocation + local clear
-  - Add `RevokeAccessTokenRequest` — `POST https://www.reddit.com/api/v1/revoke_token` with Basic auth (`client_id:client_secret`), form body `token=<refresh_token>&token_type_hint=refresh_token`; revoking the refresh token invalidates all associated access tokens server-side (RFC 7009 / Reddit OAuth2 docs); 204 response expected (returned even for already-invalid tokens)
-  - Add `virtual void SignOut() {}` default no-op to `Service` base class
-  - Add `void SignOut() override` to `RedditService` — submits revoke request on service thread (fire-and-forget), then calls `ClearAccessToken()` + `ClearRefreshToken()` regardless of request result
-  - `DownloadOptionsPanel::UpdateSignInButton()` — replace disabled "Signed In" button with active "Sign Out" button that calls `service->SignOut()`
+- [x] Reddit sign-out — local-only token clear (server-side revocation deferred)
+  - `RevokeAccessTokenRequest` implemented (`POST /api/v1/revoke_token`) but **not called** — Reddit imposes a multi-minute propagation delay after revocation during which re-authentication hangs (OAuth page never redirects); sign-out clears tokens locally only; class retained for future use
+  - `virtual void SignOut() {}` default no-op added to `Service` base class
+  - `RedditService::SignOut()` clears access token, refresh token, and username in memory and on disk; see header comment in `RevokeAccessTokenRequest.h` for full rationale
+  - `DownloadOptionsPanel::UpdateSignInButton()` — replaced disabled "Signed In" button with active "Sign Out" button
 - [x] Reddit signed-in username badge — fetch and display the authenticated username in the Download Options panel
   - Add `GetCurrentUserRequest` — `GET https://oauth.reddit.com/api/v1/me` with Bearer token; returns JSON containing `"name"` field
   - Call after successful sign-in (`FetchAccessToken` on complete) and after a successful token refresh (`TryPerformAuthTokenRefresh`); store username in `RedditService::m_Username`

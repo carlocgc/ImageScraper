@@ -204,51 +204,20 @@ bool ImageScraper::RedditService::IsCancelled( )
 
 void ImageScraper::RedditService::SignOut( )
 {
-    std::string refreshToken{ };
+    // NOTE: RevokeAccessTokenRequest exists but is intentionally not called here.
+    // Reddit imposes a server-side propagation delay of several minutes after token
+    // revocation, during which re-authentication hangs (OAuth page never redirects).
+    // For a desktop app the security trade-off is acceptable — tokens live only on
+    // the user's machine and the refresh token is deleted locally, so it cannot be
+    // reused. Local-only clear gives instant, clean sign-out with no UX penalty.
+    ClearAccessToken( );
+    ClearRefreshToken( );
     {
-        std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
-        refreshToken = m_RefreshToken;
+        std::unique_lock<std::mutex> lock( m_UsernameMutex );
+        m_Username.clear( );
     }
 
-    // Fire-and-forget: revoke the refresh token server-side (also invalidates all associated access tokens)
-    TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, refreshToken ]( )
-        {
-            if( refreshToken.empty( ) )
-            {
-                DebugLog( "[%s] No refresh token to revoke.", __FUNCTION__ );
-            }
-            else
-            {
-                RequestOptions revokeOptions{ };
-                revokeOptions.m_CaBundle      = m_CaBundle;
-                revokeOptions.m_UserAgent     = m_UserAgent;
-                revokeOptions.m_ClientId      = m_ClientId;
-                revokeOptions.m_ClientSecret  = m_ClientSecret;
-                revokeOptions.m_AccessToken   = refreshToken; // carries the refresh token
-
-                RevokeAccessTokenRequest revokeRequest{ };
-                RequestResult result = revokeRequest.Perform( revokeOptions );
-
-                if( result.m_Success )
-                {
-                    InfoLog( "[%s] Reddit token revoked successfully.", __FUNCTION__ );
-                }
-                else
-                {
-                    WarningLog( "[%s] Reddit token revocation failed: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
-                }
-            }
-
-            // Clear locally regardless of whether the revoke request succeeded
-            ClearAccessToken( );
-            ClearRefreshToken( );
-            {
-                std::unique_lock<std::mutex> lock( m_UsernameMutex );
-                m_Username.clear( );
-            }
-        } );
-
-    DebugLog( "[%s] Reddit sign-out initiated.", __FUNCTION__ );
+    InfoLog( "[%s] Reddit signed out.", __FUNCTION__ );
 }
 
 void ImageScraper::RedditService::FetchCurrentUser( )
