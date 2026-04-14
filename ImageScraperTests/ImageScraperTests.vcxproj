@@ -80,6 +80,10 @@
       <Message>Copy runtime dependencies to test output directory</Message>
       <Command>xcopy "$(SolutionDir)ImageScraper\lib\Debug\libcurl-d.dll" "$(TargetDir)" /Y</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Message>Running unit tests</Message>
+      <Command>"$(TargetPath)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -104,6 +108,10 @@
       <Message>Copy runtime dependencies to test output directory</Message>
       <Command>xcopy "$(SolutionDir)ImageScraper\lib\Release\libcurl.dll" "$(TargetDir)" /Y</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Message>Running unit tests</Message>
+      <Command>"$(TargetPath)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\catch2\catch_amalgamated.cpp" />
