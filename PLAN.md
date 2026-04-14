@@ -44,30 +44,30 @@
 ### Threading — ThreadPool tests
 
 **Start / Stop lifecycle**
-- [ ] `Start` — pool starts with the requested number of worker threads
-- [ ] `Start` when already running is a no-op; does not spawn additional threads
-- [ ] `Stop` joins all threads; pool can be restarted cleanly after `Stop`
-- [ ] Destructor calls `Stop` without hanging
+- [x] `Start` — pool starts with the requested number of worker threads
+- [x] `Start` when already running is a no-op; does not spawn additional threads
+- [x] `Stop` joins all threads; pool can be restarted cleanly after `Stop`
+- [x] Destructor calls `Stop` without hanging
 
 **Submit (worker thread)**
-- [ ] `Submit` — future resolves to the correct return value (non-void callable)
-- [ ] `Submit` — void-returning task completes without error
-- [ ] `Submit` — tasks on the same context execute in submission order (FIFO)
-- [ ] `Submit` — tasks on different contexts execute independently and concurrently
+- [x] `Submit` — future resolves to the correct return value (non-void callable)
+- [x] `Submit` — void-returning task completes without error
+- [x] `Submit` — tasks on the same context execute in submission order (FIFO)
+- [x] `Submit` — tasks on different contexts execute independently and concurrently
 
 **SubmitMain (main-thread queue)**
-- [ ] `SubmitMain` — task does not execute until `Update()` is called
-- [ ] `SubmitMain` — future resolves after `Update()` is called
-- [ ] `SubmitMain` — multiple queued tasks drain one per `Update()` call in FIFO order
+- [x] `SubmitMain` — task does not execute until `Update()` is called
+- [x] `SubmitMain` — future resolves after `Update()` is called
+- [x] `SubmitMain` — multiple queued tasks drain one per `Update()` call in FIFO order
 
 **Update**
-- [ ] `Update` on an empty main queue is a no-op (no crash or block)
-- [ ] `Update` after `Stop` is a no-op
+- [x] `Update` on an empty main queue is a no-op (no crash or block)
+- [x] `Update` after `Stop` is a no-op
 
 **Stop edge cases**
-- [ ] `Stop` when not running is a no-op
-- [ ] `Stop` while tasks are in flight waits for in-flight tasks to complete before returning
-- [ ] Pending queued tasks at `Stop` time are dropped — verify and document behaviour
+- [x] `Stop` when not running is a no-op
+- [x] `Stop` while tasks are in flight waits for in-flight tasks to complete before returning
+- [x] Pending queued tasks at `Stop` time are dropped — verify and document behaviour
 
 ---
 
