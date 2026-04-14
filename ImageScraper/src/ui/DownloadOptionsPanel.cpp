@@ -37,15 +37,12 @@ void ImageScraper::DownloadOptionsPanel::Update( )
 void ImageScraper::DownloadOptionsPanel::SetInputState( InputState state )
 {
     m_InputState = state;
-    if( m_InputState == InputState::Free )
-    {
-        Reset( );
-    }
 }
 
 void ImageScraper::DownloadOptionsPanel::OnRunComplete( )
 {
     SetInputState( InputState::Free );
+    Reset( );
 }
 
 void ImageScraper::DownloadOptionsPanel::OnSignInComplete( ContentProvider provider )

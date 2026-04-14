@@ -149,7 +149,8 @@ bool ImageScraper::FrontEnd::IsCancelled( )
 
 void ImageScraper::FrontEnd::OnRunComplete( )
 {
-    SetInputState( InputState::Free );
+    m_DownloadOptionsPanel->OnRunComplete( );
+    m_LogPanel->SetRunning( false );
 }
 
 void ImageScraper::FrontEnd::OnCurrentDownloadProgress( float progress )

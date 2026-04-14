@@ -106,8 +106,8 @@
 - [x] `DownloadOptionsPanel` holds a list of `IProviderPanel` — new platforms add a panel, not a FrontEnd edit
 
 ### Code quality
-- [ ] Replace `#define INVALID_CONTENT_PROVIDER` and `#define` UI constants with `constexpr`
-- [ ] `Reset()` should be called explicitly rather than implicitly from `SetInputState`
+- [x] Replace `#define` UI constants with `constexpr` — moved 14 integer constants in `ServiceOptionTypes.h` into the `ImageScraper` namespace as `constexpr int` (`INVALID_CONTENT_PROVIDER` was already `constexpr`)
+- [x] `Reset()` should be called explicitly rather than implicitly from `SetInputState` — removed side effect from `SetInputState`; `OnRunComplete` now calls `Reset()` explicitly; `FrontEnd::OnRunComplete` delegates to `DownloadOptionsPanel::OnRunComplete` directly
 
 ### Authentication & Session Management
 - [ ] OAuth2 for Tumblr — implement OAuth2 sign-in flow (similar to Reddit); update `TumblrPanel`, request classes, and `config.template.json`

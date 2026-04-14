@@ -2,6 +2,7 @@
 #include "utils/TumblrUtils.h"
 #include "services/ServiceOptionTypes.h"
 
+using namespace ImageScraper;
 using namespace ImageScraper::TumblrUtils;
 
 TEST_CASE( "GetMediaUrlsFromResponse returns empty for no posts", "[TumblrUtils]" )
