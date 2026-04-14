@@ -156,8 +156,11 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
 
 bool ImageScraper::RedditService::IsSignedIn( ) const
 {
-    std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
-    return !m_AccessToken.empty( );
+    // True only when the user has signed in via OAuth — refresh token is the
+    // indicator. App-only auth populates m_AccessToken but not m_RefreshToken,
+    // so checking access token alone would flicker the button during downloads.
+    std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
+    return !m_RefreshToken.empty( );
 }
 
 void ImageScraper::RedditService::Authenticate( AuthenticateCallback callback )
