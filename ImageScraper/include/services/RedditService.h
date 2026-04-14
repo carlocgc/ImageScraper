@@ -22,6 +22,7 @@ namespace ImageScraper
         bool HandleExternalAuth( const std::string& response ) override;
         bool IsSignedIn( ) const override;
         void Authenticate( AuthenticateCallback callback ) override;
+        void SignOut( ) override;
 
     protected:
         bool IsCancelled( ) override;

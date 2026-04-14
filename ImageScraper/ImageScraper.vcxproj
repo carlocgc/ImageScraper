@@ -228,6 +228,7 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
     <ClCompile Include="src\requests\fourchan\GetThreadsRequest.cpp" />
     <ClCompile Include="src\requests\fourchan\GetBoardsRequest.cpp" />
     <ClCompile Include="src\requests\reddit\AppOnlyAuthRequest.cpp" />
+    <ClCompile Include="src\requests\reddit\RevokeAccessTokenRequest.cpp" />
     <ClCompile Include="src\requests\reddit\FetchAccessTokenRequest.cpp" />
     <ClCompile Include="src\requests\reddit\FetchSubredditPostsRequest.cpp" />
     <ClCompile Include="src\requests\reddit\RefreshAccessTokenRequest.cpp" />
@@ -340,6 +341,7 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\requests\DownloadRequest.h" />
     <ClInclude Include="include\requests\DownloadRequestTypes.h" />
     <ClInclude Include="include\requests\reddit\AppOnlyAuthRequest.h" />
+    <ClInclude Include="include\requests\reddit\RevokeAccessTokenRequest.h" />
     <ClInclude Include="include\services\RedditService.h" />
     <ClInclude Include="include\services\Service.h" />
     <ClInclude Include="include\ui\FrontEnd.h" />
