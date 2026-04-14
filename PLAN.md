@@ -120,6 +120,11 @@
   - Call after successful sign-in (`FetchAccessToken` on complete) and after a successful token refresh (`TryPerformAuthTokenRefresh`); store username in `RedditService::m_Username`
   - Add `virtual std::string GetSignedInUser() const { return {}; }` to `Service` base class
   - `DownloadOptionsPanel::UpdateSignInButton()` — when signed in, render a small styled badge showing `u/<username>` alongside the Sign Out button; clear `m_Username` on sign-out
+- [ ] Reddit deauthorise all sessions — explicit server-side token revocation as a separate destructive action distinct from sign-out
+  - Calls `RevokeAccessTokenRequest` (already implemented) to hit `POST /api/v1/revoke_token`; invalidates the refresh token and all associated access tokens on Reddit's servers
+  - Exposed as a separate button (e.g. "Deauthorise App") rather than part of the normal Sign Out flow, since it carries the multi-minute re-auth delay; user should be warned before proceeding
+  - After the revoke request completes, calls `SignOut()` to clear tokens locally
+  - Useful when the user suspects their credentials are compromised or wants to fully revoke app access from Reddit's end
 - [ ] OAuth2 for Tumblr — implement OAuth2 sign-in flow (similar to Reddit); update `TumblrPanel`, request classes, and `config.template.json`
 - [ ] Sign-out for Tumblr — same pattern as Reddit once OAuth2 is implemented
 - [ ] Remove `CanSignIn()` from `FourChanPanel` / hide sign-in UI for 4chan — API is fully anonymous and public, no authentication exists
