@@ -203,11 +203,17 @@ ImageScraper::DownloadHistoryPanel::ThumbnailEntry ImageScraper::DownloadHistory
         return { };
     }
 
-    std::error_code ec;
-    const auto bytes = std::filesystem::file_size( filepath, ec );
-    if( ec || bytes > k_MaxThumbnailBytes )
+    // GIFs: stbi_load only decodes the first frame so file size is irrelevant to memory use.
+    // For all other formats the decoded bitmap scales with file size, so cap it.
+    const bool isGif = std::filesystem::path( filepath ).extension( ).string( ) == ".gif";
+    if( !isGif )
     {
-        return { };
+        std::error_code ec;
+        const auto bytes = std::filesystem::file_size( filepath, ec );
+        if( ec || bytes > k_MaxThumbnailBytes )
+        {
+            return { };
+        }
     }
 
     int w = 0, h = 0, channels = 0;
