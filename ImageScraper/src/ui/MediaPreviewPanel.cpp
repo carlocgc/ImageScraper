@@ -229,12 +229,23 @@ void ImageScraper::MediaPreviewPanel::OnFileDownloaded( const std::string& filep
     m_HasLatestPath = true;
 }
 
+void ImageScraper::MediaPreviewPanel::RequestPreview( const std::string& filepath )
+{
+    {
+        std::lock_guard<std::mutex> lock( m_PathMutex );
+        m_LatestPath    = filepath;
+        m_HasLatestPath = true;
+    }
+    m_ForceLoad = true;
+}
+
 void ImageScraper::MediaPreviewPanel::KickDecodeIfNeeded( )
 {
-    if( m_IsDecoding || m_GifState == GifState::Playing )
+    if( m_IsDecoding || ( m_GifState == GifState::Playing && !m_ForceLoad ) )
     {
         return;
     }
+    m_ForceLoad = false;
 
     std::string filepath;
     {

@@ -22,6 +22,9 @@ namespace ImageScraper
         // Thread-safe — may be called from a worker thread
         void OnFileDownloaded( const std::string& filepath );
 
+        // Main-thread only — forces a load even if a GIF is currently playing
+        void RequestPreview( const std::string& filepath );
+
     private:
         enum class GifState { None, StaticFrame, LoadingFullFrames, Playing };
 
@@ -56,6 +59,7 @@ namespace ImageScraper
         std::atomic_bool    m_IsDecoding{ false };
         std::future<void>   m_DecodeFuture{ };
         std::string         m_LoadingFileName{ };  // set on main thread when decode kicks off
+        bool                m_ForceLoad{ false };  // set by RequestPreview to override the Playing guard
 
         // Current display state — only touched on the main thread
         std::vector<GLuint> m_Textures{ };
