@@ -56,21 +56,21 @@ bool ImageScraper::FourChanService::IsCancelled( )
 void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inputOptions )
 {
     InfoLog( "[%s] Starting 4chan media download!", __FUNCTION__ );
-    DebugLog( "[%s] User: %s", __FUNCTION__, inputOptions.m_TumblrUser.c_str( ) );
+    DebugLog( "[%s] Board: %s", __FUNCTION__, inputOptions.m_FourChanBoard.c_str( ) );
 
-    auto onComplete = [ & ]( int filesDownloaded )
+    auto onComplete = [ this ]( int filesDownloaded )
     {
         InfoLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
         m_Sink->OnRunComplete( );
     };
 
-    auto onFail = [ & ]( )
+    auto onFail = [ this ]( )
     {
         ErrorLog( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
         m_Sink->OnRunComplete( );
     };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ &, options = inputOptions, onComplete, onFail ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, options = inputOptions, onComplete, onFail ]( )
         {
             if( IsCancelled( ) )
             {

@@ -42,7 +42,7 @@ ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig,
 
     {
         std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
-        if( m_AppConfig->GetValue<std::string>( s_AppDataKey_RefreshToken, m_RefreshToken ) && m_RefreshToken != "" )
+        if( m_AppConfig->GetValue<std::string>( s_AppDataKey_RefreshToken, m_RefreshToken ) && !m_RefreshToken.empty( ) )
         {
             DebugLog( "[%s] Refresh token found!, m_RefreshToken: %s", __FUNCTION__, m_RefreshToken.c_str( ) );
         }
@@ -161,19 +161,19 @@ bool ImageScraper::RedditService::IsSignedIn( ) const
 
 void ImageScraper::RedditService::Authenticate( AuthenticateCallback callback )
 {
-    auto onComplete = [ &, completeCallback = callback ]( )
+    auto onComplete = [ this, completeCallback = callback ]( )
     {
         completeCallback( m_ContentProvider, true );
         DebugLog( "[%s] Reddit autheticated successfully!", __FUNCTION__ );
     };
 
-    auto onFail = [ &, completeCallback = callback ]( )
+    auto onFail = [ this, completeCallback = callback ]( )
     {
         completeCallback( m_ContentProvider, false );
         DebugLog( "[%s] Reddit authetication failed", __FUNCTION__ );
     };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ &, onComplete, onFail ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, onComplete, onFail ]( )
         {
             if( TryPerformAuthTokenRefresh( ) )
             {
@@ -193,8 +193,9 @@ bool ImageScraper::RedditService::IsCancelled( )
 
 const bool ImageScraper::RedditService::IsAuthenticated( ) const
 {
+    std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
 
-    if( !IsSignedIn( ) )
+    if( m_AccessToken.empty( ) )
     {
         return false;
     }
@@ -210,19 +211,19 @@ const bool ImageScraper::RedditService::IsAuthenticated( ) const
 
 void ImageScraper::RedditService::FetchAccessToken( const std::string& authCode )
 {
-    auto onComplete = [ & ]( )
+    auto onComplete = [ this ]( )
     {
         m_Sink->OnSignInComplete( ContentProvider::Reddit );
         InfoLog( "[%s] Reddit signed in successfully!", __FUNCTION__ );
     };
 
-    auto onFail = [ & ]( const std::string error )
+    auto onFail = [ this ]( const std::string error )
     {
         m_Sink->OnSignInComplete( ContentProvider::Reddit );
         ErrorLog( "[%s] Reddit sign in failed, error: %s", __FUNCTION__, error.c_str( ) );
     };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ &, authCode, onComplete, onFail ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, authCode, onComplete, onFail ]( )
         {
             InfoLog( "[%s] Started OAuth process!", __FUNCTION__ );
             DebugLog( "[%s] authCode: %s", __FUNCTION__, authCode.c_str( ) );
@@ -266,21 +267,21 @@ void ImageScraper::RedditService::FetchAccessToken( const std::string& authCode 
 
 void ImageScraper::RedditService::DownloadContent( const UserInputOptions& inputOptions )
 {
-    auto onComplete = [ & ]( int filesDownloaded )
+    auto onComplete = [ this ]( int filesDownloaded )
     {
         InfoLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
 
         m_Sink->OnRunComplete( );
     };
 
-    auto onFail = [ & ]( )
+    auto onFail = [ this ]( )
     {
         ErrorLog( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
 
         m_Sink->OnRunComplete( );
     };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ &, options = inputOptions, onComplete, onFail ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, options = inputOptions, onComplete, onFail ]( )
         {
             InfoLog( "[%s] Starting Reddit media download!", __FUNCTION__ );
             DebugLog( "[%s] Subreddit: %s", __FUNCTION__, options.m_SubredditName.c_str( ) );
@@ -296,7 +297,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
             if( !IsAuthenticated( ) )
             {
-                if( m_RefreshToken != "" )
+                if( !m_RefreshToken.empty( ) )
                 {
                     if( !TryPerformAuthTokenRefresh( ) )
                     {
@@ -417,7 +418,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
                 const std::string newUrl = DownloadHelpers::RedirectToPreferredFileTypeUrl( url );
 
-                if( newUrl != "" )
+                if( !newUrl.empty( ) )
                 {
                     url = newUrl;
                 }

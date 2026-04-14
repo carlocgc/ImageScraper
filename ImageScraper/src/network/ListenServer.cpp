@@ -39,7 +39,7 @@ void ImageScraper::ListenServer::Start( )
         return;
     }
 
-    auto OnMessageReceived = [ & ]( const std::string message )
+    auto OnMessageReceived = [ this ]( const std::string message )
         {
             DebugLog( "[%s] ListenServer message received, message: %s", __FUNCTION__, message.c_str( ) );
 
@@ -55,7 +55,7 @@ void ImageScraper::ListenServer::Start( )
             DebugLog( "[%s] ListenServer auth response not handled!", __FUNCTION__ );
         };
 
-    auto OnError = [ & ]( const std::string error )
+    auto OnError = [ this ]( const std::string error )
         {
             DebugLog( "[%s] ListenServer failed, error: %s", __FUNCTION__, error.c_str( ) );
 
@@ -70,7 +70,7 @@ void ImageScraper::ListenServer::Start( )
             Start( );
         };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ListenServer, [ &, OnMessageReceived, OnError ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ListenServer, [ this, OnMessageReceived, OnError ]( )
         {
             m_Running.store( true );
 
