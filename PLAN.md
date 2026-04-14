@@ -77,11 +77,24 @@
 - [x] Extract `FourChanPanel` — owns board, max threads, max media state
 - [x] `DownloadOptionsPanel` holds a list of `IProviderPanel` — new platforms add a panel, not a FrontEnd edit
 
+### Authentication & Session Management
+- [ ] OAuth2 for Tumblr — implement OAuth2 sign-in flow (similar to Reddit); update `TumblrPanel`, request classes, and `config.template.json`
+- [ ] OAuth2 for 4chan — implement OAuth2 sign-in flow; update `FourChanPanel`, request classes, and `config.template.json`
+- [ ] Sign-out for all OAuth providers — add sign-out button/action to each OAuth-capable provider panel (Reddit, Tumblr, 4chan once implemented); revoke/clear stored tokens and reset panel UI state
+- [ ] OAuth2 redirect HTML polish — review and improve the in-app redirect/confirmation page shown after OAuth2 authorisation; better copy, styling, and error states
+
 ### New windows
 - [x] `MediaPreviewPanel` — loads last downloaded image into an OpenGL texture (stb_image) and renders it in a dockable ImGui window; supports static images and animated GIFs (frame stepping)
 - [x] `DownloadHistoryPanel` — ring buffer of completed downloads showing filename, source URL, and timestamp; clicking an entry opens it in explorer
+- [ ] `DownloadHistoryPanel` provider tabs — add a tab strip per provider so history is filterable by source; an "All" tab shows the combined view
+- [ ] `DownloadHistoryPanel` extra param columns — show provider-specific download parameters as additional columns (e.g. Download Scope / sort for Reddit: Hot, Best, New, Top, etc.)
+- [ ] `DownloadHistoryPanel` hover tooltip preview — show a small single-frame thumbnail of the image in an ImGui tooltip when hovering a history entry; skip non-image and large files gracefully
 - [ ] `DownloadProgressPanel` — extract current and total download progress bars out of `LogPanel` into a dedicated dockable panel; `LogPanel` retains log lines only
 - [ ] `MediaPreviewPanel` video support — webm and mp4 playback via an appropriate decoding library (e.g. libav / FFmpeg); seamless alongside existing stb_image path for images and GIFs
+
+### Persistence
+- [ ] Persistent download history — serialize the `DownloadHistoryPanel` ring buffer to disk (e.g. JSON) and reload it on launch so history survives restarts
+- [ ] Persistent search history — record per-provider search inputs and surface them as a dropdown in each provider options panel; persist to disk across launches
 
 ### Code quality
 - [ ] Replace `#define INVALID_CONTENT_PROVIDER` and `#define` UI constants with `constexpr`
@@ -110,3 +123,15 @@
 - [ ] Bluesky — new service + request classes
 - [ ] Mastodon — new service + request classes (federated, needs instance URL input)
 - [ ] Update `config.template.json` and `UserInputOptions` for each new platform
+
+---
+
+## Packaging & Distribution
+
+- [ ] CRT bundling review — investigate whether the MSVC C runtime (`msvcp`/`vcruntime` DLLs) can and should be statically linked or embedded so the release exe is fully self-contained; weigh exe size vs. eliminating the redistributable dependency
+
+---
+
+## Long-term / Exploratory
+
+- [ ] Containerisation & self-hosting — investigate running the app headlessly in a Docker container with a web UI so users can self-host and interact via a browser; assess what a service-layer API would look like, how the current ImGui frontend would be replaced or supplemented, and whether the download/auth pipeline needs changes to support a multi-user or remote context
