@@ -16,17 +16,51 @@ void ImageScraper::DownloadOptionsPanel::Update( )
 {
     ImGui::SetNextWindowSize( ImVec2( 640, 200 ), ImGuiCond_FirstUseEver );
 
-    if( !ImGui::Begin( "Download Options", nullptr ) )
+    ImVec2 contentScreenMin{ 0.0f, 0.0f };
+    ImVec2 contentScreenMax{ 0.0f, 0.0f };
+    bool windowOpen = false;
+
+    if( ImGui::Begin( "Download Options", nullptr ) )
     {
-        ImGui::End( );
-        return;
+        windowOpen = true;
+
+        const ImVec2 winPos = ImGui::GetWindowPos( );
+        contentScreenMin = ImVec2( winPos.x + ImGui::GetWindowContentRegionMin( ).x,
+                                   winPos.y + ImGui::GetWindowContentRegionMin( ).y );
+        contentScreenMax = ImVec2( winPos.x + ImGui::GetWindowContentRegionMax( ).x,
+                                   winPos.y + ImGui::GetWindowContentRegionMax( ).y );
+
+        UpdateProviderWidgets( );
+        UpdateRunCancelButton( );
+        UpdateSignInButton( );
     }
 
-    UpdateProviderWidgets( );
-    UpdateRunCancelButton( );
-    UpdateSignInButton( );
-
     ImGui::End( );
+
+    if( windowOpen && m_Running )
+    {
+        constexpr float k_BarH = 4.0f;
+        constexpr float k_SegW = 0.3f;
+
+        const float barW  = contentScreenMax.x - contentScreenMin.x;
+        const float barY0 = contentScreenMax.y - k_BarH;
+        const float barY1 = contentScreenMax.y;
+        const float segW  = barW * k_SegW;
+
+        const float t     = static_cast<float>( fabs( sin( ImGui::GetTime( ) * 1.5 ) ) );
+        const float segX0 = contentScreenMin.x + ( barW - segW ) * t;
+        const float segX1 = segX0 + segW;
+
+        ImDrawList* dl = ImGui::GetForegroundDrawList( );
+        dl->AddRectFilled(
+            ImVec2( contentScreenMin.x, barY0 ),
+            ImVec2( contentScreenMax.x, barY1 ),
+            IM_COL32( 0, 0, 0, 120 ) );
+        dl->AddRectFilled(
+            ImVec2( segX0, barY0 ),
+            ImVec2( segX1, barY1 ),
+            IM_COL32( 100, 180, 255, 220 ) );
+    }
 
     if( HandleUserInput( ) )
     {
@@ -101,6 +135,9 @@ void ImageScraper::DownloadOptionsPanel::UpdateSignInButton( )
     const bool signInStarted = signingInProvider == static_cast<int>( m_ContentProvider );
 
     const std::shared_ptr<Service> service = GetCurrentService( );
+
+    ImGui::BeginDisabled( m_Running );
+
     if( service && service->IsSignedIn( ) )
     {
         const std::string username = service->GetSignedInUser( );
@@ -134,6 +171,8 @@ void ImageScraper::DownloadOptionsPanel::UpdateSignInButton( )
             }
         }
     }
+
+    ImGui::EndDisabled( );
 }
 
 void ImageScraper::DownloadOptionsPanel::UpdateRunCancelButton( )
