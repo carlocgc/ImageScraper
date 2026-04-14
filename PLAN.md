@@ -115,6 +115,11 @@
   - Add `virtual void SignOut() {}` default no-op to `Service` base class
   - Add `void SignOut() override` to `RedditService` — submits revoke request on service thread (fire-and-forget), then calls `ClearAccessToken()` + `ClearRefreshToken()` regardless of request result
   - `DownloadOptionsPanel::UpdateSignInButton()` — replace disabled "Signed In" button with active "Sign Out" button that calls `service->SignOut()`
+- [ ] Reddit signed-in username badge — fetch and display the authenticated username in the Download Options panel
+  - Add `GetCurrentUserRequest` — `GET https://oauth.reddit.com/api/v1/me` with Bearer token; returns JSON containing `"name"` field
+  - Call after successful sign-in (`FetchAccessToken` on complete) and after a successful token refresh (`TryPerformAuthTokenRefresh`); store username in `RedditService::m_Username`
+  - Add `virtual std::string GetSignedInUser() const { return {}; }` to `Service` base class
+  - `DownloadOptionsPanel::UpdateSignInButton()` — when signed in, render a small styled badge showing `u/<username>` alongside the Sign Out button; clear `m_Username` on sign-out
 - [ ] OAuth2 for Tumblr — implement OAuth2 sign-in flow (similar to Reddit); update `TumblrPanel`, request classes, and `config.template.json`
 - [ ] Sign-out for Tumblr — same pattern as Reddit once OAuth2 is implemented
 - [ ] Remove `CanSignIn()` from `FourChanPanel` / hide sign-in UI for 4chan — API is fully anonymous and public, no authentication exists
