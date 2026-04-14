@@ -189,6 +189,24 @@
 - [ ] GitHub CI — investigate Actions workflows for: (1) running tests on every push/PR, (2) nightly builds on a schedule, (3) automated tagged release builds that produce a versioned artefact (zip / installer); assess Windows MSVC runner availability, secret handling for any signing step, and artefact retention policy
 - [ ] CRT bundling review — investigate whether the MSVC C runtime (`msvcp`/`vcruntime` DLLs) can and should be statically linked or embedded so the release exe is fully self-contained; weigh exe size vs. eliminating the redistributable dependency
 
+## Project Housekeeping
+
+- [ ] Consolidate and migrate roadmap to GitHub issues
+  - Close stale / already-done issues: #14 (UI modularisation — done), #9 (preview panel — done)
+  - Update issues that are still valid but need detail added from PLAN.md: #3 (sign-out), #10 (immediate cancel), #13 (Tumblr OAuth), #4 (Discord), #7 (Twitter/X), #12 (Mastodon)
+  - Decide whether to track #8 (PCH) and #6 (file logger) — add to PLAN.md if wanted, otherwise close as won't-fix
+  - Decide whether to add Steam (#11) to Phase 5 new platforms or close
+  - Create new issues for items in PLAN.md with no corresponding issue: Credentials panel, username badge, download history tabs, DownloadProgressPanel, persistent history, GitHub CI, CRT bundling, containerisation, etc.
+  - Group issues under milestones matching phases (Phase 3, Phase 4, Phase 5, Packaging)
+  - Once all items are tracked in GitHub, remove `PLAN.md` from the repo; future planning lives in GitHub issues only
+- [ ] README polish — rewrite the README to reflect the current state of the project
+  - Replace the sparse setup section with clear step-by-step instructions referencing the in-app Credentials panel (once built) rather than manual config editing
+  - Add a Features section covering current capabilities: OAuth2 (Reddit), multi-threaded downloads, media preview, download history, animated GIF support
+  - Add a Dependencies / Build section listing the required VS version, platform target, and how to build from source
+  - Add a Contributing section referencing the feature branch / PR workflow from `CLAUDE.md`
+  - Remove outdated references to manual `config.template.json` copy once the Credentials panel is in place
+  - Update credits to include stb_image and Catch2
+
 ---
 
 ## Long-term / Exploratory
