@@ -133,7 +133,7 @@
 ### New windows
 - [x] `MediaPreviewPanel` — loads last downloaded image into an OpenGL texture (stb_image) and renders it in a dockable ImGui window; supports static images and animated GIFs (frame stepping)
 - [x] `DownloadHistoryPanel` — ring buffer of completed downloads showing filename, source URL, and timestamp; clicking an entry opens it in explorer
-- [ ] `DownloadProgressPanel` — extract current and total download progress bars out of `LogPanel` into a dedicated dockable panel; `LogPanel` retains log lines only
+- [x] `DownloadProgressPanel` — extract current and total download progress bars out of `LogPanel` into a dedicated dockable panel; `LogPanel` retains log lines only
 - [ ] `DownloadHistoryPanel` provider tabs — add a tab strip per provider so history is filterable by source; an "All" tab shows the combined view
 - [ ] `DownloadHistoryPanel` extra param columns — show provider-specific download parameters as additional columns (e.g. Download Scope / sort for Reddit: Hot, Best, New, Top, etc.)
 - [ ] `DownloadHistoryPanel` hover tooltip preview — show a small single-frame thumbnail of the image in an ImGui tooltip when hovering a history entry; skip non-image and large files gracefully
