@@ -17,10 +17,8 @@ namespace ImageScraper
         void Update( ) override;
 
         void Log( const LogLine& line );
-        void OnCurrentDownloadProgress( float progress );
-        void OnTotalDownloadProgress( int current, int total );
 
-        // Pass false to reset all progress state when a run ends
+        // Pass false to reset scroll state when a run ends
         void SetRunning( bool running );
 
         LogLevel GetLogLevel( ) const { return m_LogLevel; }
@@ -33,10 +31,6 @@ namespace ImageScraper
         bool                m_DebugLogging{ false };
         bool                m_ScrollToBottom{ false };
 
-        std::atomic<float> m_CurrentDownloadProgress{ 0.f };
-        std::atomic<float> m_TotalProgress{ 0.f };
-        std::atomic_int    m_CurrentDownloadNum{ 0 };
-        std::atomic_int    m_TotalDownloadsCount{ 0 };
-        bool               m_Running{ false };
+        bool m_Running{ false };
     };
 }

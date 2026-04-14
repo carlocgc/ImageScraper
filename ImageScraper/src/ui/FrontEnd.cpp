@@ -1,4 +1,5 @@
 #include "ui/FrontEnd.h"
+#include "ui/DownloadProgressPanel.h"
 #include "log/Logger.h"
 
 ImageScraper::FrontEnd::FrontEnd( int maxLogLines )
@@ -19,8 +20,9 @@ ImageScraper::FrontEnd::~FrontEnd( )
 
 bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& services )
 {
-    m_DownloadOptionsPanel = std::make_unique<DownloadOptionsPanel>( services );
-    m_MediaPreviewPanel    = std::make_unique<MediaPreviewPanel>( );
+    m_DownloadOptionsPanel  = std::make_unique<DownloadOptionsPanel>( services );
+    m_DownloadProgressPanel = std::make_unique<DownloadProgressPanel>( );
+    m_MediaPreviewPanel     = std::make_unique<MediaPreviewPanel>( );
     m_DownloadHistoryPanel = std::make_unique<DownloadHistoryPanel>(
         [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->RequestPreview( filepath ); } );
 
@@ -82,9 +84,11 @@ void ImageScraper::FrontEnd::Update( )
     if( !wasRunning && m_DownloadOptionsPanel->IsRunning( ) )
     {
         m_LogPanel->SetRunning( true );
+        m_DownloadProgressPanel->SetRunning( true );
     }
 
     m_LogPanel->Update( );
+    m_DownloadProgressPanel->Update( );
     m_MediaPreviewPanel->Update( );
     m_DownloadHistoryPanel->Update( );
 }
@@ -151,16 +155,17 @@ void ImageScraper::FrontEnd::OnRunComplete( )
 {
     m_DownloadOptionsPanel->OnRunComplete( );
     m_LogPanel->SetRunning( false );
+    m_DownloadProgressPanel->SetRunning( false );
 }
 
 void ImageScraper::FrontEnd::OnCurrentDownloadProgress( float progress )
 {
-    m_LogPanel->OnCurrentDownloadProgress( progress );
+    m_DownloadProgressPanel->OnCurrentDownloadProgress( progress );
 }
 
 void ImageScraper::FrontEnd::OnTotalDownloadProgress( int current, int total )
 {
-    m_LogPanel->OnTotalDownloadProgress( current, total );
+    m_DownloadProgressPanel->OnTotalDownloadProgress( current, total );
 }
 
 int ImageScraper::FrontEnd::GetSigningInProvider( )

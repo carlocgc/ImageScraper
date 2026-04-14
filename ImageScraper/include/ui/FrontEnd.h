@@ -13,6 +13,7 @@
 #include "ui/IUiPanel.h"
 #include "ui/LogPanel.h"
 #include "ui/DownloadOptionsPanel.h"
+#include "ui/DownloadProgressPanel.h"
 #include "ui/MediaPreviewPanel.h"
 #include "ui/DownloadHistoryPanel.h"
 
@@ -58,9 +59,10 @@ namespace ImageScraper
         GLFWwindow* m_WindowPtr{ nullptr };
         int         m_MaxLogLines{ 0 };
 
-        std::unique_ptr<LogPanel>             m_LogPanel{ };
-        std::unique_ptr<DownloadOptionsPanel> m_DownloadOptionsPanel{ };
-        std::unique_ptr<MediaPreviewPanel>    m_MediaPreviewPanel{ };
-        std::unique_ptr<DownloadHistoryPanel> m_DownloadHistoryPanel{ };
+        std::unique_ptr<LogPanel>              m_LogPanel{ };
+        std::unique_ptr<DownloadOptionsPanel>  m_DownloadOptionsPanel{ };
+        std::unique_ptr<DownloadProgressPanel> m_DownloadProgressPanel{ };
+        std::unique_ptr<MediaPreviewPanel>     m_MediaPreviewPanel{ };
+        std::unique_ptr<DownloadHistoryPanel>  m_DownloadHistoryPanel{ };
     };
 }
