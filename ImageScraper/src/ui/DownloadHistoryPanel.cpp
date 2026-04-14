@@ -103,9 +103,10 @@ void ImageScraper::DownloadHistoryPanel::Update( )
                 {
                     dispW = static_cast<float>( thumb.m_Width );
                     float dispH = static_cast<float>( thumb.m_Height );
-                    if( dispW > k_TooltipMaxSize || dispH > k_TooltipMaxSize )
+                    // Scale down so width never exceeds k_TooltipMaxSize, preserving aspect ratio
+                    if( dispW > k_TooltipMaxSize )
                     {
-                        const float scale = k_TooltipMaxSize / std::max( dispW, dispH );
+                        const float scale = k_TooltipMaxSize / dispW;
                         dispW *= scale;
                         dispH *= scale;
                     }
