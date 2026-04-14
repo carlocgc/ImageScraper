@@ -161,7 +161,7 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl-d_imp.lib;Crypt32.lib;ws2_32.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl-d_imp.lib;Crypt32.lib;ws2_32.lib;avformat.lib;avcodec.lib;avutil.lib;swscale.lib;swresample.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl-d.dll" "$(TargetDir)" /Y
@@ -169,9 +169,14 @@ xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\config.template.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
-    </PreBuildEvent>
-    <PreBuildEvent>
+xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\$(Configuration)\avformat-62.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\$(Configuration)\avcodec-62.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\$(Configuration)\avutil-60.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\$(Configuration)\avdevice-62.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\$(Configuration)\avfilter-11.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\$(Configuration)\swscale-9.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Command>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -193,7 +198,7 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\Release</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl_imp.lib;Crypt32.lib;ws2_32.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl_imp.lib;Crypt32.lib;ws2_32.lib;avformat.lib;avcodec.lib;avutil.lib;swscale.lib;swresample.lib</AdditionalDependencies>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PreBuildEvent>
@@ -202,7 +207,14 @@ xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\config.template.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\$(Configuration)\avformat-62.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\$(Configuration)\avcodec-62.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\$(Configuration)\avutil-60.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\$(Configuration)\avdevice-62.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\$(Configuration)\avfilter-11.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\$(Configuration)\swscale-9.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Command>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -245,6 +257,7 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
     <ClCompile Include="src\ui\TumblrPanel.cpp" />
     <ClCompile Include="src\ui\FourChanPanel.cpp" />
     <ClCompile Include="src\ui\MediaPreviewPanel.cpp" />
+    <ClCompile Include="src\ui\VideoPlayer.cpp" />
     <ClCompile Include="src\ui\DownloadHistoryPanel.cpp" />
     <ClCompile Include="src\ui\DownloadProgressPanel.cpp" />
     <ClCompile Include="src\stb\stb_image.cpp" />
@@ -356,6 +369,7 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\ui\TumblrPanel.h" />
     <ClInclude Include="include\ui\FourChanPanel.h" />
     <ClInclude Include="include\ui\MediaPreviewPanel.h" />
+    <ClInclude Include="include\ui\VideoPlayer.h" />
     <ClInclude Include="include\ui\DownloadHistoryPanel.h" />
     <ClInclude Include="include\ui\DownloadProgressPanel.h" />
     <ClInclude Include="include\stb\stb_image.h" />

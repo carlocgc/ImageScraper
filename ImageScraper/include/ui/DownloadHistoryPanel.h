@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui/IUiPanel.h"
+#include "ui/VideoPlayer.h"
 #include "collections/RingBuffer.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl3_loader.h"
@@ -51,7 +52,9 @@ namespace ImageScraper
         // Returns thumbnail entry for the filepath; entry.m_Texture == 0 means unavailable.
         // Loads on first call, caches the result — never retries failed loads.
         ThumbnailEntry GetOrLoadThumbnail( const std::string& filepath );
-        static bool IsSupportedImageExtension( const std::string& filepath );
+        static ThumbnailEntry LoadVideoThumbnail( const std::string& filepath );
+        static bool IsSupportedMediaExtension( const std::string& filepath );
+        static bool IsVideoExtension( const std::string& filepath );
 
         static constexpr int        k_Capacity          = 200;
         static constexpr uintmax_t  k_MaxThumbnailBytes = 5 * 1024 * 1024; // 5 MB

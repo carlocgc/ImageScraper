@@ -198,14 +198,22 @@ ImageScraper::DownloadHistoryPanel::ThumbnailEntry ImageScraper::DownloadHistory
     // Mark as attempted before any early-out so we never retry a failed load
     m_ThumbnailCache[ filepath ] = ThumbnailEntry{ };
 
-    if( !IsSupportedImageExtension( filepath ) )
+    if( !IsSupportedMediaExtension( filepath ) )
     {
         return { };
     }
 
+    if( IsVideoExtension( filepath ) )
+    {
+        ThumbnailEntry entry = LoadVideoThumbnail( filepath );
+        m_ThumbnailCache[ filepath ] = entry;
+        return entry;
+    }
+
     // GIFs: stbi_load only decodes the first frame so file size is irrelevant to memory use.
     // For all other formats the decoded bitmap scales with file size, so cap it.
-    const bool isGif = std::filesystem::path( filepath ).extension( ).string( ) == ".gif";
+    const std::string ext = std::filesystem::path( filepath ).extension( ).string( );
+    const bool isGif = ( ext == ".gif" || ext == ".GIF" );
     if( !isGif )
     {
         std::error_code ec;
@@ -238,18 +246,59 @@ ImageScraper::DownloadHistoryPanel::ThumbnailEntry ImageScraper::DownloadHistory
     return entry;
 }
 
-bool ImageScraper::DownloadHistoryPanel::IsSupportedImageExtension( const std::string& filepath )
+bool ImageScraper::DownloadHistoryPanel::IsSupportedMediaExtension( const std::string& filepath )
 {
     std::string ext = std::filesystem::path( filepath ).extension( ).string( );
-    // Lowercase the extension for case-insensitive comparison
     std::transform( ext.begin( ), ext.end( ), ext.begin( ), []( unsigned char c ) { return static_cast<char>( std::tolower( c ) ); } );
 
     static const std::unordered_set<std::string> k_Supported =
     {
-        ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tga", ".webp"
+        ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tga", ".webp",
+        ".mp4", ".webm", ".mov", ".mkv", ".avi"
     };
 
     return k_Supported.count( ext ) > 0;
+}
+
+bool ImageScraper::DownloadHistoryPanel::IsVideoExtension( const std::string& filepath )
+{
+    std::string ext = std::filesystem::path( filepath ).extension( ).string( );
+    std::transform( ext.begin( ), ext.end( ), ext.begin( ), []( unsigned char c ) { return static_cast<char>( std::tolower( c ) ); } );
+
+    static const std::unordered_set<std::string> k_Video =
+    {
+        ".mp4", ".webm", ".mov", ".mkv", ".avi"
+    };
+
+    return k_Video.count( ext ) > 0;
+}
+
+ImageScraper::DownloadHistoryPanel::ThumbnailEntry ImageScraper::DownloadHistoryPanel::LoadVideoThumbnail( const std::string& filepath )
+{
+    VideoPlayer player;
+    if( !player.Open( filepath ) )
+    {
+        return { };
+    }
+
+    std::vector<uint8_t> rgba;
+    if( !player.DecodeNextFrame( rgba ) )
+    {
+        return { };
+    }
+
+    const int w = player.GetWidth( );
+    const int h = player.GetHeight( );
+
+    GLuint tex = 0;
+    glGenTextures( 1, &tex );
+    glBindTexture( GL_TEXTURE_2D, tex );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data( ) );
+    glBindTexture( GL_TEXTURE_2D, 0 );
+
+    return ThumbnailEntry{ tex, w, h };
 }
 
 std::string ImageScraper::DownloadHistoryPanel::FormatFileSize( const std::string& filepath )
