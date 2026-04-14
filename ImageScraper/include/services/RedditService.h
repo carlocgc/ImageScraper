@@ -22,6 +22,7 @@ namespace ImageScraper
         bool HandleExternalAuth( const std::string& response ) override;
         bool IsSignedIn( ) const override;
         void Authenticate( AuthenticateCallback callback ) override;
+        void SignOut( ) override;
 
     protected:
         bool IsCancelled( ) override;
@@ -51,7 +52,7 @@ namespace ImageScraper
         // Used for pagination
         std::string m_AfterParam{ };
 
-        std::mutex m_RefreshTokenMutex{ };
+        mutable std::mutex m_RefreshTokenMutex{ };
         std::string m_RefreshToken{ };
         mutable std::mutex m_AccessTokenMutex{ };
         std::string m_AccessToken{ };

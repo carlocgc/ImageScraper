@@ -13,6 +13,7 @@
 #include "utils/StringUtils.h"
 #include "curlpp/cURLpp.hpp"
 #include "requests/reddit/RefreshAccessTokenRequest.h"
+#include "requests/reddit/RevokeAccessTokenRequest.h"
 
 #include <string>
 #include <map>
@@ -155,8 +156,11 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
 
 bool ImageScraper::RedditService::IsSignedIn( ) const
 {
-    std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
-    return !m_AccessToken.empty( );
+    // True only when the user has signed in via OAuth — refresh token is the
+    // indicator. App-only auth populates m_AccessToken but not m_RefreshToken,
+    // so checking access token alone would flicker the button during downloads.
+    std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
+    return !m_RefreshToken.empty( );
 }
 
 void ImageScraper::RedditService::Authenticate( AuthenticateCallback callback )
@@ -189,6 +193,51 @@ void ImageScraper::RedditService::Authenticate( AuthenticateCallback callback )
 bool ImageScraper::RedditService::IsCancelled( )
 {
     return m_Sink->IsCancelled( );
+}
+
+void ImageScraper::RedditService::SignOut( )
+{
+    std::string refreshToken{ };
+    {
+        std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
+        refreshToken = m_RefreshToken;
+    }
+
+    // Fire-and-forget: revoke the refresh token server-side (also invalidates all associated access tokens)
+    TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, refreshToken ]( )
+        {
+            if( refreshToken.empty( ) )
+            {
+                DebugLog( "[%s] No refresh token to revoke.", __FUNCTION__ );
+            }
+            else
+            {
+                RequestOptions revokeOptions{ };
+                revokeOptions.m_CaBundle      = m_CaBundle;
+                revokeOptions.m_UserAgent     = m_UserAgent;
+                revokeOptions.m_ClientId      = m_ClientId;
+                revokeOptions.m_ClientSecret  = m_ClientSecret;
+                revokeOptions.m_AccessToken   = refreshToken; // carries the refresh token
+
+                RevokeAccessTokenRequest revokeRequest{ };
+                RequestResult result = revokeRequest.Perform( revokeOptions );
+
+                if( result.m_Success )
+                {
+                    InfoLog( "[%s] Reddit token revoked successfully.", __FUNCTION__ );
+                }
+                else
+                {
+                    WarningLog( "[%s] Reddit token revocation failed: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+                }
+            }
+
+            // Clear locally regardless of whether the revoke request succeeded
+            ClearAccessToken( );
+            ClearRefreshToken( );
+        } );
+
+    DebugLog( "[%s] Reddit sign-out initiated.", __FUNCTION__ );
 }
 
 const bool ImageScraper::RedditService::IsAuthenticated( ) const

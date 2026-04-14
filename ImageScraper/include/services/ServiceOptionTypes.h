@@ -7,17 +7,17 @@ namespace ImageScraper
     constexpr int CONTENT_PROVIDERS_COUNT       = 4;
     constexpr int INPUT_STRING_MAX              = 64;
     constexpr int REDDIT_LIMIT_MIN              = 1;
-    constexpr int REDDIT_LIMIT_DEFAULT          = 1000;
+    constexpr int REDDIT_LIMIT_DEFAULT          = 5;
     constexpr int REDDIT_LIMIT_MAX              = 10000;
     constexpr int REDDIT_SCOPES_COUNT           = 8;
     constexpr int REDDIT_SCOPE_TIMEFRAMES_COUNT = 5;
     constexpr int TUMBLR_LIMIT_MIN              = 1;
-    constexpr int TUMBLR_LIMIT_DEFAULT          = 1000;
+    constexpr int TUMBLR_LIMIT_DEFAULT          = 5;
     constexpr int TUMBLR_LIMIT_MAX              = 10000;
     constexpr int FOURCHAN_THREAD_MIN           = 1;
     constexpr int FOURCHAN_THREAD_MAX           = 50;
     constexpr int FOURCHAN_MEDIA_MIN            = 1;
-    constexpr int FOURCHAN_MEDIA_DEFAULT        = 1000;
+    constexpr int FOURCHAN_MEDIA_DEFAULT        = 5;
     constexpr int FOURCHAN_MEDIA_MAX            = 10000;
 
     enum class ContentProvider : uint16_t

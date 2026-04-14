@@ -31,6 +31,7 @@ namespace ImageScraper
         virtual bool HandleExternalAuth( const std::string& response ) = 0;
         virtual bool IsSignedIn( ) const = 0;
         virtual void Authenticate( AuthenticateCallback callback ) = 0;
+        virtual void SignOut( ) { }
         ContentProvider GetContentProvider( ) const { return m_ContentProvider; }
 
     protected:

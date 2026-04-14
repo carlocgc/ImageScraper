@@ -103,9 +103,10 @@ void ImageScraper::DownloadOptionsPanel::UpdateSignInButton( )
     const std::shared_ptr<Service> service = GetCurrentService( );
     if( service && service->IsSignedIn( ) )
     {
-        ImGui::BeginDisabled( true );
-        ImGui::Button( "Signed In", ImVec2( 120, 40 ) );
-        ImGui::EndDisabled( );
+        if( ImGui::Button( "Sign Out", ImVec2( 100, 40 ) ) )
+        {
+            service->SignOut( );
+        }
     }
     else if( signInStarted )
     {
