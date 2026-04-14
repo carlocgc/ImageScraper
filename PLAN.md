@@ -5,7 +5,7 @@
 
 - [x] Select and integrate a test framework — Catch2 v3.14.0 vendored (no external tools required)
 - [x] Run tests automatically on every main project build (post-build event on main project)
-- [x] Run tests as post-build event on the test project itself for faster isolated test runs
+- [x] Run tests as post-build event on the test project itself for faster isolated test runs; fix solution dependency so test project builds after main project
 - [x] Organise test include files into subfolders — move `MockHttpClient.h` to `include/mocks/`
 
 ### RequestTypes
