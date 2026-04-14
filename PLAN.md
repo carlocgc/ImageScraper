@@ -4,7 +4,8 @@
 > Goal: Catch 3rd party API breakage and provide a regression net before any refactoring.
 
 - [x] Select and integrate a test framework — Catch2 v3.14.0 vendored (no external tools required)
-- [x] Run tests automatically on every main project build (post-build event, Option 1)
+- [x] Run tests automatically on every main project build (post-build event on main project)
+- [ ] Run tests as post-build event on the test project itself for faster isolated test runs
 
 ### RequestTypes
 - [x] `ResponseErrorCodefromInt` — known HTTP codes map correctly
@@ -35,7 +36,7 @@
 
 ### Threading — ThreadPool fixes
 - [x] Clear `m_Threads` and context maps in `Stop` so the pool can be restarted cleanly
-- [x] Guard `Submit` against out-of-range context — assert/early-return when `context >= m_Threads.size()` to prevent silent deadlock
+- [x] Guard `Submit` against out-of-range context — assert when `context >= m_Threads.size()` to prevent silent deadlock
 - [x] Remove dead `m_StopMutex` field and dead `m_MainCondition` / `notify_one` call in `SubmitMain`
 - [x] Make `m_IsRunning` `atomic<bool>` to match `m_Stopping`
 
@@ -66,10 +67,6 @@
 - [ ] `Stop` when not running is a no-op
 - [ ] `Stop` while tasks are in flight waits for in-flight tasks to complete before returning
 - [ ] Pending queued tasks at `Stop` time are dropped — verify and document behaviour
-
-### Future workflow improvements
-- [ ] Run tests as post-build event on the test project itself (Option 2)
-- [ ] CI pipeline via GitHub Actions — build and run tests on every push/PR (Option 4)
 
 ---
 
@@ -107,6 +104,10 @@
 - [x] Extract `FourChanPanel` — owns board, max threads, max media state
 - [x] `DownloadOptionsPanel` holds a list of `IProviderPanel` — new platforms add a panel, not a FrontEnd edit
 
+### Code quality
+- [ ] Replace `#define INVALID_CONTENT_PROVIDER` and `#define` UI constants with `constexpr`
+- [ ] `Reset()` should be called explicitly rather than implicitly from `SetInputState`
+
 ### Authentication & Session Management
 - [ ] OAuth2 for Tumblr — implement OAuth2 sign-in flow (similar to Reddit); update `TumblrPanel`, request classes, and `config.template.json`
 - [ ] OAuth2 for 4chan — implement OAuth2 sign-in flow; update `FourChanPanel`, request classes, and `config.template.json`
@@ -116,19 +117,15 @@
 ### New windows
 - [x] `MediaPreviewPanel` — loads last downloaded image into an OpenGL texture (stb_image) and renders it in a dockable ImGui window; supports static images and animated GIFs (frame stepping)
 - [x] `DownloadHistoryPanel` — ring buffer of completed downloads showing filename, source URL, and timestamp; clicking an entry opens it in explorer
+- [ ] `DownloadProgressPanel` — extract current and total download progress bars out of `LogPanel` into a dedicated dockable panel; `LogPanel` retains log lines only
 - [ ] `DownloadHistoryPanel` provider tabs — add a tab strip per provider so history is filterable by source; an "All" tab shows the combined view
 - [ ] `DownloadHistoryPanel` extra param columns — show provider-specific download parameters as additional columns (e.g. Download Scope / sort for Reddit: Hot, Best, New, Top, etc.)
 - [ ] `DownloadHistoryPanel` hover tooltip preview — show a small single-frame thumbnail of the image in an ImGui tooltip when hovering a history entry; skip non-image and large files gracefully
-- [ ] `DownloadProgressPanel` — extract current and total download progress bars out of `LogPanel` into a dedicated dockable panel; `LogPanel` retains log lines only
 - [ ] `MediaPreviewPanel` video support — webm and mp4 playback via an appropriate decoding library (e.g. libav / FFmpeg); seamless alongside existing stb_image path for images and GIFs
 
 ### Persistence
 - [ ] Persistent download history — serialize the `DownloadHistoryPanel` ring buffer to disk (e.g. JSON) and reload it on launch so history survives restarts
 - [ ] Persistent search history — record per-provider search inputs and surface them as a dropdown in each provider options panel; persist to disk across launches
-
-### Code quality
-- [ ] Replace `#define INVALID_CONTENT_PROVIDER` and `#define` UI constants with `constexpr`
-- [ ] `Reset()` should be called explicitly rather than implicitly from `SetInputState`
 
 ---
 
@@ -137,9 +134,9 @@
 > **Depends on: Phase 2**
 
 - [ ] Immediate cancellation — interrupt the in-flight curl transfer on cancel rather than waiting for the current download to complete; requires surfacing a curl abort mechanism through `IHttpClient` and `DownloadRequest`
-- [ ] Increase network thread count and benchmark throughput
-- [ ] Per-task cancellation support (cancel individual downloads cleanly)
 - [ ] Process multiple UI callbacks per frame (remove single-task-per-frame limit)
+- [ ] Per-task cancellation support (cancel individual downloads cleanly)
+- [ ] Increase network thread count and benchmark throughput
 - [ ] Evaluate dedicated download thread pool separate from API request threads
 
 ---
@@ -158,8 +155,8 @@
 
 ## Packaging & Distribution
 
+- [ ] GitHub CI — investigate Actions workflows for: (1) running tests on every push/PR, (2) nightly builds on a schedule, (3) automated tagged release builds that produce a versioned artefact (zip / installer); assess Windows MSVC runner availability, secret handling for any signing step, and artefact retention policy
 - [ ] CRT bundling review — investigate whether the MSVC C runtime (`msvcp`/`vcruntime` DLLs) can and should be statically linked or embedded so the release exe is fully self-contained; weigh exe size vs. eliminating the redistributable dependency
-- [ ] GitHub CI — investigate Actions workflows for: (1) running tests on every push/PR (extends Phase 1 item), (2) nightly builds on a schedule, (3) automated tagged release builds that produce a versioned artefact (zip / installer); assess Windows MSVC runner availability, secret handling for any signing step, and artefact retention policy
 
 ---
 
