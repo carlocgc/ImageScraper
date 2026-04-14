@@ -33,9 +33,39 @@
 - [x] FourChan: `GetPageCountForBoard` — matching board, missing board, missing boards field
 - [x] FourChan: `GetFileNamesFromResponse` — valid threads, empty threads, missing fields, multi-thread
 
-### Threading
-- [ ] `ThreadPool` — task submission and execution on correct context
-- [ ] `ThreadPool` — concurrent tasks complete without data races
+### Threading — ThreadPool fixes
+- [x] Clear `m_Threads` and context maps in `Stop` so the pool can be restarted cleanly
+- [x] Guard `Submit` against out-of-range context — assert/early-return when `context >= m_Threads.size()` to prevent silent deadlock
+- [x] Remove dead `m_StopMutex` field and dead `m_MainCondition` / `notify_one` call in `SubmitMain`
+- [x] Make `m_IsRunning` `atomic<bool>` to match `m_Stopping`
+
+### Threading — ThreadPool tests
+
+**Start / Stop lifecycle**
+- [ ] `Start` — pool starts with the requested number of worker threads
+- [ ] `Start` when already running is a no-op; does not spawn additional threads
+- [ ] `Stop` joins all threads; pool can be restarted cleanly after `Stop`
+- [ ] Destructor calls `Stop` without hanging
+
+**Submit (worker thread)**
+- [ ] `Submit` — future resolves to the correct return value (non-void callable)
+- [ ] `Submit` — void-returning task completes without error
+- [ ] `Submit` — tasks on the same context execute in submission order (FIFO)
+- [ ] `Submit` — tasks on different contexts execute independently and concurrently
+
+**SubmitMain (main-thread queue)**
+- [ ] `SubmitMain` — task does not execute until `Update()` is called
+- [ ] `SubmitMain` — future resolves after `Update()` is called
+- [ ] `SubmitMain` — multiple queued tasks drain one per `Update()` call in FIFO order
+
+**Update**
+- [ ] `Update` on an empty main queue is a no-op (no crash or block)
+- [ ] `Update` after `Stop` is a no-op
+
+**Stop edge cases**
+- [ ] `Stop` when not running is a no-op
+- [ ] `Stop` while tasks are in flight waits for in-flight tasks to complete before returning
+- [ ] Pending queued tasks at `Stop` time are dropped — verify and document behaviour
 
 ### Future workflow improvements
 - [ ] Run tests as post-build event on the test project itself (Option 2)

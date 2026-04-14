@@ -3,6 +3,7 @@
 #include "log/Logger.h"
 #include "traits/TypeTraits.h"
 
+#include <cassert>
 #include <map>
 #include <thread>
 #include <queue>
@@ -35,6 +36,8 @@ namespace ImageScraper
         auto Submit( ThreadContext context, F&& f, Args&&... args ) -> std::future<decltype( f( args... ) )>
         {
             using ReturnT = decltype( f( args... ) );
+
+            assert( context < static_cast<ThreadContext>( m_Threads.size( ) ) && "ThreadPool::Submit context out of range" );
 
             // Create a new packaged_task object that will wrap the function to be executed
             auto task = std::make_shared<std::packaged_task<ReturnT( )>>(
@@ -79,7 +82,6 @@ namespace ImageScraper
                 m_MainQueue.emplace( [ task ]( ) { ( *task )( ); } );
             }
 
-            m_MainCondtion.notify_one( );
             return res;
         }
 
@@ -98,10 +100,8 @@ namespace ImageScraper
 
         std::queue<std::function<void( )>> m_MainQueue{ };
         std::mutex m_MainMutex{ };
-        std::condition_variable m_MainCondtion{ };
 
-        std::mutex m_StopMutex{ };
         std::atomic<bool> m_Stopping{ false };
-        bool m_IsRunning{ false };
+        std::atomic<bool> m_IsRunning{ false };
     };
 }

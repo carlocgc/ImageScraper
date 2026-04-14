@@ -83,11 +83,11 @@ void ImageScraper::ThreadPool::Stop( )
         return;
     }
 
-    m_Stopping.store( true );    
+    m_Stopping.store( true );
 
     for( auto& [key, cond] : m_Conditions )
     {
-        cond.notify_all( );        
+        cond.notify_all( );
     }
 
     for( auto& thread : m_Threads )
@@ -95,6 +95,11 @@ void ImageScraper::ThreadPool::Stop( )
         thread.join( );
     }
 
-    m_IsRunning = false;
+    m_Threads.clear( );
+    m_TaskQueues.clear( );
+    m_QueueMutexes.clear( );
+    m_Conditions.clear( );
+
+    m_IsRunning.store( false );
     m_Stopping.store( false );
 }
