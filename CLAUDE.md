@@ -62,4 +62,8 @@ Likewise, any new test files added to `ImageScraperTests` must be added to `Imag
 
 Files that are only `#include`d will compile correctly but won't appear in Solution Explorer, making them easy to lose track of.
 
+## Source File Organisation
+
+All source and header files must live inside a named subfolder — never directly in a bare `src/` or `include/` root. Group by domain or type (e.g. `include/mocks/`, `src/tests/`, `src/async/`). This applies to both projects. When adding a new file, choose or create the most appropriate subfolder rather than dropping it at the top level.
+
 ---

@@ -1,5 +1,5 @@
 #include "catch2/catch_amalgamated.hpp"
-#include "MockHttpClient.h"
+#include "mocks/MockHttpClient.h"
 
 #include "requests/fourchan/GetBoardsRequest.h"
 #include "requests/fourchan/GetThreadsRequest.h"

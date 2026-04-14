@@ -135,7 +135,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\catch2\catch_amalgamated.hpp" />
-    <ClInclude Include="include\MockHttpClient.h" />
+    <ClInclude Include="include\mocks\MockHttpClient.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
