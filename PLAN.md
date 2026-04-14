@@ -110,9 +110,14 @@
 - [x] `Reset()` should be called explicitly rather than implicitly from `SetInputState` — removed side effect from `SetInputState`; `OnRunComplete` now calls `Reset()` explicitly; `FrontEnd::OnRunComplete` delegates to `DownloadOptionsPanel::OnRunComplete` directly
 
 ### Authentication & Session Management
+- [ ] **[NEXT]** Reddit sign-out — fire-and-forget token revocation + local clear
+  - Add `RevokeAccessTokenRequest` — `POST https://www.reddit.com/api/v1/revoke_token` with Basic auth (`client_id:client_secret`), form body `token=<refresh_token>&token_type_hint=refresh_token`; revoking the refresh token invalidates all associated access tokens server-side (RFC 7009 / Reddit OAuth2 docs); 204 response expected (returned even for already-invalid tokens)
+  - Add `virtual void SignOut() {}` default no-op to `Service` base class
+  - Add `void SignOut() override` to `RedditService` — submits revoke request on service thread (fire-and-forget), then calls `ClearAccessToken()` + `ClearRefreshToken()` regardless of request result
+  - `DownloadOptionsPanel::UpdateSignInButton()` — replace disabled "Signed In" button with active "Sign Out" button that calls `service->SignOut()`
 - [ ] OAuth2 for Tumblr — implement OAuth2 sign-in flow (similar to Reddit); update `TumblrPanel`, request classes, and `config.template.json`
-- [ ] OAuth2 for 4chan — implement OAuth2 sign-in flow; update `FourChanPanel`, request classes, and `config.template.json`
-- [ ] Sign-out for all OAuth providers — add sign-out button/action to each OAuth-capable provider panel (Reddit, Tumblr, 4chan once implemented); revoke/clear stored tokens and reset panel UI state
+- [ ] Sign-out for Tumblr — same pattern as Reddit once OAuth2 is implemented
+- [ ] Remove `CanSignIn()` from `FourChanPanel` / hide sign-in UI for 4chan — API is fully anonymous and public, no authentication exists
 - [ ] OAuth2 redirect HTML polish — review and improve the in-app redirect/confirmation page shown after OAuth2 authorisation; better copy, styling, and error states
 
 ### New windows
