@@ -98,6 +98,12 @@ When the work is done and the build passes, push the branch and open a PR agains
 gh pr create --base development --title "..." --body "..."
 ```
 
+`gh` is not on the bash shell PATH. Use the full path:
+
+```bash
+"/c/Program Files/GitHub CLI/gh.exe" pr create --base development --title "..." --body "..."
+```
+
 The user reviews the PR diff and merges directly — no formal approval step is required for this solo project. Once merged, delete the remote branch using the "Delete branch" button on the GitHub PR page.
 
 ### Releases: `development` → `main`
