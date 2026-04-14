@@ -152,6 +152,26 @@
 
 ---
 
+## Phase 4.5 — Credentials Panel
+> Goal: Let users enter and persist API credentials inside the app, eliminating the manual config.json copy step.
+
+- [ ] `CredentialsPanel` — new dockable ImGui panel for reading and writing service credentials
+  - Reads all known credential keys from `m_UserConfig` (`JsonFile`) on init; if `config.json` does not exist, creates it via `JsonFile::CreateFile()` so first-run works without manual setup
+  - One collapsible section per provider (Reddit, Tumblr, Discord); 4chan has no credentials so is omitted
+  - Sensitive fields (client secret, API keys) use `ImGuiInputTextFlags_Password` to mask by default with a show/hide toggle
+  - Writes back to `m_UserConfig` and calls `Serialise()` immediately on field change — no explicit save button needed
+  - Pass `shared_ptr<JsonFile> m_UserConfig` into `CredentialsPanel` via constructor (already available in `App` and `FrontEnd`)
+  - Required fields highlighted with a red `ImGui::TextColored` warning label when empty; optional fields have no indicator
+- [ ] Services — lazy credential reads
+  - Currently `RedditService` caches `m_ClientId` / `m_ClientSecret` in its constructor; switch to reading from `m_UserConfig` at the point of use (before each API request) so credentials updated via the panel take effect without a restart
+  - Same pattern for Tumblr and Discord when those are implemented
+- [ ] Download gate — block Run when required credentials are missing
+  - Add `virtual bool HasRequiredCredentials() const { return true; }` to `Service` base class; override in `RedditService` to return false when `client_id` or `client_secret` is empty in `m_UserConfig`
+  - `DownloadOptionsPanel::HandleUserInput()` checks `service->HasRequiredCredentials()` before submitting; shows a log-level warning if missing
+- [ ] Deprecate manual config setup — `config.template.json` stays in source control as reference, but the README and in-app first-run experience should guide users to the Credentials panel instead
+
+---
+
 ## Phase 5 — New Platforms
 > Goal: Expand supported platforms leveraging the improved request and threading layers.
 > **Depends on: Phase 3, Phase 4**
