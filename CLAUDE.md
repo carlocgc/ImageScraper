@@ -67,3 +67,69 @@ Files that are only `#include`d will compile correctly but won't appear in Solut
 All source and header files must live inside a named subfolder — never directly in a bare `src/` or `include/` root. Group by domain or type (e.g. `include/mocks/`, `src/tests/`, `src/async/`). This applies to both projects. When adding a new file, choose or create the most appropriate subfolder rather than dropping it at the top level.
 
 ---
+
+## Git Workflow
+
+### Branch structure
+
+```
+main          ← stable releases only, always tagged
+  └── development  ← integration branch, always buildable
+        └── feature/...  ← one branch per feature or fix
+```
+
+### Starting work
+
+Every piece of work — feature, fix, or chore — gets its own branch off `development`:
+
+```bash
+git checkout development
+git pull
+git checkout -b feature/short-description   # or fix/ or chore/
+```
+
+Never commit directly to `development` or `main`.
+
+### Opening a pull request
+
+When the work is done and the build passes, push the branch and open a PR against `development`:
+
+```bash
+gh pr create --base development --title "..." --body "..."
+```
+
+Wait for user approval before merging. Once approved, merge using squash:
+
+```bash
+gh pr merge <number> --squash --delete-branch
+```
+
+Squash merge keeps `development` history clean — one commit per feature.
+
+### Releases: `development` → `main`
+
+When `development` is stable enough to ship, open a PR from `development` → `main`. Use a regular merge commit (not squash) to preserve integration history:
+
+```bash
+gh pr merge <number> --merge
+```
+
+Immediately after merging, tag `main` with a version:
+
+```bash
+git checkout main && git pull
+git tag v0.1.0 -m "v0.1.0"
+git push origin v0.1.0
+```
+
+### Versioning
+
+Semantic versioning: `MAJOR.MINOR.PATCH`
+
+- `PATCH` — bug fixes, no new features
+- `MINOR` — new features, backwards compatible
+- `MAJOR` — breaking changes or major milestone
+
+### Merge approval
+
+The user reviews and approves PRs. Claude merges after approval is given.
