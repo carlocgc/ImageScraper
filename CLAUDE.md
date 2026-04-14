@@ -98,17 +98,11 @@ When the work is done and the build passes, push the branch and open a PR agains
 gh pr create --base development --title "..." --body "..."
 ```
 
-Wait for user approval before merging. Once approved, merge using squash:
-
-```bash
-gh pr merge <number> --squash --delete-branch
-```
-
-Squash merge keeps `development` history clean — one commit per feature.
+The user reviews the PR diff and merges directly — no formal approval step is required for this solo project. Once the user has merged, delete the remote branch.
 
 ### Releases: `development` → `main`
 
-When `development` is stable enough to ship, open a PR from `development` → `main`. Use a regular merge commit (not squash) to preserve integration history:
+When `development` is stable enough to ship, open a PR from `development` → `main`. The user reviews and merges using a regular merge commit (not squash) to preserve integration history:
 
 ```bash
 gh pr merge <number> --merge
