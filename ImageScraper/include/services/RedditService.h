@@ -23,6 +23,7 @@ namespace ImageScraper
         bool IsSignedIn( ) const override;
         void Authenticate( AuthenticateCallback callback ) override;
         void SignOut( ) override;
+        std::string GetSignedInUser( ) const override;
 
     protected:
         bool IsCancelled( ) override;
@@ -38,6 +39,7 @@ namespace ImageScraper
         bool TryParseRefreshToken( const Json& response );
         void ClearRefreshToken( );
         void ClearAccessToken( );
+        void FetchCurrentUser( );
 
         static const std::string s_RedirectUrl;
         static const std::string s_AppDataKey_DeviceId;
@@ -51,6 +53,9 @@ namespace ImageScraper
 
         // Used for pagination
         std::string m_AfterParam{ };
+
+        mutable std::mutex m_UsernameMutex{ };
+        std::string m_Username{ };
 
         mutable std::mutex m_RefreshTokenMutex{ };
         std::string m_RefreshToken{ };

@@ -32,6 +32,7 @@ namespace ImageScraper
         virtual bool IsSignedIn( ) const = 0;
         virtual void Authenticate( AuthenticateCallback callback ) = 0;
         virtual void SignOut( ) { }
+        virtual std::string GetSignedInUser( ) const { return { }; }
         ContentProvider GetContentProvider( ) const { return m_ContentProvider; }
 
     protected:

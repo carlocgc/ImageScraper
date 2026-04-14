@@ -14,6 +14,7 @@
 #include "curlpp/cURLpp.hpp"
 #include "requests/reddit/RefreshAccessTokenRequest.h"
 #include "requests/reddit/RevokeAccessTokenRequest.h"
+#include "requests/reddit/GetCurrentUserRequest.h"
 
 #include <string>
 #include <map>
@@ -163,6 +164,12 @@ bool ImageScraper::RedditService::IsSignedIn( ) const
     return !m_RefreshToken.empty( );
 }
 
+std::string ImageScraper::RedditService::GetSignedInUser( ) const
+{
+    std::unique_lock<std::mutex> lock( m_UsernameMutex );
+    return m_Username;
+}
+
 void ImageScraper::RedditService::Authenticate( AuthenticateCallback callback )
 {
     auto onComplete = [ this, completeCallback = callback ]( )
@@ -197,47 +204,57 @@ bool ImageScraper::RedditService::IsCancelled( )
 
 void ImageScraper::RedditService::SignOut( )
 {
-    std::string refreshToken{ };
+    // NOTE: RevokeAccessTokenRequest exists but is intentionally not called here.
+    // Reddit imposes a server-side propagation delay of several minutes after token
+    // revocation, during which re-authentication hangs (OAuth page never redirects).
+    // For a desktop app the security trade-off is acceptable — tokens live only on
+    // the user's machine and the refresh token is deleted locally, so it cannot be
+    // reused. Local-only clear gives instant, clean sign-out with no UX penalty.
+    ClearAccessToken( );
+    ClearRefreshToken( );
     {
-        std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
-        refreshToken = m_RefreshToken;
+        std::unique_lock<std::mutex> lock( m_UsernameMutex );
+        m_Username.clear( );
     }
 
-    // Fire-and-forget: revoke the refresh token server-side (also invalidates all associated access tokens)
-    TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, refreshToken ]( )
-        {
-            if( refreshToken.empty( ) )
-            {
-                DebugLog( "[%s] No refresh token to revoke.", __FUNCTION__ );
-            }
-            else
-            {
-                RequestOptions revokeOptions{ };
-                revokeOptions.m_CaBundle      = m_CaBundle;
-                revokeOptions.m_UserAgent     = m_UserAgent;
-                revokeOptions.m_ClientId      = m_ClientId;
-                revokeOptions.m_ClientSecret  = m_ClientSecret;
-                revokeOptions.m_AccessToken   = refreshToken; // carries the refresh token
+    InfoLog( "[%s] Reddit signed out.", __FUNCTION__ );
+}
 
-                RevokeAccessTokenRequest revokeRequest{ };
-                RequestResult result = revokeRequest.Perform( revokeOptions );
+void ImageScraper::RedditService::FetchCurrentUser( )
+{
+    std::string accessToken{ };
+    {
+        std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
+        accessToken = m_AccessToken;
+    }
 
-                if( result.m_Success )
-                {
-                    InfoLog( "[%s] Reddit token revoked successfully.", __FUNCTION__ );
-                }
-                else
-                {
-                    WarningLog( "[%s] Reddit token revocation failed: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
-                }
-            }
+    RequestOptions options{ };
+    options.m_CaBundle    = m_CaBundle;
+    options.m_UserAgent   = m_UserAgent;
+    options.m_AccessToken = accessToken;
 
-            // Clear locally regardless of whether the revoke request succeeded
-            ClearAccessToken( );
-            ClearRefreshToken( );
-        } );
+    GetCurrentUserRequest request{ };
+    RequestResult result = request.Perform( options );
 
-    DebugLog( "[%s] Reddit sign-out initiated.", __FUNCTION__ );
+    if( !result.m_Success )
+    {
+        WarningLog( "[%s] Failed to fetch Reddit username: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        return;
+    }
+
+    const Json response = Json::parse( result.m_Response );
+    if( !response.contains( "name" ) )
+    {
+        WarningLog( "[%s] Reddit /api/v1/me response missing 'name' field.", __FUNCTION__ );
+        return;
+    }
+
+    {
+        std::unique_lock<std::mutex> lock( m_UsernameMutex );
+        m_Username = response[ "name" ].get<std::string>( );
+    }
+
+    InfoLog( "[%s] Reddit signed in as: %s", __FUNCTION__, m_Username.c_str( ) );
 }
 
 const bool ImageScraper::RedditService::IsAuthenticated( ) const
@@ -262,6 +279,7 @@ void ImageScraper::RedditService::FetchAccessToken( const std::string& authCode 
 {
     auto onComplete = [ this ]( )
     {
+        FetchCurrentUser( );
         m_Sink->OnSignInComplete( ContentProvider::Reddit );
         InfoLog( "[%s] Reddit signed in successfully!", __FUNCTION__ );
     };
@@ -591,6 +609,7 @@ bool ImageScraper::RedditService::TryPerformAuthTokenRefresh( )
     }
 
     InfoLog( "[%s] Reddit access token refreshed successfully!", __FUNCTION__ );
+    FetchCurrentUser( );
     return true;
 }
 

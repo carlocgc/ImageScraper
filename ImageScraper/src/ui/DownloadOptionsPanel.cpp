@@ -103,6 +103,13 @@ void ImageScraper::DownloadOptionsPanel::UpdateSignInButton( )
     const std::shared_ptr<Service> service = GetCurrentService( );
     if( service && service->IsSignedIn( ) )
     {
+        const std::string username = service->GetSignedInUser( );
+        if( !username.empty( ) )
+        {
+            ImGui::SameLine( );
+            ImGui::TextColored( ImVec4( 1.0f, 0.45f, 0.0f, 1.0f ), "u/%s", username.c_str( ) );
+        }
+
         if( ImGui::Button( "Sign Out", ImVec2( 100, 40 ) ) )
         {
             service->SignOut( );
