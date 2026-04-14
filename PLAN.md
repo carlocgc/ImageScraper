@@ -185,7 +185,7 @@
 - [ ] X (Twitter) — new service + request classes
 - [ ] Bluesky — new service + request classes
 - [ ] Mastodon — new service + request classes (federated, needs instance URL input)
-- [ ] Redgifs — new service + request classes for redgifs.com; Reddit frequently embeds Redgifs URLs for GIF content so this unlocks a large class of media currently skipped; requires investigating the Redgifs public API (content discovery endpoint, pagination, auth if needed) and adding a provider panel
+- [ ] Redgifs — new service + request classes for redgifs.com; Reddit frequently embeds Redgifs URLs for GIF content so this unlocks a large class of media currently skipped; requires investigating the Redgifs public API (content discovery endpoint, pagination, auth if needed) and adding a provider panel; primary API reference is github.com/scrazzz/redgifs (api.py)
 - [ ] Update `config.template.json` and `UserInputOptions` for each new platform
 
 ---
