@@ -98,9 +98,10 @@ void ImageScraper::DownloadHistoryPanel::Update( )
                 ImGui::BeginTooltip( );
 
                 const ThumbnailEntry thumb = GetOrLoadThumbnail( entry.m_FilePath );
+                float dispW = k_TooltipMaxSize;
                 if( thumb.m_Texture != 0 )
                 {
-                    float dispW = static_cast<float>( thumb.m_Width );
+                    dispW = static_cast<float>( thumb.m_Width );
                     float dispH = static_cast<float>( thumb.m_Height );
                     if( dispW > k_TooltipMaxSize || dispH > k_TooltipMaxSize )
                     {
@@ -113,8 +114,9 @@ void ImageScraper::DownloadHistoryPanel::Update( )
                     ImGui::Separator( );
                 }
 
-                ImGui::TextUnformatted( entry.m_FilePath.c_str( ) );
+                ImGui::PushTextWrapPos( ImGui::GetCursorPosX( ) + dispW );
                 ImGui::TextDisabled( "Left click: preview  |  Right click: reveal in Explorer" );
+                ImGui::PopTextWrapPos( );
                 ImGui::EndTooltip( );
             }
 
