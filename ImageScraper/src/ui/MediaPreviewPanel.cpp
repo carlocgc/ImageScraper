@@ -377,7 +377,7 @@ void ImageScraper::MediaPreviewPanel::OpenVideo( const std::string& filepath )
     }
 
     m_CurrentFrame = 0;
-    m_MediaState   = MediaState::VideoPlaying;
+    m_MediaState   = MediaState::VideoPaused;
 }
 
 void ImageScraper::MediaPreviewPanel::AdvanceVideoFrame( )

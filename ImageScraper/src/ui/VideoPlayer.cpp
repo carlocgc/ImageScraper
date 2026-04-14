@@ -185,10 +185,13 @@ void ImageScraper::VideoPlayer::Close( )
 
 bool ImageScraper::VideoPlayer::ConvertFrame( std::vector<uint8_t>& rgbaOut )
 {
-    const int bufSize = m_Width * m_Height * 4;
-    if( static_cast<int>( rgbaOut.size( ) ) != bufSize )
+    const int bufSize    = m_Width * m_Height * 4;
+    // sws_scale uses SIMD stores that can write up to 64 bytes past the last row.
+    // Allocate a padded buffer so those stores land in owned memory.
+    const int paddedSize = bufSize + 64;
+    if( static_cast<int>( rgbaOut.size( ) ) < paddedSize )
     {
-        rgbaOut.resize( static_cast<size_t>( bufSize ) );
+        rgbaOut.resize( static_cast<size_t>( paddedSize ) );
     }
 
     uint8_t*  dstData[ 4 ]     = { rgbaOut.data( ), nullptr, nullptr, nullptr };

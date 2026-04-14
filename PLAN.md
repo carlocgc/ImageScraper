@@ -137,7 +137,8 @@
 - [ ] `DownloadHistoryPanel` provider tabs — add a tab strip per provider so history is filterable by source; an "All" tab shows the combined view
 - [ ] `DownloadHistoryPanel` extra param columns — show provider-specific download parameters as additional columns (e.g. Download Scope / sort for Reddit: Hot, Best, New, Top, etc.)
 - [x] `DownloadHistoryPanel` hover tooltip preview — show a small single-frame thumbnail of the image in an ImGui tooltip when hovering a history entry; skip non-image and large files gracefully
-- [ ] `MediaPreviewPanel` video support — webm and mp4 playback via an appropriate decoding library (e.g. libav / FFmpeg); seamless alongside existing stb_image path for images and GIFs
+- [x] `MediaPreviewPanel` video support — webm and mp4 playback via an appropriate decoding library (e.g. libav / FFmpeg); seamless alongside existing stb_image path for images and GIFs
+- [ ] `MediaPreviewPanel` video audio playback — decode and play audio streams alongside video using WASAPI (no new third-party dependency); requires A/V sync via audio PTS as master clock
 
 ### Persistence
 - [ ] Persistent download history — serialize the `DownloadHistoryPanel` ring buffer to disk (e.g. JSON) and reload it on launch so history survives restarts
