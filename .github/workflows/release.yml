@@ -54,6 +54,15 @@ jobs:
       - name: Run tests
         run: bin\ImageScraperTests\x64\Release\ImageScraperTests.exe
 
+      - name: Copy MSVC CRT DLLs
+        shell: pwsh
+        run: |
+          $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          $crtDir = Get-ChildItem "$vsPath\VC\Redist\MSVC\*\x64\Microsoft.VC143.CRT" | Select-Object -First 1
+          Copy-Item "$crtDir\msvcp140.dll"       "bin\ImageScraper\x64\Release\"
+          Copy-Item "$crtDir\vcruntime140.dll"   "bin\ImageScraper\x64\Release\"
+          Copy-Item "$crtDir\vcruntime140_1.dll" "bin\ImageScraper\x64\Release\"
+
       - name: Package release
         id: package
         shell: pwsh
