@@ -127,6 +127,8 @@ The `ImageScraperTests` project runs automatically as a post-build event when bu
 
 The **Test Adapter for Catch2** (v2.x, by JohnnyHendriks) is an optional Visual Studio extension that integrates the test suite into Test Explorer, enabling per-test run, debug, and results inline. `ImageScraper.runsettings` is pre-configured for the adapter — after installing the extension, select it via **Test → Configure Run Settings → Select Solution Wide runsettings File**.
 
+Catch2 tests are free functions with no C++ class, so the **Class** column in Test Explorer will always be empty. Use **Group By → Traits** in the Test Explorer toolbar to group tests by their `[tag]` instead.
+
 ### Updating the CA Certificate
 
 libcurl's TLS verification uses a bundled CA certificate. To update it:

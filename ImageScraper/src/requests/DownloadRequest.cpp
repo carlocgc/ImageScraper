@@ -54,9 +54,16 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
     }
     catch( curlpp::RuntimeError& e )
     {
-        m_Result.SetError( ResponseErrorCode::InternalServerError );
-        m_Result.m_Error.m_ErrorString = e.what( );
-        DebugLog( "[%s] DownloadRequest failed! error: %s", __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ) );
+        if( m_Sink && m_Sink->IsCancelled( ) )
+        {
+            DebugLog( "[%s] DownloadRequest aborted by cancellation.", __FUNCTION__ );
+        }
+        else
+        {
+            m_Result.SetError( ResponseErrorCode::InternalServerError );
+            m_Result.m_Error.m_ErrorString = e.what( );
+            DebugLog( "[%s] DownloadRequest failed! error: %s", __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ) );
+        }
         return m_Result;
     }
     catch( curlpp::LogicError& e )
@@ -93,6 +100,11 @@ int ImageScraper::DownloadRequest::ProgressCallback( double dltotal, double dlno
 {
     if( m_Sink )
     {
+        if( m_Sink->IsCancelled( ) )
+        {
+            return 1; // Non-zero aborts the transfer immediately (CURLE_ABORTED_BY_CALLBACK)
+        }
+
         const float current = static_cast< float >( dlnow );
         const float total = static_cast< float >( dltotal );
 
