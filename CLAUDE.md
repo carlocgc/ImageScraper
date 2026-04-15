@@ -86,7 +86,8 @@ The **Test Adapter for Catch2** passes test names as command-line arguments to t
 
 - **Do not use em dashes (`—`) in test names.** Use a regular hyphen (`-`) instead.
 - Colons (`::`) in test names (e.g. `ClassName::method`) are fine — the adapter handles them.
-- Keep tags lowercase and without spaces: `[ringBuffer]`, `[threadPool]`, etc.
+- **Every test must have at least one tag.**
+- **Tags use PascalCase** (e.g. `[RingBuffer]`, `[ThreadPool]`, `[Reddit]`). Never use all-lowercase (`[ringBuffer]`, `[reddit]`) — mixed casing creates duplicate groups in Test Explorer.
 
 Test names follow the pattern: `"Subject does expected thing"`, e.g. `"Push beyond capacity discards the oldest element"`.
 

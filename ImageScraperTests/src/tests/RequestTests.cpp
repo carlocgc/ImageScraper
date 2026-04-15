@@ -50,7 +50,7 @@ static bool HasHeaderPrefix( const std::vector<std::string>& headers, const std:
 // ---------------------------------------------------------------------------
 // FourChan::GetBoardsRequest
 // ---------------------------------------------------------------------------
-TEST_CASE( "GetBoardsRequest - success maps response body", "[requests][fourchan]" )
+TEST_CASE( "GetBoardsRequest - success maps response body", "[Requests][FourChan]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"boards":[]})" );
@@ -63,7 +63,7 @@ TEST_CASE( "GetBoardsRequest - success maps response body", "[requests][fourchan
     REQUIRE( mock->m_CallCount == 1 );
 }
 
-TEST_CASE( "GetBoardsRequest - HTTP failure sets error", "[requests][fourchan]" )
+TEST_CASE( "GetBoardsRequest - HTTP failure sets error", "[Requests][FourChan]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeFailure( 404 );
@@ -74,7 +74,7 @@ TEST_CASE( "GetBoardsRequest - HTTP failure sets error", "[requests][fourchan]" 
     REQUIRE_FALSE( result.m_Success );
 }
 
-TEST_CASE( "GetBoardsRequest - service error JSON sets failure", "[requests][fourchan]" )
+TEST_CASE( "GetBoardsRequest - service error JSON sets failure", "[Requests][FourChan]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"error":404})" );
@@ -85,7 +85,7 @@ TEST_CASE( "GetBoardsRequest - service error JSON sets failure", "[requests][fou
     REQUIRE_FALSE( result.m_Success );
 }
 
-TEST_CASE( "GetBoardsRequest - sends correct URL", "[requests][fourchan]" )
+TEST_CASE( "GetBoardsRequest - sends correct URL", "[Requests][FourChan]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"boards":[]})" );
@@ -99,7 +99,7 @@ TEST_CASE( "GetBoardsRequest - sends correct URL", "[requests][fourchan]" )
 // ---------------------------------------------------------------------------
 // FourChan::GetThreadsRequest
 // ---------------------------------------------------------------------------
-TEST_CASE( "GetThreadsRequest - success maps response body", "[requests][fourchan]" )
+TEST_CASE( "GetThreadsRequest - success maps response body", "[Requests][FourChan]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"([{"threads":[]}])" );
@@ -113,7 +113,7 @@ TEST_CASE( "GetThreadsRequest - success maps response body", "[requests][fourcha
     REQUIRE( result.m_Response == R"([{"threads":[]}])" );
 }
 
-TEST_CASE( "GetThreadsRequest - URL is base + urlExt", "[requests][fourchan]" )
+TEST_CASE( "GetThreadsRequest - URL is base + urlExt", "[Requests][FourChan]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"([{"threads":[]}])" );
@@ -126,7 +126,7 @@ TEST_CASE( "GetThreadsRequest - URL is base + urlExt", "[requests][fourchan]" )
     REQUIRE( mock->m_LastRequest.m_Url == "https://a.4cdn.org/po/catalog.json" );
 }
 
-TEST_CASE( "GetThreadsRequest - HTTP failure sets error", "[requests][fourchan]" )
+TEST_CASE( "GetThreadsRequest - HTTP failure sets error", "[Requests][FourChan]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeFailure( 500 );
@@ -140,7 +140,7 @@ TEST_CASE( "GetThreadsRequest - HTTP failure sets error", "[requests][fourchan]"
 // ---------------------------------------------------------------------------
 // Reddit::AppOnlyAuthRequest
 // ---------------------------------------------------------------------------
-TEST_CASE( "AppOnlyAuthRequest - empty clientId fails without network call", "[requests][reddit]" )
+TEST_CASE( "AppOnlyAuthRequest - empty clientId fails without network call", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"access_token":"t","expires_in":3600})" );
@@ -155,7 +155,7 @@ TEST_CASE( "AppOnlyAuthRequest - empty clientId fails without network call", "[r
     REQUIRE( mock->m_CallCount == 0 );
 }
 
-TEST_CASE( "AppOnlyAuthRequest - empty clientSecret fails without network call", "[requests][reddit]" )
+TEST_CASE( "AppOnlyAuthRequest - empty clientSecret fails without network call", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"access_token":"t","expires_in":3600})" );
@@ -170,7 +170,7 @@ TEST_CASE( "AppOnlyAuthRequest - empty clientSecret fails without network call",
     REQUIRE( mock->m_CallCount == 0 );
 }
 
-TEST_CASE( "AppOnlyAuthRequest - success maps response body", "[requests][reddit]" )
+TEST_CASE( "AppOnlyAuthRequest - success maps response body", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"access_token":"tok","expires_in":3600})" );
@@ -185,7 +185,7 @@ TEST_CASE( "AppOnlyAuthRequest - success maps response body", "[requests][reddit
     REQUIRE( result.m_Response == R"({"access_token":"tok","expires_in":3600})" );
 }
 
-TEST_CASE( "AppOnlyAuthRequest - sends Basic Authorization header", "[requests][reddit]" )
+TEST_CASE( "AppOnlyAuthRequest - sends Basic Authorization header", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"access_token":"tok","expires_in":3600})" );
@@ -199,7 +199,7 @@ TEST_CASE( "AppOnlyAuthRequest - sends Basic Authorization header", "[requests][
     REQUIRE( HasHeaderPrefix( mock->m_LastRequest.m_Headers, "Authorization: Basic " ) );
 }
 
-TEST_CASE( "AppOnlyAuthRequest - HTTP failure sets error", "[requests][reddit]" )
+TEST_CASE( "AppOnlyAuthRequest - HTTP failure sets error", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeFailure( 401 );
@@ -213,7 +213,7 @@ TEST_CASE( "AppOnlyAuthRequest - HTTP failure sets error", "[requests][reddit]" 
     REQUIRE_FALSE( result.m_Success );
 }
 
-TEST_CASE( "AppOnlyAuthRequest - service error JSON sets failure", "[requests][reddit]" )
+TEST_CASE( "AppOnlyAuthRequest - service error JSON sets failure", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"error":401})" );
@@ -230,7 +230,7 @@ TEST_CASE( "AppOnlyAuthRequest - service error JSON sets failure", "[requests][r
 // ---------------------------------------------------------------------------
 // Reddit::FetchAccessTokenRequest
 // ---------------------------------------------------------------------------
-TEST_CASE( "FetchAccessTokenRequest - empty clientId fails without network call", "[requests][reddit]" )
+TEST_CASE( "FetchAccessTokenRequest - empty clientId fails without network call", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"access_token":"t","expires_in":3600})" );
@@ -245,7 +245,7 @@ TEST_CASE( "FetchAccessTokenRequest - empty clientId fails without network call"
     REQUIRE( mock->m_CallCount == 0 );
 }
 
-TEST_CASE( "FetchAccessTokenRequest - success maps response body", "[requests][reddit]" )
+TEST_CASE( "FetchAccessTokenRequest - success maps response body", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"access_token":"tok","expires_in":3600})" );
@@ -259,7 +259,7 @@ TEST_CASE( "FetchAccessTokenRequest - success maps response body", "[requests][r
     REQUIRE( result.m_Success );
 }
 
-TEST_CASE( "FetchAccessTokenRequest - query params are appended to POST body", "[requests][reddit]" )
+TEST_CASE( "FetchAccessTokenRequest - query params are appended to POST body", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"access_token":"tok","expires_in":3600})" );
@@ -277,7 +277,7 @@ TEST_CASE( "FetchAccessTokenRequest - query params are appended to POST body", "
     REQUIRE( body.find( "redirect_uri=http://localhost" ) != std::string::npos );
 }
 
-TEST_CASE( "FetchAccessTokenRequest - sends Basic Authorization header", "[requests][reddit]" )
+TEST_CASE( "FetchAccessTokenRequest - sends Basic Authorization header", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"access_token":"tok","expires_in":3600})" );
@@ -294,7 +294,7 @@ TEST_CASE( "FetchAccessTokenRequest - sends Basic Authorization header", "[reque
 // ---------------------------------------------------------------------------
 // Reddit::RefreshAccessTokenRequest
 // ---------------------------------------------------------------------------
-TEST_CASE( "RefreshAccessTokenRequest - empty clientId fails without network call", "[requests][reddit]" )
+TEST_CASE( "RefreshAccessTokenRequest - empty clientId fails without network call", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
 
@@ -308,7 +308,7 @@ TEST_CASE( "RefreshAccessTokenRequest - empty clientId fails without network cal
     REQUIRE( mock->m_CallCount == 0 );
 }
 
-TEST_CASE( "RefreshAccessTokenRequest - success maps response body", "[requests][reddit]" )
+TEST_CASE( "RefreshAccessTokenRequest - success maps response body", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"access_token":"newtok","expires_in":3600})" );
@@ -322,7 +322,7 @@ TEST_CASE( "RefreshAccessTokenRequest - success maps response body", "[requests]
     REQUIRE( result.m_Success );
 }
 
-TEST_CASE( "RefreshAccessTokenRequest - POST body starts with refresh_token grant", "[requests][reddit]" )
+TEST_CASE( "RefreshAccessTokenRequest - POST body starts with refresh_token grant", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"access_token":"newtok","expires_in":3600})" );
@@ -341,7 +341,7 @@ TEST_CASE( "RefreshAccessTokenRequest - POST body starts with refresh_token gran
 // ---------------------------------------------------------------------------
 // Reddit::FetchSubredditPostsRequest
 // ---------------------------------------------------------------------------
-TEST_CASE( "FetchSubredditPostsRequest - no token uses public URL", "[requests][reddit]" )
+TEST_CASE( "FetchSubredditPostsRequest - no token uses public URL", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"data":{}})" );
@@ -356,7 +356,7 @@ TEST_CASE( "FetchSubredditPostsRequest - no token uses public URL", "[requests][
     REQUIRE( mock->m_LastRequest.m_Url.find( "oauth.reddit.com" ) == std::string::npos );
 }
 
-TEST_CASE( "FetchSubredditPostsRequest - with token uses OAuth URL and Bearer header", "[requests][reddit]" )
+TEST_CASE( "FetchSubredditPostsRequest - with token uses OAuth URL and Bearer header", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"data":{}})" );
@@ -371,7 +371,7 @@ TEST_CASE( "FetchSubredditPostsRequest - with token uses OAuth URL and Bearer he
     REQUIRE( HasHeaderPrefix( mock->m_LastRequest.m_Headers, "Authorization: Bearer " ) );
 }
 
-TEST_CASE( "FetchSubredditPostsRequest - HTTP failure sets error", "[requests][reddit]" )
+TEST_CASE( "FetchSubredditPostsRequest - HTTP failure sets error", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeFailure( 403 );
@@ -384,7 +384,7 @@ TEST_CASE( "FetchSubredditPostsRequest - HTTP failure sets error", "[requests][r
     REQUIRE_FALSE( result.m_Success );
 }
 
-TEST_CASE( "FetchSubredditPostsRequest - service error JSON sets failure", "[requests][reddit]" )
+TEST_CASE( "FetchSubredditPostsRequest - service error JSON sets failure", "[Requests][Reddit]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"error":403})" );
@@ -400,7 +400,7 @@ TEST_CASE( "FetchSubredditPostsRequest - service error JSON sets failure", "[req
 // ---------------------------------------------------------------------------
 // Tumblr::RetrievePublishedPostsRequest
 // ---------------------------------------------------------------------------
-TEST_CASE( "RetrievePublishedPostsRequest - success maps response body", "[requests][tumblr]" )
+TEST_CASE( "RetrievePublishedPostsRequest - success maps response body", "[Requests][Tumblr]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"response":{}})" );
@@ -414,7 +414,7 @@ TEST_CASE( "RetrievePublishedPostsRequest - success maps response body", "[reque
     REQUIRE( result.m_Response == R"({"response":{}})" );
 }
 
-TEST_CASE( "RetrievePublishedPostsRequest - URL is base + urlExt + query params", "[requests][tumblr]" )
+TEST_CASE( "RetrievePublishedPostsRequest - URL is base + urlExt + query params", "[Requests][Tumblr]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"response":{}})" );
@@ -431,7 +431,7 @@ TEST_CASE( "RetrievePublishedPostsRequest - URL is base + urlExt + query params"
     REQUIRE( url.find( "api_key=mykey" ) != std::string::npos );
 }
 
-TEST_CASE( "RetrievePublishedPostsRequest - HTTP failure sets error", "[requests][tumblr]" )
+TEST_CASE( "RetrievePublishedPostsRequest - HTTP failure sets error", "[Requests][Tumblr]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeFailure( 401 );
@@ -444,7 +444,7 @@ TEST_CASE( "RetrievePublishedPostsRequest - HTTP failure sets error", "[requests
     REQUIRE_FALSE( result.m_Success );
 }
 
-TEST_CASE( "RetrievePublishedPostsRequest - service error JSON sets failure", "[requests][tumblr]" )
+TEST_CASE( "RetrievePublishedPostsRequest - service error JSON sets failure", "[Requests][Tumblr]" )
 {
     auto mock = std::make_shared<MockHttpClient>( );
     mock->m_Response = MakeSuccess( R"({"error":401})" );
