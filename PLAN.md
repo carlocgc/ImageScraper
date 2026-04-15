@@ -127,8 +127,8 @@
   - Useful when the user suspects their credentials are compromised or wants to fully revoke app access from Reddit's end
 - [ ] OAuth2 for Tumblr — implement OAuth2 sign-in flow (similar to Reddit); update `TumblrPanel`, request classes, and `config.template.json`
 - [ ] Sign-out for Tumblr — same pattern as Reddit once OAuth2 is implemented
-- [ ] Remove `CanSignIn()` from `FourChanPanel` / hide sign-in UI for 4chan — API is fully anonymous and public, no authentication exists
-- [ ] OAuth2 redirect HTML polish — review and improve the in-app redirect/confirmation page shown after OAuth2 authorisation; better copy, styling, and error states
+- [x] Remove `CanSignIn()` from `FourChanPanel` / hide sign-in UI for 4chan — `CanSignIn()` returns `false`; `DownloadOptionsPanel::UpdateSignInButton()` early-returns, so no sign-in UI is rendered for 4chan
+- [x] OAuth2 redirect HTML polish — dark-themed page with Reddit brand colour, checkmark icon, clear "Signed in to Reddit — close this tab" copy; removed external image fetch
 
 ### New windows
 - [x] `MediaPreviewPanel` — loads last downloaded image into an OpenGL texture (stb_image) and renders it in a dockable ImGui window; supports static images and animated GIFs (frame stepping)
@@ -161,20 +161,21 @@
 ## Phase 4.5 — Credentials Panel
 > Goal: Let users enter and persist API credentials inside the app, eliminating the manual config.json copy step.
 
-- [ ] `CredentialsPanel` — new dockable ImGui panel for reading and writing service credentials
+- [x] `CredentialsPanel` — new dockable ImGui panel for reading and writing service credentials
   - Reads all known credential keys from `m_UserConfig` (`JsonFile`) on init; if `config.json` does not exist, creates it via `JsonFile::CreateFile()` so first-run works without manual setup
   - One collapsible section per provider (Reddit, Tumblr, Discord); 4chan has no credentials so is omitted
   - Sensitive fields (client secret, API keys) use `ImGuiInputTextFlags_Password` to mask by default with a show/hide toggle
   - Writes back to `m_UserConfig` and calls `Serialise()` immediately on field change — no explicit save button needed
   - Pass `shared_ptr<JsonFile> m_UserConfig` into `CredentialsPanel` via constructor (already available in `App` and `FrontEnd`)
   - Required fields highlighted with a red `ImGui::TextColored` warning label when empty; optional fields have no indicator
-- [ ] Services — lazy credential reads
-  - Currently `RedditService` caches `m_ClientId` / `m_ClientSecret` in its constructor; switch to reading from `m_UserConfig` at the point of use (before each API request) so credentials updated via the panel take effect without a restart
-  - Same pattern for Tumblr and Discord when those are implemented
-- [ ] Download gate — block Run when required credentials are missing
-  - Add `virtual bool HasRequiredCredentials() const { return true; }` to `Service` base class; override in `RedditService` to return false when `client_id` or `client_secret` is empty in `m_UserConfig`
-  - `DownloadOptionsPanel::HandleUserInput()` checks `service->HasRequiredCredentials()` before submitting; shows a log-level warning if missing
-- [ ] Deprecate manual config setup — `config.template.json` stays in source control as reference, but the README and in-app first-run experience should guide users to the Credentials panel instead
+  - ImGui modal warning popup shown when Run is clicked with missing credentials — avoids soft-lock
+- [x] Services — lazy credential reads
+  - `RedditService` now reads `m_ClientId` / `m_ClientSecret` from `m_UserConfig` at the point of use; credentials updated via the panel take effect without a restart
+  - Same pattern applied to `TumblrService`
+- [x] Download gate — block Run when required credentials are missing
+  - `virtual bool HasRequiredCredentials() const { return true; }` added to `Service` base; `RedditService` and `TumblrService` override to check their required keys
+  - `DownloadOptionsPanel::HandleUserInput()` checks `HasRequiredCredentials()` and shows a modal warning popup if missing; `m_Running` only set after service confirms dispatch to prevent soft-lock
+- [x] Deprecate manual config setup — `config.template.json` stays in source control as reference; README and in-app Credentials panel guide users; developer credentials stored in `data/config.json` (gitignored) and copied to output dir by pre-build event
 
 ---
 

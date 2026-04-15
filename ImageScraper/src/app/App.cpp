@@ -25,6 +25,7 @@
 const std::string ImageScraper::App::s_UserConfigFile = "config.json";
 const std::string ImageScraper::App::s_AppConfigFile = "ImageScraper/config.json";
 const std::string ImageScraper::App::s_CaBundleFile = "curl-ca-bundle.crt";
+const std::string ImageScraper::App::s_AuthHtmlFile = "auth.html";
 
 ImageScraper::App::App( )
 {
@@ -40,6 +41,8 @@ ImageScraper::App::App( )
 
     const std::string userConfigPath = ( exeDir / s_UserConfigFile ).generic_string( );
     m_UserConfig = std::make_shared<JsonFile>( userConfigPath );
+
+    m_AuthHtmlPath = ( exeDir / s_AuthHtmlFile ).generic_string( );
 
     m_FrontEnd = std::make_shared<FrontEnd>( UI_MAX_LOG_LINES );
 
@@ -79,7 +82,7 @@ int ImageScraper::App::Run( )
 
     TaskManager::Instance( ).Start( THREAD_POOL_MAX_THREADS );
 
-    m_ListenServer->Init( m_Services, LISTEN_SERVER_PORT );
+    m_ListenServer->Init( m_Services, LISTEN_SERVER_PORT, m_AuthHtmlPath );
     m_ListenServer->Start( );
 
     AuthenticateServices( );

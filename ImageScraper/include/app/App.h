@@ -23,6 +23,7 @@ namespace ImageScraper
         static const std::string s_AppConfigFile;
         static const std::string s_UserConfigFile;
         static const std::string s_CaBundleFile;
+        static const std::string s_AuthHtmlFile;
 
     private:
         void AuthenticateServices( );
@@ -32,6 +33,7 @@ namespace ImageScraper
         std::shared_ptr<FrontEnd> m_FrontEnd{ nullptr };
         std::shared_ptr<ListenServer> m_ListenServer{ nullptr };
 
+        std::string m_AuthHtmlPath{ };
         std::vector<std::shared_ptr<Service>> m_Services{ };
 
         int m_AuthenticatingCount{ 0 };

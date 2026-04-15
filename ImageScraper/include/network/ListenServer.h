@@ -11,7 +11,7 @@ namespace ImageScraper
     class ListenServer : public NonCopyMovable
     {
     public:
-        void Init( std::vector<std::shared_ptr<Service>> services, int port );
+        void Init( std::vector<std::shared_ptr<Service>> services, int port, const std::string& authHtmlPath );
         void Start( );
         void Stop( );
         void Reset( );
