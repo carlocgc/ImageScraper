@@ -33,6 +33,7 @@ void ImageScraper::DownloadOptionsPanel::Update( )
         UpdateProviderWidgets( );
         UpdateRunCancelButton( );
         UpdateSignInButton( );
+        UpdateWarningPopup( );
     }
 
     ImGui::End( );
@@ -209,7 +210,6 @@ bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
     DebugLog( "[%s] Started processing user input...", __FUNCTION__ );
 
     m_StartProcess = false;
-    m_Running      = true;
 
     IProviderPanel* panel = GetActivePanel( );
     if( !panel )
@@ -223,13 +223,22 @@ bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
         return false;
     }
 
+    const std::shared_ptr<Service> service = GetCurrentService( );
+    if( service && !service->HasRequiredCredentials( ) )
+    {
+        WarningLog( "[%s] Missing required credentials for this provider, please fill in the Credentials panel.", __FUNCTION__ );
+        OpenWarning( "Missing credentials for this provider.\nPlease fill in the required fields in the Credentials panel." );
+        return false;
+    }
+
     const UserInputOptions inputOptions = panel->BuildInputOptions( );
 
-    for( auto service : m_Services )
+    for( auto svc : m_Services )
     {
-        if( service->HandleUserInput( inputOptions ) )
+        if( svc->HandleUserInput( inputOptions ) )
         {
             DebugLog( "[%s] User input handled!", __FUNCTION__ );
+            m_Running = true;
             return true;
         }
     }
@@ -260,6 +269,38 @@ ImageScraper::IProviderPanel* ImageScraper::DownloadOptionsPanel::GetActivePanel
         }
     }
     return nullptr;
+}
+
+void ImageScraper::DownloadOptionsPanel::UpdateWarningPopup( )
+{
+    if( m_OpenWarningPopup )
+    {
+        ImGui::OpenPopup( "Warning##popup" );
+        m_OpenWarningPopup = false;
+    }
+
+    ImGui::SetNextWindowSize( ImVec2( 340, 0 ), ImGuiCond_Always );
+    if( ImGui::BeginPopupModal( "Warning##popup", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize ) )
+    {
+        ImGui::Spacing( );
+        ImGui::TextWrapped( "%s", m_WarningMessage.c_str( ) );
+        ImGui::Spacing( );
+
+        const float buttonW = 80.0f;
+        ImGui::SetCursorPosX( ( ImGui::GetContentRegionAvail( ).x - buttonW ) * 0.5f );
+        if( ImGui::Button( "OK", ImVec2( buttonW, 0 ) ) )
+        {
+            ImGui::CloseCurrentPopup( );
+        }
+
+        ImGui::EndPopup( );
+    }
+}
+
+void ImageScraper::DownloadOptionsPanel::OpenWarning( const std::string& message )
+{
+    m_WarningMessage    = message;
+    m_OpenWarningPopup  = true;
 }
 
 std::shared_ptr<ImageScraper::Service> ImageScraper::DownloadOptionsPanel::GetCurrentService( ) const

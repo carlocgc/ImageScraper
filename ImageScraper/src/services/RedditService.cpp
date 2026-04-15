@@ -54,15 +54,6 @@ ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig,
         }
     }
 
-    if( !m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, m_ClientId ) )
-    {
-        WarningLog( "[%s] Could not find reddit client id, add client id to %s to be able to authenticate with the reddit api!", __FUNCTION__, m_UserConfig->GetFilePath( ).c_str( ) );
-    }
-
-    if( !m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientSecret, m_ClientSecret ) )
-    {
-        WarningLog( "[%s] Could not find reddit client secret, add client secret to %s to be able to authenticate with the reddit api!", __FUNCTION__, m_UserConfig->GetFilePath( ).c_str( ) );
-    }
 }
 
 bool ImageScraper::RedditService::HandleUserInput( const UserInputOptions& options )
@@ -76,10 +67,22 @@ bool ImageScraper::RedditService::HandleUserInput( const UserInputOptions& optio
     return true;
 }
 
+bool ImageScraper::RedditService::HasRequiredCredentials( ) const
+{
+    std::string clientId;
+    std::string clientSecret;
+    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, clientId );
+    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientSecret, clientSecret );
+    return !clientId.empty( ) && !clientSecret.empty( );
+}
+
 bool ImageScraper::RedditService::OpenExternalAuth( )
 {
+    std::string clientId;
+    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, clientId );
+
     std::wstring wurl = L"https://www.reddit.com/api/v1/authorize";
-    wurl += L"?client_id=" + StringUtils::Utf8ToWideString( m_ClientId, false );
+    wurl += L"?client_id=" + StringUtils::Utf8ToWideString( clientId, false );
     wurl += L"&response_type=code";
     wurl += L"&state=" + StringUtils::Utf8ToWideString( m_DeviceId, false );
     wurl += L"&redirect_uri=" + StringUtils::Utf8ToWideString( s_RedirectUrl, false );
@@ -297,12 +300,17 @@ void ImageScraper::RedditService::FetchAccessToken( const std::string& authCode 
 
             RequestOptions fetchOptions{ };
 
+            std::string clientId;
+            std::string clientSecret;
+            m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, clientId );
+            m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientSecret, clientSecret );
+
             fetchOptions.m_QueryParams.push_back( { "code", authCode } );
             fetchOptions.m_QueryParams.push_back( { "redirect_uri", curlpp::escape( s_RedirectUrl ) } );
             fetchOptions.m_CaBundle = m_CaBundle;
             fetchOptions.m_UserAgent = m_UserAgent;
-            fetchOptions.m_ClientId = m_ClientId;
-            fetchOptions.m_ClientSecret = m_ClientSecret;
+            fetchOptions.m_ClientId = clientId;
+            fetchOptions.m_ClientSecret = clientSecret;
 
             FetchAccessTokenRequest fetchRequest{ };
             RequestResult fetchResult = fetchRequest.Perform( fetchOptions );
@@ -536,11 +544,16 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
 bool ImageScraper::RedditService::TryPerformAppOnlyAuth( )
 {
+    std::string clientId;
+    std::string clientSecret;
+    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, clientId );
+    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientSecret, clientSecret );
+
     RequestOptions authOptions{ };
     authOptions.m_CaBundle = m_CaBundle;
     authOptions.m_UserAgent = m_UserAgent;
-    authOptions.m_ClientId = m_ClientId;
-    authOptions.m_ClientSecret = m_ClientSecret;
+    authOptions.m_ClientId = clientId;
+    authOptions.m_ClientSecret = clientSecret;
 
     AppOnlyAuthRequest authRequest{ };
     RequestResult authResult = authRequest.Perform( authOptions );
@@ -579,10 +592,15 @@ bool ImageScraper::RedditService::TryPerformAuthTokenRefresh( )
         authOptions.m_QueryParams.push_back( { "refresh_token", m_RefreshToken } );
     }
 
+    std::string clientId;
+    std::string clientSecret;
+    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, clientId );
+    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientSecret, clientSecret );
+
     authOptions.m_CaBundle = m_CaBundle;
     authOptions.m_UserAgent = m_UserAgent;
-    authOptions.m_ClientId = m_ClientId;
-    authOptions.m_ClientSecret = m_ClientSecret;
+    authOptions.m_ClientId = clientId;
+    authOptions.m_ClientSecret = clientSecret;
 
     RefreshAccessTokenRequest authRequest{ };
     RequestResult authResult = authRequest.Perform( authOptions );

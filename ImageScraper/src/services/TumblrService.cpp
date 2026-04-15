@@ -14,22 +14,19 @@ const std::string ImageScraper::TumblrService::s_UserDataKey_ApiKey = "tumblr_ap
 ImageScraper::TumblrService::TumblrService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<IServiceSink> sink )
     : Service( ContentProvider::Tumblr, appConfig, userConfig, caBundle, sink )
 {
-    if( !m_UserConfig->GetValue<std::string>( s_UserDataKey_ApiKey, m_ApiKey ) )
-    {
-        WarningLog( "[%s] Could not find tumblr api key, add api key to %s to be able to download tumblr content!", __FUNCTION__, m_UserConfig->GetFilePath( ).c_str( ) );
-    }
+}
+
+bool ImageScraper::TumblrService::HasRequiredCredentials( ) const
+{
+    std::string apiKey;
+    m_UserConfig->GetValue<std::string>( s_UserDataKey_ApiKey, apiKey );
+    return !apiKey.empty( );
 }
 
 bool ImageScraper::TumblrService::HandleUserInput( const UserInputOptions& options )
 {
     if( options.m_Provider != ContentProvider::Tumblr )
     {
-        return false;
-    }
-
-    if( m_ApiKey == "" )
-    {
-        ErrorLog( "[%s] Could not find tumblr api key, add api key to %s to be able to download tumblr content!", __FUNCTION__, m_UserConfig->GetFilePath( ).c_str( ) );
         return false;
     }
 
@@ -89,8 +86,11 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
                 return;
             }
 
+            std::string apiKey;
+            m_UserConfig->GetValue<std::string>( s_UserDataKey_ApiKey, apiKey );
+
             RequestOptions retrievePostsOptions{ };
-            retrievePostsOptions.m_QueryParams.push_back( { "api_key", m_ApiKey } );
+            retrievePostsOptions.m_QueryParams.push_back( { "api_key", apiKey } );
             retrievePostsOptions.m_UrlExt = options.m_TumblrUser + ".tumblr.com/posts";
             retrievePostsOptions.m_CaBundle = m_CaBundle;
             retrievePostsOptions.m_UserAgent = m_UserAgent;

@@ -24,6 +24,7 @@ namespace ImageScraper
         void Authenticate( AuthenticateCallback callback ) override;
         void SignOut( ) override;
         std::string GetSignedInUser( ) const override;
+        bool HasRequiredCredentials( ) const override;
 
     protected:
         bool IsCancelled( ) override;
@@ -48,8 +49,6 @@ namespace ImageScraper
         static const std::string s_UserDataKey_ClientSecret;
 
         std::string m_DeviceId{ };
-        std::string m_ClientId{ };
-        std::string m_ClientSecret{ };
 
         // Used for pagination
         std::string m_AfterParam{ };

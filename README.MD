@@ -72,24 +72,18 @@ The build output lands in `bin/ImageScraper/x64/Debug/` or `.../Release/`. Requi
 
 ## Configuration
 
-API credentials are stored in `ImageScraper/data/config.json`, which is gitignored. Create it by copying the template:
-
-```
-copy ImageScraper\data\config.template.json ImageScraper\data\config.json
-```
-
-Then fill in credentials for each platform you want to use:
+Credentials are entered directly in the **Credentials** panel inside the app. Fields are saved automatically to `config.json` next to the executable as you type — no manual file editing required.
 
 ### ![Reddit](https://img.shields.io/badge/Reddit-%23FF4500.svg?style=flat&logo=Reddit&logoColor=white)
 
 1. Create a web app at https://www.reddit.com/prefs/apps
 2. Set the redirect URI to `http://localhost:8080`
-3. Copy the **client ID** and **client secret** into `config.json`
+3. Enter the **client ID** and **client secret** in the Credentials panel
 
 ### ![Tumblr](https://img.shields.io/badge/Tumblr-%2336465D.svg?style=flat&logo=Tumblr&logoColor=white)
 
 1. Register an app at https://www.tumblr.com/oauth/apps
-2. Copy the **OAuth Consumer Key** into `config.json`
+2. Enter the **OAuth Consumer Key** in the Credentials panel
 
 ### 4chan
 
@@ -99,11 +93,33 @@ No setup required — the API is fully public and anonymous.
 
 ## Development
 
-### Debug Working Directory
+### Developer Credentials
 
-Set the debugger working directory to `$(TargetDir)` for all configurations and platforms. This ensures the app can locate its data files (`config.json`, `auth.html`, `imgui.ini`) at runtime.
+`ImageScraper/data/config.json` is gitignored. If you populate it with your API credentials, the pre-build event will automatically copy it to the build output directory alongside the exe — so your credentials are available immediately after each build without having to re-enter them in the Credentials panel.
 
-In Visual Studio: right-click the `ImageScraper` project → **Properties** → **Debugging** → **Working Directory** → `$(TargetDir)`.
+To set up initially:
+
+```
+copy ImageScraper\data\config.template.json ImageScraper\data\config.json
+```
+
+Then edit `config.json` with your real credentials. The file stays on your machine and is never committed.
+
+### Window Layout (imgui.ini)
+
+The docked panel layout is controlled by `ImageScraper/data/imgui.ini`, which is committed to source control as the canonical ship layout. The pre-build event copies it to the output directory before each build.
+
+At runtime, ImGui writes any layout changes back to `imgui.ini` next to the exe. That file is gitignored — changes made at runtime are local only and thrown away unless deliberately promoted.
+
+**To update the ship layout:**
+
+1. Run the app and arrange the panels as desired
+2. Close the app (ImGui flushes `imgui.ini` on exit)
+3. Copy the updated file back to source:
+   ```
+   copy bin\ImageScraper\x64\Debug\imgui.ini ImageScraper\data\imgui.ini
+   ```
+4. Commit `ImageScraper/data/imgui.ini`
 
 ### Running Tests
 

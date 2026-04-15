@@ -18,13 +18,14 @@ ImageScraper::FrontEnd::~FrontEnd( )
     glfwTerminate( );
 }
 
-bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& services )
+bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& services, std::shared_ptr<JsonFile> userConfig )
 {
     m_DownloadOptionsPanel  = std::make_unique<DownloadOptionsPanel>( services );
     m_DownloadProgressPanel = std::make_unique<DownloadProgressPanel>( );
     m_MediaPreviewPanel     = std::make_unique<MediaPreviewPanel>( );
-    m_DownloadHistoryPanel = std::make_unique<DownloadHistoryPanel>(
+    m_DownloadHistoryPanel  = std::make_unique<DownloadHistoryPanel>(
         [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->RequestPreview( filepath ); } );
+    m_CredentialsPanel      = std::make_unique<CredentialsPanel>( userConfig );
 
     glfwSetErrorCallback( GLFW_ErrorCallback );
     if( !glfwInit( ) )
@@ -96,6 +97,7 @@ void ImageScraper::FrontEnd::Update( )
     m_DownloadProgressPanel->Update( );
     m_MediaPreviewPanel->Update( );
     m_DownloadHistoryPanel->Update( );
+    m_CredentialsPanel->Update( );
 }
 
 void ImageScraper::FrontEnd::Render( )

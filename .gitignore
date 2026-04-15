@@ -264,6 +264,10 @@ paket-files/
 __pycache__/
 *.pyc
 
+# imgui layout — ignore runtime-generated copies, keep only the committed data/ layout
+imgui.ini
+!ImageScraper/data/imgui.ini
+
 # Sensitive configuration — contains real API credentials, never commit
 ImageScraper/data/config.json
 
