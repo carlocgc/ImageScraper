@@ -206,7 +206,7 @@
   - Add `ImageScraper/include/version/` subfolder and register `Version.h` in `ImageScraper.vcxproj` as a `<ClInclude>`
 
 ### Static CRT
-- [x] Set `RuntimeLibrary` to `MultiThreaded` (static) in `ImageScraper.vcxproj` for the Release|x64 configuration — eliminates the `msvcp140.dll` / `vcruntime140.dll` runtime dependency so the release zip is fully self-contained; exe size increases by ~500 KB
+- [ ] CRT distribution — vendored `libcurlpp.lib` and `glfw3.lib` are built with dynamic CRT (`/MD`); static CRT (`/MT`) causes a linker mismatch and cannot be used without rebuilding those libs from source; options: (a) copy CRT DLLs from the VS redist package in the release workflow (valid under Microsoft redistribution terms), (b) document the VC++ 2022 Redistributable as a user prerequisite, (c) rebuild vendored libs with static CRT as part of the vcpkg migration
 
 ### GitHub Actions
 - [x] Create `.github/workflows/ci.yml` — PR and push gate on `development`
