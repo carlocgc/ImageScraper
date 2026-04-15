@@ -125,6 +125,8 @@ At runtime, ImGui writes any layout changes back to `imgui.ini` next to the exe.
 
 The `ImageScraperTests` project runs automatically as a post-build event when building the main project. To run tests in isolation, set `ImageScraperTests` as the startup project and build it directly.
 
+The **Test Adapter for Catch2** (v2.x, by JohnnyHendriks) is an optional Visual Studio extension that integrates the test suite into Test Explorer, enabling per-test run, debug, and results inline. `ImageScraper.runsettings` is pre-configured for the adapter — after installing the extension, select it via **Test → Configure Run Settings → Select Solution Wide runsettings File**.
+
 ### Updating the CA Certificate
 
 libcurl's TLS verification uses a bundled CA certificate. To update it:

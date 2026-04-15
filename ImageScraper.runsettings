@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <Catch2Adapter>
+    <!-- Match the test executable by name -->
+    <FilenameFilter>ImageScraperTests</FilenameFilter>
+    <!-- Group tests by their [tag] in Test Explorer -->
+    <NamingScheme>
+      <IsTagGrouping>true</IsTagGrouping>
+    </NamingScheme>
+  </Catch2Adapter>
+</RunSettings>
