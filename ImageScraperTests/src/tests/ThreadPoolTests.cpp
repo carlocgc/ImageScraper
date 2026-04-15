@@ -10,7 +10,7 @@ using namespace ImageScraper;
 
 // ─── Start / Stop lifecycle ───────────────────────────────────────────────────
 
-TEST_CASE( "ThreadPool::Start — tasks complete on all started contexts", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::Start - tasks complete on all started contexts", "[ThreadPool]" )
 {
     ThreadPool pool;
     pool.Start( 3 );
@@ -24,7 +24,7 @@ TEST_CASE( "ThreadPool::Start — tasks complete on all started contexts", "[Thr
     REQUIRE( count == 3 );
 }
 
-TEST_CASE( "ThreadPool::Start — calling Start again while running is a no-op", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::Start - calling Start again while running is a no-op", "[ThreadPool]" )
 {
     ThreadPool pool;
     pool.Start( 2 );
@@ -38,7 +38,7 @@ TEST_CASE( "ThreadPool::Start — calling Start again while running is a no-op",
     REQUIRE( count == 2 );
 }
 
-TEST_CASE( "ThreadPool::Stop — pool can be restarted cleanly after Stop", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::Stop - pool can be restarted cleanly after Stop", "[ThreadPool]" )
 {
     ThreadPool pool;
     pool.Start( 1 );
@@ -56,7 +56,7 @@ TEST_CASE( "ThreadPool::Stop — pool can be restarted cleanly after Stop", "[Th
     REQUIRE( count == 2 );
 }
 
-TEST_CASE( "ThreadPool destructor — completes without hanging", "[ThreadPool]" )
+TEST_CASE( "ThreadPool destructor - completes without hanging", "[ThreadPool]" )
 {
     {
         ThreadPool pool;
@@ -64,13 +64,13 @@ TEST_CASE( "ThreadPool destructor — completes without hanging", "[ThreadPool]"
         auto f0 = pool.Submit( 0, [ ]( ) { } );
         auto f1 = pool.Submit( 1, [ ]( ) { } );
         f0.get( ); f1.get( );
-    }  // destructor called here — test hangs if it deadlocks
+    }  // destructor called here - test hangs if it deadlocks
     SUCCEED( );
 }
 
 // ─── Submit (worker thread) ───────────────────────────────────────────────────
 
-TEST_CASE( "ThreadPool::Submit — future resolves to the correct return value", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::Submit - future resolves to the correct return value", "[ThreadPool]" )
 {
     ThreadPool pool;
     pool.Start( 1 );
@@ -79,7 +79,7 @@ TEST_CASE( "ThreadPool::Submit — future resolves to the correct return value",
     REQUIRE( future.get( ) == 42 );
 }
 
-TEST_CASE( "ThreadPool::Submit — void-returning task completes without error", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::Submit - void-returning task completes without error", "[ThreadPool]" )
 {
     ThreadPool pool;
     pool.Start( 1 );
@@ -90,7 +90,7 @@ TEST_CASE( "ThreadPool::Submit — void-returning task completes without error",
     REQUIRE( ran );
 }
 
-TEST_CASE( "ThreadPool::Submit — tasks on the same context execute in FIFO order", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::Submit - tasks on the same context execute in FIFO order", "[ThreadPool]" )
 {
     ThreadPool pool;
     pool.Start( 1 );
@@ -106,7 +106,7 @@ TEST_CASE( "ThreadPool::Submit — tasks on the same context execute in FIFO ord
     REQUIRE( order == std::vector<int>{ 1, 2, 3 } );
 }
 
-TEST_CASE( "ThreadPool::Submit — tasks on different contexts execute concurrently", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::Submit - tasks on different contexts execute concurrently", "[ThreadPool]" )
 {
     // Context 1 sets a flag that unblocks context 0. If both ran on the same
     // thread this would deadlock, proving they must run in parallel.
@@ -132,7 +132,7 @@ TEST_CASE( "ThreadPool::Submit — tasks on different contexts execute concurren
 
 // ─── SubmitMain (main-thread queue) ──────────────────────────────────────────
 
-TEST_CASE( "ThreadPool::SubmitMain — task does not execute until Update() is called", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::SubmitMain - task does not execute until Update() is called", "[ThreadPool]" )
 {
     ThreadPool pool;
     pool.Start( 1 );
@@ -145,7 +145,7 @@ TEST_CASE( "ThreadPool::SubmitMain — task does not execute until Update() is c
     REQUIRE( ran );
 }
 
-TEST_CASE( "ThreadPool::SubmitMain — future resolves after Update() is called", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::SubmitMain - future resolves after Update() is called", "[ThreadPool]" )
 {
     ThreadPool pool;
     pool.Start( 1 );
@@ -155,7 +155,7 @@ TEST_CASE( "ThreadPool::SubmitMain — future resolves after Update() is called"
     REQUIRE( future.get( ) == 99 );
 }
 
-TEST_CASE( "ThreadPool::SubmitMain — multiple tasks drain one per Update() call in FIFO order", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::SubmitMain - multiple tasks drain one per Update() call in FIFO order", "[ThreadPool]" )
 {
     ThreadPool pool;
     pool.Start( 1 );
@@ -179,14 +179,14 @@ TEST_CASE( "ThreadPool::SubmitMain — multiple tasks drain one per Update() cal
 
 // ─── Update ──────────────────────────────────────────────────────────────────
 
-TEST_CASE( "ThreadPool::Update — no-op on an empty main queue", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::Update - no-op on an empty main queue", "[ThreadPool]" )
 {
     ThreadPool pool;
     pool.Start( 1 );
     REQUIRE_NOTHROW( pool.Update( ) );
 }
 
-TEST_CASE( "ThreadPool::Update — no-op after Stop", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::Update - no-op after Stop", "[ThreadPool]" )
 {
     ThreadPool pool;
     pool.Start( 1 );
@@ -197,13 +197,13 @@ TEST_CASE( "ThreadPool::Update — no-op after Stop", "[ThreadPool]" )
 
 // ─── Stop edge cases ─────────────────────────────────────────────────────────
 
-TEST_CASE( "ThreadPool::Stop — no-op when pool has not been started", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::Stop - no-op when pool has not been started", "[ThreadPool]" )
 {
     ThreadPool pool;
     REQUIRE_NOTHROW( pool.Stop( ) );
 }
 
-TEST_CASE( "ThreadPool::Stop — waits for in-flight task to complete before returning", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::Stop - waits for in-flight task to complete before returning", "[ThreadPool]" )
 {
     ThreadPool pool;
     pool.Start( 1 );
@@ -224,7 +224,7 @@ TEST_CASE( "ThreadPool::Stop — waits for in-flight task to complete before ret
     REQUIRE( taskComplete );
 }
 
-TEST_CASE( "ThreadPool::Stop — queued tasks not yet started are dropped", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::Stop - queued tasks not yet started are dropped", "[ThreadPool]" )
 {
     // Documented behaviour: once m_Stopping is set the worker exits after its
     // current task and does not drain remaining queued tasks. The exact number
@@ -246,12 +246,12 @@ TEST_CASE( "ThreadPool::Stop — queued tasks not yet started are dropped", "[Th
 
     while( !workerBlocked ) { std::this_thread::yield( ); }
 
-    // Queue tasks while the worker is occupied — these should be dropped
+    // Queue tasks while the worker is occupied - these should be dropped
     pool.Submit( 0, [ & ]( ) { extraTasksRan++; } );
     pool.Submit( 0, [ & ]( ) { extraTasksRan++; } );
     pool.Submit( 0, [ & ]( ) { extraTasksRan++; } );
 
-    // Release the blocker then stop — m_Stopping races with the worker picking
+    // Release the blocker then stop - m_Stopping races with the worker picking
     // up the next task, so some tasks may slip through, but not all three
     releaseWorker = true;
     pool.Stop( );
