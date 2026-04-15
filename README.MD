@@ -111,6 +111,22 @@ copy ImageScraper\data\config.template.json ImageScraper\data\config.json
 
 Then edit `config.json` with your real credentials. The file stays on your machine and is never committed.
 
+### Window Layout (imgui.ini)
+
+The docked panel layout is controlled by `ImageScraper/data/imgui.ini`, which is committed to source control as the canonical ship layout. The pre-build event copies it to the output directory before each build.
+
+At runtime, ImGui writes any layout changes back to `imgui.ini` next to the exe. That file is gitignored — changes made at runtime are local only and thrown away unless deliberately promoted.
+
+**To update the ship layout:**
+
+1. Run the app and arrange the panels as desired
+2. Close the app (ImGui flushes `imgui.ini` on exit)
+3. Copy the updated file back to source:
+   ```
+   copy bin\ImageScraper\x64\Debug\imgui.ini ImageScraper\data\imgui.ini
+   ```
+4. Commit `ImageScraper/data/imgui.ini`
+
 ### Running Tests
 
 The `ImageScraperTests` project runs automatically as a post-build event when building the main project. To run tests in isolation, set `ImageScraperTests` as the startup project and build it directly.
