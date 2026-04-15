@@ -206,7 +206,7 @@
   - Add `ImageScraper/include/version/` subfolder and register `Version.h` in `ImageScraper.vcxproj` as a `<ClInclude>`
 
 ### Static CRT
-- [x] Set `RuntimeLibrary` to `MultiThreaded` (static) in `ImageScraper.vcxproj` for the Release|x64 configuration — eliminates the `msvcp140.dll` / `vcruntime140.dll` runtime dependency so the release zip is fully self-contained; exe size increases by ~500 KB
+- [x] CRT distribution — copy `msvcp140.dll`, `vcruntime140.dll`, `vcruntime140_1.dll` from the VS redist package in `release.yml` using `vswhere`; DLLs land in the output directory before zipping so the release is self-contained with no user prerequisite
 
 ### GitHub Actions
 - [x] Create `.github/workflows/ci.yml` — PR and push gate on `development`
