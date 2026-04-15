@@ -31,6 +31,7 @@ namespace ImageScraper
         std::shared_ptr<JsonFile> m_UserConfig{ nullptr };
         std::shared_ptr<FrontEnd> m_FrontEnd{ nullptr };
         std::shared_ptr<ListenServer> m_ListenServer{ nullptr };
+        std::string m_AuthHtmlPath{ };
 
         std::vector<std::shared_ptr<Service>> m_Services{ };
 

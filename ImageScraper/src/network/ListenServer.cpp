@@ -11,14 +11,14 @@
 #include <winsock2.h>
 #include <WS2tcpip.h>
 
-void ImageScraper::ListenServer::Init( std::vector<std::shared_ptr<Service>> services, int port )
+void ImageScraper::ListenServer::Init( std::vector<std::shared_ptr<Service>> services, int port, const std::string& authHtmlPath )
 {
     m_Services = services;
     m_Port = port;
     m_Initialised = true;
 
     std::stringstream htmlContent{ };
-    std::ifstream htmlFile( "auth.html" );
+    std::ifstream htmlFile( authHtmlPath );
     if( htmlFile.is_open( ) )
     {
         htmlContent << htmlFile.rdbuf( );

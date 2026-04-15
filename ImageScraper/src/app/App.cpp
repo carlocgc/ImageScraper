@@ -15,6 +15,8 @@
 
 #include <string>
 #include <chrono>
+#include <filesystem>
+#include <windows.h>
 
 #define UI_MAX_LOG_LINES 10000
 #define LISTEN_SERVER_PORT 8080
@@ -30,10 +32,14 @@ ImageScraper::App::App( )
     Logger::AddLogger( std::make_shared<DevLogger>( ) );
     Logger::AddLogger( std::make_shared<ConsoleLogger>( ) );
 
+    char exePathBuf[ MAX_PATH ];
+    GetModuleFileNameA( nullptr, exePathBuf, MAX_PATH );
+    const std::filesystem::path exeDir = std::filesystem::path( exePathBuf ).parent_path( );
+
     const std::string appConfigPath = ( std::filesystem::temp_directory_path( ) / s_AppConfigFile ).generic_string( );
     m_AppConfig = std::make_shared<JsonFile>( appConfigPath );
 
-    const std::string userConfigPath = ( std::filesystem::current_path( ) / s_UserConfigFile ).generic_string( );
+    const std::string userConfigPath = ( exeDir / s_UserConfigFile ).generic_string( );
     m_UserConfig = std::make_shared<JsonFile>( userConfigPath );
 
     m_FrontEnd = std::make_shared<FrontEnd>( UI_MAX_LOG_LINES );
@@ -50,11 +56,12 @@ ImageScraper::App::App( )
         InfoLog( "[%s] User Config Loaded!", __FUNCTION__ );
     }
 
-    const std::string caBundlePath = ( std::filesystem::current_path( ) / s_CaBundleFile ).generic_string( );
+    const std::string caBundlePath = ( exeDir / s_CaBundleFile ).generic_string( );
     m_Services.push_back( std::make_shared<RedditService>( m_AppConfig, m_UserConfig, caBundlePath, m_FrontEnd ) );
     m_Services.push_back( std::make_shared<TumblrService>( m_AppConfig, m_UserConfig, caBundlePath, m_FrontEnd ) );
     m_Services.push_back( std::make_shared<FourChanService>( m_AppConfig, m_UserConfig, caBundlePath, m_FrontEnd ) );
 
+    m_AuthHtmlPath = ( exeDir / "auth.html" ).generic_string( );
     m_ListenServer = std::make_shared<ListenServer>( );
 }
 
@@ -74,7 +81,7 @@ int ImageScraper::App::Run( )
 
     TaskManager::Instance( ).Start( THREAD_POOL_MAX_THREADS );
 
-    m_ListenServer->Init( m_Services, LISTEN_SERVER_PORT );
+    m_ListenServer->Init( m_Services, LISTEN_SERVER_PORT, m_AuthHtmlPath );
     m_ListenServer->Start( );
 
     AuthenticateServices( );
