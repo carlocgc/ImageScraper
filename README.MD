@@ -72,24 +72,18 @@ The build output lands in `bin/ImageScraper/x64/Debug/` or `.../Release/`. Requi
 
 ## Configuration
 
-API credentials are stored in `ImageScraper/data/config.json`, which is gitignored. Create it by copying the template:
-
-```
-copy ImageScraper\data\config.template.json ImageScraper\data\config.json
-```
-
-Then fill in credentials for each platform you want to use:
+Credentials are entered directly in the **Credentials** panel inside the app. Fields are saved automatically to `config.json` next to the executable as you type — no manual file editing required.
 
 ### ![Reddit](https://img.shields.io/badge/Reddit-%23FF4500.svg?style=flat&logo=Reddit&logoColor=white)
 
 1. Create a web app at https://www.reddit.com/prefs/apps
 2. Set the redirect URI to `http://localhost:8080`
-3. Copy the **client ID** and **client secret** into `config.json`
+3. Enter the **client ID** and **client secret** in the Credentials panel
 
 ### ![Tumblr](https://img.shields.io/badge/Tumblr-%2336465D.svg?style=flat&logo=Tumblr&logoColor=white)
 
 1. Register an app at https://www.tumblr.com/oauth/apps
-2. Copy the **OAuth Consumer Key** into `config.json`
+2. Enter the **OAuth Consumer Key** in the Credentials panel
 
 ### 4chan
 
