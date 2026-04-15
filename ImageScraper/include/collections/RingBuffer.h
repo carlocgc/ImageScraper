@@ -15,7 +15,7 @@ namespace ImageScraper
     public:
         RingBuffer( const std::size_t capacity )
             : m_Capacity{ capacity }
-            , m_Buffer{ capacity }
+            , m_Buffer( capacity )
         {
         };
 
@@ -115,7 +115,7 @@ namespace ImageScraper
 
         T& operator[]( const int i )
         {
-            if( i > m_Size )
+            if( i >= static_cast<int>( m_Size ) )
             {
                 throw std::out_of_range( "Index out of range" );
             }
