@@ -9,6 +9,7 @@
 #include <vector>
 #include <memory>
 #include <atomic>
+#include <string>
 
 namespace ImageScraper
 {
@@ -33,8 +34,10 @@ namespace ImageScraper
         void UpdateProviderWidgets( );
         void UpdateSignInButton( );
         void UpdateRunCancelButton( );
+        void UpdateWarningPopup( );
 
         bool HandleUserInput( );
+        void OpenWarning( const std::string& message );
         void Reset( );
         void CancelSignIn( );
 
@@ -48,6 +51,8 @@ namespace ImageScraper
         int  m_ContentProvider{ 0 };
         bool m_StartProcess{ false };
         bool m_Running{ false };
+        bool m_OpenWarningPopup{ false };
+        std::string m_WarningMessage{ };
         std::atomic_bool m_DownloadCancelled{ false };
         std::atomic<int> m_SigningInProvider{ INVALID_CONTENT_PROVIDER };
     };
