@@ -127,8 +127,8 @@
   - Useful when the user suspects their credentials are compromised or wants to fully revoke app access from Reddit's end
 - [ ] OAuth2 for Tumblr — implement OAuth2 sign-in flow (similar to Reddit); update `TumblrPanel`, request classes, and `config.template.json`
 - [ ] Sign-out for Tumblr — same pattern as Reddit once OAuth2 is implemented
-- [ ] Remove `CanSignIn()` from `FourChanPanel` / hide sign-in UI for 4chan — API is fully anonymous and public, no authentication exists
-- [ ] OAuth2 redirect HTML polish — review and improve the in-app redirect/confirmation page shown after OAuth2 authorisation; better copy, styling, and error states
+- [x] Remove `CanSignIn()` from `FourChanPanel` / hide sign-in UI for 4chan — `CanSignIn()` returns `false`; `DownloadOptionsPanel::UpdateSignInButton()` early-returns, so no sign-in UI is rendered for 4chan
+- [x] OAuth2 redirect HTML polish — dark-themed page with Reddit brand colour, checkmark icon, clear "Signed in to Reddit — close this tab" copy; removed external image fetch
 
 ### New windows
 - [x] `MediaPreviewPanel` — loads last downloaded image into an OpenGL texture (stb_image) and renders it in a dockable ImGui window; supports static images and animated GIFs (frame stepping)
