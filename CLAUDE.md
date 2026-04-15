@@ -68,6 +68,30 @@ All source and header files must live inside a named subfolder — never directl
 
 ---
 
+## Testing
+
+### Tests as part of a feature PR
+
+Every feature or fix PR should include Catch2 tests for any new logic that can be tested without a render context or live network call. Pure utility functions, data structures, request parsing, and file I/O are all in scope. UI panel classes and service orchestration that require ImGui or real HTTP are out of scope.
+
+When adding tests:
+1. Create a new `*Tests.cpp` file in `ImageScraperTests/src/tests/`
+2. Register it in `ImageScraperTests/ImageScraperTests.vcxproj` as `<ClCompile Include="..." />`
+3. If the code under test lives in a `.cpp` file not already compiled by the test project, add that source file to the test vcxproj too
+4. Run the full build to confirm all assertions pass before raising the PR
+
+### Test naming rules
+
+The **Test Adapter for Catch2** passes test names as command-line arguments to the executable. Certain characters break argument parsing:
+
+- **Do not use em dashes (`—`) in test names.** Use a regular hyphen (`-`) instead.
+- Colons (`::`) in test names (e.g. `ClassName::method`) are fine — the adapter handles them.
+- Keep tags lowercase and without spaces: `[ringBuffer]`, `[threadPool]`, etc.
+
+Test names follow the pattern: `"Subject does expected thing"`, e.g. `"Push beyond capacity discards the oldest element"`.
+
+---
+
 ## Git Workflow
 
 ### Branch structure
