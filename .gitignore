@@ -15,6 +15,10 @@
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+
+# Vendor binaries — exempt lib/ subdirs from the Debug/Release rules above
+!ImageScraper/lib/Debug/
+!ImageScraper/lib/Release/
 x64/
 x86/
 bld/
@@ -259,3 +263,9 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+
+# Sensitive configuration — contains real API credentials, never commit
+ImageScraper/data/config.json
+
+# Claude Code memory and session data
+.claude/

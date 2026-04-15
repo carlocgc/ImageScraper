@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [development]
+  pull_request:
+    branches: [development]
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Debug|x64
+        run: msbuild ImageScraper.sln /p:Configuration=Debug /p:Platform=x64 /m /nologo /verbosity:minimal
+
+      - name: Run tests with JUnit output
+        run: bin\ImageScraperTests\x64\Debug\ImageScraperTests.exe --reporter junit --out test-results.xml
+
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Catch2 Tests
+          path: test-results.xml
+          reporter: java-junit
+
+      - name: Upload debug binaries on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: debug-test-binaries
+          path: |
+            bin\ImageScraperTests\x64\Debug\ImageScraperTests.exe
+            bin\ImageScraperTests\x64\Debug\libcurl-d.dll
+          retention-days: 7
