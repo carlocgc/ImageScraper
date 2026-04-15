@@ -223,6 +223,14 @@ bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
         return false;
     }
 
+    const std::shared_ptr<Service> service = GetCurrentService( );
+    if( service && !service->HasRequiredCredentials( ) )
+    {
+        WarningLog( "[%s] Missing required credentials for this provider, please fill in the Credentials panel.", __FUNCTION__ );
+        m_Running = false;
+        return false;
+    }
+
     const UserInputOptions inputOptions = panel->BuildInputOptions( );
 
     for( auto service : m_Services )

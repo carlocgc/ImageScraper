@@ -99,11 +99,17 @@ No setup required — the API is fully public and anonymous.
 
 ## Development
 
-### Debug Working Directory
+### Developer Credentials
 
-Set the debugger working directory to `$(TargetDir)` for all configurations and platforms. This ensures the app can locate its data files (`config.json`, `auth.html`, `imgui.ini`) at runtime.
+`ImageScraper/data/config.json` is gitignored. If you populate it with your API credentials, the pre-build event will automatically copy it to the build output directory alongside the exe — so your credentials are available immediately after each build without having to re-enter them in the Credentials panel.
 
-In Visual Studio: right-click the `ImageScraper` project → **Properties** → **Debugging** → **Working Directory** → `$(TargetDir)`.
+To set up initially:
+
+```
+copy ImageScraper\data\config.template.json ImageScraper\data\config.json
+```
+
+Then edit `config.json` with your real credentials. The file stays on your machine and is never committed.
 
 ### Running Tests
 

@@ -21,6 +21,7 @@ namespace ImageScraper
         bool HandleExternalAuth( const std::string& response ) override;
         bool IsSignedIn( ) const override;
         void Authenticate( AuthenticateCallback callback ) override;
+        bool HasRequiredCredentials( ) const override;
 
     protected:
         bool IsCancelled( ) override;
@@ -30,6 +31,5 @@ namespace ImageScraper
         std::vector<std::string> GetMediaUrlsFromResponse( const Json& response, int maxItems );
 
         static const std::string s_UserDataKey_ApiKey;
-        std::string m_ApiKey{ };
     };
 }

@@ -16,6 +16,8 @@
 #include "ui/DownloadProgressPanel.h"
 #include "ui/MediaPreviewPanel.h"
 #include "ui/DownloadHistoryPanel.h"
+#include "ui/CredentialsPanel.h"
+#include "io/JsonFile.h"
 
 #include <stdio.h>
 #include <string>
@@ -36,7 +38,7 @@ namespace ImageScraper
         FrontEnd( int maxLogLines );
         ~FrontEnd( );
 
-        bool Init( const std::vector<std::shared_ptr<Service>>& services );
+        bool Init( const std::vector<std::shared_ptr<Service>>& services, std::shared_ptr<JsonFile> userConfig );
         void Update( );
         void SetInputState( InputState state );
         void Render( );
@@ -66,5 +68,6 @@ namespace ImageScraper
         std::unique_ptr<DownloadProgressPanel> m_DownloadProgressPanel{ };
         std::unique_ptr<MediaPreviewPanel>     m_MediaPreviewPanel{ };
         std::unique_ptr<DownloadHistoryPanel>  m_DownloadHistoryPanel{ };
+        std::unique_ptr<CredentialsPanel>      m_CredentialsPanel{ };
     };
 }
