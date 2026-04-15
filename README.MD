@@ -56,12 +56,8 @@ A Windows desktop application for downloading media from social platforms. Built
 
 - **Visual Studio 2022** with the **Desktop development with C++** workload
 - **Windows 10 SDK** (10.0)
-- **FFmpeg DLLs** — place the following in `ImageScraper/lib/Debug/` and `ImageScraper/lib/Release/`:
-  - `avcodec-62.dll`, `avformat-62.dll`, `avutil-60.dll`
-  - `avdevice-62.dll`, `avfilter-11.dll`, `swscale-9.dll`, `swresample-6.dll`
-  - Obtain a Windows build from https://ffmpeg.org/download.html (gyan.dev shared builds recommended)
 
-All other dependencies (libcurl, GLFW, curlpp, Dear ImGui, nlohmann/json, stb_image, cppcodec) are vendored in `ImageScraper/include/` and `ImageScraper/lib/`.
+All dependencies (libcurl, GLFW, curlpp, FFmpeg, Dear ImGui, nlohmann/json, stb_image, cppcodec) are vendored in `ImageScraper/include/` and `ImageScraper/lib/` — no separate installs required.
 
 ### Building
 

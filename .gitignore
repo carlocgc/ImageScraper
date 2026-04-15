@@ -15,6 +15,10 @@
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+
+# Vendor binaries — exempt lib/ subdirs from the Debug/Release rules above
+!ImageScraper/lib/Debug/
+!ImageScraper/lib/Release/
 x64/
 x86/
 bld/
