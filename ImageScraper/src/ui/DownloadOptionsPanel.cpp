@@ -210,7 +210,6 @@ bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
     DebugLog( "[%s] Started processing user input...", __FUNCTION__ );
 
     m_StartProcess = false;
-    m_Running      = true;
 
     IProviderPanel* panel = GetActivePanel( );
     if( !panel )
@@ -228,18 +227,18 @@ bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
     if( service && !service->HasRequiredCredentials( ) )
     {
         WarningLog( "[%s] Missing required credentials for this provider, please fill in the Credentials panel.", __FUNCTION__ );
-        m_Running = false;
         OpenWarning( "Missing credentials for this provider.\nPlease fill in the required fields in the Credentials panel." );
         return false;
     }
 
     const UserInputOptions inputOptions = panel->BuildInputOptions( );
 
-    for( auto service : m_Services )
+    for( auto svc : m_Services )
     {
-        if( service->HandleUserInput( inputOptions ) )
+        if( svc->HandleUserInput( inputOptions ) )
         {
             DebugLog( "[%s] User input handled!", __FUNCTION__ );
+            m_Running = true;
             return true;
         }
     }
