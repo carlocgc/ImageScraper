@@ -52,6 +52,11 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
+    char exePath[ MAX_PATH ];
+    GetModuleFileNameA( nullptr, exePath, MAX_PATH );
+    m_IniPath = ( std::filesystem::path( exePath ).parent_path( ) / "imgui.ini" ).string( );
+    io.IniFilename = m_IniPath.c_str( );
+
     ImGui::StyleColorsDark( );
 
     ImGuiStyle& style = ImGui::GetStyle( );

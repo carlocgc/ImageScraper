@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <filesystem>
 
 namespace ImageScraper
 {
@@ -58,6 +59,7 @@ namespace ImageScraper
 
         GLFWwindow* m_WindowPtr{ nullptr };
         int         m_MaxLogLines{ 0 };
+        std::string m_IniPath{ };
 
         std::unique_ptr<LogPanel>              m_LogPanel{ };
         std::unique_ptr<DownloadOptionsPanel>  m_DownloadOptionsPanel{ };
