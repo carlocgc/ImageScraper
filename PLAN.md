@@ -191,10 +191,33 @@
 
 ---
 
+## Dependency Management
+
+- [ ] Migrate binary dependencies to vcpkg — replace committed `lib/` binaries (libcurl, libcurlpp, glfw3, FFmpeg) with vcpkg manifests; eliminates binary blobs from git history, gives reproducible builds with pinned versions, and makes CI straightforward; assess MSVC triplet compatibility and whether dynamic vs. static linking choices are preserved
+
+---
+
 ## Packaging & Distribution
 
 - [ ] GitHub CI — investigate Actions workflows for: (1) running tests on every push/PR, (2) nightly builds on a schedule, (3) automated tagged release builds that produce a versioned artefact (zip / installer); assess Windows MSVC runner availability, secret handling for any signing step, and artefact retention policy
 - [ ] CRT bundling review — investigate whether the MSVC C runtime (`msvcp`/`vcruntime` DLLs) can and should be statically linked or embedded so the release exe is fully self-contained; weigh exe size vs. eliminating the redistributable dependency
+
+## Licensing & Open Source Readiness
+
+- [x] Add `THIRD_PARTY_LICENSES.md` — document every vendored dependency with its name, version, copyright notice, and full license text; required for LGPL (FFmpeg) and good practice for all others
+  - FFmpeg (LGPL 2.1+): avcodec, avformat, avutil, avdevice, avfilter, swscale, swresample — dynamic linking satisfies LGPL; users must be able to swap DLLs
+  - Dear ImGui v1.89.5 (MIT)
+  - GLFW 3.3 (BSD 3-Clause)
+  - libcurl 8.0.1 (curl/MIT-style)
+  - curlpp 0.8.1 (MIT)
+  - nlohmann/json v3.11.2 (MIT)
+  - cppcodec (MIT)
+  - stb_image v2.30 (MIT / Public Domain dual)
+  - Catch2 v3.14.0 (Boost Software License 1.0)
+- [x] Add FFmpeg attribution to README — brief credits section naming FFmpeg and linking to https://ffmpeg.org; note that LGPL-licensed DLLs are distributed alongside the application
+- [ ] Decide how to distribute FFmpeg DLLs — the existing `lib/` approach (matching curl/GLFW) is simplest; alternatively attach to GitHub Releases to avoid binary blobs in git history
+
+---
 
 ## Project Housekeeping
 
@@ -206,13 +229,7 @@
   - Create new issues for items in PLAN.md with no corresponding issue: Credentials panel, username badge, download history tabs, DownloadProgressPanel, persistent history, GitHub CI, CRT bundling, containerisation, etc.
   - Group issues under milestones matching phases (Phase 3, Phase 4, Phase 5, Packaging)
   - Once all items are tracked in GitHub, remove `PLAN.md` from the repo; future planning lives in GitHub issues only
-- [ ] README polish — rewrite the README to reflect the current state of the project
-  - Replace the sparse setup section with clear step-by-step instructions referencing the in-app Credentials panel (once built) rather than manual config editing
-  - Add a Features section covering current capabilities: OAuth2 (Reddit), multi-threaded downloads, media preview, download history, animated GIF support
-  - Add a Dependencies / Build section listing the required VS version, platform target, and how to build from source
-  - Add a Contributing section referencing the feature branch / PR workflow from `CLAUDE.md`
-  - Remove outdated references to manual `config.template.json` copy once the Credentials panel is in place
-  - Update credits to include stb_image and Catch2
+- [x] README polish — rewrite the README to reflect the current state of the project
 
 ---
 
