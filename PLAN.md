@@ -150,7 +150,7 @@
 > Goal: Parallelise downloads, improve cancellation, unblock UI callback throughput.
 > **Depends on: Phase 2**
 
-- [ ] Immediate cancellation — interrupt the in-flight curl transfer on cancel rather than waiting for the current download to complete; requires surfacing a curl abort mechanism through `IHttpClient` and `DownloadRequest`
+- [x] Immediate cancellation — `DownloadRequest::ProgressCallback` returns non-zero when `IsCancelled()` is true, triggering `CURLE_ABORTED_BY_CALLBACK` which unblocks `request.perform()` immediately; cancellation-caused `RuntimeError` is logged at debug level rather than as an error
 - [ ] Process multiple UI callbacks per frame (remove single-task-per-frame limit)
 - [ ] Per-task cancellation support (cancel individual downloads cleanly)
 - [ ] Increase network thread count and benchmark throughput
