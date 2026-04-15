@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <Catch2Adapter>
+    <!-- Match the test executable by name -->
+    <FilenameFilter>ImageScraperTests</FilenameFilter>
+  </Catch2Adapter>
+</RunSettings>
