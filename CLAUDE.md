@@ -73,7 +73,7 @@ All source and header files must live inside a named subfolder — never directl
 ### Branch structure
 
 ```
-main          ← stable releases only, always tagged
+master        ← stable releases only, always tagged
   └── development  ← integration branch, always buildable
         └── feature/...  ← one branch per feature or fix
 ```
@@ -88,7 +88,7 @@ git pull
 git checkout -b feature/short-description   # or fix/ or chore/
 ```
 
-Never commit directly to `development` or `main`.
+Never commit directly to `development` or `master`.
 
 ### Opening a pull request
 
@@ -106,18 +106,18 @@ gh pr create --base development --title "..." --body "..."
 
 The user reviews the PR diff and merges directly — no formal approval step is required for this solo project. Once merged, delete the remote branch using the "Delete branch" button on the GitHub PR page.
 
-### Releases: `development` → `main`
+### Releases: `development` → `master`
 
-When `development` is stable enough to ship, open a PR from `development` → `main`. The user reviews and merges using a regular merge commit (not squash) to preserve integration history:
+When `development` is stable enough to ship, open a PR from `development` → `master`. The user reviews and merges using a regular merge commit (not squash) to preserve integration history:
 
 ```bash
 gh pr merge <number> --merge
 ```
 
-Immediately after merging, tag `main` with a version:
+Immediately after merging, tag `master` with a version:
 
 ```bash
-git checkout main && git pull
+git checkout master && git pull
 git tag v0.1.0 -m "v0.1.0"
 git push origin v0.1.0
 ```

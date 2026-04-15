@@ -199,8 +199,43 @@
 
 ## Packaging & Distribution
 
-- [ ] GitHub CI — investigate Actions workflows for: (1) running tests on every push/PR, (2) nightly builds on a schedule, (3) automated tagged release builds that produce a versioned artefact (zip / installer); assess Windows MSVC runner availability, secret handling for any signing step, and artefact retention policy
-- [ ] CRT bundling review — investigate whether the MSVC C runtime (`msvcp`/`vcruntime` DLLs) can and should be statically linked or embedded so the release exe is fully self-contained; weigh exe size vs. eliminating the redistributable dependency
+### Versioning
+- [x] Add `VERSION` file to repo root containing `MAJOR.MINOR.PATCH` (e.g. `1.0.0`) — canonical version source consumed by CI for artefact naming and release titles
+- [x] Add `Version.h` generation step to CI — a pre-workflow step reads `VERSION` and writes `ImageScraper/include/version/Version.h` with `constexpr` version strings; generated file is not committed, only exists during the CI run; local builds compile with whatever `Version.h` was last committed (update manually before tagging a release)
+  - `Version.h` exposes `VERSION_MAJOR`, `VERSION_MINOR`, `VERSION_PATCH`, and `VERSION_STRING`
+  - Add `ImageScraper/include/version/` subfolder and register `Version.h` in `ImageScraper.vcxproj` as a `<ClInclude>`
+
+### Static CRT
+- [x] Set `RuntimeLibrary` to `MultiThreaded` (static) in `ImageScraper.vcxproj` for the Release|x64 configuration — eliminates the `msvcp140.dll` / `vcruntime140.dll` runtime dependency so the release zip is fully self-contained; exe size increases by ~500 KB
+
+### GitHub Actions
+- [x] Create `.github/workflows/ci.yml` — PR and push gate on `development`
+  - Trigger: `pull_request` targeting `development`; `push` to `development`
+  - Runner: `windows-latest` (VS2022, v143 toolset, Windows 10 SDK — matches vcxproj exactly)
+  - Steps: `actions/checkout` → `microsoft/setup-msbuild` → MSBuild `Debug|x64` → re-run test exe with `--reporter junit` → publish JUnit XML to PR summary
+  - MSBuild invocation: `msbuild ImageScraper.sln /p:Configuration=Debug /p:Platform=x64 /m /nologo /verbosity:minimal`
+  - Post-build event already runs tests and exits non-zero on failure — MSBuild step fails automatically if any test fails
+  - Upload `ImageScraperTests.exe` and its DLL as a workflow artefact (7-day retention) for local investigation of CI failures
+  - Permissions: `contents: read`
+
+- [x] Create `.github/workflows/release.yml` — release build and publish
+  - Trigger: `push` of tag matching `v*.*.*`; `workflow_dispatch` (manual)
+  - Runner: `windows-latest`
+  - Steps:
+    1. `actions/checkout`
+    2. `microsoft/setup-msbuild`
+    3. Generate `Version.h` from `VERSION` file (PowerShell one-liner)
+    4. MSBuild `Release|x64` — xcopy post-build events automatically copy all DLLs and data files to `bin\ImageScraper\x64\Release\`
+    5. Re-run test exe (Release build) — block release if any test fails
+    6. `Compress-Archive` the Release output directory to `ImageScraper-v{VERSION}-x64.zip`
+    7. `softprops/action-gh-release@v2` — create GitHub Release with the zip as an asset; use tag annotation as release body
+    8. Upload `.pdb` as a workflow artefact (30-day retention) for crash debugging
+  - Permissions: `contents: write`
+  - Release zip contents (assembled by existing post-build xcopy events): `ImageScraper.exe`, `libcurl.dll`, `curl-ca-bundle.crt`, `config.template.json`, `auth.html`, `imgui.ini`, `avformat-62.dll`, `avcodec-62.dll`, `avutil-60.dll`, `avdevice-62.dll`, `avfilter-11.dll`, `swscale-9.dll`, `swresample-6.dll`
+  - x64 only; no x86 (Win32 configurations are non-functional)
+
+### CLAUDE.md correction
+- [x] Update `CLAUDE.md` branch diagram — stable branch is `master` not `main`; correct the diagram and any references
 
 ## Licensing & Open Source Readiness
 
