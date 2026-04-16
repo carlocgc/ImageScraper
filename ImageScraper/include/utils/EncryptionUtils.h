@@ -27,7 +27,7 @@ namespace ImageScraper
                 return encryptedData;
             }
 
-            ErrorLog( "[%s] Failed to encrypt data!", __FUNCTION__ );
+            LogError( "[%s] Failed to encrypt data!", __FUNCTION__ );
             return "";
         }
 
@@ -47,7 +47,7 @@ namespace ImageScraper
                 return decryptedData;
             }
 
-            ErrorLog( "[%s] Failed to decrypt data!", __FUNCTION__ );
+            LogError( "[%s] Failed to decrypt data!", __FUNCTION__ );
             return "";
         }
 

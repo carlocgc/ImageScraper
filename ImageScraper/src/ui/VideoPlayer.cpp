@@ -21,13 +21,13 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
 
     if( avformat_open_input( &m_FormatCtx, filepath.c_str( ), nullptr, nullptr ) < 0 )
     {
-        ErrorLog( "[%s] avformat_open_input failed for: %s", __FUNCTION__, filepath.c_str( ) );
+        LogError( "[%s] avformat_open_input failed for: %s", __FUNCTION__, filepath.c_str( ) );
         return false;
     }
 
     if( avformat_find_stream_info( m_FormatCtx, nullptr ) < 0 )
     {
-        ErrorLog( "[%s] avformat_find_stream_info failed for: %s", __FUNCTION__, filepath.c_str( ) );
+        LogError( "[%s] avformat_find_stream_info failed for: %s", __FUNCTION__, filepath.c_str( ) );
         Close( );
         return false;
     }
@@ -45,7 +45,7 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
 
     if( m_VideoStream < 0 )
     {
-        ErrorLog( "[%s] No video stream found in: %s", __FUNCTION__, filepath.c_str( ) );
+        LogError( "[%s] No video stream found in: %s", __FUNCTION__, filepath.c_str( ) );
         Close( );
         return false;
     }
@@ -54,7 +54,7 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
     const AVCodec* codec = avcodec_find_decoder( codecPar->codec_id );
     if( !codec )
     {
-        ErrorLog( "[%s] Unsupported codec in: %s", __FUNCTION__, filepath.c_str( ) );
+        LogError( "[%s] Unsupported codec in: %s", __FUNCTION__, filepath.c_str( ) );
         Close( );
         return false;
     }
@@ -62,21 +62,21 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
     m_CodecCtx = avcodec_alloc_context3( codec );
     if( !m_CodecCtx )
     {
-        ErrorLog( "[%s] avcodec_alloc_context3 failed", __FUNCTION__ );
+        LogError( "[%s] avcodec_alloc_context3 failed", __FUNCTION__ );
         Close( );
         return false;
     }
 
     if( avcodec_parameters_to_context( m_CodecCtx, codecPar ) < 0 )
     {
-        ErrorLog( "[%s] avcodec_parameters_to_context failed", __FUNCTION__ );
+        LogError( "[%s] avcodec_parameters_to_context failed", __FUNCTION__ );
         Close( );
         return false;
     }
 
     if( avcodec_open2( m_CodecCtx, codec, nullptr ) < 0 )
     {
-        ErrorLog( "[%s] avcodec_open2 failed for: %s", __FUNCTION__, filepath.c_str( ) );
+        LogError( "[%s] avcodec_open2 failed for: %s", __FUNCTION__, filepath.c_str( ) );
         Close( );
         return false;
     }
@@ -94,7 +94,7 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
 
     if( !m_SwsCtx )
     {
-        ErrorLog( "[%s] sws_getContext failed for: %s", __FUNCTION__, filepath.c_str( ) );
+        LogError( "[%s] sws_getContext failed for: %s", __FUNCTION__, filepath.c_str( ) );
         Close( );
         return false;
     }
@@ -104,7 +104,7 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
 
     if( !m_Frame || !m_Packet )
     {
-        ErrorLog( "[%s] Frame/packet alloc failed", __FUNCTION__ );
+        LogError( "[%s] Frame/packet alloc failed", __FUNCTION__ );
         Close( );
         return false;
     }

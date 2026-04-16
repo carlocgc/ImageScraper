@@ -86,13 +86,13 @@ void ImageScraper::DownloadOptionsPanel::OnSignInComplete( ContentProvider provi
 
     if( signingInProvider != static_cast<int>( provider ) )
     {
-        ErrorLog( "[%s] Tried to complete sign in for an invalid provider!", __FUNCTION__ );
+        LogError( "[%s] Tried to complete sign in for an invalid provider!", __FUNCTION__ );
         return;
     }
 
     if( signingInProvider == INVALID_CONTENT_PROVIDER )
     {
-        ErrorLog( "[%s] Tried to complete sign in when no sign in was started!", __FUNCTION__ );
+        LogError( "[%s] Tried to complete sign in when no sign in was started!", __FUNCTION__ );
         return;
     }
 
@@ -207,14 +207,14 @@ bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
         return false;
     }
 
-    DebugLog( "[%s] Started processing user input...", __FUNCTION__ );
+    LogDebug( "[%s] Started processing user input...", __FUNCTION__ );
 
     m_StartProcess = false;
 
     IProviderPanel* panel = GetActivePanel( );
     if( !panel )
     {
-        DebugLog( "[%s] Invalid ContentProvider, check ContentProvider constant", __FUNCTION__ );
+        LogDebug( "[%s] Invalid ContentProvider, check ContentProvider constant", __FUNCTION__ );
         return false;
     }
 
@@ -237,13 +237,13 @@ bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
     {
         if( svc->HandleUserInput( inputOptions ) )
         {
-            DebugLog( "[%s] User input handled!", __FUNCTION__ );
+            LogDebug( "[%s] User input handled!", __FUNCTION__ );
             m_Running = true;
             return true;
         }
     }
 
-    DebugLog( "[%s] User input not handled, check for missing services!", __FUNCTION__ );
+    LogDebug( "[%s] User input not handled, check for missing services!", __FUNCTION__ );
     return false;
 }
 

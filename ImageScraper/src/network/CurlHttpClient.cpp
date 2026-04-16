@@ -57,12 +57,12 @@ ImageScraper::HttpResponse ImageScraper::CurlHttpClient::Execute( const HttpRequ
     catch( curlpp::RuntimeError& error )
     {
         response.m_Error = error.what( );
-        DebugLog( "[%s] CurlHttpClient runtime error: %s", __FUNCTION__, response.m_Error.c_str( ) );
+        LogDebug( "[%s] CurlHttpClient runtime error: %s", __FUNCTION__, response.m_Error.c_str( ) );
     }
     catch( curlpp::LogicError& error )
     {
         response.m_Error = error.what( );
-        DebugLog( "[%s] CurlHttpClient logic error: %s", __FUNCTION__, response.m_Error.c_str( ) );
+        LogDebug( "[%s] CurlHttpClient logic error: %s", __FUNCTION__, response.m_Error.c_str( ) );
     }
 
     return response;

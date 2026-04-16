@@ -142,7 +142,7 @@ void ImageScraper::CredentialsPanel::SaveField( const std::string& key, const ch
         return;
     }
 
-    DebugLog( "[%s] Saved credential: %s", __FUNCTION__, key.c_str( ) );
+    LogDebug( "[%s] Saved credential: %s", __FUNCTION__, key.c_str( ) );
 
 #ifdef _DEBUG
     if( m_SaveDevCredentials )
@@ -169,7 +169,7 @@ void ImageScraper::CredentialsPanel::SaveField( const std::string& key, const ch
         }
         else
         {
-            DebugLog( "[%s] Credentials backed up to %s", __FUNCTION__, devDataPath.string( ).c_str( ) );
+            LogDebug( "[%s] Credentials backed up to %s", __FUNCTION__, devDataPath.string( ).c_str( ) );
         }
     }
 #endif

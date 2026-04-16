@@ -29,7 +29,7 @@ bool ImageScraper::FourChanService::HandleUserInput( const UserInputOptions& opt
 
 bool ImageScraper::FourChanService::OpenExternalAuth( )
 {
-    ErrorLog( "[%s] Sign in not implemented for this provider!", __FUNCTION__ );
+    LogError( "[%s] Sign in not implemented for this provider!", __FUNCTION__ );
     return false;
 }
 
@@ -56,7 +56,7 @@ bool ImageScraper::FourChanService::IsCancelled( )
 void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inputOptions )
 {
     InfoLog( "[%s] Starting 4chan media download!", __FUNCTION__ );
-    DebugLog( "[%s] Board: %s", __FUNCTION__, inputOptions.m_FourChanBoard.c_str( ) );
+    LogDebug( "[%s] Board: %s", __FUNCTION__, inputOptions.m_FourChanBoard.c_str( ) );
 
     auto onComplete = [ this ]( int filesDownloaded )
     {
@@ -66,7 +66,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
     auto onFail = [ this ]( )
     {
-        ErrorLog( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
+        LogError( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
         m_Sink->OnRunComplete( );
     };
 
@@ -90,13 +90,13 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
             if( !getBoardResult.m_Success )
             {
-                ErrorLog( "[%s] Failed to get 4chan board data, error: %s", __FUNCTION__, getBoardResult.m_Error.m_ErrorString.c_str( ) );
+                LogError( "[%s] Failed to get 4chan board data, error: %s", __FUNCTION__, getBoardResult.m_Error.m_ErrorString.c_str( ) );
                 TaskManager::Instance( ).SubmitMain( onFail );
                 return;
             }
 
             InfoLog( "[%s] 4chan boards retrieved successfully.", __FUNCTION__ );
-            DebugLog( "[%s] Response: %s", __FUNCTION__, getBoardResult.m_Response.c_str( ) );
+            LogDebug( "[%s] Response: %s", __FUNCTION__, getBoardResult.m_Response.c_str( ) );
 
             // Get page count for board
 
@@ -105,7 +105,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
             if( pages <= 0 )
             {
-                DebugLog( "[%s] Board %s contained no pages, nothing to download...", __FUNCTION__, options.m_FourChanBoard.c_str( ) );
+                LogDebug( "[%s] Board %s contained no pages, nothing to download...", __FUNCTION__, options.m_FourChanBoard.c_str( ) );
                 TaskManager::Instance( ).SubmitMain( onFail );
                 return;
             }
@@ -138,7 +138,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 }
 
                 InfoLog( "[%s] Threads on page %i retrieved successfully.", __FUNCTION__, i );
-                DebugLog( "[%s] Response: %s", __FUNCTION__, getThreadResult.m_Response.c_str( ) );
+                LogDebug( "[%s] Response: %s", __FUNCTION__, getThreadResult.m_Response.c_str( ) );
 
                 json getThreadResponse = json::parse( getThreadResult.m_Response );
                 std::vector<std::string> filenames{ };
@@ -178,7 +178,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
             const std::string dirStr = dir.generic_string( );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
-                ErrorLog( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );
+                LogError( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );
                 TaskManager::Instance( ).SubmitMain( onFail );
                 return;
             }
@@ -213,7 +213,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 RequestResult result = request.Perform( downloadOptions );
                 if( !result.m_Success )
                 {
-                    ErrorLog( "[%s] Download failed, error: %s, url: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ), url.c_str( ) );
+                    LogError( "[%s] Download failed, error: %s, url: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ), url.c_str( ) );
                     continue;
                 }
 
@@ -223,7 +223,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 std::ofstream outfile{ filepath, std::ios::binary };
                 if( !outfile.is_open( ) )
                 {
-                    ErrorLog( "[%s] Download failed, could not open file for write: %s", __FUNCTION__, filepath.c_str( ) );
+                    LogError( "[%s] Download failed, could not open file for write: %s", __FUNCTION__, filepath.c_str( ) );
                     continue;
                 }
 

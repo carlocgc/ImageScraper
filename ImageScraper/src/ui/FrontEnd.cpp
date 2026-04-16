@@ -2,13 +2,7 @@
 #include "ui/DownloadProgressPanel.h"
 #include "log/Logger.h"
 
-// imgui_internal.h declares a function named DebugLog, which collides with our
-// Logger.h macro of the same name.  Push/pop the macro around the include so
-// the preprocessor doesn't mangle ImGui's declaration.
-#pragma push_macro( "DebugLog" )
-#undef DebugLog
 #include "imgui/imgui_internal.h"
-#pragma pop_macro( "DebugLog" )
 
 ImageScraper::FrontEnd::FrontEnd( int maxLogLines )
     : m_MaxLogLines{ maxLogLines }

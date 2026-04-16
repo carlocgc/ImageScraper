@@ -100,7 +100,7 @@ void ImageScraper::MediaPreviewPanel::Update( )
             ImGui::SetCursorPos( ImVec2( ImGui::GetCursorPosX( ) + offsetX, ImGui::GetCursorPosY( ) + offsetY ) );
 
             const GLuint tex = m_Textures[ m_CurrentFrame ];
-            ImGui::Image( reinterpret_cast<ImTextureID>( static_cast<uintptr_t>( tex ) ), ImVec2( drawW, drawH ) );
+            ImGui::Image( static_cast<ImTextureID>( tex ), ImVec2( drawW, drawH ) );
 
             if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) )
             {
@@ -479,7 +479,7 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
     std::ifstream file( filepath, std::ios::binary | std::ios::ate );
     if( !file.is_open( ) )
     {
-        ErrorLog( "[%s] Could not open file for preview: %s", __FUNCTION__, filepath.c_str( ) );
+        LogError( "[%s] Could not open file for preview: %s", __FUNCTION__, filepath.c_str( ) );
         return nullptr;
     }
 
@@ -488,7 +488,7 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
     std::vector<unsigned char> fileData( static_cast<size_t>( size ) );
     if( !file.read( reinterpret_cast<char*>( fileData.data( ) ), size ) )
     {
-        ErrorLog( "[%s] Could not read file for preview: %s", __FUNCTION__, filepath.c_str( ) );
+        LogError( "[%s] Could not read file for preview: %s", __FUNCTION__, filepath.c_str( ) );
         return nullptr;
     }
 
@@ -510,7 +510,7 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
 
         if( !data )
         {
-            ErrorLog( "[%s] stbi_load_gif_from_memory failed for: %s", __FUNCTION__, filepath.c_str( ) );
+            LogError( "[%s] stbi_load_gif_from_memory failed for: %s", __FUNCTION__, filepath.c_str( ) );
             return nullptr;
         }
 
@@ -541,7 +541,7 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
 
         if( !data )
         {
-            DebugLog( "[%s] stbi_load_from_memory failed (unsupported format?) for: %s", __FUNCTION__, filepath.c_str( ) );
+            LogDebug( "[%s] stbi_load_from_memory failed (unsupported format?) for: %s", __FUNCTION__, filepath.c_str( ) );
             return nullptr;
         }
 

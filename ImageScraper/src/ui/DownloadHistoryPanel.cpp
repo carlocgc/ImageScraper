@@ -111,7 +111,7 @@ void ImageScraper::DownloadHistoryPanel::Update( )
                         dispH *= scale;
                     }
 
-                    ImGui::Image( reinterpret_cast<ImTextureID>( static_cast<uintptr_t>( thumb.m_Texture ) ), ImVec2( dispW, dispH ) );
+                    ImGui::Image( static_cast<ImTextureID>( thumb.m_Texture ), ImVec2( dispW, dispH ) );
                     ImGui::Separator( );
                 }
 

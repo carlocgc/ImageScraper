@@ -14,12 +14,12 @@ ImageScraper::DownloadRequest::DownloadRequest( std::shared_ptr<IServiceSink> si
 
 ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const DownloadOptions& options )
 {
-    DebugLog( "[%s] DownloadRequest started! URL: %s", __FUNCTION__, options.m_Url.c_str( ) );
+    LogDebug( "[%s] DownloadRequest started! URL: %s", __FUNCTION__, options.m_Url.c_str( ) );
 
     if( options.m_BufferPtr == nullptr )
     {
         m_Result.SetError( ResponseErrorCode::InternalServerError );
-        DebugLog( "[%s] DownloadRequest failed! error: %s", __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] DownloadRequest failed! error: %s", __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ) );
         return m_Result;
     }
 
@@ -56,13 +56,13 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
     {
         if( m_Sink && m_Sink->IsCancelled( ) )
         {
-            DebugLog( "[%s] DownloadRequest aborted by cancellation.", __FUNCTION__ );
+            LogDebug( "[%s] DownloadRequest aborted by cancellation.", __FUNCTION__ );
         }
         else
         {
             m_Result.SetError( ResponseErrorCode::InternalServerError );
             m_Result.m_Error.m_ErrorString = e.what( );
-            DebugLog( "[%s] DownloadRequest failed! error: %s", __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ) );
+            LogDebug( "[%s] DownloadRequest failed! error: %s", __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ) );
         }
         return m_Result;
     }
@@ -70,11 +70,11 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
     {
         m_Result.SetError( ResponseErrorCode::InternalServerError );
         m_Result.m_Error.m_ErrorString = e.what( );
-        DebugLog( "[%s] DownloadRequest failed! error: %s", __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] DownloadRequest failed! error: %s", __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ) );
         return m_Result;
     }
 
-    DebugLog( "[%s] DownloadRequest complete!", __FUNCTION__ );
+    LogDebug( "[%s] DownloadRequest complete!", __FUNCTION__ );
     m_Result.m_Success = true;
     return m_Result;
 }
@@ -83,7 +83,7 @@ size_t ImageScraper::DownloadRequest::WriteCallback( char* contents, size_t size
 {
     if( !m_BufferPtr )
     {
-        ErrorLog( "[%s] DownloadRequest failed, buffer invalid!", __FUNCTION__ );
+        LogError( "[%s] DownloadRequest failed, buffer invalid!", __FUNCTION__ );
         m_Result.SetError( ResponseErrorCode::InternalServerError );
         return 0;
     }
@@ -92,7 +92,7 @@ size_t ImageScraper::DownloadRequest::WriteCallback( char* contents, size_t size
     m_BufferPtr->insert( m_BufferPtr->begin( ) + m_BytesWritten, contents, contents + realsize );
     m_BytesWritten += realsize;
 
-    DebugLog( "[%s] %i bytes written.", __FUNCTION__, static_cast< int >( m_BytesWritten ) );
+    LogDebug( "[%s] %i bytes written.", __FUNCTION__, static_cast< int >( m_BytesWritten ) );
     return realsize;
 }
 

@@ -29,7 +29,7 @@ namespace ImageScraper
 {
     static void GLFW_ErrorCallback( int error, const char* description )
     {
-        ErrorLog( "[%s] GLFW Error %d: %s", error, description );
+        LogError( "[%s] GLFW Error %d: %s", error, description );
     }
 
     class FrontEnd : public IServiceSink
