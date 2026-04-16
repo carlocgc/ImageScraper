@@ -76,6 +76,9 @@ Credentials are entered directly in the **Credentials** panel inside the app. Fi
 
 ### ![Reddit](https://img.shields.io/badge/Reddit-%23FF4500.svg?style=flat&logo=Reddit&logoColor=white)
 
+> [!WARNING]
+> **Reddit has restricted access to its public API.** New app registration at `reddit.com/prefs/apps` is no longer available for general use — existing client credentials cannot be created. The instructions below are kept for reference in case access is restored.
+
 1. Create a web app at https://www.reddit.com/prefs/apps
 2. Set the redirect URI to `http://localhost:8080`
 3. Enter the **client ID** and **client secret** in the Credentials panel
@@ -95,15 +98,15 @@ No setup required — the API is fully public and anonymous.
 
 ### Developer Credentials
 
-`ImageScraper/data/config.json` is gitignored. If you populate it with your API credentials, the pre-build event will automatically copy it to the build output directory alongside the exe — so your credentials are available immediately after each build without having to re-enter them in the Credentials panel.
+`ImageScraper/data/config.json` is gitignored. If it exists, the pre-build event copies it to the build output directory alongside the exe — so your credentials are available immediately after each build without having to re-enter them in the Credentials panel.
 
-To set up initially:
+To set up:
 
-```
-copy ImageScraper\data\config.template.json ImageScraper\data\config.json
-```
+1. Run the app once — it creates `config.json` automatically
+2. In the **Credentials** panel, tick **"Save credentials to source data/"** (Debug builds only)
+3. Enter your credentials — they are backed up to `ImageScraper/data/config.json` automatically on every keystroke
 
-Then edit `config.json` with your real credentials. The file stays on your machine and is never committed.
+The file stays on your machine and is never committed.
 
 ### Window Layout (imgui.ini)
 

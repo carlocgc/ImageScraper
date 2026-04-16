@@ -30,5 +30,9 @@ namespace ImageScraper
         bool m_ShowRedditSecret{ false };
         bool m_ShowTumblrKey{ false };
         bool m_ShowDiscordSecret{ false };
+
+#ifdef _DEBUG
+        bool m_SaveDevCredentials{ false };
+#endif
     };
 }

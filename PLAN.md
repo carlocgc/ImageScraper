@@ -125,7 +125,7 @@
   - Exposed as a separate button (e.g. "Deauthorise App") rather than part of the normal Sign Out flow, since it carries the multi-minute re-auth delay; user should be warned before proceeding
   - After the revoke request completes, calls `SignOut()` to clear tokens locally
   - Useful when the user suspects their credentials are compromised or wants to fully revoke app access from Reddit's end
-- [ ] OAuth2 for Tumblr — implement OAuth2 sign-in flow (similar to Reddit); update `TumblrPanel`, request classes, and `config.template.json`
+- [ ] OAuth2 for Tumblr — implement OAuth2 sign-in flow (similar to Reddit); update `TumblrPanel` and request classes
 - [ ] Sign-out for Tumblr — same pattern as Reddit once OAuth2 is implemented
 - [x] Remove `CanSignIn()` from `FourChanPanel` / hide sign-in UI for 4chan — `CanSignIn()` returns `false`; `DownloadOptionsPanel::UpdateSignInButton()` early-returns, so no sign-in UI is rendered for 4chan
 - [x] OAuth2 redirect HTML polish — dark-themed page with Reddit brand colour, checkmark icon, clear "Signed in to Reddit — close this tab" copy; removed external image fetch
@@ -175,7 +175,9 @@
 - [x] Download gate — block Run when required credentials are missing
   - `virtual bool HasRequiredCredentials() const { return true; }` added to `Service` base; `RedditService` and `TumblrService` override to check their required keys
   - `DownloadOptionsPanel::HandleUserInput()` checks `HasRequiredCredentials()` and shows a modal warning popup if missing; `m_Running` only set after service confirms dispatch to prevent soft-lock
-- [x] Deprecate manual config setup — `config.template.json` stays in source control as reference; README and in-app Credentials panel guide users; developer credentials stored in `data/config.json` (gitignored) and copied to output dir by pre-build event
+- [x] Deprecate manual config setup — README and in-app Credentials panel guide users; developer credentials stored in `data/config.json` (gitignored) and copied to output dir by pre-build event
+- [x] Dev credentials backup — `CredentialsPanel` shows a **Debug-only** "Save credentials to source data/" checkbox; when checked, every field save copies `config.json` back to `ImageScraper/data/config.json` via `std::filesystem::copy_file` using `__FILE__`-derived path, keeping dev credentials persistent across rebuilds without manual xcopy
+- [x] Remove `config.template.json` — app auto-creates `config.json` on first run via `JsonFile::Deserialise()`; removed from source control, vcxproj pre-build events, CLAUDE.md, and README
 
 ---
 
@@ -188,7 +190,7 @@
 - [ ] Bluesky — new service + request classes
 - [ ] Mastodon — new service + request classes (federated, needs instance URL input)
 - [ ] Redgifs — new service + request classes for redgifs.com; Reddit frequently embeds Redgifs URLs for GIF content so this unlocks a large class of media currently skipped; requires investigating the Redgifs public API (content discovery endpoint, pagination, auth if needed) and adding a provider panel; primary API reference is github.com/scrazzz/redgifs (api.py)
-- [ ] Update `config.template.json` and `UserInputOptions` for each new platform
+- [ ] Update `UserInputOptions` for each new platform
 
 ---
 
@@ -232,7 +234,7 @@
     7. `softprops/action-gh-release@v2` — create GitHub Release with the zip as an asset; use tag annotation as release body
     8. Upload `.pdb` as a workflow artefact (30-day retention) for crash debugging
   - Permissions: `contents: write`
-  - Release zip contents (assembled by existing post-build xcopy events): `ImageScraper.exe`, `libcurl.dll`, `curl-ca-bundle.crt`, `config.template.json`, `auth.html`, `imgui.ini`, `avformat-62.dll`, `avcodec-62.dll`, `avutil-60.dll`, `avdevice-62.dll`, `avfilter-11.dll`, `swscale-9.dll`, `swresample-6.dll`
+  - Release zip contents (assembled by existing post-build xcopy events): `ImageScraper.exe`, `libcurl.dll`, `curl-ca-bundle.crt`, `auth.html`, `avformat-62.dll`, `avcodec-62.dll`, `avutil-60.dll`, `avdevice-62.dll`, `avfilter-11.dll`, `swscale-9.dll`, `swresample-6.dll`
   - x64 only; no x86 (Win32 configurations are non-functional)
 
 ### CLAUDE.md correction

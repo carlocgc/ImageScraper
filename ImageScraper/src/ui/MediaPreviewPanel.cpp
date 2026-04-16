@@ -14,7 +14,7 @@ ImageScraper::MediaPreviewPanel::~MediaPreviewPanel( )
 
 void ImageScraper::MediaPreviewPanel::Update( )
 {
-    // Upload any newly decoded image/GIF (GPU buffer copies — main thread only)
+    // Upload any newly decoded image/GIF (GPU buffer copies - main thread only)
     {
         std::unique_ptr<DecodedImage> decoded;
         {
@@ -115,7 +115,7 @@ void ImageScraper::MediaPreviewPanel::Update( )
     }
     ImGui::End( );
 
-    // Handle click — toggle play/pause
+    // Handle click - toggle play/pause
     if( imageClicked )
     {
         if( m_MediaState == MediaState::StaticFrame )
@@ -282,7 +282,7 @@ void ImageScraper::MediaPreviewPanel::KickDecodeIfNeeded( )
     m_LoadingFileName = std::filesystem::path( filepath ).filename( ).string( );
     m_IsDecoding      = true;
 
-    // Always decode only the first frame — fast for both images and GIFs
+    // Always decode only the first frame - fast for both images and GIFs
     m_DecodeFuture = std::async( std::launch::async, [ this, filepath ]( )
     {
         auto decoded = DecodeFile( filepath, true );
@@ -399,12 +399,12 @@ void ImageScraper::MediaPreviewPanel::AdvanceVideoFrame( )
 
     if( !m_VideoPlayer->DecodeNextFrame( m_VideoFrameBuffer ) )
     {
-        // EOF — loop back to start
+        // EOF - loop back to start
         m_VideoPlayer->SeekToStart( );
         m_VideoPlayer->DecodeNextFrame( m_VideoFrameBuffer );
     }
 
-    // Upload the new frame — dimensions are constant for a given video so glTexImage2D is fine
+    // Upload the new frame - dimensions are constant for a given video so glTexImage2D is fine
     glBindTexture( GL_TEXTURE_2D, m_Textures[ 0 ] );
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_VideoFrameBuffer.data( ) );
     glBindTexture( GL_TEXTURE_2D, 0 );
@@ -495,7 +495,7 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
     auto decoded        = std::make_unique<DecodedImage>( );
     decoded->m_FilePath = filepath;
 
-    // Full GIF decode — all frames with delays
+    // Full GIF decode - all frames with delays
     if( !firstFrameOnly && IsGif( filepath ) )
     {
         int* delays   = nullptr;
@@ -533,7 +533,7 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
     }
     else
     {
-        // Single frame — covers static images and first-frame-only GIF preview
+        // Single frame - covers static images and first-frame-only GIF preview
         int width = 0, height = 0, channels = 0;
         unsigned char* data = stbi_load_from_memory(
             fileData.data( ), static_cast<int>( fileData.size( ) ),
