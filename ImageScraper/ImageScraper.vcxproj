@@ -112,8 +112,7 @@
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\config.template.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -142,8 +141,7 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\config.template.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -169,7 +167,6 @@ xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\config.template.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avformat-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avcodec-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avutil-60.dll" "$(TargetDir)" /Y
@@ -207,7 +204,6 @@ xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\config.template.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avformat-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avcodec-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avutil-60.dll" "$(TargetDir)" /Y

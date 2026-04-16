@@ -58,10 +58,12 @@ namespace ImageScraper
 
     private:
         void ShowDemoWindow( );
+        void SetupDefaultLayout( ImGuiID dockspaceId );
 
         GLFWwindow* m_WindowPtr{ nullptr };
         int         m_MaxLogLines{ 0 };
         std::string m_IniPath{ };
+        bool        m_LayoutInitialised{ false };
 
         std::unique_ptr<LogPanel>              m_LogPanel{ };
         std::unique_ptr<DownloadOptionsPanel>  m_DownloadOptionsPanel{ };
