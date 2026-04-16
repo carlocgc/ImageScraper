@@ -15,8 +15,12 @@ namespace ImageScraper
         bool             CanSignIn( ) const override { return false; }
         bool             IsReadyToRun( ) const override { return !m_FourChanBoard.empty( ); }
         UserInputOptions BuildInputOptions( ) const override;
+        void             LoadSearchHistory( std::shared_ptr<JsonFile> appConfig ) override;
 
     private:
+        void SaveSearchHistory( );
+
+        std::shared_ptr<JsonFile> m_AppConfig{ };
         std::string m_FourChanBoard{ };
         int         m_FourChanMaxThreads{ FOURCHAN_THREAD_MAX };
         int         m_FourChanMaxMediaItems{ FOURCHAN_MEDIA_DEFAULT };

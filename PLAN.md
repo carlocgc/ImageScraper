@@ -141,8 +141,8 @@
 - [ ] `MediaPreviewPanel` video audio playback — decode and play audio streams alongside video using WASAPI (no new third-party dependency); requires A/V sync via audio PTS as master clock
 
 ### Persistence
-- [ ] Persistent download history — serialize the `DownloadHistoryPanel` ring buffer to disk (e.g. JSON) and reload it on launch so history survives restarts
-- [ ] Persistent search history — record per-provider search inputs and surface them as a dropdown in each provider options panel; persist to disk across launches
+- [x] Persistent download history — serialize the `DownloadHistoryPanel` ring buffer to disk (e.g. JSON) and reload it on launch so history survives restarts
+- [x] Persistent search history — last-used search input per provider (subreddit, Tumblr user, 4chan board) persisted to AppConfig JSON and restored on launch; dropdown history surface deferred to a future task
 
 ---
 

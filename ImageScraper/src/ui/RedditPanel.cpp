@@ -1,7 +1,27 @@
 #include "ui/RedditPanel.h"
+#include "log/Logger.h"
 
 #include <algorithm>
 #include <cctype>
+
+void ImageScraper::RedditPanel::LoadSearchHistory( std::shared_ptr<JsonFile> appConfig )
+{
+    m_AppConfig = std::move( appConfig );
+    if( !m_AppConfig ) return;
+
+    m_AppConfig->GetValue<std::string>( "reddit_last_subreddit", m_SubredditName );
+}
+
+void ImageScraper::RedditPanel::SaveSearchHistory( )
+{
+    if( !m_AppConfig ) return;
+
+    m_AppConfig->SetValue<std::string>( "reddit_last_subreddit", m_SubredditName );
+    if( !m_AppConfig->Serialise( ) )
+    {
+        WarningLog( "[%s] Failed to save Reddit search history", __FUNCTION__ );
+    }
+}
 
 void ImageScraper::RedditPanel::Update( )
 {
@@ -13,6 +33,7 @@ void ImageScraper::RedditPanel::Update( )
         if( ImGui::InputText( "Subreddit (e.g. Gifs)", buffer, INPUT_STRING_MAX, flags ) )
         {
             m_SubredditName = buffer;
+            SaveSearchHistory( );
         }
     }
 
