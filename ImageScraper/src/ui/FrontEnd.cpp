@@ -94,24 +94,16 @@ void ImageScraper::FrontEnd::Update( )
         if( !std::filesystem::exists( m_IniPath ) )
         {
             SetupDefaultLayout( dockspaceId );
-            // Defer focus: DockBuilderFinish() leaves dock assignments pending
-            // until NewFrame() on the next frame processes them.  Calling
-            // SetWindowFocus() now would fire before windows know their nodes.
-            m_FocusDefaultTabsNextFrame = true;
         }
     }
 
-    // Apply default tab focus one frame after layout setup, once dock
-    // assignments have been fully processed by NewFrame().
-    if( m_FocusDefaultTabsNextFrame )
-    {
-        m_FocusDefaultTabsNextFrame = false;
-        ImGui::SetWindowFocus( "Download Options" );
-        ImGui::SetWindowFocus( "Download History" );
-        ImGui::SetWindowFocus( "Media Preview" );
-    }
-
     ShowDemoWindow( );
+
+    m_LogPanel->Update( );
+    m_DownloadProgressPanel->Update( );
+    m_MediaPreviewPanel->Update( );
+    m_DownloadHistoryPanel->Update( );
+    m_CredentialsPanel->Update( );
 
     const bool wasRunning = m_DownloadOptionsPanel->IsRunning( );
     m_DownloadOptionsPanel->Update( );
@@ -120,12 +112,6 @@ void ImageScraper::FrontEnd::Update( )
         m_LogPanel->SetRunning( true );
         m_DownloadProgressPanel->SetRunning( true );
     }
-
-    m_LogPanel->Update( );
-    m_DownloadProgressPanel->Update( );
-    m_MediaPreviewPanel->Update( );
-    m_DownloadHistoryPanel->Update( );
-    m_CredentialsPanel->Update( );
 }
 
 void ImageScraper::FrontEnd::Render( )
@@ -189,7 +175,7 @@ void ImageScraper::FrontEnd::SetupDefaultLayout( ImGuiID dockspaceId )
     ImGuiID dockTopLeft, dockBottomLeft;
     ImGui::DockBuilderSplitNode( dockLeft, ImGuiDir_Up, 350.0f / 841.0f, &dockTopLeft, &dockBottomLeft );
 
-    // Dock all panels - order within a node does not reliably control tab selection
+    // Dock all panels
     ImGui::DockBuilderDockWindow( "Download Options", dockTopLeft );
     ImGui::DockBuilderDockWindow( "Credentials",      dockTopLeft );
     ImGui::DockBuilderDockWindow( "Output",           dockBottomLeft );
