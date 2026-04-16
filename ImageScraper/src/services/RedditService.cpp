@@ -160,7 +160,7 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
 
 bool ImageScraper::RedditService::IsSignedIn( ) const
 {
-    // True only when the user has signed in via OAuth — refresh token is the
+    // True only when the user has signed in via OAuth - refresh token is the
     // indicator. App-only auth populates m_AccessToken but not m_RefreshToken,
     // so checking access token alone would flicker the button during downloads.
     std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
@@ -210,7 +210,7 @@ void ImageScraper::RedditService::SignOut( )
     // NOTE: RevokeAccessTokenRequest exists but is intentionally not called here.
     // Reddit imposes a server-side propagation delay of several minutes after token
     // revocation, during which re-authentication hangs (OAuth page never redirects).
-    // For a desktop app the security trade-off is acceptable — tokens live only on
+    // For a desktop app the security trade-off is acceptable - tokens live only on
     // the user's machine and the refresh token is deleted locally, so it cannot be
     // reused. Local-only clear gives instant, clean sign-out with no UX penalty.
     ClearAccessToken( );

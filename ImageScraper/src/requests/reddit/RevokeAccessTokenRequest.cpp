@@ -58,7 +58,7 @@ ImageScraper::RequestResult ImageScraper::Reddit::RevokeAccessTokenRequest::Perf
 
     const HttpResponse response = m_HttpClient->Post( request );
 
-    // Reddit returns 204 No Content on success — no body to parse
+    // Reddit returns 204 No Content on success - no body to parse
     if( response.m_StatusCode == 204 || response.m_Success )
     {
         DebugLog( "[%s] RevokeAccessTokenRequest complete!", __FUNCTION__ );

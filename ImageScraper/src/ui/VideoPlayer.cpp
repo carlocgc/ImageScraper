@@ -130,11 +130,11 @@ bool ImageScraper::VideoPlayer::DecodeNextFrame( std::vector<uint8_t>& rgbaOut )
 
         if( recvRet != AVERROR( EAGAIN ) )
         {
-            // EOF or error — no more frames
+            // EOF or error - no more frames
             return false;
         }
 
-        // Need more packets — read and send to decoder
+        // Need more packets - read and send to decoder
         bool sentPacket = false;
         while( !sentPacket )
         {

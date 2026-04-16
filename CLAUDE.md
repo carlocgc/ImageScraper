@@ -6,6 +6,12 @@ A C++ desktop application that scrapes and downloads images from Reddit, 4chan, 
 
 ---
 
+## General Rules
+
+**Never use em dashes (`—`).** ImGui renders the em dash as `?` (it falls outside the default font's Latin-1 range), and the Catch2 test adapter breaks on it in test names. Use a regular hyphen (`-`) everywhere — in source strings, comments, test names, and documentation.
+
+---
+
 ## Dependencies
 
 Do NOT add third-party libraries or dependencies without explicit user approval. This includes:
@@ -38,16 +44,11 @@ Never commit sensitive data to source control. The following must always be kept
 - Real API keys, client IDs, client secrets, or access tokens
 - OAuth tokens or refresh tokens of any kind
 
-`ImageScraper/data/config.template.json` is the committed template with placeholder values. `ImageScraper/data/config.json` is gitignored and holds real local credentials.
+`ImageScraper/data/config.json` is gitignored and holds real local credentials. In Debug builds, the app creates this file automatically on first run via `JsonFile::Deserialise()`. Release builds do not yet guarantee auto-creation for end users.
 
 When adding a new key:
-1. Add it with a placeholder value to `config.template.json` and commit
-2. Add it with the real value to your local `config.json`
-
-End users create their config by copying the template:
-```bash
-cp ImageScraper/data/config.template.json ImageScraper/data/config.json
-```
+1. Add handling for it in `JsonFile::Deserialise()` with a sensible default (so Debug auto-creation picks it up)
+2. Add the real value via the Credentials panel (or directly in your local `config.json`)
 
 ---
 

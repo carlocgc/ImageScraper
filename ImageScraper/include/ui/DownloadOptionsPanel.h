@@ -23,7 +23,7 @@ namespace ImageScraper
         // State queries used by FrontEnd to coordinate with other panels
         bool IsRunning( ) const { return m_Running; }
 
-        // IServiceSink delegation targets — called by FrontEnd
+        // IServiceSink delegation targets - called by FrontEnd
         bool IsCancelled( ) const { return m_DownloadCancelled.load( ); }
         void OnRunComplete( );
         void SetInputState( InputState state );
