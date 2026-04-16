@@ -6,6 +6,28 @@ A C++ desktop application that scrapes and downloads images from Reddit, 4chan, 
 
 ---
 
+## Build
+
+**Build command** (always use PowerShell, never bash for MSBuild):
+```powershell
+& 'C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' 'G:\Projects\ImageScraper\ImageScraper.sln' /p:Configuration=Debug /p:Platform=x64 /t:ImageScraper /m /nologo
+```
+Replace `Debug` with `Release` or `/t:ImageScraper` with `/t:ImageScraperTests` as needed. The solution file is always at `G:\Projects\ImageScraper\ImageScraper.sln`.
+
+**The main repo is at `G:\Projects\ImageScraper`.** Feature branches are worked on directly in this repo or via `git worktree add`. Worktrees go under `G:\Projects\ImageScraper\.claude\worktrees\<name>`.
+
+**After a PR is merged**, run the following to clean up:
+```powershell
+git -C 'G:\Projects\ImageScraper' checkout development
+git -C 'G:\Projects\ImageScraper' pull
+git -C 'G:\Projects\ImageScraper' branch -D feature/branch-name
+git -C 'G:\Projects\ImageScraper' remote prune origin
+# If a worktree was used:
+git -C 'G:\Projects\ImageScraper' worktree remove --force 'G:\Projects\ImageScraper\.claude\worktrees\<name>'
+```
+
+---
+
 ## General Rules
 
 **Never use em dashes (`—`).** ImGui renders the em dash as `?` (it falls outside the default font's Latin-1 range), and the Catch2 test adapter breaks on it in test names. Use a regular hyphen (`-`) everywhere - in source strings, comments, test names, and documentation.
@@ -36,6 +58,10 @@ Do NOT modify any vendored dependency code without explicit approval. This inclu
 - `ImageScraperTests/src/catch2/`
 
 If a bug or limitation in a dependency needs working around, implement the workaround in project code and flag it to the user.
+
+**ImGui internal API** - include `imgui/imgui_internal.h` (not bare `imgui_internal.h`) when DockBuilder or other internal APIs are needed. `imgui.h` and `imgui_internal.h` both declare names that collide with project macros - check `Logger.h` for the current macro names before including ImGui headers.
+
+**ImGui version**: v1.92.7-docking (vendored). The docking variant is required - do not replace with the non-docking release.
 
 ---
 
