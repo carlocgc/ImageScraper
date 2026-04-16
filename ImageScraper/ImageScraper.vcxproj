@@ -111,7 +111,6 @@
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl-d.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\config.template.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
     </PreBuildEvent>
@@ -141,7 +140,6 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\config.template.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <Message>Copy dependencies to target directory</Message>
@@ -167,7 +165,6 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl-d.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\config.template.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avformat-62.dll" "$(TargetDir)" /Y
@@ -205,7 +202,6 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\config.template.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avformat-62.dll" "$(TargetDir)" /Y
@@ -400,7 +396,6 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
   </ItemGroup>
   <ItemGroup>
     <None Include="data\auth.html" />
-    <None Include="data\config.template.json" />
     <None Include="include\curlpp\Easy.inl" />
     <None Include="include\curlpp\Info.inl" />
     <None Include="include\curlpp\internal\CurlHandle.inl" />

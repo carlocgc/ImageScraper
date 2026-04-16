@@ -38,16 +38,11 @@ Never commit sensitive data to source control. The following must always be kept
 - Real API keys, client IDs, client secrets, or access tokens
 - OAuth tokens or refresh tokens of any kind
 
-`ImageScraper/data/config.template.json` is the committed template with placeholder values. `ImageScraper/data/config.json` is gitignored and holds real local credentials.
+`ImageScraper/data/config.json` is gitignored and holds real local credentials. The app creates this file automatically on first run via `JsonFile::Deserialise()`.
 
 When adding a new key:
-1. Add it with a placeholder value to `config.template.json` and commit
-2. Add it with the real value to your local `config.json`
-
-End users create their config by copying the template:
-```bash
-cp ImageScraper/data/config.template.json ImageScraper/data/config.json
-```
+1. Add it to `JsonFile::Deserialise()` with a sensible default so the app creates it on first run
+2. Add the real value via the Credentials panel (or directly in your local `config.json`)
 
 ---
 
