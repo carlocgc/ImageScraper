@@ -1,6 +1,26 @@
 #include "ui/TumblrPanel.h"
+#include "log/Logger.h"
 
 #include <algorithm>
+
+void ImageScraper::TumblrPanel::LoadSearchHistory( std::shared_ptr<JsonFile> appConfig )
+{
+    m_AppConfig = std::move( appConfig );
+    if( !m_AppConfig ) return;
+
+    m_AppConfig->GetValue<std::string>( "tumblr_last_user", m_TumblrUser );
+}
+
+void ImageScraper::TumblrPanel::SaveSearchHistory( )
+{
+    if( !m_AppConfig ) return;
+
+    m_AppConfig->SetValue<std::string>( "tumblr_last_user", m_TumblrUser );
+    if( !m_AppConfig->Serialise( ) )
+    {
+        WarningLog( "[%s] Failed to save Tumblr search history", __FUNCTION__ );
+    }
+}
 
 void ImageScraper::TumblrPanel::Update( )
 {
@@ -12,6 +32,7 @@ void ImageScraper::TumblrPanel::Update( )
         if( ImGui::InputText( "Tumblr User", buffer, INPUT_STRING_MAX, flags ) )
         {
             m_TumblrUser = buffer;
+            SaveSearchHistory( );
         }
     }
 

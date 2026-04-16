@@ -31,8 +31,8 @@ const std::string ImageScraper::RedditService::s_AppDataKey_RefreshToken = "redd
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientId = "reddit_client_id";
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientSecret = "reddit_client_secret";
 
-ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<IServiceSink> sink )
-    : Service( ContentProvider::Reddit, appConfig, userConfig, caBundle, sink )
+ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
+    : Service( ContentProvider::Reddit, appConfig, userConfig, caBundle, outputDir, sink )
 {
     if( !m_AppConfig->GetValue<std::string>( s_AppDataKey_DeviceId, m_DeviceId ) )
     {
@@ -464,7 +464,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
             InfoLog( "[%s] All Subreddit data fetched successfully.", __FUNCTION__ );
 
             // Create download directory
-            const std::filesystem::path dir = std::filesystem::current_path( ) / "Downloads" / "Reddit" / options.m_SubredditName / options.m_RedditScope;
+            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Downloads" / "Reddit" / options.m_SubredditName;
             const std::string dirStr = dir.generic_string( );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {

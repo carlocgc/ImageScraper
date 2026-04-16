@@ -11,8 +11,8 @@
 
 #include <string>
 
-ImageScraper::FourChanService::FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<IServiceSink> sink )
-    : Service( ContentProvider::FourChan, appConfig, userConfig, caBundle, sink )
+ImageScraper::FourChanService::FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
+    : Service( ContentProvider::FourChan, appConfig, userConfig, caBundle, outputDir, sink )
 {
 }
 
@@ -174,7 +174,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
             // Create download directory
 
-            const std::filesystem::path dir = std::filesystem::current_path( ) / "Downloads" / "4chan" / options.m_FourChanBoard;
+            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Downloads" / "4chan" / options.m_FourChanBoard;
             const std::string dirStr = dir.generic_string( );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {

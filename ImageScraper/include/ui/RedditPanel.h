@@ -15,8 +15,12 @@ namespace ImageScraper
         bool             CanSignIn( ) const override { return true; }
         bool             IsReadyToRun( ) const override { return !m_SubredditName.empty( ); }
         UserInputOptions BuildInputOptions( ) const override;
+        void             LoadSearchHistory( std::shared_ptr<JsonFile> appConfig ) override;
 
     private:
+        void SaveSearchHistory( );
+
+        std::shared_ptr<JsonFile> m_AppConfig{ };
         std::string          m_SubredditName{ };
         RedditScope          m_RedditScope{ RedditScope::Hot };
         RedditScopeTimeFrame m_RedditScopeTimeFrame{ RedditScopeTimeFrame::All };

@@ -15,8 +15,12 @@ namespace ImageScraper
         bool             CanSignIn( ) const override { return false; }
         bool             IsReadyToRun( ) const override { return !m_TumblrUser.empty( ); }
         UserInputOptions BuildInputOptions( ) const override;
+        void             LoadSearchHistory( std::shared_ptr<JsonFile> appConfig ) override;
 
     private:
+        void SaveSearchHistory( );
+
+        std::shared_ptr<JsonFile> m_AppConfig{ };
         std::string m_TumblrUser{ };
         int         m_TumblrMaxMediaItems{ TUMBLR_LIMIT_DEFAULT };
     };

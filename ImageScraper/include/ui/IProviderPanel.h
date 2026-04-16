@@ -1,7 +1,10 @@
 #pragma once
 
 #include "ui/IUiPanel.h"
+#include "io/JsonFile.h"
 #include "services/ServiceOptionTypes.h"
+
+#include <memory>
 
 namespace ImageScraper
 {
@@ -13,5 +16,9 @@ namespace ImageScraper
         virtual bool             CanSignIn( ) const = 0;
         virtual bool             IsReadyToRun( ) const = 0;
         virtual UserInputOptions BuildInputOptions( ) const = 0;
+
+        // Load persisted search inputs from appConfig; save back on every change.
+        // Default no-op - override in panels that have persistent inputs.
+        virtual void LoadSearchHistory( std::shared_ptr<JsonFile> ) { }
     };
 }

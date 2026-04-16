@@ -8,8 +8,8 @@ using Json = nlohmann::json;
 const std::string ImageScraper::DiscordService::s_UserDataKey_ClientId = "discord_client_id";
 const std::string ImageScraper::DiscordService::s_UserDataKey_ClientSecret = "discord_client_secret";
 
-ImageScraper::DiscordService::DiscordService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<IServiceSink> sink )
-    : Service( ContentProvider::Discord, appConfig, userConfig, caBundle, sink )
+ImageScraper::DiscordService::DiscordService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
+    : Service( ContentProvider::Discord, appConfig, userConfig, caBundle, outputDir, sink )
 {
     if( !m_UserConfig->GetValue( s_UserDataKey_ClientId, m_ClientId ) )
     {

@@ -12,6 +12,14 @@ ImageScraper::DownloadOptionsPanel::DownloadOptionsPanel( const std::vector<std:
     m_ProviderPanels.push_back( std::make_unique<FourChanPanel>( ) );
 }
 
+void ImageScraper::DownloadOptionsPanel::LoadSearchHistory( std::shared_ptr<JsonFile> appConfig )
+{
+    for( auto& panel : m_ProviderPanels )
+    {
+        panel->LoadSearchHistory( appConfig );
+    }
+}
+
 void ImageScraper::DownloadOptionsPanel::Update( )
 {
     ImGui::SetNextWindowSize( ImVec2( 640, 200 ), ImGuiCond_FirstUseEver );

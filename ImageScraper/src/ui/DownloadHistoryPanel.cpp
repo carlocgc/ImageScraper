@@ -72,6 +72,12 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         {
             const DownloadHistoryEntry& entry = m_History[ i ];
 
+            // Skip entries whose file has been removed from disk since download
+            if( !std::filesystem::exists( entry.m_FilePath ) )
+            {
+                continue;
+            }
+
             ImGui::TableNextRow( );
 
             ImGui::TableSetColumnIndex( 0 );
@@ -144,6 +150,70 @@ void ImageScraper::DownloadHistoryPanel::OnFileDownloaded( const std::string& fi
     m_Pending.push_back( std::move( entry ) );
 }
 
+void ImageScraper::DownloadHistoryPanel::Load( std::shared_ptr<JsonFile> appConfig )
+{
+    m_AppConfig = std::move( appConfig );
+    if( !m_AppConfig )
+    {
+        return;
+    }
+
+    Json entries;
+    if( !m_AppConfig->GetValue<Json>( "download_history", entries ) || !entries.is_array( ) )
+    {
+        return;
+    }
+
+    for( const auto& obj : entries )
+    {
+        DownloadHistoryEntry entry;
+        entry.m_FilePath  = obj.value( "file_path",  "" );
+        entry.m_FileName  = obj.value( "file_name",  "" );
+        entry.m_FileSize  = obj.value( "file_size",  "" );
+        entry.m_SourceUrl = obj.value( "source_url", "" );
+        entry.m_Timestamp = obj.value( "timestamp",  "" );
+
+        if( !entry.m_FilePath.empty( ) && std::filesystem::exists( entry.m_FilePath ) )
+        {
+            m_History.Push( std::move( entry ) );
+        }
+    }
+
+    LogDebug( "[%s] Loaded %d history entries", __FUNCTION__, m_History.GetSize( ) );
+}
+
+void ImageScraper::DownloadHistoryPanel::Save( )
+{
+    if( !m_AppConfig )
+    {
+        return;
+    }
+
+    Json entries = Json::array( );
+    const int size = m_History.GetSize( );
+    for( int i = 0; i < size; ++i )
+    {
+        const DownloadHistoryEntry& entry = m_History[ i ];
+        if( !std::filesystem::exists( entry.m_FilePath ) )
+        {
+            continue;
+        }
+        entries.push_back( {
+            { "file_path",  entry.m_FilePath  },
+            { "file_name",  entry.m_FileName  },
+            { "file_size",  entry.m_FileSize  },
+            { "source_url", entry.m_SourceUrl },
+            { "timestamp",  entry.m_Timestamp }
+        } );
+    }
+
+    m_AppConfig->SetValue<Json>( "download_history", entries );
+    if( !m_AppConfig->Serialise( ) )
+    {
+        WarningLog( "[%s] Failed to save download history", __FUNCTION__ );
+    }
+}
+
 void ImageScraper::DownloadHistoryPanel::FlushPending( )
 {
     std::vector<DownloadHistoryEntry> pending;
@@ -160,6 +230,8 @@ void ImageScraper::DownloadHistoryPanel::FlushPending( )
     {
         m_History.Push( std::move( entry ) );
     }
+
+    Save( );
 }
 
 void ImageScraper::DownloadHistoryPanel::OpenInExplorer( const std::string& filepath )
