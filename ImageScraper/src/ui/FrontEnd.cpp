@@ -94,18 +94,26 @@ void ImageScraper::FrontEnd::Update( )
         if( !std::filesystem::exists( m_IniPath ) )
         {
             SetupDefaultLayout( dockspaceId );
-            m_ApplyDefaultFocus = true;
+            // Defer focus: DockBuilderFinish() leaves dock assignments pending
+            // until NewFrame() on the next frame processes them.  Calling
+            // SetWindowFocus() now would fire before windows know their nodes.
+            m_FocusDefaultTabsNextFrame = true;
         }
+    }
+
+    // Apply default tab focus one frame after layout setup, once dock
+    // assignments have been fully processed by NewFrame().
+    if( m_FocusDefaultTabsNextFrame )
+    {
+        m_FocusDefaultTabsNextFrame = false;
+        ImGui::SetWindowFocus( "Download Options" );
+        ImGui::SetWindowFocus( "Download History" );
+        ImGui::SetWindowFocus( "Media Preview" );
     }
 
     ShowDemoWindow( );
 
-    // On the first frame after a fresh layout build, focus the default tab in
-    // each multi-window dock node.  SetNextWindowFocus() is consumed by the
-    // very next Begin() call, so it must be called immediately before the
-    // target panel's Update().
     const bool wasRunning = m_DownloadOptionsPanel->IsRunning( );
-    if( m_ApplyDefaultFocus ) ImGui::SetNextWindowFocus( );
     m_DownloadOptionsPanel->Update( );
     if( !wasRunning && m_DownloadOptionsPanel->IsRunning( ) )
     {
@@ -115,13 +123,9 @@ void ImageScraper::FrontEnd::Update( )
 
     m_LogPanel->Update( );
     m_DownloadProgressPanel->Update( );
-    if( m_ApplyDefaultFocus ) ImGui::SetNextWindowFocus( );
     m_MediaPreviewPanel->Update( );
-    if( m_ApplyDefaultFocus ) ImGui::SetNextWindowFocus( );
     m_DownloadHistoryPanel->Update( );
     m_CredentialsPanel->Update( );
-
-    m_ApplyDefaultFocus = false;
 }
 
 void ImageScraper::FrontEnd::Render( )

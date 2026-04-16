@@ -64,7 +64,7 @@ namespace ImageScraper
         int         m_MaxLogLines{ 0 };
         std::string m_IniPath{ };
         bool        m_LayoutInitialised{ false };
-        bool        m_ApplyDefaultFocus{ false };
+        bool        m_FocusDefaultTabsNextFrame{ false };
 
         std::unique_ptr<LogPanel>              m_LogPanel{ };
         std::unique_ptr<DownloadOptionsPanel>  m_DownloadOptionsPanel{ };
