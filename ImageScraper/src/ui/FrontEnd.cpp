@@ -175,11 +175,11 @@ void ImageScraper::FrontEnd::SetupDefaultLayout( ImGuiID dockspaceId )
     ImGuiID dockTopLeft, dockBottomLeft;
     ImGui::DockBuilderSplitNode( dockLeft, ImGuiDir_Up, 350.0f / 841.0f, &dockTopLeft, &dockBottomLeft );
 
-    // Dock panels - last window docked to a node becomes the default selected tab
-    ImGui::DockBuilderDockWindow( "Credentials",      dockTopLeft );
+    // Dock all panels - order within a node does not reliably control tab selection
     ImGui::DockBuilderDockWindow( "Download Options", dockTopLeft );
-    ImGui::DockBuilderDockWindow( "Download History", dockBottomLeft );
+    ImGui::DockBuilderDockWindow( "Credentials",      dockTopLeft );
     ImGui::DockBuilderDockWindow( "Output",           dockBottomLeft );
+    ImGui::DockBuilderDockWindow( "Download History", dockBottomLeft );
     ImGui::DockBuilderDockWindow( "Media Preview",    dockRight );
     ImGui::DockBuilderDockWindow( "Download Progress", dockBottom );
 
@@ -188,6 +188,19 @@ void ImageScraper::FrontEnd::SetupDefaultLayout( ImGuiID dockspaceId )
 #endif
 
     ImGui::DockBuilderFinish( dockspaceId );
+
+    // Explicitly select the default visible tab in each multi-window node.
+    // DockBuilderDockWindow dock order does not reliably control this.
+    auto selectTab = []( ImGuiID nodeId, const char* windowName )
+    {
+        ImGuiDockNode* node = ImGui::DockBuilderGetNode( nodeId );
+        if( node )
+            node->SelectedTabId = ImHashStr( windowName );
+    };
+
+    selectTab( dockTopLeft,    "Credentials" );
+    selectTab( dockBottomLeft, "Download History" );
+    selectTab( dockRight,      "Media Preview" );
 }
 
 void ImageScraper::FrontEnd::ShowDemoWindow( )
