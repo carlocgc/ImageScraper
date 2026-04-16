@@ -3,10 +3,12 @@
 #include "ui/IUiPanel.h"
 #include "ui/VideoPlayer.h"
 #include "collections/RingBuffer.h"
+#include "io/JsonFile.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl3_loader.h"
 
 #include <string>
+#include <memory>
 #include <mutex>
 #include <functional>
 #include <unordered_map>
@@ -39,11 +41,14 @@ namespace ImageScraper
         ~DownloadHistoryPanel( );
         void Update( ) override;
 
+        void Load( std::shared_ptr<JsonFile> appConfig );
+
         // Thread-safe - may be called from a worker thread
         void OnFileDownloaded( const std::string& filepath, const std::string& sourceUrl );
 
     private:
         void FlushPending( );
+        void Save( );
         static void OpenInExplorer( const std::string& filepath );
         static std::string FormatTimestamp( );
         static std::string ExtractFileName( const std::string& filepath );
@@ -62,6 +67,7 @@ namespace ImageScraper
 
         PreviewCallback                   m_OnPreviewRequested{ };
         RingBuffer<DownloadHistoryEntry>  m_History{ k_Capacity };
+        std::shared_ptr<JsonFile>         m_AppConfig{ };
 
         std::mutex                        m_PendingMutex{ };
         std::vector<DownloadHistoryEntry> m_Pending{ };

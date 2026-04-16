@@ -68,7 +68,7 @@ ImageScraper::App::App( )
 
 int ImageScraper::App::Run( )
 {
-    if( !m_FrontEnd || !m_FrontEnd->Init( m_Services, m_UserConfig ) )
+    if( !m_FrontEnd || !m_FrontEnd->Init( m_Services, m_UserConfig, m_AppConfig ) )
     {
         LogError( "[%s] Could not start FrontEnd!", __FUNCTION__ );
         return EXIT_FAILURE;
