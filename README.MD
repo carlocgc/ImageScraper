@@ -97,15 +97,13 @@ No setup required — the API is fully public and anonymous.
 
 `ImageScraper/data/config.json` is gitignored. If it exists, the pre-build event copies it to the build output directory alongside the exe — so your credentials are available immediately after each build without having to re-enter them in the Credentials panel.
 
-To set up, run the app once (it creates `config.json` automatically), enter your credentials in the Credentials panel, then copy the file to the source tree:
+To set up:
 
-```
-copy bin\ImageScraper\x64\Debug\config.json ImageScraper\data\config.json
-```
+1. Run the app once — it creates `config.json` automatically
+2. In the **Credentials** panel, tick **"Save credentials to source data/"** (Debug builds only)
+3. Enter your credentials — they are backed up to `ImageScraper/data/config.json` automatically on every keystroke
 
 The file stays on your machine and is never committed.
-
-In Debug builds, the **Credentials** panel shows a **"Save credentials to source data/"** checkbox. When checked, every keystroke that saves a credential automatically backs it up to `ImageScraper/data/config.json` — so the manual copy step above only needs to be done once.
 
 ### Window Layout (imgui.ini)
 
