@@ -97,14 +97,14 @@ void ImageScraper::FrontEnd::Update( )
         }
     }
 
-    ShowDemoWindow( );
-
-    m_LogPanel->Update( );
-    m_DownloadProgressPanel->Update( );
-    m_MediaPreviewPanel->Update( );
-    m_DownloadHistoryPanel->Update( );
-    m_CredentialsPanel->Update( );
-
+    // Panel update order controls default tab focus within each dock node.
+    // ImGui focuses the first panel to call Begin() in each shared node, with
+    // the exception of the very last Begin() call in the frame which also
+    // receives focus.  Keep this ordering intentional:
+    //   Top-left node    - Download Options (first) focused, Credentials secondary
+    //   Right node       - Media Preview (first) focused, Dear ImGui Demo secondary
+    //   Bottom-left node - Download History (first) focused, Output secondary
+    //   Bottom node      - Download Progress (last, sole occupant)
     const bool wasRunning = m_DownloadOptionsPanel->IsRunning( );
     m_DownloadOptionsPanel->Update( );
     if( !wasRunning && m_DownloadOptionsPanel->IsRunning( ) )
@@ -112,6 +112,15 @@ void ImageScraper::FrontEnd::Update( )
         m_LogPanel->SetRunning( true );
         m_DownloadProgressPanel->SetRunning( true );
     }
+
+    m_CredentialsPanel->Update( );
+    m_MediaPreviewPanel->Update( );
+    m_DownloadHistoryPanel->Update( );
+    m_LogPanel->Update( );
+
+    ShowDemoWindow( );
+
+    m_DownloadProgressPanel->Update( );
 }
 
 void ImageScraper::FrontEnd::Render( )
