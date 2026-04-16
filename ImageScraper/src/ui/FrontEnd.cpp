@@ -94,12 +94,18 @@ void ImageScraper::FrontEnd::Update( )
         if( !std::filesystem::exists( m_IniPath ) )
         {
             SetupDefaultLayout( dockspaceId );
+            m_ApplyDefaultFocus = true;
         }
     }
 
     ShowDemoWindow( );
 
+    // On the first frame after a fresh layout build, focus the default tab in
+    // each multi-window dock node.  SetNextWindowFocus() is consumed by the
+    // very next Begin() call, so it must be called immediately before the
+    // target panel's Update().
     const bool wasRunning = m_DownloadOptionsPanel->IsRunning( );
+    if( m_ApplyDefaultFocus ) ImGui::SetNextWindowFocus( );
     m_DownloadOptionsPanel->Update( );
     if( !wasRunning && m_DownloadOptionsPanel->IsRunning( ) )
     {
@@ -109,9 +115,13 @@ void ImageScraper::FrontEnd::Update( )
 
     m_LogPanel->Update( );
     m_DownloadProgressPanel->Update( );
+    if( m_ApplyDefaultFocus ) ImGui::SetNextWindowFocus( );
     m_MediaPreviewPanel->Update( );
+    if( m_ApplyDefaultFocus ) ImGui::SetNextWindowFocus( );
     m_DownloadHistoryPanel->Update( );
     m_CredentialsPanel->Update( );
+
+    m_ApplyDefaultFocus = false;
 }
 
 void ImageScraper::FrontEnd::Render( )
@@ -188,19 +198,6 @@ void ImageScraper::FrontEnd::SetupDefaultLayout( ImGuiID dockspaceId )
 #endif
 
     ImGui::DockBuilderFinish( dockspaceId );
-
-    // Explicitly select the default visible tab in each multi-window node.
-    // DockBuilderDockWindow dock order does not reliably control this.
-    auto selectTab = []( ImGuiID nodeId, const char* windowName )
-    {
-        ImGuiDockNode* node = ImGui::DockBuilderGetNode( nodeId );
-        if( node )
-            node->SelectedTabId = ImHashStr( windowName );
-    };
-
-    selectTab( dockTopLeft,    "Credentials" );
-    selectTab( dockBottomLeft, "Download History" );
-    selectTab( dockRight,      "Media Preview" );
 }
 
 void ImageScraper::FrontEnd::ShowDemoWindow( )
