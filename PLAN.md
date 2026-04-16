@@ -176,6 +176,12 @@
   - `virtual bool HasRequiredCredentials() const { return true; }` added to `Service` base; `RedditService` and `TumblrService` override to check their required keys
   - `DownloadOptionsPanel::HandleUserInput()` checks `HasRequiredCredentials()` and shows a modal warning popup if missing; `m_Running` only set after service confirms dispatch to prevent soft-lock
 - [x] Deprecate manual config setup — `config.template.json` stays in source control as reference; README and in-app Credentials panel guide users; developer credentials stored in `data/config.json` (gitignored) and copied to output dir by pre-build event
+- [x] Dev credentials backup — `CredentialsPanel` shows a **Debug-only** "Save credentials to source data/" checkbox; when checked, every field save copies `config.json` back to `ImageScraper/data/config.json` via `std::filesystem::copy_file` using `__FILE__`-derived path, keeping dev credentials persistent across rebuilds without manual xcopy
+- [ ] Remove `config.template.json` — the app auto-creates `config.json` on first run via `JsonFile::Deserialise()`; the template is redundant and misleading
+  - Remove `config.template.json` from source control
+  - Remove `xcopy config.template.json` from all pre-build event configurations in `ImageScraper.vcxproj`
+  - Remove from release zip contents in `.github/workflows/release.yml` and `PLAN.md` release notes
+  - Update README to remove any remaining references to the template file
 
 ---
 

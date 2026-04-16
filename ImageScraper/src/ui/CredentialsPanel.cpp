@@ -3,6 +3,8 @@
 
 #include "imgui/imgui.h"
 
+#include <filesystem>
+
 static const std::string s_Key_RedditClientId     = "reddit_client_id";
 static const std::string s_Key_RedditClientSecret = "reddit_client_secret";
 static const std::string s_Key_TumblrApiKey       = "tumblr_api_key";
@@ -110,6 +112,19 @@ void ImageScraper::CredentialsPanel::Update( )
     InputField( "Client ID",     "##discord_id",     m_DiscordClientId,     m_ShowDiscordSecret, false, s_Key_DiscordClientId,     false );
     InputField( "Client Secret", "##discord_secret", m_DiscordClientSecret, m_ShowDiscordSecret, true,  s_Key_DiscordClientSecret, false );
 
+#ifdef _DEBUG
+    ImGui::Spacing( );
+    ImGui::Separator( );
+    ImGui::Spacing( );
+    ImGui::TextColored( ImVec4( 1.0f, 0.8f, 0.2f, 1.0f ), "Dev" );
+    ImGui::SameLine( );
+    ImGui::Checkbox( "Save credentials to source data/", &m_SaveDevCredentials );
+    if( ImGui::IsItemHovered( ) )
+    {
+        ImGui::SetTooltip( "Backs up config.json to ImageScraper/data/ on every save.\nDebug builds only — keeps dev credentials persistent across rebuilds." );
+    }
+#endif
+
     ImGui::End( );
 }
 
@@ -124,9 +139,38 @@ void ImageScraper::CredentialsPanel::SaveField( const std::string& key, const ch
     if( !m_UserConfig->Serialise( ) )
     {
         WarningLog( "[%s] Failed to save credentials to config file.", __FUNCTION__ );
+        return;
     }
-    else
+
+    DebugLog( "[%s] Saved credential: %s", __FUNCTION__, key.c_str( ) );
+
+#ifdef _DEBUG
+    if( m_SaveDevCredentials )
     {
-        DebugLog( "[%s] Saved credential: %s", __FUNCTION__, key.c_str( ) );
+        // Derive source data directory from the compile-time path of this file:
+        // CredentialsPanel.cpp lives at ImageScraper/src/ui/, so three parent_path() calls
+        // reach ImageScraper/, then append data/config.json.
+        const std::filesystem::path devDataPath = std::filesystem::path( __FILE__ )
+            .parent_path( )   // src/ui/
+            .parent_path( )   // src/
+            .parent_path( )   // ImageScraper/
+            / "data" / "config.json";
+
+        std::error_code ec;
+        std::filesystem::copy_file(
+            std::filesystem::path( m_UserConfig->GetFilePath( ) ),
+            devDataPath,
+            std::filesystem::copy_options::overwrite_existing,
+            ec );
+
+        if( ec )
+        {
+            WarningLog( "[%s] Failed to back up credentials to source: %s", __FUNCTION__, ec.message( ).c_str( ) );
+        }
+        else
+        {
+            DebugLog( "[%s] Credentials backed up to %s", __FUNCTION__, devDataPath.string( ).c_str( ) );
+        }
     }
+#endif
 }
