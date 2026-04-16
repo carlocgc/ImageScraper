@@ -94,8 +94,10 @@ void ImageScraper::FrontEnd::Update( )
     if( !m_LayoutInitialised )
     {
         m_LayoutInitialised = true;
-        ImGuiDockNode* node = ImGui::DockBuilderGetNode( dockspaceId );
-        if( node == nullptr || node->IsLeafNode( ) )
+        // Only build the default layout on a genuinely fresh run.
+        // If imgui.ini already exists ImGui restores the saved layout itself
+        // and we must not overwrite it.
+        if( !std::filesystem::exists( m_IniPath ) )
         {
             SetupDefaultLayout( dockspaceId );
         }
@@ -179,11 +181,11 @@ void ImageScraper::FrontEnd::SetupDefaultLayout( ImGuiID dockspaceId )
     ImGuiID dockTopLeft, dockBottomLeft;
     ImGui::DockBuilderSplitNode( dockLeft, ImGuiDir_Up, 350.0f / 841.0f, &dockTopLeft, &dockBottomLeft );
 
-    // Dock panels — first window docked to a node becomes the default selected tab
-    ImGui::DockBuilderDockWindow( "Download Options", dockTopLeft );
+    // Dock panels - last window docked to a node becomes the default selected tab
     ImGui::DockBuilderDockWindow( "Credentials",      dockTopLeft );
-    ImGui::DockBuilderDockWindow( "Output",           dockBottomLeft );
+    ImGui::DockBuilderDockWindow( "Download Options", dockTopLeft );
     ImGui::DockBuilderDockWindow( "Download History", dockBottomLeft );
+    ImGui::DockBuilderDockWindow( "Output",           dockBottomLeft );
     ImGui::DockBuilderDockWindow( "Media Preview",    dockRight );
     ImGui::DockBuilderDockWindow( "Download Progress", dockBottom );
 
