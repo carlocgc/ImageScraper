@@ -39,7 +39,7 @@ namespace ImageScraper
         ~DownloadHistoryPanel( );
         void Update( ) override;
 
-        // Thread-safe — may be called from a worker thread
+        // Thread-safe - may be called from a worker thread
         void OnFileDownloaded( const std::string& filepath, const std::string& sourceUrl );
 
     private:
@@ -50,7 +50,7 @@ namespace ImageScraper
         static std::string FormatFileSize( const std::string& filepath );
 
         // Returns thumbnail entry for the filepath; entry.m_Texture == 0 means unavailable.
-        // Loads on first call, caches the result — never retries failed loads.
+        // Loads on first call, caches the result - never retries failed loads.
         ThumbnailEntry GetOrLoadThumbnail( const std::string& filepath );
         static ThumbnailEntry LoadVideoThumbnail( const std::string& filepath );
         static bool IsSupportedMediaExtension( const std::string& filepath );

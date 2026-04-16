@@ -6,6 +6,12 @@ A C++ desktop application that scrapes and downloads images from Reddit, 4chan, 
 
 ---
 
+## General Rules
+
+**Never use em dashes (`—`).** ImGui renders the em dash as `?` (it falls outside the default font's Latin-1 range), and the Catch2 test adapter breaks on it in test names. Use a regular hyphen (`-`) everywhere — in source strings, comments, test names, and documentation.
+
+---
+
 ## Dependencies
 
 Do NOT add third-party libraries or dependencies without explicit user approval. This includes:

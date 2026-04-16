@@ -121,7 +121,7 @@ void ImageScraper::CredentialsPanel::Update( )
     ImGui::Checkbox( "Save credentials to source data/", &m_SaveDevCredentials );
     if( ImGui::IsItemHovered( ) )
     {
-        ImGui::SetTooltip( "Backs up config.json to ImageScraper/data/ on every save.\nDebug builds only — keeps dev credentials persistent across rebuilds." );
+        ImGui::SetTooltip( "Backs up config.json to ImageScraper/data/ on every save.\nDebug builds only - keeps dev credentials persistent across rebuilds." );
     }
 #endif
 

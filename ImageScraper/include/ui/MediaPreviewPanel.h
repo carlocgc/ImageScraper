@@ -20,10 +20,10 @@ namespace ImageScraper
         ~MediaPreviewPanel( );
         void Update( ) override;
 
-        // Thread-safe — may be called from a worker thread
+        // Thread-safe - may be called from a worker thread
         void OnFileDownloaded( const std::string& filepath );
 
-        // Main-thread only — forces a load even if media is currently playing
+        // Main-thread only - forces a load even if media is currently playing
         void RequestPreview( const std::string& filepath );
 
     private:
@@ -68,7 +68,7 @@ namespace ImageScraper
         std::string m_LatestPath{ };
         bool        m_HasLatestPath{ false };
 
-        // Decoded result posted by the decode task (worker thread → Update) — images/GIFs only
+        // Decoded result posted by the decode task (worker thread → Update) - images/GIFs only
         std::mutex                    m_DecodedMutex{ };
         std::unique_ptr<DecodedImage> m_PendingDecoded{ };
 
@@ -77,7 +77,7 @@ namespace ImageScraper
         std::string         m_LoadingFileName{ };
         bool                m_ForceLoad{ false };
 
-        // Current display state — only touched on the main thread
+        // Current display state - only touched on the main thread
         std::vector<GLuint> m_Textures{ };
         std::vector<int>    m_FrameDelaysMs{ };
         int         m_Width{ 0 };
@@ -87,7 +87,7 @@ namespace ImageScraper
         std::string m_CurrentFilePath{ };
         MediaState  m_MediaState{ MediaState::None };
 
-        // Video playback — single reused texture, decoded frame-by-frame
+        // Video playback - single reused texture, decoded frame-by-frame
         std::unique_ptr<VideoPlayer> m_VideoPlayer{ };
         std::vector<uint8_t>         m_VideoFrameBuffer{ };  // reused RGBA scratch buffer
     };
