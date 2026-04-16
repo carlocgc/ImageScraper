@@ -8,18 +8,56 @@ void ImageScraper::FourChanPanel::LoadSearchHistory( std::shared_ptr<JsonFile> a
     m_AppConfig = std::move( appConfig );
     if( !m_AppConfig ) return;
 
-    m_AppConfig->GetValue<std::string>( "fourchan_last_board", m_FourChanBoard );
+    Json arr;
+    if( m_AppConfig->GetValue<Json>( "fourchan_board_history", arr ) && arr.is_array( ) )
+    {
+        for( const auto& item : arr )
+        {
+            if( item.is_string( ) )
+                m_SearchHistory.push_back( item.get<std::string>( ) );
+        }
+        if( static_cast<int>( m_SearchHistory.size( ) ) > k_MaxHistory )
+            m_SearchHistory.resize( k_MaxHistory );
+    }
+
+    if( !m_SearchHistory.empty( ) )
+        m_FourChanBoard = m_SearchHistory.front( );
 }
 
 void ImageScraper::FourChanPanel::SaveSearchHistory( )
 {
     if( !m_AppConfig ) return;
 
-    m_AppConfig->SetValue<std::string>( "fourchan_last_board", m_FourChanBoard );
+    Json arr = Json::array( );
+    for( const auto& item : m_SearchHistory )
+        arr.push_back( item );
+
+    m_AppConfig->SetValue<Json>( "fourchan_board_history", arr );
     if( !m_AppConfig->Serialise( ) )
     {
         WarningLog( "[%s] Failed to save FourChan search history", __FUNCTION__ );
     }
+}
+
+void ImageScraper::FourChanPanel::OnSearchCommitted( )
+{
+    PushToHistory( m_FourChanBoard );
+}
+
+void ImageScraper::FourChanPanel::PushToHistory( const std::string& value )
+{
+    if( value.empty( ) ) return;
+
+    auto it = std::find( m_SearchHistory.begin( ), m_SearchHistory.end( ), value );
+    if( it != m_SearchHistory.end( ) )
+        m_SearchHistory.erase( it );
+
+    m_SearchHistory.insert( m_SearchHistory.begin( ), value );
+
+    if( static_cast<int>( m_SearchHistory.size( ) ) > k_MaxHistory )
+        m_SearchHistory.resize( k_MaxHistory );
+
+    SaveSearchHistory( );
 }
 
 void ImageScraper::FourChanPanel::Update( )
@@ -29,10 +67,34 @@ void ImageScraper::FourChanPanel::Update( )
         char buffer[ INPUT_STRING_MAX ] = "";
         strcpy_s( buffer, INPUT_STRING_MAX, m_FourChanBoard.c_str( ) );
         ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Board (e.g. v, sci )", buffer, INPUT_STRING_MAX, flags ) )
-        {
+        const float arrowW  = ImGui::GetFrameHeight( );
+        const float spacing = ImGui::GetStyle( ).ItemInnerSpacing.x;
+        ImGui::SetNextItemWidth( ImGui::CalcItemWidth( ) - arrowW - spacing );
+        if( ImGui::InputText( "##fourchan_board", buffer, INPUT_STRING_MAX, flags ) )
             m_FourChanBoard = buffer;
-            SaveSearchHistory( );
+
+        ImGui::SameLine( 0.f, spacing );
+        if( ImGui::ArrowButton( "##fourchan_hist_btn", ImGuiDir_Down ) )
+            ImGui::OpenPopup( "##fourchan_hist" );
+
+        ImGui::SameLine( 0.f, spacing );
+        ImGui::TextUnformatted( "Board (e.g. v, sci )" );
+
+        if( ImGui::BeginPopup( "##fourchan_hist" ) )
+        {
+            if( m_SearchHistory.empty( ) )
+            {
+                ImGui::TextDisabled( "No history yet" );
+            }
+            else
+            {
+                for( const auto& item : m_SearchHistory )
+                {
+                    if( ImGui::Selectable( item.c_str( ) ) )
+                        m_FourChanBoard = item;
+                }
+            }
+            ImGui::EndPopup( );
         }
     }
 
@@ -50,9 +112,9 @@ void ImageScraper::FourChanPanel::Update( )
 ImageScraper::UserInputOptions ImageScraper::FourChanPanel::BuildInputOptions( ) const
 {
     UserInputOptions options{ };
-    options.m_Provider            = ContentProvider::FourChan;
-    options.m_FourChanBoard       = m_FourChanBoard;
-    options.m_FourChanMaxThreads  = m_FourChanMaxThreads;
+    options.m_Provider              = ContentProvider::FourChan;
+    options.m_FourChanBoard         = m_FourChanBoard;
+    options.m_FourChanMaxThreads    = m_FourChanMaxThreads;
     options.m_FourChanMaxMediaItems = m_FourChanMaxMediaItems;
     return options;
 }

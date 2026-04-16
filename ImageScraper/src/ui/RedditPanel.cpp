@@ -9,18 +9,56 @@ void ImageScraper::RedditPanel::LoadSearchHistory( std::shared_ptr<JsonFile> app
     m_AppConfig = std::move( appConfig );
     if( !m_AppConfig ) return;
 
-    m_AppConfig->GetValue<std::string>( "reddit_last_subreddit", m_SubredditName );
+    Json arr;
+    if( m_AppConfig->GetValue<Json>( "reddit_subreddit_history", arr ) && arr.is_array( ) )
+    {
+        for( const auto& item : arr )
+        {
+            if( item.is_string( ) )
+                m_SearchHistory.push_back( item.get<std::string>( ) );
+        }
+        if( static_cast<int>( m_SearchHistory.size( ) ) > k_MaxHistory )
+            m_SearchHistory.resize( k_MaxHistory );
+    }
+
+    if( !m_SearchHistory.empty( ) )
+        m_SubredditName = m_SearchHistory.front( );
 }
 
 void ImageScraper::RedditPanel::SaveSearchHistory( )
 {
     if( !m_AppConfig ) return;
 
-    m_AppConfig->SetValue<std::string>( "reddit_last_subreddit", m_SubredditName );
+    Json arr = Json::array( );
+    for( const auto& item : m_SearchHistory )
+        arr.push_back( item );
+
+    m_AppConfig->SetValue<Json>( "reddit_subreddit_history", arr );
     if( !m_AppConfig->Serialise( ) )
     {
         WarningLog( "[%s] Failed to save Reddit search history", __FUNCTION__ );
     }
+}
+
+void ImageScraper::RedditPanel::OnSearchCommitted( )
+{
+    PushToHistory( m_SubredditName );
+}
+
+void ImageScraper::RedditPanel::PushToHistory( const std::string& value )
+{
+    if( value.empty( ) ) return;
+
+    auto it = std::find( m_SearchHistory.begin( ), m_SearchHistory.end( ), value );
+    if( it != m_SearchHistory.end( ) )
+        m_SearchHistory.erase( it );
+
+    m_SearchHistory.insert( m_SearchHistory.begin( ), value );
+
+    if( static_cast<int>( m_SearchHistory.size( ) ) > k_MaxHistory )
+        m_SearchHistory.resize( k_MaxHistory );
+
+    SaveSearchHistory( );
 }
 
 void ImageScraper::RedditPanel::Update( )
@@ -30,10 +68,34 @@ void ImageScraper::RedditPanel::Update( )
         char buffer[ INPUT_STRING_MAX ] = "";
         strcpy_s( buffer, INPUT_STRING_MAX, m_SubredditName.c_str( ) );
         ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Subreddit (e.g. Gifs)", buffer, INPUT_STRING_MAX, flags ) )
-        {
+        const float arrowW  = ImGui::GetFrameHeight( );
+        const float spacing = ImGui::GetStyle( ).ItemInnerSpacing.x;
+        ImGui::SetNextItemWidth( ImGui::CalcItemWidth( ) - arrowW - spacing );
+        if( ImGui::InputText( "##subreddit", buffer, INPUT_STRING_MAX, flags ) )
             m_SubredditName = buffer;
-            SaveSearchHistory( );
+
+        ImGui::SameLine( 0.f, spacing );
+        if( ImGui::ArrowButton( "##subreddit_hist_btn", ImGuiDir_Down ) )
+            ImGui::OpenPopup( "##subreddit_hist" );
+
+        ImGui::SameLine( 0.f, spacing );
+        ImGui::TextUnformatted( "Subreddit (e.g. Gifs)" );
+
+        if( ImGui::BeginPopup( "##subreddit_hist" ) )
+        {
+            if( m_SearchHistory.empty( ) )
+            {
+                ImGui::TextDisabled( "No history yet" );
+            }
+            else
+            {
+                for( const auto& item : m_SearchHistory )
+                {
+                    if( ImGui::Selectable( item.c_str( ) ) )
+                        m_SubredditName = item;
+                }
+            }
+            ImGui::EndPopup( );
         }
     }
 

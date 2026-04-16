@@ -246,6 +246,7 @@ bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
         if( svc->HandleUserInput( inputOptions ) )
         {
             LogDebug( "[%s] User input handled!", __FUNCTION__ );
+            panel->OnSearchCommitted( );
             m_Running = true;
             return true;
         }
