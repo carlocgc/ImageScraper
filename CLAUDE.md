@@ -38,10 +38,10 @@ Never commit sensitive data to source control. The following must always be kept
 - Real API keys, client IDs, client secrets, or access tokens
 - OAuth tokens or refresh tokens of any kind
 
-`ImageScraper/data/config.json` is gitignored and holds real local credentials. The app creates this file automatically on first run via `JsonFile::Deserialise()`.
+`ImageScraper/data/config.json` is gitignored and holds real local credentials. In Debug builds, the app creates this file automatically on first run via `JsonFile::Deserialise()`. Release builds do not yet guarantee auto-creation for end users.
 
 When adding a new key:
-1. Add it to `JsonFile::Deserialise()` with a sensible default so the app creates it on first run
+1. Add handling for it in `JsonFile::Deserialise()` with a sensible default (so Debug auto-creation picks it up)
 2. Add the real value via the Credentials panel (or directly in your local `config.json`)
 
 ---
