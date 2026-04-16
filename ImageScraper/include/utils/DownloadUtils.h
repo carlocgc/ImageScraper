@@ -45,7 +45,7 @@ namespace ImageScraper::DownloadHelpers
         const std::size_t slashPos = url.find_last_of( "/" );
         if( slashPos == std::string::npos )
         {
-            DebugLog( "[%s] %s did not contain a file name and ext", __FUNCTION__, url.c_str() );
+            LogDebug( "[%s] %s did not contain a file name and ext", __FUNCTION__, url.c_str() );
             return "";
         }
 
@@ -54,7 +54,7 @@ namespace ImageScraper::DownloadHelpers
         const std::size_t dotPos = filename.find_last_of( "." );
         if( dotPos == std::string::npos )
         {
-            DebugLog( "[%s] %s did not contain a file name and ext", __FUNCTION__, url.c_str( ) );
+            LogDebug( "[%s] %s did not contain a file name and ext", __FUNCTION__, url.c_str( ) );
             return "";
         }
 
@@ -66,7 +66,7 @@ namespace ImageScraper::DownloadHelpers
         const std::size_t dotPos = file.find_last_of( "." );
         if( dotPos == std::string::npos )
         {
-            DebugLog( "[%s] %s did not contain a file name and ext", __FUNCTION__, file .c_str( ) );
+            LogDebug( "[%s] %s did not contain a file name and ext", __FUNCTION__, file .c_str( ) );
             return "";
         }
 
@@ -88,7 +88,7 @@ namespace ImageScraper::DownloadHelpers
         const std::size_t dotPos = url.find_last_of( "." );
         if( dotPos == std::string::npos )
         {
-            DebugLog( "[%s] %s did not contain a file name and ext", __FUNCTION__, url.c_str( ) );
+            LogDebug( "[%s] %s did not contain a file name and ext", __FUNCTION__, url.c_str( ) );
             return "";
         }
 
@@ -103,7 +103,7 @@ namespace ImageScraper::DownloadHelpers
         {
             if( !std::filesystem::create_directories( dir ) )
             {
-                ErrorLog( "[%s] Failed to create download folder, invalid path: %s", __FUNCTION__, dir );
+                LogError( "[%s] Failed to create download folder, invalid path: %s", __FUNCTION__, dir );
                 return false;
             }
         }

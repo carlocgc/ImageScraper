@@ -20,7 +20,7 @@ ImageScraper::Reddit::FetchSubredditPostsRequest::FetchSubredditPostsRequest( st
 
 ImageScraper::RequestResult ImageScraper::Reddit::FetchSubredditPostsRequest::Perform( const RequestOptions& options )
 {
-    DebugLog( "[%s] FetchSubredditPostsRequest started!", __FUNCTION__ );
+    LogDebug( "[%s] FetchSubredditPostsRequest started!", __FUNCTION__ );
 
     RequestResult result{ };
 
@@ -40,7 +40,7 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchSubredditPostsRequest::Pe
         request.m_Url = s_BaseUrl + urlEnd;
     }
 
-    DebugLog( "[%s] FetchSubredditPostsRequest, URL: %s", __FUNCTION__, request.m_Url.c_str( ) );
+    LogDebug( "[%s] FetchSubredditPostsRequest, URL: %s", __FUNCTION__, request.m_Url.c_str( ) );
 
     const HttpResponse response = m_HttpClient->Get( request );
 
@@ -48,7 +48,7 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchSubredditPostsRequest::Pe
     {
         result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );
         result.m_Error.m_ErrorString = response.m_Error;
-        DebugLog( "[%s] FetchSubredditPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] FetchSubredditPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
@@ -56,11 +56,11 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchSubredditPostsRequest::Pe
 
     if( DownloadHelpers::IsRedditResponseError( result ) )
     {
-        DebugLog( "[%s] FetchSubredditPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] FetchSubredditPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
-    DebugLog( "[%s] FetchSubredditPostsRequest complete!", __FUNCTION__ );
+    LogDebug( "[%s] FetchSubredditPostsRequest complete!", __FUNCTION__ );
     result.m_Success = true;
     return result;
 }

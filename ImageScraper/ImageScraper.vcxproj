@@ -96,7 +96,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);CURLPP_STATICLIB;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include\imgui</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -111,8 +111,7 @@
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl-d.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -123,7 +122,7 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CURLPP_STATICLIB;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include\imgui</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -140,8 +139,7 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -151,7 +149,7 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);CURL_STATICLIB;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -166,7 +164,6 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avformat-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avcodec-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avutil-60.dll" "$(TargetDir)" /Y
@@ -185,7 +182,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CURL_STATICLIB;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -203,7 +200,6 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avformat-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avcodec-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avutil-60.dll" "$(TargetDir)" /Y

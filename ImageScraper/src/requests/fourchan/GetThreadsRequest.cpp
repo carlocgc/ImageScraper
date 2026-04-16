@@ -18,7 +18,7 @@ ImageScraper::FourChan::GetThreadsRequest::GetThreadsRequest( std::shared_ptr<IH
 
 ImageScraper::RequestResult ImageScraper::FourChan::GetThreadsRequest::Perform( const RequestOptions& options )
 {
-    DebugLog( "[%s] FourChan::GetThreadsRequest started!", __FUNCTION__ );
+    LogDebug( "[%s] FourChan::GetThreadsRequest started!", __FUNCTION__ );
 
     RequestResult result{ };
 
@@ -29,7 +29,7 @@ ImageScraper::RequestResult ImageScraper::FourChan::GetThreadsRequest::Perform( 
     request.m_UserAgent = options.m_UserAgent;
     request.m_CaBundle = options.m_CaBundle;
 
-    DebugLog( "[%s] FourChan::GetThreadsRequest, URL: %s", __FUNCTION__, url.c_str( ) );
+    LogDebug( "[%s] FourChan::GetThreadsRequest, URL: %s", __FUNCTION__, url.c_str( ) );
 
     const HttpResponse response = m_HttpClient->Get( request );
 
@@ -37,7 +37,7 @@ ImageScraper::RequestResult ImageScraper::FourChan::GetThreadsRequest::Perform( 
     {
         result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );
         result.m_Error.m_ErrorString = response.m_Error;
-        DebugLog( "[%s] FourChan::GetThreadsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] FourChan::GetThreadsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
@@ -45,11 +45,11 @@ ImageScraper::RequestResult ImageScraper::FourChan::GetThreadsRequest::Perform( 
 
     if( DownloadHelpers::IsFourChanResponseError( result ) )
     {
-        DebugLog( "[%s] FourChan::GetThreadsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] FourChan::GetThreadsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
-    DebugLog( "[%s] FourChan::GetThreadsRequest complete!", __FUNCTION__ );
+    LogDebug( "[%s] FourChan::GetThreadsRequest complete!", __FUNCTION__ );
     result.m_Success = true;
     return result;
 }

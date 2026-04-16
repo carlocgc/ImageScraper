@@ -2,6 +2,8 @@
 #include "ui/DownloadProgressPanel.h"
 #include "log/Logger.h"
 
+#include "imgui/imgui_internal.h"
+
 ImageScraper::FrontEnd::FrontEnd( int maxLogLines )
     : m_MaxLogLines{ maxLogLines }
 {
@@ -81,10 +83,28 @@ void ImageScraper::FrontEnd::Update( )
     ImGui_ImplGlfw_NewFrame( );
     ImGui::NewFrame( );
 
-    ImGui::DockSpaceOverViewport( );
+    const ImGuiID dockspaceId = ImGui::DockSpaceOverViewport( );
 
-    ShowDemoWindow( );
+    if( !m_LayoutInitialised )
+    {
+        m_LayoutInitialised = true;
+        // Only build the default layout on a genuinely fresh run.
+        // If imgui.ini already exists ImGui restores the saved layout itself
+        // and we must not overwrite it.
+        if( !std::filesystem::exists( m_IniPath ) )
+        {
+            SetupDefaultLayout( dockspaceId );
+        }
+    }
 
+    // Panel update order controls default tab focus within each dock node.
+    // ImGui focuses the first panel to call Begin() in each shared node, with
+    // the exception of the very last Begin() call in the frame which also
+    // receives focus.  Keep this ordering intentional:
+    //   Top-left node    - Download Options (first) focused, Credentials secondary
+    //   Right node       - Media Preview (first) focused, Dear ImGui Demo secondary
+    //   Bottom-left node - Download History (first) focused, Output secondary
+    //   Bottom node      - Download Progress (last, sole occupant)
     const bool wasRunning = m_DownloadOptionsPanel->IsRunning( );
     m_DownloadOptionsPanel->Update( );
     if( !wasRunning && m_DownloadOptionsPanel->IsRunning( ) )
@@ -93,11 +113,14 @@ void ImageScraper::FrontEnd::Update( )
         m_DownloadProgressPanel->SetRunning( true );
     }
 
-    m_LogPanel->Update( );
-    m_DownloadProgressPanel->Update( );
+    m_CredentialsPanel->Update( );
     m_MediaPreviewPanel->Update( );
     m_DownloadHistoryPanel->Update( );
-    m_CredentialsPanel->Update( );
+    m_LogPanel->Update( );
+
+    ShowDemoWindow( );
+
+    m_DownloadProgressPanel->Update( );
 }
 
 void ImageScraper::FrontEnd::Render( )
@@ -141,6 +164,39 @@ void ImageScraper::FrontEnd::SetInputState( InputState state )
 ImageScraper::LogLevel ImageScraper::FrontEnd::GetLogLevel( ) const
 {
     return m_LogPanel->GetLogLevel( );
+}
+
+void ImageScraper::FrontEnd::SetupDefaultLayout( ImGuiID dockspaceId )
+{
+    ImGui::DockBuilderRemoveNode( dockspaceId );
+    ImGui::DockBuilderAddNode( dockspaceId, ImGuiDockNodeFlags_DockSpace );
+    ImGui::DockBuilderSetNodeSize( dockspaceId, ImGui::GetMainViewport( )->Size );
+
+    // Carve off a narrow strip at the bottom for download progress
+    ImGuiID dockTop, dockBottom;
+    ImGui::DockBuilderSplitNode( dockspaceId, ImGuiDir_Down, 80.0f / 900.0f, &dockBottom, &dockTop );
+
+    // Split the remaining area into left and right columns
+    ImGuiID dockLeft, dockRight;
+    ImGui::DockBuilderSplitNode( dockTop, ImGuiDir_Left, 732.0f / 1600.0f, &dockLeft, &dockRight );
+
+    // Split the left column into top (options) and bottom (log/history)
+    ImGuiID dockTopLeft, dockBottomLeft;
+    ImGui::DockBuilderSplitNode( dockLeft, ImGuiDir_Up, 350.0f / 841.0f, &dockTopLeft, &dockBottomLeft );
+
+    // Dock all panels
+    ImGui::DockBuilderDockWindow( "Download Options", dockTopLeft );
+    ImGui::DockBuilderDockWindow( "Credentials",      dockTopLeft );
+    ImGui::DockBuilderDockWindow( "Output",           dockBottomLeft );
+    ImGui::DockBuilderDockWindow( "Download History", dockBottomLeft );
+    ImGui::DockBuilderDockWindow( "Media Preview",    dockRight );
+    ImGui::DockBuilderDockWindow( "Download Progress", dockBottom );
+
+#ifdef _DEBUG
+    ImGui::DockBuilderDockWindow( "Dear ImGui Demo", dockRight );
+#endif
+
+    ImGui::DockBuilderFinish( dockspaceId );
 }
 
 void ImageScraper::FrontEnd::ShowDemoWindow( )

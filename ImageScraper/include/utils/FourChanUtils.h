@@ -37,7 +37,7 @@ namespace ImageScraper::FourChanUtils
         }
         catch( const Json::exception& e )
         {
-            ErrorLog( "[%s] GetPageCountForBoard error parsing response, error: %s", __FUNCTION__, e.what( ) );
+            LogError( "[%s] GetPageCountForBoard error parsing response, error: %s", __FUNCTION__, e.what( ) );
         }
 
         return pages;
@@ -77,7 +77,7 @@ namespace ImageScraper::FourChanUtils
         }
         catch( const Json::exception& e )
         {
-            ErrorLog( "[%s] GetFileNamesFromResponse error parsing response, error: %s", __FUNCTION__, e.what( ) );
+            LogError( "[%s] GetFileNamesFromResponse error parsing response, error: %s", __FUNCTION__, e.what( ) );
         }
 
         return filenames;

@@ -27,13 +27,13 @@ namespace ImageScraper::RedditUtils
     {
         if( !response.contains( "access_token" ) )
         {
-            ErrorLog( "[%s] Response did not contain access token!", __FUNCTION__ );
+            LogError( "[%s] Response did not contain access token!", __FUNCTION__ );
             return std::nullopt;
         }
 
         if( !response.contains( "expires_in" ) )
         {
-            ErrorLog( "[%s] Response did not contain token expire seconds!", __FUNCTION__ );
+            LogError( "[%s] Response did not contain token expire seconds!", __FUNCTION__ );
             return std::nullopt;
         }
 
@@ -46,7 +46,7 @@ namespace ImageScraper::RedditUtils
         }
         catch( const Json::exception& ex )
         {
-            ErrorLog( "[%s] Could not parse access token response, error: %s", __FUNCTION__, ex.what( ) );
+            LogError( "[%s] Could not parse access token response, error: %s", __FUNCTION__, ex.what( ) );
             return std::nullopt;
         }
     }
@@ -55,7 +55,7 @@ namespace ImageScraper::RedditUtils
     {
         if( !response.contains( "refresh_token" ) )
         {
-            ErrorLog( "[%s] Response did not contain refresh token!", __FUNCTION__ );
+            LogError( "[%s] Response did not contain refresh token!", __FUNCTION__ );
             return std::nullopt;
         }
 
@@ -66,7 +66,7 @@ namespace ImageScraper::RedditUtils
         }
         catch( const Json::exception& ex )
         {
-            ErrorLog( "[%s] Could not parse refresh token response, error: %s", __FUNCTION__, ex.what( ) );
+            LogError( "[%s] Could not parse refresh token response, error: %s", __FUNCTION__, ex.what( ) );
             return std::nullopt;
         }
     }
@@ -132,7 +132,7 @@ namespace ImageScraper::RedditUtils
         }
         catch( const Json::exception& e )
         {
-            ErrorLog( "[%s] GetMediaUrls error parsing data, error: %s", __FUNCTION__, e.what( ) );
+            LogError( "[%s] GetMediaUrls error parsing data, error: %s", __FUNCTION__, e.what( ) );
         }
 
         return result;

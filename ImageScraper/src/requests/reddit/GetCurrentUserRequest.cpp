@@ -18,14 +18,14 @@ ImageScraper::Reddit::GetCurrentUserRequest::GetCurrentUserRequest( std::shared_
 
 ImageScraper::RequestResult ImageScraper::Reddit::GetCurrentUserRequest::Perform( const RequestOptions& options )
 {
-    DebugLog( "[%s] GetCurrentUserRequest started!", __FUNCTION__ );
+    LogDebug( "[%s] GetCurrentUserRequest started!", __FUNCTION__ );
 
     RequestResult result{ };
 
     if( options.m_AccessToken.empty( ) )
     {
         result.SetError( ResponseErrorCode::InternalServerError );
-        DebugLog( "[%s] GetCurrentUserRequest failed, access token not provided.", __FUNCTION__ );
+        LogDebug( "[%s] GetCurrentUserRequest failed, access token not provided.", __FUNCTION__ );
         return result;
     }
 
@@ -41,7 +41,7 @@ ImageScraper::RequestResult ImageScraper::Reddit::GetCurrentUserRequest::Perform
     {
         result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );
         result.m_Error.m_ErrorString = response.m_Error;
-        DebugLog( "[%s] GetCurrentUserRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] GetCurrentUserRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
@@ -49,11 +49,11 @@ ImageScraper::RequestResult ImageScraper::Reddit::GetCurrentUserRequest::Perform
 
     if( DownloadHelpers::IsRedditResponseError( result ) )
     {
-        DebugLog( "[%s] GetCurrentUserRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] GetCurrentUserRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
-    DebugLog( "[%s] GetCurrentUserRequest complete!", __FUNCTION__ );
+    LogDebug( "[%s] GetCurrentUserRequest complete!", __FUNCTION__ );
     result.m_Success = true;
     return result;
 }

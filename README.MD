@@ -108,21 +108,13 @@ To set up:
 
 The file stays on your machine and is never committed.
 
-### Window Layout (imgui.ini)
+### Window Layout
 
-The docked panel layout is controlled by `ImageScraper/data/imgui.ini`, which is committed to source control as the canonical ship layout. The pre-build event copies it to the output directory before each build.
+The default docked panel layout is set up programmatically on first run using ImGui's `DockBuilder` API in `FrontEnd::SetupDefaultLayout()`. Windows are docked by name rather than hash, so the layout never goes stale when panels are added or renamed.
 
-At runtime, ImGui writes any layout changes back to `imgui.ini` next to the exe. That file is gitignored — changes made at runtime are local only and thrown away unless deliberately promoted.
+The layout is only applied when no saved layout exists (i.e. no `imgui.ini` next to the exe). Once the app has run once, ImGui persists any rearrangements to `imgui.ini` in the output directory and restores them on subsequent launches. That file is gitignored — it is local to each machine.
 
-**To update the ship layout:**
-
-1. Run the app and arrange the panels as desired
-2. Close the app (ImGui flushes `imgui.ini` on exit)
-3. Copy the updated file back to source:
-   ```
-   copy bin\ImageScraper\x64\Debug\imgui.ini ImageScraper\data\imgui.ini
-   ```
-4. Commit `ImageScraper/data/imgui.ini`
+**To add a new panel to the default layout**, add a `DockBuilderDockWindow("Panel Name", dockNodeId)` call in `FrontEnd::SetupDefaultLayout()` and delete `imgui.ini` from the output directory to force a layout reset on next run.
 
 ### Running Tests
 

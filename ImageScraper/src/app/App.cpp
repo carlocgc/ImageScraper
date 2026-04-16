@@ -70,13 +70,13 @@ int ImageScraper::App::Run( )
 {
     if( !m_FrontEnd || !m_FrontEnd->Init( m_Services, m_UserConfig ) )
     {
-        ErrorLog( "[%s] Could not start FrontEnd!", __FUNCTION__ );
+        LogError( "[%s] Could not start FrontEnd!", __FUNCTION__ );
         return EXIT_FAILURE;
     }
 
     if( !m_ListenServer )
     {
-        ErrorLog( "[%s] Invalid ListenServer!", __FUNCTION__ );
+        LogError( "[%s] Invalid ListenServer!", __FUNCTION__ );
         return EXIT_FAILURE;
     }
 
@@ -119,7 +119,7 @@ void ImageScraper::App::AuthenticateServices( )
     {
         if( !success )
         {
-            DebugLog( "[%s] %s failed to authenticate!", __FUNCTION__, s_ContentProviderStrings[ static_cast<uint8_t>( provider ) ] );
+            LogDebug( "[%s] %s failed to authenticate!", __FUNCTION__, s_ContentProviderStrings[ static_cast<uint8_t>( provider ) ] );
         }
 
         m_AuthenticatingCount--;

@@ -35,37 +35,37 @@ void ImageScraper::ListenServer::Start( )
 {
     if( !m_Initialised )
     {
-        ErrorLog( "[%s] ListenServer not initialised, call Init() before calling Start()!", __FUNCTION__ );
+        LogError( "[%s] ListenServer not initialised, call Init() before calling Start()!", __FUNCTION__ );
         return;
     }
 
     auto OnMessageReceived = [ this ]( const std::string message )
         {
-            DebugLog( "[%s] ListenServer message received, message: %s", __FUNCTION__, message.c_str( ) );
+            LogDebug( "[%s] ListenServer message received, message: %s", __FUNCTION__, message.c_str( ) );
 
             for( const auto& service : m_Services )
             {
                 if( service->HandleExternalAuth( message ) )
                 {
-                    DebugLog( "[%s] ListenServer auth response handled!", __FUNCTION__ );
+                    LogDebug( "[%s] ListenServer auth response handled!", __FUNCTION__ );
                     return;
                 }
             }
 
-            DebugLog( "[%s] ListenServer auth response not handled!", __FUNCTION__ );
+            LogDebug( "[%s] ListenServer auth response not handled!", __FUNCTION__ );
         };
 
     auto OnError = [ this ]( const std::string error )
         {
-            DebugLog( "[%s] ListenServer failed, error: %s", __FUNCTION__, error.c_str( ) );
+            LogDebug( "[%s] ListenServer failed, error: %s", __FUNCTION__, error.c_str( ) );
 
             if( m_CurrentRetries >= m_MaxRetries )
             {
-                DebugLog( "[%s] ListenServer max retries reached!", __FUNCTION__ );
+                LogDebug( "[%s] ListenServer max retries reached!", __FUNCTION__ );
                 return;
             }
 
-            DebugLog( "[%s] ListenServer retrying startup: %i/%i !", __FUNCTION__, m_CurrentRetries, m_MaxRetries );
+            LogDebug( "[%s] ListenServer retrying startup: %i/%i !", __FUNCTION__, m_CurrentRetries, m_MaxRetries );
             ++m_CurrentRetries;
             Start( );
         };
@@ -185,14 +185,14 @@ void ImageScraper::ListenServer::Start( )
                     return;
                 }
 
-                DebugLog( "[%s] ListenServer connection established!", __FUNCTION__ );
+                LogDebug( "[%s] ListenServer connection established!", __FUNCTION__ );
 
                 // Now receive and process the HTTP response from the browser
                 char buffer[ 4096 ];
                 int bytesReceived = recv( clientSocket, buffer, sizeof( buffer ), 0 );
                 std::string response( buffer, bytesReceived );
 
-                DebugLog( "[%s] ListenServer bytes received!, bytes: %i, data: %s, ", __FUNCTION__, bytesReceived, response.c_str( ) );
+                LogDebug( "[%s] ListenServer bytes received!, bytes: %i, data: %s, ", __FUNCTION__, bytesReceived, response.c_str( ) );
 
                 const int contentLength = static_cast< int >( m_AuthHtml.length( ) );
 
@@ -210,10 +210,10 @@ void ImageScraper::ListenServer::Start( )
                 }
                 else
                 {
-                    DebugLog( "[%s] ListenServer sent http response successfully!", __FUNCTION__ );
+                    LogDebug( "[%s] ListenServer sent http response successfully!", __FUNCTION__ );
                 }                
 
-                DebugLog( "[%s] ListenServer Response: ", __FUNCTION__, response.c_str( ) );
+                LogDebug( "[%s] ListenServer Response: ", __FUNCTION__, response.c_str( ) );
 
                 auto messageTask = TaskManager::Instance( ).SubmitMain( OnMessageReceived, response );
                 ( void )messageTask;

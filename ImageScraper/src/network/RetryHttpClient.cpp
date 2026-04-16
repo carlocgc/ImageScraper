@@ -47,7 +47,7 @@ ImageScraper::HttpResponse ImageScraper::RetryHttpClient::Execute( const HttpReq
         // Don't retry on client errors (4xx) other than 429
         if( response.m_StatusCode >= 400 && response.m_StatusCode < 500 )
         {
-            DebugLog( "[%s] Client error %i, not retrying.", __FUNCTION__, response.m_StatusCode );
+            LogDebug( "[%s] Client error %i, not retrying.", __FUNCTION__, response.m_StatusCode );
             return response;
         }
 

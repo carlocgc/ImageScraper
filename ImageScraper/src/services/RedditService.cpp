@@ -39,18 +39,18 @@ ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig,
         m_DeviceId = StringUtils::CreateGuid( 30 );
         m_AppConfig->SetValue<std::string>( s_AppDataKey_DeviceId, m_DeviceId );
         m_AppConfig->Serialise( );
-        DebugLog( "[%s] Created new Reddit device id: %s", __FUNCTION__, m_DeviceId.c_str( ) );
+        LogDebug( "[%s] Created new Reddit device id: %s", __FUNCTION__, m_DeviceId.c_str( ) );
     }
 
     {
         std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
         if( m_AppConfig->GetValue<std::string>( s_AppDataKey_RefreshToken, m_RefreshToken ) && !m_RefreshToken.empty( ) )
         {
-            DebugLog( "[%s] Refresh token found!, m_RefreshToken: %s", __FUNCTION__, m_RefreshToken.c_str( ) );
+            LogDebug( "[%s] Refresh token found!, m_RefreshToken: %s", __FUNCTION__, m_RefreshToken.c_str( ) );
         }
         else
         {
-            DebugLog( "[%s] No refresh token found!", __FUNCTION__ );
+            LogDebug( "[%s] No refresh token found!", __FUNCTION__ );
         }
     }
 
@@ -93,11 +93,11 @@ bool ImageScraper::RedditService::OpenExternalAuth( )
     {
         const std::string url = StringUtils::WideStringToUtf8String( wurl, true );
         InfoLog( "[%s] Opened external auth in browser!", __FUNCTION__ );
-        DebugLog( "[%s] External auth url: %s", __FUNCTION__, url.c_str( ) );
+        LogDebug( "[%s] External auth url: %s", __FUNCTION__, url.c_str( ) );
         return true;
     }
 
-    ErrorLog( "[%s] Could not open default browser, make sure a default browser is set in OS settings!", __FUNCTION__ );
+    LogError( "[%s] Could not open default browser, make sure a default browser is set in OS settings!", __FUNCTION__ );
     return false;
 }
 
@@ -106,13 +106,13 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
     const int signingInProvider = m_Sink->GetSigningInProvider( );
     if( signingInProvider == INVALID_CONTENT_PROVIDER )
     {
-        ErrorLog( "[%s] RedditService::HandleExternalAuth skipped, No signing in provider!", __FUNCTION__ );
+        LogError( "[%s] RedditService::HandleExternalAuth skipped, No signing in provider!", __FUNCTION__ );
         return false;
     }
 
     if( static_cast< ContentProvider >( signingInProvider ) != m_ContentProvider )
     {
-        DebugLog( "[%s] RedditService::HandleExternalAuth skipped, incorrect provider!", __FUNCTION__ );
+        LogDebug( "[%s] RedditService::HandleExternalAuth skipped, incorrect provider!", __FUNCTION__ );
         return false;
     }
 
@@ -120,13 +120,13 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
     std::size_t errorStart = response.find( errorKey );
     if( errorStart != std::string::npos )
     {
-        DebugLog( "[%s] RedditService::HandleExternalAuth failed, response contained error!", __FUNCTION__ );
+        LogDebug( "[%s] RedditService::HandleExternalAuth failed, response contained error!", __FUNCTION__ );
         return false;
     }
 
     if( response.find( "favicon" ) != std::string::npos )
     {
-        DebugLog( "[%s] RedditService::HandleExternalAuth failed, invalid message!", __FUNCTION__ );
+        LogDebug( "[%s] RedditService::HandleExternalAuth failed, invalid message!", __FUNCTION__ );
         return false;
     }
 
@@ -137,7 +137,7 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
     std::size_t codeStart = response.find( codeKey );
     if( codeStart == std::string::npos )
     {
-        DebugLog( "[%s] RedditService::HandleExternalAuth failed, could not find auth code start!", __FUNCTION__ );
+        LogDebug( "[%s] RedditService::HandleExternalAuth failed, could not find auth code start!", __FUNCTION__ );
         return false;
     }
 
@@ -146,13 +146,13 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
     const std::size_t codeEnd = response.find( " ", codeStart );
     if( codeEnd == std::string::npos )
     {
-        DebugLog( "[%s] RedditService::HandleExternalAuth failed, could not find auth code end!", __FUNCTION__ );
+        LogDebug( "[%s] RedditService::HandleExternalAuth failed, could not find auth code end!", __FUNCTION__ );
         return false;
     }
 
     const std::string authCode = response.substr( codeStart, codeEnd - codeStart );
     InfoLog( "[%s] Auth code received!", __FUNCTION__ );
-    DebugLog( "[%s] Auth code: %s", __FUNCTION__, authCode.c_str( ) );
+    LogDebug( "[%s] Auth code: %s", __FUNCTION__, authCode.c_str( ) );
 
     FetchAccessToken( authCode );
     return true;
@@ -178,13 +178,13 @@ void ImageScraper::RedditService::Authenticate( AuthenticateCallback callback )
     auto onComplete = [ this, completeCallback = callback ]( )
     {
         completeCallback( m_ContentProvider, true );
-        DebugLog( "[%s] Reddit autheticated successfully!", __FUNCTION__ );
+        LogDebug( "[%s] Reddit autheticated successfully!", __FUNCTION__ );
     };
 
     auto onFail = [ this, completeCallback = callback ]( )
     {
         completeCallback( m_ContentProvider, false );
-        DebugLog( "[%s] Reddit authetication failed", __FUNCTION__ );
+        LogDebug( "[%s] Reddit authetication failed", __FUNCTION__ );
     };
 
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, onComplete, onFail ]( )
@@ -290,13 +290,13 @@ void ImageScraper::RedditService::FetchAccessToken( const std::string& authCode 
     auto onFail = [ this ]( const std::string error )
     {
         m_Sink->OnSignInComplete( ContentProvider::Reddit );
-        ErrorLog( "[%s] Reddit sign in failed, error: %s", __FUNCTION__, error.c_str( ) );
+        LogError( "[%s] Reddit sign in failed, error: %s", __FUNCTION__, error.c_str( ) );
     };
 
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, authCode, onComplete, onFail ]( )
         {
             InfoLog( "[%s] Started OAuth process!", __FUNCTION__ );
-            DebugLog( "[%s] authCode: %s", __FUNCTION__, authCode.c_str( ) );
+            LogDebug( "[%s] authCode: %s", __FUNCTION__, authCode.c_str( ) );
 
             RequestOptions fetchOptions{ };
 
@@ -351,7 +351,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
     auto onFail = [ this ]( )
     {
-        ErrorLog( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
+        LogError( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
 
         m_Sink->OnRunComplete( );
     };
@@ -359,9 +359,9 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, options = inputOptions, onComplete, onFail ]( )
         {
             InfoLog( "[%s] Starting Reddit media download!", __FUNCTION__ );
-            DebugLog( "[%s] Subreddit: %s", __FUNCTION__, options.m_SubredditName.c_str( ) );
-            DebugLog( "[%s] Scope: %s", __FUNCTION__, options.m_RedditScope.c_str( ) );
-            DebugLog( "[%s] Media Item Limit: %i", __FUNCTION__, options.m_RedditMaxMediaItems );
+            LogDebug( "[%s] Subreddit: %s", __FUNCTION__, options.m_SubredditName.c_str( ) );
+            LogDebug( "[%s] Scope: %s", __FUNCTION__, options.m_RedditScope.c_str( ) );
+            LogDebug( "[%s] Media Item Limit: %i", __FUNCTION__, options.m_RedditMaxMediaItems );
 
             if( IsCancelled( ) )
             {
@@ -387,7 +387,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
             if( !IsAuthenticated( ) )
             {
-                ErrorLog( "[%s] Could not authenticate with reddit api", __FUNCTION__ );
+                LogError( "[%s] Could not authenticate with reddit api", __FUNCTION__ );
                 TaskManager::Instance( ).SubmitMain( onFail );
                 return;
             }
@@ -432,7 +432,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
                 if( !fetchResult.m_Success )
                 {
-                    ErrorLog( "[%s] Failed to fetch subreddit (page %i), error: %s", __FUNCTION__, pageNum, fetchResult.m_Error.m_ErrorString.c_str( ) );
+                    LogError( "[%s] Failed to fetch subreddit (page %i), error: %s", __FUNCTION__, pageNum, fetchResult.m_Error.m_ErrorString.c_str( ) );
                     continue;
                 }
 
@@ -448,7 +448,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 }
 
                 InfoLog( "[%s] Subreddit (page %i) fetched successfully. Media urls queued: %i/%i", __FUNCTION__, pageNum, static_cast< int >( mediaUrls.size( ) ), options.m_RedditMaxMediaItems );
-                DebugLog( "[%s] Response: %s", __FUNCTION__, fetchResult.m_Response.c_str( ) );
+                LogDebug( "[%s] Response: %s", __FUNCTION__, fetchResult.m_Response.c_str( ) );
 
                 ++pageNum;
             }
@@ -468,7 +468,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
             const std::string dirStr = dir.generic_string( );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
-                ErrorLog( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );
+                LogError( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );
                 TaskManager::Instance( ).SubmitMain( onFail );
                 return;
             }
@@ -510,7 +510,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 RequestResult result = request.Perform( options );
                 if( !result.m_Success )
                 {
-                    ErrorLog( "[%s] Download failed, error: %s, url: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ), url.c_str( ) );
+                    LogError( "[%s] Download failed, error: %s, url: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ), url.c_str( ) );
                     continue;
                 }
 
@@ -520,7 +520,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 std::ofstream outfile{ filepath, std::ios::binary };
                 if( !outfile.is_open( ) )
                 {
-                    ErrorLog( "[%s] Download failed, could not open file for write: %s", __FUNCTION__, filepath.c_str( ) );
+                    LogError( "[%s] Download failed, could not open file for write: %s", __FUNCTION__, filepath.c_str( ) );
                     continue;
                 }
 
@@ -560,7 +560,7 @@ bool ImageScraper::RedditService::TryPerformAppOnlyAuth( )
 
     if( !authResult.m_Success )
     {
-        ErrorLog( "[%s] Failed to authenticate with Reddit API, error: %s", __FUNCTION__, authResult.m_Error.m_ErrorString );
+        LogError( "[%s] Failed to authenticate with Reddit API, error: %s", __FUNCTION__, authResult.m_Error.m_ErrorString );
         return false;
     }
 
@@ -568,7 +568,7 @@ bool ImageScraper::RedditService::TryPerformAppOnlyAuth( )
 
     if( !TryParseAccessTokenAndExpiry( authResponse ) )
     {
-        ErrorLog( "[%s] Reddit authentication failed!", __FUNCTION__ );
+        LogError( "[%s] Reddit authentication failed!", __FUNCTION__ );
         return false;
     }
 
@@ -585,7 +585,7 @@ bool ImageScraper::RedditService::TryPerformAuthTokenRefresh( )
 
         if( m_RefreshToken.empty( ) )
         {
-            DebugLog( "[%s] Reddit access token not found!", __FUNCTION__ );
+            LogDebug( "[%s] Reddit access token not found!", __FUNCTION__ );
             return false;
         }
 
@@ -607,7 +607,7 @@ bool ImageScraper::RedditService::TryPerformAuthTokenRefresh( )
 
     if( !authResult.m_Success )
     {
-        ErrorLog( "[%s] Failed to refresh access token, error: %s", __FUNCTION__, authResult.m_Error.m_ErrorString.c_str( ) );
+        LogError( "[%s] Failed to refresh access token, error: %s", __FUNCTION__, authResult.m_Error.m_ErrorString.c_str( ) );
         ClearRefreshToken( );
         return false;
     }
@@ -616,13 +616,13 @@ bool ImageScraper::RedditService::TryPerformAuthTokenRefresh( )
 
     if( !TryParseAccessTokenAndExpiry( authResponse ) )
     {
-        ErrorLog( "[%s] Could not parse access token or expiry!", __FUNCTION__ );
+        LogError( "[%s] Could not parse access token or expiry!", __FUNCTION__ );
         return false;
     }
 
     if( !TryParseRefreshToken( authResponse ) )
     {
-        ErrorLog( "[%s] Could not parse refresh token!", __FUNCTION__ );
+        LogError( "[%s] Could not parse refresh token!", __FUNCTION__ );
         return false;
     }
 
@@ -652,7 +652,7 @@ bool ImageScraper::RedditService::TryParseAccessTokenAndExpiry( const Json& resp
     m_AuthExpireSeconds = std::chrono::seconds{ result->m_ExpireSeconds - expireDelta };
     m_TokenReceived = std::chrono::system_clock::now( );
 
-    DebugLog( "[%s] Reddit access token: %s", __FUNCTION__, m_AccessToken.c_str( ) );
+    LogDebug( "[%s] Reddit access token: %s", __FUNCTION__, m_AccessToken.c_str( ) );
     return true;
 }
 
@@ -669,7 +669,7 @@ bool ImageScraper::RedditService::TryParseRefreshToken( const Json& response )
     m_AppConfig->SetValue( s_AppDataKey_RefreshToken, m_RefreshToken );
     m_AppConfig->Serialise( );
 
-    DebugLog( "[%s] Reddit refresh token: %s", __FUNCTION__, m_RefreshToken.c_str( ) );
+    LogDebug( "[%s] Reddit refresh token: %s", __FUNCTION__, m_RefreshToken.c_str( ) );
     return true;
 }
 

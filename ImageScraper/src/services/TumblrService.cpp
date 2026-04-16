@@ -36,7 +36,7 @@ bool ImageScraper::TumblrService::HandleUserInput( const UserInputOptions& optio
 
 bool ImageScraper::TumblrService::OpenExternalAuth( )
 {
-    ErrorLog( "[%s] Sign in not implemented for this provider!", __FUNCTION__ );
+    LogError( "[%s] Sign in not implemented for this provider!", __FUNCTION__ );
     return false;
 }
 
@@ -63,7 +63,7 @@ bool ImageScraper::TumblrService::IsCancelled( )
 void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& inputOptions )
 {
     InfoLog( "[%s] Starting Tumblr media download!", __FUNCTION__ );
-    DebugLog( "[%s] User: %s", __FUNCTION__, inputOptions.m_TumblrUser.c_str( ) );
+    LogDebug( "[%s] User: %s", __FUNCTION__, inputOptions.m_TumblrUser.c_str( ) );
 
     auto onComplete = [ & ]( int filesDownloaded )
     {
@@ -73,7 +73,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
 
     auto onFail = [ & ]( )
     {
-        ErrorLog( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
+        LogError( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
         m_Sink->OnRunComplete( );
     };
 
@@ -106,7 +106,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
             }
 
             InfoLog( "[%s] Tumblr posts retrieved successfully.", __FUNCTION__ );
-            DebugLog( "[%s] Response: %s", __FUNCTION__, fetchResult.m_Response.c_str( ) );
+            LogDebug( "[%s] Response: %s", __FUNCTION__, fetchResult.m_Response.c_str( ) );
 
             // Parse response
             json response = json::parse( fetchResult.m_Response );
@@ -125,7 +125,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
             const std::string dirStr = dir.generic_string( );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
-                ErrorLog( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );
+                LogError( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );
                 TaskManager::Instance( ).SubmitMain( onFail );
                 return;
             }
@@ -169,7 +169,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
                 RequestResult result = request.Perform( options );
                 if( !result.m_Success )
                 {
-                    ErrorLog( "[%s] Download failed, error: %s, url: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ), url.c_str( ) );
+                    LogError( "[%s] Download failed, error: %s, url: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ), url.c_str( ) );
                     continue;
                 }
 
@@ -179,7 +179,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
                 std::ofstream outfile{ filepath, std::ios::binary };
                 if( !outfile.is_open( ) )
                 {
-                    ErrorLog( "[%s] Download failed, could not open file for write: %s", __FUNCTION__, filepath.c_str( ) );
+                    LogError( "[%s] Download failed, could not open file for write: %s", __FUNCTION__, filepath.c_str( ) );
                     continue;
                 }
 
