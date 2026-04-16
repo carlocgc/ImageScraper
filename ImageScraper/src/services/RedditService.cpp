@@ -464,7 +464,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
             InfoLog( "[%s] All Subreddit data fetched successfully.", __FUNCTION__ );
 
             // Create download directory
-            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Downloads" / "Reddit" / options.m_SubredditName / options.m_RedditScope;
+            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Downloads" / "Reddit" / options.m_SubredditName;
             const std::string dirStr = dir.generic_string( );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
