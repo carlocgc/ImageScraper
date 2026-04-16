@@ -16,11 +16,12 @@ namespace ImageScraper
     public:
         using AuthenticateCallback = std::function<void( ContentProvider, bool )>;
 
-        Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<IServiceSink> sink )
+        Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
             : m_ContentProvider{ provider }
             , m_AppConfig{ appConfig }
             , m_UserConfig{ userConfig }
             , m_CaBundle{ caBundle }
+            , m_OutputDir{ outputDir }
             , m_Sink{ sink }
         {
         }
@@ -44,6 +45,7 @@ namespace ImageScraper
         std::shared_ptr<JsonFile> m_UserConfig{ nullptr };
         std::string m_UserAgent{ "Windows:ImageScraper:v0.1:carlocgc1@gmail.com" };
         std::string m_CaBundle{ };
+        std::string m_OutputDir{ };
         std::shared_ptr<IServiceSink> m_Sink{ nullptr };
     };
 }

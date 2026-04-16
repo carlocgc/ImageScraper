@@ -72,6 +72,12 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         {
             const DownloadHistoryEntry& entry = m_History[ i ];
 
+            // Skip entries whose file has been removed from disk since download
+            if( !std::filesystem::exists( entry.m_FilePath ) )
+            {
+                continue;
+            }
+
             ImGui::TableNextRow( );
 
             ImGui::TableSetColumnIndex( 0 );
@@ -167,7 +173,7 @@ void ImageScraper::DownloadHistoryPanel::Load( std::shared_ptr<JsonFile> appConf
         entry.m_SourceUrl = obj.value( "source_url", "" );
         entry.m_Timestamp = obj.value( "timestamp",  "" );
 
-        if( !entry.m_FilePath.empty( ) )
+        if( !entry.m_FilePath.empty( ) && std::filesystem::exists( entry.m_FilePath ) )
         {
             m_History.Push( std::move( entry ) );
         }
@@ -188,6 +194,10 @@ void ImageScraper::DownloadHistoryPanel::Save( )
     for( int i = 0; i < size; ++i )
     {
         const DownloadHistoryEntry& entry = m_History[ i ];
+        if( !std::filesystem::exists( entry.m_FilePath ) )
+        {
+            continue;
+        }
         entries.push_back( {
             { "file_path",  entry.m_FilePath  },
             { "file_name",  entry.m_FileName  },
