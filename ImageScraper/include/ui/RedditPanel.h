@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui/IProviderPanel.h"
+#include "ui/SearchHistory.h"
 #include "imgui/imgui.h"
 
 #include <string>
@@ -16,11 +17,10 @@ namespace ImageScraper
         bool             IsReadyToRun( ) const override { return !m_SubredditName.empty( ); }
         UserInputOptions BuildInputOptions( ) const override;
         void             LoadSearchHistory( std::shared_ptr<JsonFile> appConfig ) override;
+        void             OnSearchCommitted( ) override;
 
     private:
-        void SaveSearchHistory( );
-
-        std::shared_ptr<JsonFile> m_AppConfig{ };
+        SearchHistory        m_SearchHistory{ };
         std::string          m_SubredditName{ };
         RedditScope          m_RedditScope{ RedditScope::Hot };
         RedditScopeTimeFrame m_RedditScopeTimeFrame{ RedditScopeTimeFrame::All };

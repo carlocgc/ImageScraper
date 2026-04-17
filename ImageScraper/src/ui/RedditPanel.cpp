@@ -6,21 +6,13 @@
 
 void ImageScraper::RedditPanel::LoadSearchHistory( std::shared_ptr<JsonFile> appConfig )
 {
-    m_AppConfig = std::move( appConfig );
-    if( !m_AppConfig ) return;
-
-    m_AppConfig->GetValue<std::string>( "reddit_last_subreddit", m_SubredditName );
+    m_SearchHistory.Load( std::move( appConfig ), "reddit_subreddit_history" );
+    m_SubredditName = m_SearchHistory.GetMostRecent( );
 }
 
-void ImageScraper::RedditPanel::SaveSearchHistory( )
+void ImageScraper::RedditPanel::OnSearchCommitted( )
 {
-    if( !m_AppConfig ) return;
-
-    m_AppConfig->SetValue<std::string>( "reddit_last_subreddit", m_SubredditName );
-    if( !m_AppConfig->Serialise( ) )
-    {
-        WarningLog( "[%s] Failed to save Reddit search history", __FUNCTION__ );
-    }
+    m_SearchHistory.Push( m_SubredditName );
 }
 
 void ImageScraper::RedditPanel::Update( )
@@ -29,11 +21,46 @@ void ImageScraper::RedditPanel::Update( )
     {
         char buffer[ INPUT_STRING_MAX ] = "";
         strcpy_s( buffer, INPUT_STRING_MAX, m_SubredditName.c_str( ) );
-        ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Subreddit (e.g. Gifs)", buffer, INPUT_STRING_MAX, flags ) )
+        const float arrowW  = ImGui::GetFrameHeight( );
+        const float spacing = ImGui::GetStyle( ).ItemInnerSpacing.x;
+        ImGui::SetNextItemWidth( ImGui::CalcItemWidth( ) - arrowW - spacing );
+        if( ImGui::InputText( "##subreddit", buffer, INPUT_STRING_MAX, ImGuiInputTextFlags_CharsNoBlank ) )
         {
             m_SubredditName = buffer;
-            SaveSearchHistory( );
+        }
+
+        const ImVec2 inputMin = ImGui::GetItemRectMin( );
+        const ImVec2 inputMax = ImGui::GetItemRectMax( );
+
+        ImGui::SameLine( 0.f, spacing );
+        if( ImGui::ArrowButton( "##subreddit_hist_btn", ImGuiDir_Down ) )
+        {
+            ImGui::OpenPopup( "##subreddit_hist" );
+        }
+
+        ImGui::SameLine( 0.f, spacing );
+        ImGui::TextUnformatted( "Subreddit (e.g. Gifs)" );
+
+        const float popupW = ( inputMax.x - inputMin.x ) + spacing + arrowW;
+        ImGui::SetNextWindowPos( ImVec2( inputMin.x, inputMax.y ), ImGuiCond_Always );
+        ImGui::SetNextWindowSize( ImVec2( popupW, 0.f ), ImGuiCond_Always );
+        if( ImGui::BeginPopup( "##subreddit_hist", ImGuiWindowFlags_NoFocusOnAppearing ) )
+        {
+            if( m_SearchHistory.IsEmpty( ) )
+            {
+                ImGui::TextDisabled( "No history yet" );
+            }
+            else
+            {
+                for( const auto& item : m_SearchHistory.GetItems( ) )
+                {
+                    if( ImGui::Selectable( item.c_str( ) ) )
+                    {
+                        m_SubredditName = item;
+                    }
+                }
+            }
+            ImGui::EndPopup( );
         }
     }
 
