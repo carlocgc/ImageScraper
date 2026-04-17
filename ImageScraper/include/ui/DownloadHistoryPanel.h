@@ -74,5 +74,8 @@ namespace ImageScraper
 
         // Thumbnail cache: filepath → texture + dimensions (texture == 0 means failed/skipped)
         std::unordered_map<std::string, ThumbnailEntry> m_ThumbnailCache{ };
+
+        // Tracks all filepaths currently in m_History to prevent duplicate entries
+        std::unordered_set<std::string> m_KnownPaths{ };
     };
 }

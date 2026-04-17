@@ -78,6 +78,7 @@ void ImageScraper::DownloadHistoryPanel::Update( )
                 continue;
             }
 
+            ImGui::PushID( i );
             ImGui::TableNextRow( );
 
             ImGui::TableSetColumnIndex( 0 );
@@ -129,6 +130,8 @@ void ImageScraper::DownloadHistoryPanel::Update( )
 
             ImGui::TableSetColumnIndex( 3 );
             ImGui::TextUnformatted( entry.m_SourceUrl.c_str( ) );
+
+            ImGui::PopID( );
         }
 
         ImGui::EndTable( );
@@ -173,8 +176,9 @@ void ImageScraper::DownloadHistoryPanel::Load( std::shared_ptr<JsonFile> appConf
         entry.m_SourceUrl = obj.value( "source_url", "" );
         entry.m_Timestamp = obj.value( "timestamp",  "" );
 
-        if( !entry.m_FilePath.empty( ) && std::filesystem::exists( entry.m_FilePath ) )
+        if( !entry.m_FilePath.empty( ) && std::filesystem::exists( entry.m_FilePath ) && m_KnownPaths.count( entry.m_FilePath ) == 0 )
         {
+            m_KnownPaths.insert( entry.m_FilePath );
             m_History.Push( std::move( entry ) );
         }
     }
@@ -228,6 +232,11 @@ void ImageScraper::DownloadHistoryPanel::FlushPending( )
 
     for( auto& entry : pending )
     {
+        if( m_KnownPaths.count( entry.m_FilePath ) > 0 )
+        {
+            continue;
+        }
+        m_KnownPaths.insert( entry.m_FilePath );
         m_History.Push( std::move( entry ) );
     }
 
