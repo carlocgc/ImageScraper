@@ -59,7 +59,6 @@ namespace ImageScraper
         static ThumbnailEntry LoadVideoThumbnail( const std::string& filepath );
         static bool IsSupportedMediaExtension( const std::string& filepath );
         static bool IsVideoExtension( const std::string& filepath );
-        bool ContainsPath( const std::string& filepath );
 
         static constexpr int        k_Capacity          = 200;
         static constexpr uintmax_t  k_MaxThumbnailBytes = 5 * 1024 * 1024; // 5 MB
