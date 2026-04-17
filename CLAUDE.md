@@ -57,6 +57,8 @@ Do NOT modify any vendored dependency code without explicit approval. This inclu
 - `ImageScraperTests/include/catch2/`
 - `ImageScraperTests/src/catch2/`
 
+This prohibition extends to applying coding standards - do not reformat or restructure dependency files to match project style. Only project-authored code is subject to coding standards enforcement.
+
 If a bug or limitation in a dependency needs working around, implement the workaround in project code and flag it to the user.
 
 **ImGui internal API** - include `imgui/imgui_internal.h` (not bare `imgui_internal.h`) when DockBuilder or other internal APIs are needed. `imgui.h` and `imgui_internal.h` both declare names that collide with project macros - check `Logger.h` for the current macro names before including ImGui headers.
@@ -94,6 +96,69 @@ Files that are only `#include`d will compile correctly but won't appear in Solut
 ## Source File Organisation
 
 All source and header files must live inside a named subfolder — never directly in a bare `src/` or `include/` root. Group by domain or type (e.g. `include/mocks/`, `src/tests/`, `src/async/`). This applies to both projects. When adding a new file, choose or create the most appropriate subfolder rather than dropping it at the top level.
+
+---
+
+## Coding Standards
+
+These are guidelines to follow within reason, not absolute rules. Use judgement — the goal is readable, maintainable code. Flag cases where a rule would genuinely hurt clarity rather than silently breaking it.
+
+**Always use braces for conditional and loop bodies**, even single-line ones:
+
+```cpp
+// Correct
+if( !value.empty( ) )
+{
+    m_History.push_back( value );
+}
+
+// Wrong - never omit braces
+if( !value.empty( ) )
+    m_History.push_back( value );
+```
+
+Applies to `if`, `else`, `for`, `while`, and `do` bodies. Prefer to follow this consistently as it prevents a common class of bugs.
+
+**Prefer early returns over nesting.** Validate preconditions and return at the top of a function rather than wrapping the main body in an `if` block:
+
+```cpp
+// Correct - guard at the top, flat body
+void Foo::DoWork( )
+{
+    if( !m_Ready )
+    {
+        return;
+    }
+    // main logic here, no extra indent level
+}
+
+// Avoid - main logic buried inside a condition
+void Foo::DoWork( )
+{
+    if( m_Ready )
+    {
+        // main logic indented an extra level
+    }
+}
+```
+
+**Avoid Yoda conditions.** Write comparisons in natural reading order — variable on the left, literal/constant on the right:
+
+```cpp
+// Correct
+if( count == 0 ) { }
+if( ptr != nullptr ) { }
+
+// Wrong
+if( 0 == count ) { }
+if( nullptr != ptr ) { }
+```
+
+**Follow SOLID, DRY, and YAGNI:**
+
+- **SOLID** - Aim for single responsibility per class/function; prefer depending on abstractions over concretions. Flag significant violations when spotted.
+- **DRY** - Avoid duplicating logic across multiple places. Look to extract shared functions, classes, or base types, but don't over-abstract trivially small code.
+- **YAGNI** - Implement what is needed now. Avoid hooks, flags, or abstractions for hypothetical future requirements unless there is a clear near-term need.
 
 ---
 
