@@ -54,11 +54,11 @@ ImageScraper::TumblrService::TumblrService( std::shared_ptr<JsonFile> appConfig,
 
 bool ImageScraper::TumblrService::HasRequiredCredentials( ) const
 {
+    // Consumer Key (api_key) is sufficient for anonymous downloads.
+    // Consumer Secret is only needed for OAuth sign-in.
     std::string clientId;
-    std::string clientSecret;
     m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, clientId );
-    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientSecret, clientSecret );
-    return !clientId.empty( ) && !clientSecret.empty( );
+    return !clientId.empty( );
 }
 
 bool ImageScraper::TumblrService::HandleUserInput( const UserInputOptions& options )

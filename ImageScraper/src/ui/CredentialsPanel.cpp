@@ -41,7 +41,7 @@ ImageScraper::CredentialsPanel::CredentialsPanel( std::shared_ptr<JsonFile> user
 
 void ImageScraper::CredentialsPanel::Update( )
 {
-    ImGui::SetNextWindowSize( ImVec2( 500, 320 ), ImGuiCond_FirstUseEver );
+    ImGui::SetNextWindowSize( ImVec2( 500, 360 ), ImGuiCond_FirstUseEver );
 
     if( !ImGui::Begin( "Credentials" ) )
     {
@@ -96,24 +96,43 @@ void ImageScraper::CredentialsPanel::Update( )
             }
         };
 
+    auto TooltipWithCopy = [ ]( const char* tip, const char* url )
+        {
+            if( ImGui::IsItemHovered( ) )
+            {
+                ImGui::SetTooltip( "%s", tip );
+            }
+            if( ImGui::IsItemHovered( ) && ImGui::IsMouseClicked( ImGuiMouseButton_Right ) )
+            {
+                ImGui::SetClipboardText( url );
+            }
+        };
+
     // --- Reddit ---
     ImGui::SeparatorText( "Reddit" );
     InputField( "Client ID",     "##reddit_id",     m_RedditClientId,     m_ShowRedditSecret, false, s_Key_RedditClientId,     true );
+    TooltipWithCopy( "OAuth2 app Client ID.\nRight-click to copy registration URL.", "https://www.reddit.com/prefs/apps" );
     InputField( "Client Secret", "##reddit_secret", m_RedditClientSecret, m_ShowRedditSecret, true,  s_Key_RedditClientSecret, true );
+    TooltipWithCopy( "OAuth2 app Client Secret.\nRight-click to copy registration URL.", "https://www.reddit.com/prefs/apps" );
 
     ImGui::Spacing( );
 
     // --- Tumblr ---
     ImGui::SeparatorText( "Tumblr" );
-    InputField( "Consumer Key",    "##tumblr_key",    m_TumblrApiKey,       m_ShowTumblrKey,    false, s_Key_TumblrApiKey,        true );
-    InputField( "Consumer Secret", "##tumblr_secret", m_TumblrClientSecret, m_ShowTumblrSecret, true,  s_Key_TumblrClientSecret,  true );
+    InputField( "Consumer Key",    "##tumblr_key",    m_TumblrApiKey,       m_ShowTumblrKey,    false, s_Key_TumblrApiKey,        true  );
+    TooltipWithCopy( "OAuth Consumer Key - required for downloads.\nRight-click to copy registration URL.", "https://www.tumblr.com/oauth/apps" );
+    InputField( "Consumer Secret", "##tumblr_secret", m_TumblrClientSecret, m_ShowTumblrSecret, true,  s_Key_TumblrClientSecret,  false );
+    TooltipWithCopy( "OAuth Consumer Secret - only needed for Sign In.\nRight-click to copy registration URL.", "https://www.tumblr.com/oauth/apps" );
 
     ImGui::Spacing( );
 
-    // --- Discord ---
+    // --- Discord (work in progress) ---
     ImGui::SeparatorText( "Discord" );
+    ImGui::TextDisabled( "Work in progress - not yet functional." );
+    ImGui::BeginDisabled( );
     InputField( "Client ID",     "##discord_id",     m_DiscordClientId,     m_ShowDiscordSecret, false, s_Key_DiscordClientId,     false );
     InputField( "Client Secret", "##discord_secret", m_DiscordClientSecret, m_ShowDiscordSecret, true,  s_Key_DiscordClientSecret, false );
+    ImGui::EndDisabled( );
 
 #ifdef _DEBUG
     ImGui::Spacing( );
