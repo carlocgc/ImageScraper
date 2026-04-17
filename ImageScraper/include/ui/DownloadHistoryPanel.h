@@ -12,7 +12,6 @@
 #include <mutex>
 #include <functional>
 #include <unordered_map>
-#include <unordered_set>
 
 namespace ImageScraper
 {

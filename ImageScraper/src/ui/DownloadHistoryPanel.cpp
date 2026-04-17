@@ -78,6 +78,7 @@ void ImageScraper::DownloadHistoryPanel::Update( )
                 continue;
             }
 
+            ImGui::PushID( i );
             ImGui::TableNextRow( );
 
             ImGui::TableSetColumnIndex( 0 );
@@ -129,6 +130,8 @@ void ImageScraper::DownloadHistoryPanel::Update( )
 
             ImGui::TableSetColumnIndex( 3 );
             ImGui::TextUnformatted( entry.m_SourceUrl.c_str( ) );
+
+            ImGui::PopID( );
         }
 
         ImGui::EndTable( );
