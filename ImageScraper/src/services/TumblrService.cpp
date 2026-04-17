@@ -90,7 +90,7 @@ bool ImageScraper::TumblrService::OpenExternalAuth( )
     std::wstring wurl = L"https://www.tumblr.com/oauth2/authorize";
     wurl += L"?client_id=" + StringUtils::Utf8ToWideString( clientId, false );
     wurl += L"&response_type=code";
-    wurl += L"&scope=basic";
+    wurl += L"&scope=basic%20offline_access";
     wurl += L"&state=" + StringUtils::Utf8ToWideString( m_StateId, false );
     // redirect_uri is intentionally omitted - Tumblr's OAuth2 server mismatches
     // the parameter even when it matches the registered URL exactly. Omitting it
@@ -459,6 +459,8 @@ bool ImageScraper::TumblrService::TryParseRefreshToken( const Json& response )
 {
     if( !response.contains( "refresh_token" ) )
     {
+        // Tumblr only returns a refresh_token when offline_access scope is granted.
+        LogError( "[%s] refresh_token missing from token response - ensure offline_access scope is requested.", __FUNCTION__ );
         return false;
     }
 
