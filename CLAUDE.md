@@ -101,6 +101,8 @@ All source and header files must live inside a named subfolder — never directl
 
 ## Coding Standards
 
+These are guidelines to follow within reason, not absolute rules. Use judgement — the goal is readable, maintainable code. Flag cases where a rule would genuinely hurt clarity rather than silently breaking it.
+
 **Always use braces for conditional and loop bodies**, even single-line ones:
 
 ```cpp
@@ -115,7 +117,7 @@ if( !value.empty( ) )
     m_History.push_back( value );
 ```
 
-This applies to `if`, `else`, `for`, `while`, and `do` bodies without exception.
+Applies to `if`, `else`, `for`, `while`, and `do` bodies. Prefer to follow this consistently as it prevents a common class of bugs.
 
 **Prefer early returns over nesting.** Validate preconditions and return at the top of a function rather than wrapping the main body in an `if` block:
 
@@ -130,7 +132,7 @@ void Foo::DoWork( )
     // main logic here, no extra indent level
 }
 
-// Wrong - main logic buried inside a condition
+// Avoid - main logic buried inside a condition
 void Foo::DoWork( )
 {
     if( m_Ready )
@@ -140,7 +142,7 @@ void Foo::DoWork( )
 }
 ```
 
-**No Yoda conditions.** Write comparisons in natural reading order — variable on the left, literal/constant on the right:
+**Avoid Yoda conditions.** Write comparisons in natural reading order — variable on the left, literal/constant on the right:
 
 ```cpp
 // Correct
@@ -154,9 +156,9 @@ if( nullptr != ptr ) { }
 
 **Follow SOLID, DRY, and YAGNI:**
 
-- **SOLID** - Single responsibility per class/function; open for extension, closed for modification; depend on abstractions. Flag violations when spotted.
-- **DRY** - Identical logic that appears in more than one place must be extracted into a shared function, class, or base. Do not copy-paste implementations.
-- **YAGNI** - Only implement what is needed now. Do not add hooks, flags, or abstractions for hypothetical future requirements.
+- **SOLID** - Aim for single responsibility per class/function; prefer depending on abstractions over concretions. Flag significant violations when spotted.
+- **DRY** - Avoid duplicating logic across multiple places. Look to extract shared functions, classes, or base types, but don't over-abstract trivially small code.
+- **YAGNI** - Implement what is needed now. Avoid hooks, flags, or abstractions for hypothetical future requirements unless there is a clear near-term need.
 
 ---
 
