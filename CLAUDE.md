@@ -57,6 +57,8 @@ Do NOT modify any vendored dependency code without explicit approval. This inclu
 - `ImageScraperTests/include/catch2/`
 - `ImageScraperTests/src/catch2/`
 
+This prohibition extends to applying coding standards - do not reformat or restructure dependency files to match project style. Only project-authored code is subject to coding standards enforcement.
+
 If a bug or limitation in a dependency needs working around, implement the workaround in project code and flag it to the user.
 
 **ImGui internal API** - include `imgui/imgui_internal.h` (not bare `imgui_internal.h`) when DockBuilder or other internal APIs are needed. `imgui.h` and `imgui_internal.h` both declare names that collide with project macros - check `Logger.h` for the current macro names before including ImGui headers.
@@ -94,6 +96,26 @@ Files that are only `#include`d will compile correctly but won't appear in Solut
 ## Source File Organisation
 
 All source and header files must live inside a named subfolder — never directly in a bare `src/` or `include/` root. Group by domain or type (e.g. `include/mocks/`, `src/tests/`, `src/async/`). This applies to both projects. When adding a new file, choose or create the most appropriate subfolder rather than dropping it at the top level.
+
+---
+
+## Coding Standards
+
+**Always use braces for conditional and loop bodies**, even single-line ones:
+
+```cpp
+// Correct
+if( !value.empty( ) )
+{
+    m_History.push_back( value );
+}
+
+// Wrong - never omit braces
+if( !value.empty( ) )
+    m_History.push_back( value );
+```
+
+This applies to `if`, `else`, `for`, `while`, and `do` bodies without exception.
 
 ---
 

@@ -6,7 +6,10 @@
 void ImageScraper::FourChanPanel::LoadSearchHistory( std::shared_ptr<JsonFile> appConfig )
 {
     m_AppConfig = std::move( appConfig );
-    if( !m_AppConfig ) return;
+    if( !m_AppConfig )
+    {
+        return;
+    }
 
     Json arr;
     if( m_AppConfig->GetValue<Json>( "fourchan_board_history", arr ) && arr.is_array( ) )
@@ -14,23 +17,34 @@ void ImageScraper::FourChanPanel::LoadSearchHistory( std::shared_ptr<JsonFile> a
         for( const auto& item : arr )
         {
             if( item.is_string( ) )
+            {
                 m_SearchHistory.push_back( item.get<std::string>( ) );
+            }
         }
         if( static_cast<int>( m_SearchHistory.size( ) ) > k_MaxHistory )
+        {
             m_SearchHistory.resize( k_MaxHistory );
+        }
     }
 
     if( !m_SearchHistory.empty( ) )
+    {
         m_FourChanBoard = m_SearchHistory.front( );
+    }
 }
 
 void ImageScraper::FourChanPanel::SaveSearchHistory( )
 {
-    if( !m_AppConfig ) return;
+    if( !m_AppConfig )
+    {
+        return;
+    }
 
     Json arr = Json::array( );
     for( const auto& item : m_SearchHistory )
+    {
         arr.push_back( item );
+    }
 
     m_AppConfig->SetValue<Json>( "fourchan_board_history", arr );
     if( !m_AppConfig->Serialise( ) )
@@ -46,16 +60,23 @@ void ImageScraper::FourChanPanel::OnSearchCommitted( )
 
 void ImageScraper::FourChanPanel::PushToHistory( const std::string& value )
 {
-    if( value.empty( ) ) return;
+    if( value.empty( ) )
+    {
+        return;
+    }
 
     auto it = std::find( m_SearchHistory.begin( ), m_SearchHistory.end( ), value );
     if( it != m_SearchHistory.end( ) )
+    {
         m_SearchHistory.erase( it );
+    }
 
     m_SearchHistory.insert( m_SearchHistory.begin( ), value );
 
     if( static_cast<int>( m_SearchHistory.size( ) ) > k_MaxHistory )
+    {
         m_SearchHistory.resize( k_MaxHistory );
+    }
 
     SaveSearchHistory( );
 }
@@ -71,7 +92,9 @@ void ImageScraper::FourChanPanel::Update( )
         const float spacing = ImGui::GetStyle( ).ItemInnerSpacing.x;
         ImGui::SetNextItemWidth( ImGui::CalcItemWidth( ) - arrowW - spacing );
         if( ImGui::InputText( "##fourchan_board", buffer, INPUT_STRING_MAX, flags ) )
+        {
             m_FourChanBoard = buffer;
+        }
 
         // Capture screen rect of the input field before adding the button
         const ImVec2 inputMin = ImGui::GetItemRectMin( );
@@ -79,7 +102,9 @@ void ImageScraper::FourChanPanel::Update( )
 
         ImGui::SameLine( 0.f, spacing );
         if( ImGui::ArrowButton( "##fourchan_hist_btn", ImGuiDir_Down ) )
+        {
             ImGui::OpenPopup( "##fourchan_hist" );
+        }
 
         ImGui::SameLine( 0.f, spacing );
         ImGui::TextUnformatted( "Board (e.g. v, sci )" );
@@ -99,7 +124,9 @@ void ImageScraper::FourChanPanel::Update( )
                 for( const auto& item : m_SearchHistory )
                 {
                     if( ImGui::Selectable( item.c_str( ) ) )
+                    {
                         m_FourChanBoard = item;
+                    }
                 }
             }
             ImGui::EndPopup( );
