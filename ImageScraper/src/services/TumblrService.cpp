@@ -61,6 +61,16 @@ bool ImageScraper::TumblrService::HasRequiredCredentials( ) const
     return !clientId.empty( );
 }
 
+bool ImageScraper::TumblrService::HasSignInCredentials( ) const
+{
+    // Sign-in requires both Consumer Key and Consumer Secret.
+    std::string clientId;
+    std::string clientSecret;
+    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, clientId );
+    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientSecret, clientSecret );
+    return !clientId.empty( ) && !clientSecret.empty( );
+}
+
 bool ImageScraper::TumblrService::HandleUserInput( const UserInputOptions& options )
 {
     if( options.m_Provider != ContentProvider::Tumblr )

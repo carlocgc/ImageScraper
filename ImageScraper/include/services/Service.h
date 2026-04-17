@@ -35,6 +35,11 @@ namespace ImageScraper
         virtual void SignOut( ) { }
         virtual std::string GetSignedInUser( ) const { return { }; }
         virtual bool HasRequiredCredentials( ) const { return true; }
+        // Returns true when the service has the additional credentials needed to initiate sign-in
+        // (e.g. a client secret on top of the api key). Defaults to HasRequiredCredentials().
+        virtual bool HasSignInCredentials( ) const { return HasRequiredCredentials( ); }
+        virtual std::string GetProviderDisplayName( ) const { return "Service"; }
+        virtual std::string GetBrandColor( ) const { return "#888888"; }
         ContentProvider GetContentProvider( ) const { return m_ContentProvider; }
 
     protected:

@@ -25,6 +25,8 @@ namespace ImageScraper
         void SignOut( ) override;
         std::string GetSignedInUser( ) const override;
         bool HasRequiredCredentials( ) const override;
+        std::string GetProviderDisplayName( ) const override { return "Reddit"; }
+        std::string GetBrandColor( ) const override { return "#FF4500"; }
 
     protected:
         bool IsCancelled( ) override;

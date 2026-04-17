@@ -26,6 +26,9 @@ namespace ImageScraper
         void SignOut( ) override;
         std::string GetSignedInUser( ) const override;
         bool HasRequiredCredentials( ) const override;
+        bool HasSignInCredentials( ) const override;
+        std::string GetProviderDisplayName( ) const override { return "Tumblr"; }
+        std::string GetBrandColor( ) const override { return "#35465C"; }
 
     protected:
         bool IsCancelled( ) override;
