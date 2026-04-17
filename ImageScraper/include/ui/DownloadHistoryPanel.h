@@ -12,7 +12,6 @@
 #include <mutex>
 #include <functional>
 #include <unordered_map>
-#include <unordered_set>
 
 namespace ImageScraper
 {
@@ -60,6 +59,7 @@ namespace ImageScraper
         static ThumbnailEntry LoadVideoThumbnail( const std::string& filepath );
         static bool IsSupportedMediaExtension( const std::string& filepath );
         static bool IsVideoExtension( const std::string& filepath );
+        bool ContainsPath( const std::string& filepath );
 
         static constexpr int        k_Capacity          = 200;
         static constexpr uintmax_t  k_MaxThumbnailBytes = 5 * 1024 * 1024; // 5 MB
@@ -74,8 +74,5 @@ namespace ImageScraper
 
         // Thumbnail cache: filepath → texture + dimensions (texture == 0 means failed/skipped)
         std::unordered_map<std::string, ThumbnailEntry> m_ThumbnailCache{ };
-
-        // Tracks all filepaths currently in m_History to prevent duplicate entries
-        std::unordered_set<std::string> m_KnownPaths{ };
     };
 }

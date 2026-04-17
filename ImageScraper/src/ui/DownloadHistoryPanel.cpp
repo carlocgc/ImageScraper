@@ -176,9 +176,8 @@ void ImageScraper::DownloadHistoryPanel::Load( std::shared_ptr<JsonFile> appConf
         entry.m_SourceUrl = obj.value( "source_url", "" );
         entry.m_Timestamp = obj.value( "timestamp",  "" );
 
-        if( !entry.m_FilePath.empty( ) && std::filesystem::exists( entry.m_FilePath ) && m_KnownPaths.count( entry.m_FilePath ) == 0 )
+        if( !entry.m_FilePath.empty( ) && std::filesystem::exists( entry.m_FilePath ) && !ContainsPath( entry.m_FilePath ) )
         {
-            m_KnownPaths.insert( entry.m_FilePath );
             m_History.Push( std::move( entry ) );
         }
     }
@@ -232,11 +231,10 @@ void ImageScraper::DownloadHistoryPanel::FlushPending( )
 
     for( auto& entry : pending )
     {
-        if( m_KnownPaths.count( entry.m_FilePath ) > 0 )
+        if( ContainsPath( entry.m_FilePath ) )
         {
             continue;
         }
-        m_KnownPaths.insert( entry.m_FilePath );
         m_History.Push( std::move( entry ) );
     }
 
@@ -380,6 +378,19 @@ ImageScraper::DownloadHistoryPanel::ThumbnailEntry ImageScraper::DownloadHistory
     glBindTexture( GL_TEXTURE_2D, 0 );
 
     return ThumbnailEntry{ tex, w, h };
+}
+
+bool ImageScraper::DownloadHistoryPanel::ContainsPath( const std::string& filepath )
+{
+    const int size = m_History.GetSize( );
+    for( int i = 0; i < size; ++i )
+    {
+        if( m_History[ i ].m_FilePath == filepath )
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 std::string ImageScraper::DownloadHistoryPanel::FormatFileSize( const std::string& filepath )
