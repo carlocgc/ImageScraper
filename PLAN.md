@@ -130,6 +130,12 @@
 - [x] Remove `CanSignIn()` from `FourChanPanel` / hide sign-in UI for 4chan — `CanSignIn()` returns `false`; `DownloadOptionsPanel::UpdateSignInButton()` early-returns, so no sign-in UI is rendered for 4chan
 - [x] OAuth2 redirect HTML polish — dark-themed page with Reddit brand colour, checkmark icon, clear "Signed in to Reddit — close this tab" copy; removed external image fetch
 
+### Tooltips & UX Polish
+- [ ] Input field tooltips throughout Download Options and Credentials panels — hover text on every field explaining its purpose and any applicable limits; keep copy terse (one short sentence each)
+  - Download Options: subreddit field ("The subreddit to scrape, without the r/ prefix"), max downloads ("Maximum number of files to download per run; capped at ..."), Reddit scope/time frame combos ("Controls post sort order / time window for Top and Controversial scopes"), Tumblr user ("Tumblr blog username to scrape"), 4chan board ("Board short name, e.g. `g`, `v`, `sci`"), 4chan max downloads ("Maximum number of media files to download across all matching threads")
+  - Credentials: each field tooltip explains what the value is and where to get it; right-clicking a field copies the relevant registration/account page URL to the clipboard (e.g. right-click Reddit Client ID copies `https://www.reddit.com/prefs/apps`, right-click Tumblr OAuth Consumer Key copies `https://www.tumblr.com/oauth/apps`)
+- [ ] Reddit deprecation notice in Download Options panel — display a short inline warning beneath the Reddit provider controls (matching the README warning) noting that new Reddit app registrations are restricted and the integration may not be functional; keep it unobtrusive (small `ImGui::TextColored` in amber, one line)
+
 ### New windows
 - [x] `MediaPreviewPanel` — loads last downloaded image into an OpenGL texture (stb_image) and renders it in a dockable ImGui window; supports static images and animated GIFs (frame stepping)
 - [x] `DownloadHistoryPanel` — ring buffer of completed downloads showing filename, source URL, and timestamp; clicking an entry opens it in explorer
