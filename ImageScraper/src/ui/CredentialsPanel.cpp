@@ -123,14 +123,14 @@ void ImageScraper::CredentialsPanel::Update( )
     // --- Reddit ---
     ImGui::SeparatorText( "Reddit" );
     InputField( "Client ID",     "##reddit_id",     m_RedditClientId,     m_ShowRedditSecret, false, s_Key_RedditClientId,     true,  "OAuth2 app Client ID.",     "https://www.reddit.com/prefs/apps" );
-    InputField( "Client Secret", "##reddit_secret", m_RedditClientSecret, m_ShowRedditSecret, true,  s_Key_RedditClientSecret, true,  "OAuth2 app Client Secret.", "https://www.reddit.com/prefs/apps" );
+    InputField( "Client Secret", "##reddit_secret", m_RedditClientSecret, m_ShowRedditSecret, true,  s_Key_RedditClientSecret, true,  "OAuth2 app Client Secret." );
 
     ImGui::Spacing( );
 
     // --- Tumblr ---
     ImGui::SeparatorText( "Tumblr" );
-    InputField( "Consumer Key",    "##tumblr_key",    m_TumblrApiKey,       m_ShowTumblrKey,    false, s_Key_TumblrApiKey,       true,  "OAuth Consumer Key - required for downloads.",      "https://www.tumblr.com/oauth/apps" );
-    InputField( "Consumer Secret", "##tumblr_secret", m_TumblrClientSecret, m_ShowTumblrSecret, true,  s_Key_TumblrClientSecret, false, "OAuth Consumer Secret - only needed for Sign In.",  "https://www.tumblr.com/oauth/apps" );
+    InputField( "Consumer Key",    "##tumblr_key",    m_TumblrApiKey,       m_ShowTumblrKey,    false, s_Key_TumblrApiKey,       true,  "OAuth Consumer Key - required for downloads.",     "https://www.tumblr.com/oauth/apps" );
+    InputField( "Consumer Secret", "##tumblr_secret", m_TumblrClientSecret, m_ShowTumblrSecret, true,  s_Key_TumblrClientSecret, false, "OAuth Consumer Secret - only needed for Sign In." );
 
     ImGui::Spacing( );
 
