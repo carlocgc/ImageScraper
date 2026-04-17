@@ -52,6 +52,31 @@ namespace ImageScraper
             return utf8_string;
         }
 
+        // Decodes a percent-encoded URL string. '+' is treated as a space.
+        static std::string UrlDecode( const std::string& str )
+        {
+            std::string result;
+            result.reserve( str.size( ) );
+            for( std::size_t i = 0; i < str.size( ); ++i )
+            {
+                if( str[ i ] == '+' )
+                {
+                    result += ' ';
+                }
+                else if( str[ i ] == '%' && i + 2 < str.size( ) )
+                {
+                    const char hexStr[ 3 ] = { str[ i + 1 ], str[ i + 2 ], '\0' };
+                    result += static_cast<char>( std::strtol( hexStr, nullptr, 16 ) );
+                    i += 2;
+                }
+                else
+                {
+                    result += str[ i ];
+                }
+            }
+            return result;
+        }
+
     private:
         StringUtils( ) = default;
     };

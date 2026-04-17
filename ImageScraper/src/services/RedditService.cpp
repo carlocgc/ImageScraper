@@ -116,17 +116,45 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
         return false;
     }
 
-    const std::string errorKey = "error";
-    std::size_t errorStart = response.find( errorKey );
-    if( errorStart != std::string::npos )
+    if( response.find( "favicon" ) != std::string::npos )
     {
-        LogDebug( "[%s] RedditService::HandleExternalAuth failed, response contained error!", __FUNCTION__ );
+        LogDebug( "[%s] RedditService::HandleExternalAuth skipped, invalid message!", __FUNCTION__ );
         return false;
     }
 
-    if( response.find( "favicon" ) != std::string::npos )
+    // Extract a named query parameter from the HTTP request line.
+    auto ExtractQueryParam = [ & ]( const std::string& key ) -> std::string
+        {
+            const std::string search = key + "=";
+            std::size_t start = response.find( search );
+            if( start == std::string::npos )
+            {
+                return { };
+            }
+            start += search.length( );
+            const std::size_t ampPos   = response.find( "&", start );
+            const std::size_t spacePos = response.find( " ", start );
+            const std::size_t end      = (std::min)( ampPos, spacePos );
+            if( end == std::string::npos )
+            {
+                return { };
+            }
+            return response.substr( start, end - start );
+        };
+
+    const bool hasError = response.find( "?error=" ) != std::string::npos
+                       || response.find( "&error=" ) != std::string::npos;
+
+    if( hasError )
     {
-        LogDebug( "[%s] RedditService::HandleExternalAuth failed, invalid message!", __FUNCTION__ );
+        const std::string error = ExtractQueryParam( "error" );
+        const std::string desc  = StringUtils::UrlDecode( ExtractQueryParam( "error_description" ) );
+        WarningLog( "[%s] Reddit OAuth error: %s - %s", __FUNCTION__, error.c_str( ), desc.c_str( ) );
+        if( error == "redirect_uri_mismatch" )
+        {
+            WarningLog( "[%s] Ensure the redirect URI in your Reddit app settings is set to: %s", __FUNCTION__, s_RedirectUrl.c_str( ) );
+        }
+        m_Sink->OnSignInComplete( m_ContentProvider );
         return false;
     }
 

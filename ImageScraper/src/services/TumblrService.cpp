@@ -121,17 +121,45 @@ bool ImageScraper::TumblrService::HandleExternalAuth( const std::string& respons
         return false;
     }
 
-    const std::string errorKey = "error";
-    std::size_t errorStart = response.find( errorKey );
-    if( errorStart != std::string::npos )
-    {
-        LogDebug( "[%s] TumblrService::HandleExternalAuth failed, response contained error!", __FUNCTION__ );
-        return false;
-    }
-
     if( response.find( "favicon" ) != std::string::npos )
     {
         LogDebug( "[%s] TumblrService::HandleExternalAuth skipped, invalid message!", __FUNCTION__ );
+        return false;
+    }
+
+    // Extract a named query parameter from the HTTP request line.
+    auto ExtractQueryParam = [ & ]( const std::string& key ) -> std::string
+        {
+            const std::string search = key + "=";
+            std::size_t start = response.find( search );
+            if( start == std::string::npos )
+            {
+                return { };
+            }
+            start += search.length( );
+            const std::size_t ampPos   = response.find( "&", start );
+            const std::size_t spacePos = response.find( " ", start );
+            const std::size_t end      = (std::min)( ampPos, spacePos );
+            if( end == std::string::npos )
+            {
+                return { };
+            }
+            return response.substr( start, end - start );
+        };
+
+    const bool hasError = response.find( "?error=" ) != std::string::npos
+                       || response.find( "&error=" ) != std::string::npos;
+
+    if( hasError )
+    {
+        const std::string error = ExtractQueryParam( "error" );
+        const std::string desc  = StringUtils::UrlDecode( ExtractQueryParam( "error_description" ) );
+        WarningLog( "[%s] Tumblr OAuth error: %s - %s", __FUNCTION__, error.c_str( ), desc.c_str( ) );
+        if( error == "redirect_uri_mismatch" )
+        {
+            WarningLog( "[%s] Ensure the callback URL in your Tumblr app settings is set to: %s", __FUNCTION__, s_RedirectUrl.c_str( ) );
+        }
+        m_Sink->OnSignInComplete( m_ContentProvider );
         return false;
     }
 
