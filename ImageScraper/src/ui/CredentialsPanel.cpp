@@ -4,6 +4,8 @@
 #include "imgui/imgui.h"
 
 #include <filesystem>
+#include <windows.h>
+#include <Shellapi.h>
 
 static const std::string s_Key_RedditClientId     = "reddit_client_id";
 static const std::string s_Key_RedditClientSecret = "reddit_client_secret";
@@ -56,8 +58,11 @@ void ImageScraper::CredentialsPanel::Update( )
     const ImVec4 grey  = ImVec4( 0.7f, 0.7f, 0.7f, 1.0f );
     constexpr float labelW = 160.0f;
 
+    // tooltip  - shown when hovering the input field; nullptr to skip
+    // url      - when non-null, appends a small square arrow button that opens the URL in the browser
     auto InputField = [ & ]( const char* label, const char* id, std::array<char, k_BufSize>& buf,
-                              bool& showToggle, bool hasToggle, const std::string& key, bool required )
+                              bool& showToggle, bool hasToggle, const std::string& key, bool required,
+                              const char* tooltip = nullptr, const char* url = nullptr )
         {
             bool empty = ( buf[ 0 ] == '\0' );
             if( required && empty )
@@ -84,6 +89,11 @@ void ImageScraper::CredentialsPanel::Update( )
                 SaveField( key, buf.data( ) );
             }
 
+            if( tooltip && ImGui::IsItemHovered( ) )
+            {
+                ImGui::SetTooltip( "%s", tooltip );
+            }
+
             if( hasToggle )
             {
                 ImGui::SameLine( );
@@ -94,35 +104,33 @@ void ImageScraper::CredentialsPanel::Update( )
                     showToggle = !showToggle;
                 }
             }
-        };
 
-    auto TooltipWithCopy = [ ]( const char* tip, const char* url )
-        {
-            if( ImGui::IsItemHovered( ) )
+            if( url )
             {
-                ImGui::SetTooltip( "%s", tip );
-            }
-            if( ImGui::IsItemHovered( ) && ImGui::IsMouseClicked( ImGuiMouseButton_Right ) )
-            {
-                ImGui::SetClipboardText( url );
+                ImGui::SameLine( );
+                std::string arrowId = std::string( "##link" ) + id;
+                if( ImGui::ArrowButton( arrowId.c_str( ), ImGuiDir_Right ) )
+                {
+                    ShellExecuteA( nullptr, "open", url, nullptr, nullptr, SW_SHOWNORMAL );
+                }
+                if( ImGui::IsItemHovered( ) )
+                {
+                    ImGui::SetTooltip( "%s", url );
+                }
             }
         };
 
     // --- Reddit ---
     ImGui::SeparatorText( "Reddit" );
-    InputField( "Client ID",     "##reddit_id",     m_RedditClientId,     m_ShowRedditSecret, false, s_Key_RedditClientId,     true );
-    TooltipWithCopy( "OAuth2 app Client ID.\nRight-click to copy registration URL.", "https://www.reddit.com/prefs/apps" );
-    InputField( "Client Secret", "##reddit_secret", m_RedditClientSecret, m_ShowRedditSecret, true,  s_Key_RedditClientSecret, true );
-    TooltipWithCopy( "OAuth2 app Client Secret.\nRight-click to copy registration URL.", "https://www.reddit.com/prefs/apps" );
+    InputField( "Client ID",     "##reddit_id",     m_RedditClientId,     m_ShowRedditSecret, false, s_Key_RedditClientId,     true,  "OAuth2 app Client ID.",     "https://www.reddit.com/prefs/apps" );
+    InputField( "Client Secret", "##reddit_secret", m_RedditClientSecret, m_ShowRedditSecret, true,  s_Key_RedditClientSecret, true,  "OAuth2 app Client Secret.", "https://www.reddit.com/prefs/apps" );
 
     ImGui::Spacing( );
 
     // --- Tumblr ---
     ImGui::SeparatorText( "Tumblr" );
-    InputField( "Consumer Key",    "##tumblr_key",    m_TumblrApiKey,       m_ShowTumblrKey,    false, s_Key_TumblrApiKey,        true  );
-    TooltipWithCopy( "OAuth Consumer Key - required for downloads.\nRight-click to copy registration URL.", "https://www.tumblr.com/oauth/apps" );
-    InputField( "Consumer Secret", "##tumblr_secret", m_TumblrClientSecret, m_ShowTumblrSecret, true,  s_Key_TumblrClientSecret,  false );
-    TooltipWithCopy( "OAuth Consumer Secret - only needed for Sign In.\nRight-click to copy registration URL.", "https://www.tumblr.com/oauth/apps" );
+    InputField( "Consumer Key",    "##tumblr_key",    m_TumblrApiKey,       m_ShowTumblrKey,    false, s_Key_TumblrApiKey,       true,  "OAuth Consumer Key - required for downloads.",      "https://www.tumblr.com/oauth/apps" );
+    InputField( "Consumer Secret", "##tumblr_secret", m_TumblrClientSecret, m_ShowTumblrSecret, true,  s_Key_TumblrClientSecret, false, "OAuth Consumer Secret - only needed for Sign In.",  "https://www.tumblr.com/oauth/apps" );
 
     ImGui::Spacing( );
 
