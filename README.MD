@@ -1,12 +1,20 @@
+<div align="center">
+
 # ImageScraper
 
+[![CI](https://github.com/carlocgc/ImageScraper/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/carlocgc/ImageScraper/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/carlocgc/ImageScraper?include_prereleases)](https://github.com/carlocgc/ImageScraper/releases)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Language](https://img.shields.io/badge/language-C%2B%2B17-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
+![UI](https://img.shields.io/badge/UI-Dear%20ImGui-blueviolet)
+![Built with Claude](https://img.shields.io/badge/built%20with-Claude-8A2BE2?logo=anthropic&logoColor=white)
 
 A Windows desktop application for downloading media from social platforms. Built with C++17, Dear ImGui, and OpenGL — no Electron, no web stack.
 
 ![Screenshot](ImageScraper/data/screenshot.png)
+
+</div>
 
 ---
 
