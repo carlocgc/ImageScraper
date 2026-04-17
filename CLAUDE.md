@@ -117,6 +117,47 @@ if( !value.empty( ) )
 
 This applies to `if`, `else`, `for`, `while`, and `do` bodies without exception.
 
+**Prefer early returns over nesting.** Validate preconditions and return at the top of a function rather than wrapping the main body in an `if` block:
+
+```cpp
+// Correct - guard at the top, flat body
+void Foo::DoWork( )
+{
+    if( !m_Ready )
+    {
+        return;
+    }
+    // main logic here, no extra indent level
+}
+
+// Wrong - main logic buried inside a condition
+void Foo::DoWork( )
+{
+    if( m_Ready )
+    {
+        // main logic indented an extra level
+    }
+}
+```
+
+**No Yoda conditions.** Write comparisons in natural reading order — variable on the left, literal/constant on the right:
+
+```cpp
+// Correct
+if( count == 0 ) { }
+if( ptr != nullptr ) { }
+
+// Wrong
+if( 0 == count ) { }
+if( nullptr != ptr ) { }
+```
+
+**Follow SOLID, DRY, and YAGNI:**
+
+- **SOLID** - Single responsibility per class/function; open for extension, closed for modification; depend on abstractions. Flag violations when spotted.
+- **DRY** - Identical logic that appears in more than one place must be extracted into a shared function, class, or base. Do not copy-paste implementations.
+- **YAGNI** - Only implement what is needed now. Do not add hooks, flags, or abstractions for hypothetical future requirements.
+
 ---
 
 ## Testing

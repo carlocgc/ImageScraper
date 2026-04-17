@@ -251,6 +251,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\ui\MediaPreviewPanel.cpp" />
     <ClCompile Include="src\ui\VideoPlayer.cpp" />
     <ClCompile Include="src\ui\DownloadHistoryPanel.cpp" />
+    <ClCompile Include="src\ui\SearchHistory.cpp" />
     <ClCompile Include="src\ui\DownloadProgressPanel.cpp" />
     <ClCompile Include="src\ui\CredentialsPanel.cpp" />
     <ClCompile Include="src\stb\stb_image.cpp" />
@@ -364,6 +365,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\ui\MediaPreviewPanel.h" />
     <ClInclude Include="include\ui\VideoPlayer.h" />
     <ClInclude Include="include\ui\DownloadHistoryPanel.h" />
+    <ClInclude Include="include\ui\SearchHistory.h" />
     <ClInclude Include="include\ui\DownloadProgressPanel.h" />
     <ClInclude Include="include\ui\CredentialsPanel.h" />
     <ClInclude Include="include\stb\stb_image.h" />

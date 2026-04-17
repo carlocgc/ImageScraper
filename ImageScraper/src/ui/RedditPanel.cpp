@@ -6,80 +6,13 @@
 
 void ImageScraper::RedditPanel::LoadSearchHistory( std::shared_ptr<JsonFile> appConfig )
 {
-    m_AppConfig = std::move( appConfig );
-    if( !m_AppConfig )
-    {
-        return;
-    }
-
-    Json arr;
-    if( m_AppConfig->GetValue<Json>( "reddit_subreddit_history", arr ) && arr.is_array( ) )
-    {
-        for( const auto& item : arr )
-        {
-            if( item.is_string( ) )
-            {
-                m_SearchHistory.push_back( item.get<std::string>( ) );
-            }
-        }
-        if( static_cast<int>( m_SearchHistory.size( ) ) > k_MaxHistory )
-        {
-            m_SearchHistory.resize( k_MaxHistory );
-        }
-    }
-
-    if( !m_SearchHistory.empty( ) )
-    {
-        m_SubredditName = m_SearchHistory.front( );
-    }
-}
-
-void ImageScraper::RedditPanel::SaveSearchHistory( )
-{
-    if( !m_AppConfig )
-    {
-        return;
-    }
-
-    Json arr = Json::array( );
-    for( const auto& item : m_SearchHistory )
-    {
-        arr.push_back( item );
-    }
-
-    m_AppConfig->SetValue<Json>( "reddit_subreddit_history", arr );
-    if( !m_AppConfig->Serialise( ) )
-    {
-        WarningLog( "[%s] Failed to save Reddit search history", __FUNCTION__ );
-    }
+    m_SearchHistory.Load( std::move( appConfig ), "reddit_subreddit_history" );
+    m_SubredditName = m_SearchHistory.GetMostRecent( );
 }
 
 void ImageScraper::RedditPanel::OnSearchCommitted( )
 {
-    PushToHistory( m_SubredditName );
-}
-
-void ImageScraper::RedditPanel::PushToHistory( const std::string& value )
-{
-    if( value.empty( ) )
-    {
-        return;
-    }
-
-    auto it = std::find( m_SearchHistory.begin( ), m_SearchHistory.end( ), value );
-    if( it != m_SearchHistory.end( ) )
-    {
-        m_SearchHistory.erase( it );
-    }
-
-    m_SearchHistory.insert( m_SearchHistory.begin( ), value );
-
-    if( static_cast<int>( m_SearchHistory.size( ) ) > k_MaxHistory )
-    {
-        m_SearchHistory.resize( k_MaxHistory );
-    }
-
-    SaveSearchHistory( );
+    m_SearchHistory.Push( m_SubredditName );
 }
 
 void ImageScraper::RedditPanel::Update( )
@@ -88,16 +21,14 @@ void ImageScraper::RedditPanel::Update( )
     {
         char buffer[ INPUT_STRING_MAX ] = "";
         strcpy_s( buffer, INPUT_STRING_MAX, m_SubredditName.c_str( ) );
-        ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
         const float arrowW  = ImGui::GetFrameHeight( );
         const float spacing = ImGui::GetStyle( ).ItemInnerSpacing.x;
         ImGui::SetNextItemWidth( ImGui::CalcItemWidth( ) - arrowW - spacing );
-        if( ImGui::InputText( "##subreddit", buffer, INPUT_STRING_MAX, flags ) )
+        if( ImGui::InputText( "##subreddit", buffer, INPUT_STRING_MAX, ImGuiInputTextFlags_CharsNoBlank ) )
         {
             m_SubredditName = buffer;
         }
 
-        // Capture screen rect of the input field before adding the button
         const ImVec2 inputMin = ImGui::GetItemRectMin( );
         const ImVec2 inputMax = ImGui::GetItemRectMax( );
 
@@ -110,19 +41,18 @@ void ImageScraper::RedditPanel::Update( )
         ImGui::SameLine( 0.f, spacing );
         ImGui::TextUnformatted( "Subreddit (e.g. Gifs)" );
 
-        // Anchor popup directly below the input field, spanning input + button width
         const float popupW = ( inputMax.x - inputMin.x ) + spacing + arrowW;
         ImGui::SetNextWindowPos( ImVec2( inputMin.x, inputMax.y ), ImGuiCond_Always );
         ImGui::SetNextWindowSize( ImVec2( popupW, 0.f ), ImGuiCond_Always );
         if( ImGui::BeginPopup( "##subreddit_hist", ImGuiWindowFlags_NoFocusOnAppearing ) )
         {
-            if( m_SearchHistory.empty( ) )
+            if( m_SearchHistory.IsEmpty( ) )
             {
                 ImGui::TextDisabled( "No history yet" );
             }
             else
             {
-                for( const auto& item : m_SearchHistory )
+                for( const auto& item : m_SearchHistory.GetItems( ) )
                 {
                     if( ImGui::Selectable( item.c_str( ) ) )
                     {

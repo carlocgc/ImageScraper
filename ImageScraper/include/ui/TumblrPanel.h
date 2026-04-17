@@ -1,10 +1,10 @@
 #pragma once
 
 #include "ui/IProviderPanel.h"
+#include "ui/SearchHistory.h"
 #include "imgui/imgui.h"
 
 #include <string>
-#include <vector>
 
 namespace ImageScraper
 {
@@ -20,14 +20,8 @@ namespace ImageScraper
         void             OnSearchCommitted( ) override;
 
     private:
-        void SaveSearchHistory( );
-        void PushToHistory( const std::string& value );
-
-        static constexpr int k_MaxHistory = 5;
-
-        std::shared_ptr<JsonFile> m_AppConfig{ };
-        std::string               m_TumblrUser{ };
-        std::vector<std::string>  m_SearchHistory{ };
-        int                       m_TumblrMaxMediaItems{ TUMBLR_LIMIT_DEFAULT };
+        SearchHistory m_SearchHistory{ };
+        std::string   m_TumblrUser{ };
+        int           m_TumblrMaxMediaItems{ TUMBLR_LIMIT_DEFAULT };
     };
 }
