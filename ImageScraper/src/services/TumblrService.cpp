@@ -91,8 +91,11 @@ bool ImageScraper::TumblrService::OpenExternalAuth( )
     wurl += L"?client_id=" + StringUtils::Utf8ToWideString( clientId, false );
     wurl += L"&response_type=code";
     wurl += L"&scope=basic";
-    wurl += L"&redirect_uri=" + StringUtils::Utf8ToWideString( StringUtils::UrlEncode( s_RedirectUrl ), false );
     wurl += L"&state=" + StringUtils::Utf8ToWideString( m_StateId, false );
+    // redirect_uri is intentionally omitted - Tumblr's OAuth2 server mismatches
+    // the parameter even when it matches the registered URL exactly. Omitting it
+    // causes Tumblr to redirect to the sole registered callback URL automatically,
+    // which is valid per RFC 6749 s4.1.1 when only one URI is registered.
 
     if( ShellExecute( NULL, L"open", wurl.c_str( ), NULL, NULL, SW_SHOWNORMAL ) )
     {
@@ -346,7 +349,7 @@ void ImageScraper::TumblrService::FetchAccessToken( const std::string& authCode 
             fetchOptions.m_CaBundle     = m_CaBundle;
             fetchOptions.m_UserAgent    = m_UserAgent;
             fetchOptions.m_QueryParams.push_back( { "code", authCode } );
-            fetchOptions.m_QueryParams.push_back( { "redirect_uri", StringUtils::UrlEncode( s_RedirectUrl ) } );
+            // redirect_uri omitted - not sent in the auth request so not required here.
 
             TumblrFetchAccessTokenRequest fetchRequest{ };
             RequestResult fetchResult = fetchRequest.Perform( fetchOptions );
