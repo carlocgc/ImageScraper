@@ -238,6 +238,9 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\requests\reddit\FetchSubredditPostsRequest.cpp" />
     <ClCompile Include="src\requests\reddit\RefreshAccessTokenRequest.cpp" />
     <ClCompile Include="src\requests\tumblr\RetrievePublishedPostsRequest.cpp" />
+    <ClCompile Include="src\requests\tumblr\TumblrFetchAccessTokenRequest.cpp" />
+    <ClCompile Include="src\requests\tumblr\TumblrRefreshAccessTokenRequest.cpp" />
+    <ClCompile Include="src\requests\tumblr\TumblrGetCurrentUserRequest.cpp" />
     <ClCompile Include="src\services\DiscordService.cpp" />
     <ClCompile Include="src\services\FourChanService.cpp" />
     <ClCompile Include="src\services\TumblrService.cpp" />
@@ -342,6 +345,9 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\requests\reddit\FetchAccessTokenRequest.h" />
     <ClInclude Include="include\requests\reddit\RefreshAccessTokenRequest.h" />
     <ClInclude Include="include\requests\tumblr\RetrievePublishedPostsRequest.h" />
+    <ClInclude Include="include\requests\tumblr\TumblrFetchAccessTokenRequest.h" />
+    <ClInclude Include="include\requests\tumblr\TumblrRefreshAccessTokenRequest.h" />
+    <ClInclude Include="include\requests\tumblr\TumblrGetCurrentUserRequest.h" />
     <ClInclude Include="include\services\IServiceSink.h" />
     <ClInclude Include="include\services\DiscordService.h" />
     <ClInclude Include="include\services\FourChanService.h" />

@@ -13,7 +13,7 @@ namespace ImageScraper
     public:
         void             Update( ) override;
         ContentProvider  GetContentProvider( ) const override { return ContentProvider::Tumblr; }
-        bool             CanSignIn( ) const override { return false; }
+        bool             CanSignIn( ) const override { return true; }
         bool             IsReadyToRun( ) const override { return !m_TumblrUser.empty( ); }
         UserInputOptions BuildInputOptions( ) const override;
         void             LoadSearchHistory( std::shared_ptr<JsonFile> appConfig ) override;

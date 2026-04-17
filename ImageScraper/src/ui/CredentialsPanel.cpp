@@ -7,8 +7,9 @@
 
 static const std::string s_Key_RedditClientId     = "reddit_client_id";
 static const std::string s_Key_RedditClientSecret = "reddit_client_secret";
-static const std::string s_Key_TumblrApiKey       = "tumblr_api_key";
-static const std::string s_Key_DiscordClientId    = "discord_client_id";
+static const std::string s_Key_TumblrApiKey        = "tumblr_api_key";
+static const std::string s_Key_TumblrClientSecret = "tumblr_client_secret";
+static const std::string s_Key_DiscordClientId     = "discord_client_id";
 static const std::string s_Key_DiscordClientSecret = "discord_client_secret";
 
 ImageScraper::CredentialsPanel::CredentialsPanel( std::shared_ptr<JsonFile> userConfig )
@@ -33,6 +34,7 @@ ImageScraper::CredentialsPanel::CredentialsPanel( std::shared_ptr<JsonFile> user
     load( s_Key_RedditClientId,      m_RedditClientId );
     load( s_Key_RedditClientSecret,  m_RedditClientSecret );
     load( s_Key_TumblrApiKey,        m_TumblrApiKey );
+    load( s_Key_TumblrClientSecret,  m_TumblrClientSecret );
     load( s_Key_DiscordClientId,     m_DiscordClientId );
     load( s_Key_DiscordClientSecret, m_DiscordClientSecret );
 }
@@ -103,7 +105,8 @@ void ImageScraper::CredentialsPanel::Update( )
 
     // --- Tumblr ---
     ImGui::SeparatorText( "Tumblr" );
-    InputField( "API Key", "##tumblr_key", m_TumblrApiKey, m_ShowTumblrKey, true, s_Key_TumblrApiKey, true );
+    InputField( "Consumer Key",    "##tumblr_key",    m_TumblrApiKey,       m_ShowTumblrKey,    false, s_Key_TumblrApiKey,        true );
+    InputField( "Consumer Secret", "##tumblr_secret", m_TumblrClientSecret, m_ShowTumblrSecret, true,  s_Key_TumblrClientSecret,  true );
 
     ImGui::Spacing( );
 
