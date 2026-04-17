@@ -52,6 +52,29 @@ namespace ImageScraper
             return utf8_string;
         }
 
+        // Percent-encodes a string for use as a URI query parameter value (RFC 3986).
+        // Unreserved characters (alpha, digit, '-', '_', '.', '~') are left as-is;
+        // everything else is encoded as %XX.
+        static std::string UrlEncode( const std::string& str )
+        {
+            std::string result;
+            result.reserve( str.size( ) * 3 );
+            for( unsigned char c : str )
+            {
+                if( std::isalnum( c ) || c == '-' || c == '_' || c == '.' || c == '~' )
+                {
+                    result += static_cast<char>( c );
+                }
+                else
+                {
+                    char hex[ 4 ];
+                    snprintf( hex, sizeof( hex ), "%%%02X", c );
+                    result += hex;
+                }
+            }
+            return result;
+        }
+
         // Decodes a percent-encoded URL string. '+' is treated as a space.
         static std::string UrlDecode( const std::string& str )
         {

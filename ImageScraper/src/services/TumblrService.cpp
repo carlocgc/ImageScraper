@@ -91,7 +91,7 @@ bool ImageScraper::TumblrService::OpenExternalAuth( )
     wurl += L"?client_id=" + StringUtils::Utf8ToWideString( clientId, false );
     wurl += L"&response_type=code";
     wurl += L"&scope=basic";
-    wurl += L"&redirect_uri=" + StringUtils::Utf8ToWideString( s_RedirectUrl, false );
+    wurl += L"&redirect_uri=" + StringUtils::Utf8ToWideString( StringUtils::UrlEncode( s_RedirectUrl ), false );
     wurl += L"&state=" + StringUtils::Utf8ToWideString( m_StateId, false );
 
     if( ShellExecute( NULL, L"open", wurl.c_str( ), NULL, NULL, SW_SHOWNORMAL ) )
@@ -346,7 +346,7 @@ void ImageScraper::TumblrService::FetchAccessToken( const std::string& authCode 
             fetchOptions.m_CaBundle     = m_CaBundle;
             fetchOptions.m_UserAgent    = m_UserAgent;
             fetchOptions.m_QueryParams.push_back( { "code", authCode } );
-            fetchOptions.m_QueryParams.push_back( { "redirect_uri", s_RedirectUrl } );
+            fetchOptions.m_QueryParams.push_back( { "redirect_uri", StringUtils::UrlEncode( s_RedirectUrl ) } );
 
             TumblrFetchAccessTokenRequest fetchRequest{ };
             RequestResult fetchResult = fetchRequest.Perform( fetchOptions );
