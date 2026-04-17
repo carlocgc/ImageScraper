@@ -73,6 +73,10 @@ void ImageScraper::TumblrPanel::Update( )
         if( ImGui::InputText( "##tumblr_user", buffer, INPUT_STRING_MAX, flags ) )
             m_TumblrUser = buffer;
 
+        // Capture screen rect of the input field before adding the button
+        const ImVec2 inputMin = ImGui::GetItemRectMin( );
+        const ImVec2 inputMax = ImGui::GetItemRectMax( );
+
         ImGui::SameLine( 0.f, spacing );
         if( ImGui::ArrowButton( "##tumblr_hist_btn", ImGuiDir_Down ) )
             ImGui::OpenPopup( "##tumblr_hist" );
@@ -80,7 +84,11 @@ void ImageScraper::TumblrPanel::Update( )
         ImGui::SameLine( 0.f, spacing );
         ImGui::TextUnformatted( "Tumblr User" );
 
-        if( ImGui::BeginPopup( "##tumblr_hist" ) )
+        // Anchor popup directly below the input field, spanning input + button width
+        const float popupW = ( inputMax.x - inputMin.x ) + spacing + arrowW;
+        ImGui::SetNextWindowPos( ImVec2( inputMin.x, inputMax.y ), ImGuiCond_Always );
+        ImGui::SetNextWindowSize( ImVec2( popupW, 0.f ), ImGuiCond_Always );
+        if( ImGui::BeginPopup( "##tumblr_hist", ImGuiWindowFlags_NoFocusOnAppearing ) )
         {
             if( m_SearchHistory.empty( ) )
             {

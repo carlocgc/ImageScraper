@@ -74,6 +74,10 @@ void ImageScraper::RedditPanel::Update( )
         if( ImGui::InputText( "##subreddit", buffer, INPUT_STRING_MAX, flags ) )
             m_SubredditName = buffer;
 
+        // Capture screen rect of the input field before adding the button
+        const ImVec2 inputMin = ImGui::GetItemRectMin( );
+        const ImVec2 inputMax = ImGui::GetItemRectMax( );
+
         ImGui::SameLine( 0.f, spacing );
         if( ImGui::ArrowButton( "##subreddit_hist_btn", ImGuiDir_Down ) )
             ImGui::OpenPopup( "##subreddit_hist" );
@@ -81,7 +85,11 @@ void ImageScraper::RedditPanel::Update( )
         ImGui::SameLine( 0.f, spacing );
         ImGui::TextUnformatted( "Subreddit (e.g. Gifs)" );
 
-        if( ImGui::BeginPopup( "##subreddit_hist" ) )
+        // Anchor popup directly below the input field, spanning input + button width
+        const float popupW = ( inputMax.x - inputMin.x ) + spacing + arrowW;
+        ImGui::SetNextWindowPos( ImVec2( inputMin.x, inputMax.y ), ImGuiCond_Always );
+        ImGui::SetNextWindowSize( ImVec2( popupW, 0.f ), ImGuiCond_Always );
+        if( ImGui::BeginPopup( "##subreddit_hist", ImGuiWindowFlags_NoFocusOnAppearing ) )
         {
             if( m_SearchHistory.empty( ) )
             {
