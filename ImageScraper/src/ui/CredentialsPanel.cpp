@@ -4,11 +4,14 @@
 #include "imgui/imgui.h"
 
 #include <filesystem>
+#include <windows.h>
+#include <Shellapi.h>
 
 static const std::string s_Key_RedditClientId     = "reddit_client_id";
 static const std::string s_Key_RedditClientSecret = "reddit_client_secret";
-static const std::string s_Key_TumblrApiKey       = "tumblr_api_key";
-static const std::string s_Key_DiscordClientId    = "discord_client_id";
+static const std::string s_Key_TumblrConsumerKey    = "tumblr_consumer_key";
+static const std::string s_Key_TumblrConsumerSecret = "tumblr_consumer_secret";
+static const std::string s_Key_DiscordClientId     = "discord_client_id";
 static const std::string s_Key_DiscordClientSecret = "discord_client_secret";
 
 ImageScraper::CredentialsPanel::CredentialsPanel( std::shared_ptr<JsonFile> userConfig )
@@ -32,14 +35,15 @@ ImageScraper::CredentialsPanel::CredentialsPanel( std::shared_ptr<JsonFile> user
 
     load( s_Key_RedditClientId,      m_RedditClientId );
     load( s_Key_RedditClientSecret,  m_RedditClientSecret );
-    load( s_Key_TumblrApiKey,        m_TumblrApiKey );
+    load( s_Key_TumblrConsumerKey,    m_TumblrConsumerKey );
+    load( s_Key_TumblrConsumerSecret, m_TumblrConsumerSecret );
     load( s_Key_DiscordClientId,     m_DiscordClientId );
     load( s_Key_DiscordClientSecret, m_DiscordClientSecret );
 }
 
 void ImageScraper::CredentialsPanel::Update( )
 {
-    ImGui::SetNextWindowSize( ImVec2( 500, 320 ), ImGuiCond_FirstUseEver );
+    ImGui::SetNextWindowSize( ImVec2( 500, 360 ), ImGuiCond_FirstUseEver );
 
     if( !ImGui::Begin( "Credentials" ) )
     {
@@ -54,8 +58,11 @@ void ImageScraper::CredentialsPanel::Update( )
     const ImVec4 grey  = ImVec4( 0.7f, 0.7f, 0.7f, 1.0f );
     constexpr float labelW = 160.0f;
 
+    // tooltip  - shown when hovering the input field; nullptr to skip
+    // url      - when non-null, appends a small square arrow button that opens the URL in the browser
     auto InputField = [ & ]( const char* label, const char* id, std::array<char, k_BufSize>& buf,
-                              bool& showToggle, bool hasToggle, const std::string& key, bool required )
+                              bool& showToggle, bool hasToggle, const std::string& key, bool required,
+                              const char* tooltip = nullptr, const char* url = nullptr )
         {
             bool empty = ( buf[ 0 ] == '\0' );
             if( required && empty )
@@ -82,6 +89,11 @@ void ImageScraper::CredentialsPanel::Update( )
                 SaveField( key, buf.data( ) );
             }
 
+            if( tooltip && ImGui::IsItemHovered( ) )
+            {
+                ImGui::SetTooltip( "%s", tooltip );
+            }
+
             if( hasToggle )
             {
                 ImGui::SameLine( );
@@ -92,25 +104,43 @@ void ImageScraper::CredentialsPanel::Update( )
                     showToggle = !showToggle;
                 }
             }
+
+            if( url )
+            {
+                ImGui::SameLine( );
+                std::string arrowId = std::string( "##link" ) + id;
+                if( ImGui::ArrowButton( arrowId.c_str( ), ImGuiDir_Right ) )
+                {
+                    ShellExecuteA( nullptr, "open", url, nullptr, nullptr, SW_SHOWNORMAL );
+                }
+                if( ImGui::IsItemHovered( ) )
+                {
+                    ImGui::SetTooltip( "%s", url );
+                }
+            }
         };
 
     // --- Reddit ---
     ImGui::SeparatorText( "Reddit" );
-    InputField( "Client ID",     "##reddit_id",     m_RedditClientId,     m_ShowRedditSecret, false, s_Key_RedditClientId,     true );
-    InputField( "Client Secret", "##reddit_secret", m_RedditClientSecret, m_ShowRedditSecret, true,  s_Key_RedditClientSecret, true );
+    InputField( "Client ID",     "##reddit_id",     m_RedditClientId,     m_ShowRedditSecret, false, s_Key_RedditClientId,     true,  "OAuth2 app Client ID.",     "https://www.reddit.com/prefs/apps" );
+    InputField( "Client Secret", "##reddit_secret", m_RedditClientSecret, m_ShowRedditSecret, true,  s_Key_RedditClientSecret, true,  "OAuth2 app Client Secret." );
 
     ImGui::Spacing( );
 
     // --- Tumblr ---
     ImGui::SeparatorText( "Tumblr" );
-    InputField( "API Key", "##tumblr_key", m_TumblrApiKey, m_ShowTumblrKey, true, s_Key_TumblrApiKey, true );
+    InputField( "Consumer Key",    "##tumblr_key",    m_TumblrConsumerKey,       m_ShowTumblrKey,    false, s_Key_TumblrConsumerKey,    true,  "OAuth Consumer Key - required for downloads.",     "https://www.tumblr.com/oauth/apps" );
+    InputField( "Consumer Secret", "##tumblr_secret", m_TumblrConsumerSecret, m_ShowTumblrSecret, true,  s_Key_TumblrConsumerSecret, false, "OAuth Consumer Secret - only needed for Sign In." );
 
     ImGui::Spacing( );
 
-    // --- Discord ---
+    // --- Discord (work in progress) ---
     ImGui::SeparatorText( "Discord" );
+    ImGui::TextDisabled( "Work in progress - not yet functional." );
+    ImGui::BeginDisabled( );
     InputField( "Client ID",     "##discord_id",     m_DiscordClientId,     m_ShowDiscordSecret, false, s_Key_DiscordClientId,     false );
     InputField( "Client Secret", "##discord_secret", m_DiscordClientSecret, m_ShowDiscordSecret, true,  s_Key_DiscordClientSecret, false );
+    ImGui::EndDisabled( );
 
 #ifdef _DEBUG
     ImGui::Spacing( );

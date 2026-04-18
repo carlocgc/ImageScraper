@@ -116,41 +116,44 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
         return false;
     }
 
-    const std::string errorKey = "error";
-    std::size_t errorStart = response.find( errorKey );
-    if( errorStart != std::string::npos )
-    {
-        LogDebug( "[%s] RedditService::HandleExternalAuth failed, response contained error!", __FUNCTION__ );
-        return false;
-    }
-
     if( response.find( "favicon" ) != std::string::npos )
     {
-        LogDebug( "[%s] RedditService::HandleExternalAuth failed, invalid message!", __FUNCTION__ );
+        LogDebug( "[%s] RedditService::HandleExternalAuth skipped, invalid message!", __FUNCTION__ );
         return false;
     }
 
-    // TODO check state matches device Id
+    const bool hasError = response.find( "?error=" ) != std::string::npos
+                       || response.find( "&error=" ) != std::string::npos;
 
-    const std::string codeKey = "code=";
-    const int codeKeyLength = static_cast< int >( codeKey.length( ) );
-    std::size_t codeStart = response.find( codeKey );
-    if( codeStart == std::string::npos )
+    if( hasError )
     {
-        LogDebug( "[%s] RedditService::HandleExternalAuth failed, could not find auth code start!", __FUNCTION__ );
+        const std::string error = StringUtils::ExtractQueryParam( response, "error" );
+        const std::string desc  = StringUtils::UrlDecode( StringUtils::ExtractQueryParam( response, "error_description" ) );
+        WarningLog( "[%s] Reddit OAuth error: %s - %s", __FUNCTION__, error.c_str( ), desc.c_str( ) );
+        if( error == "redirect_uri_mismatch" )
+        {
+            WarningLog( "[%s] Ensure the redirect URI in your Reddit app settings is set to: %s", __FUNCTION__, s_RedirectUrl.c_str( ) );
+        }
+        m_Sink->OnSignInComplete( m_ContentProvider );
         return false;
     }
 
-    codeStart += codeKeyLength;
-
-    const std::size_t codeEnd = response.find( " ", codeStart );
-    if( codeEnd == std::string::npos )
+    const std::string receivedState = StringUtils::ExtractQueryParam( response, "state" );
+    if( receivedState.empty( ) || receivedState != m_DeviceId )
     {
-        LogDebug( "[%s] RedditService::HandleExternalAuth failed, could not find auth code end!", __FUNCTION__ );
+        LogError( "[%s] Reddit OAuth state mismatch - possible CSRF attack. Expected: %s, Received: %s",
+                  __FUNCTION__, m_DeviceId.c_str( ), receivedState.c_str( ) );
+        m_Sink->OnSignInComplete( m_ContentProvider );
         return false;
     }
 
-    const std::string authCode = response.substr( codeStart, codeEnd - codeStart );
+    const std::string authCode = StringUtils::ExtractQueryParam( response, "code" );
+    if( authCode.empty( ) )
+    {
+        LogDebug( "[%s] RedditService::HandleExternalAuth failed, could not find auth code!", __FUNCTION__ );
+        return false;
+    }
+
     InfoLog( "[%s] Auth code received!", __FUNCTION__ );
     LogDebug( "[%s] Auth code: %s", __FUNCTION__, authCode.c_str( ) );
 

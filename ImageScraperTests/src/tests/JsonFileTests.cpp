@@ -139,9 +139,9 @@ TEST_CASE( "Empty string value is retrievable and detected as empty", "[JsonFile
     TempFile tmp;
     JsonFile jf( tmp.path );
 
-    jf.SetValue<std::string>( "tumblr_api_key", "" );
+    jf.SetValue<std::string>( "tumblr_consumer_key", "" );
 
     std::string out;
-    REQUIRE( jf.GetValue<std::string>( "tumblr_api_key", out ) == true );
+    REQUIRE( jf.GetValue<std::string>( "tumblr_consumer_key", out ) == true );
     REQUIRE( out.empty( ) );
 }

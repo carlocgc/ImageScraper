@@ -11,10 +11,11 @@
 #include <winsock2.h>
 #include <WS2tcpip.h>
 
-void ImageScraper::ListenServer::Init( std::vector<std::shared_ptr<Service>> services, int port, const std::string& authHtmlPath )
+void ImageScraper::ListenServer::Init( std::vector<std::shared_ptr<Service>> services, int port, const std::string& authHtmlPath, std::shared_ptr<IServiceSink> sink )
 {
     m_Services = services;
     m_Port = port;
+    m_Sink = sink;
     m_Initialised = true;
 
     std::stringstream htmlContent{ };
@@ -22,12 +23,12 @@ void ImageScraper::ListenServer::Init( std::vector<std::shared_ptr<Service>> ser
     if( htmlFile.is_open( ) )
     {
         htmlContent << htmlFile.rdbuf( );
-        m_AuthHtml = htmlContent.str( );
+        m_AuthHtmlTemplate = htmlContent.str( );
         htmlFile.close( );
     }
     else
     {
-        m_AuthHtml = "<html><body><h1>Authorization complete!</h1></body></html>";
+        m_AuthHtmlTemplate = "<html><body><h1>Authorization complete!</h1></body></html>";
     }
 }
 
@@ -194,14 +195,50 @@ void ImageScraper::ListenServer::Start( )
 
                 LogDebug( "[%s] ListenServer bytes received!, bytes: %i, data: %s, ", __FUNCTION__, bytesReceived, response.c_str( ) );
 
-                const int contentLength = static_cast< int >( m_AuthHtml.length( ) );
+                // Build the dynamic auth page - substitute brand colour and service name
+                // based on whichever provider is currently signing in.
+                std::string brandColor = "#888888";
+                std::string serviceName = "Service";
+
+                if( auto sink = m_Sink.lock( ) )
+                {
+                    const int signingInProvider = sink->GetSigningInProvider( );
+                    if( signingInProvider != INVALID_CONTENT_PROVIDER )
+                    {
+                        for( const auto& svc : m_Services )
+                        {
+                            if( static_cast<int>( svc->GetContentProvider( ) ) == signingInProvider )
+                            {
+                                brandColor  = svc->GetBrandColor( );
+                                serviceName = svc->GetProviderDisplayName( );
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                auto ReplaceAll = []( std::string& str, const std::string& from, const std::string& to )
+                    {
+                        std::size_t pos = 0;
+                        while( ( pos = str.find( from, pos ) ) != std::string::npos )
+                        {
+                            str.replace( pos, from.length( ), to );
+                            pos += to.length( );
+                        }
+                    };
+
+                std::string authHtml = m_AuthHtmlTemplate;
+                ReplaceAll( authHtml, "{{BRAND_COLOR}}",  brandColor );
+                ReplaceAll( authHtml, "{{SERVICE_NAME}}", serviceName );
+
+                const int contentLength = static_cast< int >( authHtml.length( ) );
 
                 std::string httpResponse = "HTTP/1.1 200 OK\r\n"
                     "Content-Type: text/html\r\n"
                     "Content-Length: " + std::to_string( contentLength ) + "\r\n"
                     "\r\n";
 
-                httpResponse += m_AuthHtml;
+                httpResponse += authHtml;
 
                 int bytesSent = send( clientSocket, httpResponse.c_str( ), static_cast< int >( httpResponse.length( ) ), 0 );
                 if( bytesSent == SOCKET_ERROR )

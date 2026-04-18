@@ -83,7 +83,7 @@ int ImageScraper::App::Run( )
 
     TaskManager::Instance( ).Start( THREAD_POOL_MAX_THREADS );
 
-    m_ListenServer->Init( m_Services, LISTEN_SERVER_PORT, m_AuthHtmlPath );
+    m_ListenServer->Init( m_Services, LISTEN_SERVER_PORT, m_AuthHtmlPath, m_FrontEnd );
     m_ListenServer->Start( );
 
     AuthenticateServices( );

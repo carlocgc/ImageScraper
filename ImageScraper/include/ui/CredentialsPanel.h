@@ -23,12 +23,14 @@ namespace ImageScraper
 
         std::array<char, k_BufSize> m_RedditClientId{ };
         std::array<char, k_BufSize> m_RedditClientSecret{ };
-        std::array<char, k_BufSize> m_TumblrApiKey{ };
+        std::array<char, k_BufSize> m_TumblrConsumerKey{ };
+        std::array<char, k_BufSize> m_TumblrConsumerSecret{ };
         std::array<char, k_BufSize> m_DiscordClientId{ };
         std::array<char, k_BufSize> m_DiscordClientSecret{ };
 
         bool m_ShowRedditSecret{ false };
         bool m_ShowTumblrKey{ false };
+        bool m_ShowTumblrSecret{ false };
         bool m_ShowDiscordSecret{ false };
 
 #ifdef _DEBUG

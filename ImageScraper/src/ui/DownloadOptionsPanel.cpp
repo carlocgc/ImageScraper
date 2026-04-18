@@ -170,6 +170,9 @@ void ImageScraper::DownloadOptionsPanel::UpdateSignInButton( )
     }
     else
     {
+        const bool canSignIn = service && service->HasSignInCredentials( );
+        ImGui::BeginDisabled( !canSignIn );
+
         if( ImGui::Button( "Sign In", ImVec2( 100, 40 ) ) )
         {
             if( service )
@@ -179,6 +182,13 @@ void ImageScraper::DownloadOptionsPanel::UpdateSignInButton( )
                 m_SigningInProvider.store( static_cast<int>( m_ContentProvider ) );
             }
         }
+
+        if( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) && !canSignIn )
+        {
+            ImGui::SetTooltip( "A Consumer Secret is required to sign in.\nAdd it in the Credentials panel." );
+        }
+
+        ImGui::EndDisabled( );
     }
 
     ImGui::EndDisabled( );

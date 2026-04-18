@@ -29,6 +29,11 @@ ImageScraper::RequestResult ImageScraper::Tumblr::RetrievePublishedPostsRequest:
     request.m_UserAgent = options.m_UserAgent;
     request.m_CaBundle = options.m_CaBundle;
 
+    if( !options.m_AccessToken.empty( ) )
+    {
+        request.m_Headers = { "Authorization: Bearer " + options.m_AccessToken };
+    }
+
     LogDebug( "[%s] Tumblr::RetrievePublishedPostsRequest, URL: %s", __FUNCTION__, url.c_str( ) );
 
     const HttpResponse response = m_HttpClient->Get( request );
