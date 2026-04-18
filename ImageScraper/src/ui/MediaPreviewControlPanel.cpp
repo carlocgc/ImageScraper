@@ -1,5 +1,8 @@
+#define NOMINMAX
 #include "ui/MediaPreviewControlPanel.h"
 #include "imgui/imgui.h"
+
+#include <algorithm>
 
 ImageScraper::MediaPreviewControlPanel::MediaPreviewControlPanel(
     MediaPreviewPanel* previewPanel,
@@ -11,6 +14,23 @@ ImageScraper::MediaPreviewControlPanel::MediaPreviewControlPanel(
 
 void ImageScraper::MediaPreviewControlPanel::Update( )
 {
+    // Base (minimum) button dimensions
+    constexpr float k_PlayR_min   = 18.f;
+    constexpr float k_NavR_min    = 13.f;
+    constexpr float k_PlayDia_min = k_PlayR_min * 2.f;
+    constexpr float k_NavDia_min  = k_NavR_min  * 2.f;
+    constexpr float k_Spacing_min = 8.f;
+    constexpr float k_MinContentW = k_NavDia_min + k_Spacing_min + k_PlayDia_min + k_Spacing_min + k_NavDia_min;
+    constexpr float k_MinContentH = k_PlayDia_min;
+
+    // Prevent the window from being resized smaller than needed to show the buttons at base size
+    {
+        const ImGuiStyle& style = ImGui::GetStyle( );
+        const float minW = k_MinContentW + style.WindowPadding.x * 2.f;
+        const float minH = k_MinContentH + style.WindowPadding.y * 2.f + ImGui::GetFrameHeight( );
+        ImGui::SetNextWindowSizeConstraints( ImVec2( minW, minH ), ImVec2( FLT_MAX, FLT_MAX ) );
+    }
+
     ImGui::SetNextWindowSize( ImVec2( 200, 80 ), ImGuiCond_FirstUseEver );
 
     if( !ImGui::Begin( "Media Controls", nullptr ) )
@@ -19,15 +39,21 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         return;
     }
 
-    constexpr float k_PlayR   = 18.f;
-    constexpr float k_NavR    = 13.f;
-    constexpr float k_PlayDia = k_PlayR * 2.f;
-    constexpr float k_NavDia  = k_NavR * 2.f;
-    constexpr float k_Spacing = 8.f;
-    constexpr float k_TotalW  = k_NavDia + k_Spacing + k_PlayDia + k_Spacing + k_NavDia;
-
+    // Scale buttons proportionally to fill the available content region.
+    // Scale is always >= 1 so buttons never shrink below their base size.
     const float availW  = ImGui::GetContentRegionAvail( ).x;
     const float availH  = ImGui::GetContentRegionAvail( ).y;
+    const float scaleW  = availW / k_MinContentW;
+    const float scaleH  = availH / k_MinContentH;
+    const float scale   = std::max( 1.f, std::min( scaleW, scaleH ) );
+
+    const float k_PlayR   = k_PlayR_min   * scale;
+    const float k_NavR    = k_NavR_min    * scale;
+    const float k_PlayDia = k_PlayR * 2.f;
+    const float k_NavDia  = k_NavR  * 2.f;
+    const float k_Spacing = k_Spacing_min * scale;
+    const float k_TotalW  = k_NavDia + k_Spacing + k_PlayDia + k_Spacing + k_NavDia;
+
     const float startX  = ( availW - k_TotalW ) * 0.5f;
     const float baseY   = ( availH - k_PlayDia ) * 0.5f;
     const float navOffY = ( k_PlayDia - k_NavDia ) * 0.5f;
@@ -35,8 +61,6 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
     const float cursorBaseX = ImGui::GetCursorPosX( );
     const float cursorBaseY = ImGui::GetCursorPosY( );
 
-    // canGoBack    = can navigate to older items (lower ring-buffer index)
-    // canGoForward = can navigate to newer/latest items (higher ring-buffer index)
     const bool canGoBack    = m_HistoryPanel && m_HistoryPanel->HasNext( );
     const bool canGoForward = m_HistoryPanel && m_HistoryPanel->HasPrevious( );
     const bool canPlay      = m_PreviewPanel && m_PreviewPanel->CanPlayPause( );
@@ -44,7 +68,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
 
     ImDrawList* dl = ImGui::GetWindowDrawList( );
 
-    // Draws a circular button background; returns {pressed, screenCenter, iconCol}.
+    // Draws a circle button background and returns {pressed, screenCenter, iconCol}.
     struct BtnResult { bool pressed; ImVec2 center; ImU32 iconCol; };
 
     auto CircleBtn = [ & ]( const char* id, float localX, float localY, float radius, bool disabled ) -> BtnResult
@@ -78,8 +102,8 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
     {
         auto [ pressed, center, iconCol ] = CircleBtn( "##back", 0.f, navOffY, k_NavR, !canGoBack );
 
-        const char*    label = "<<";
-        const ImVec2   sz    = ImGui::CalcTextSize( label );
+        const char*  label = "<<";
+        const ImVec2 sz    = ImGui::CalcTextSize( label );
         dl->AddText( ImVec2( center.x - sz.x * 0.5f, center.y - sz.y * 0.5f ), iconCol, label );
 
         if( pressed )
@@ -127,8 +151,8 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
     {
         auto [ pressed, center, iconCol ] = CircleBtn( "##forward", k_NavDia + k_Spacing + k_PlayDia + k_Spacing, navOffY, k_NavR, !canGoForward );
 
-        const char*    label = ">>";
-        const ImVec2   sz    = ImGui::CalcTextSize( label );
+        const char*  label = ">>";
+        const ImVec2 sz    = ImGui::CalcTextSize( label );
         dl->AddText( ImVec2( center.x - sz.x * 0.5f, center.y - sz.y * 0.5f ), iconCol, label );
 
         if( pressed )
