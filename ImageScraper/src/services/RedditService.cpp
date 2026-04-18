@@ -158,27 +158,22 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
         return false;
     }
 
-    // TODO check state matches device Id
-
-    const std::string codeKey = "code=";
-    const int codeKeyLength = static_cast< int >( codeKey.length( ) );
-    std::size_t codeStart = response.find( codeKey );
-    if( codeStart == std::string::npos )
+    const std::string receivedState = ExtractQueryParam( "state" );
+    if( receivedState.empty( ) || receivedState != m_DeviceId )
     {
-        LogDebug( "[%s] RedditService::HandleExternalAuth failed, could not find auth code start!", __FUNCTION__ );
+        LogError( "[%s] Reddit OAuth state mismatch - possible CSRF attack. Expected: %s, Received: %s",
+                  __FUNCTION__, m_DeviceId.c_str( ), receivedState.c_str( ) );
+        m_Sink->OnSignInComplete( m_ContentProvider );
         return false;
     }
 
-    codeStart += codeKeyLength;
-
-    const std::size_t codeEnd = response.find( " ", codeStart );
-    if( codeEnd == std::string::npos )
+    const std::string authCode = ExtractQueryParam( "code" );
+    if( authCode.empty( ) )
     {
-        LogDebug( "[%s] RedditService::HandleExternalAuth failed, could not find auth code end!", __FUNCTION__ );
+        LogDebug( "[%s] RedditService::HandleExternalAuth failed, could not find auth code!", __FUNCTION__ );
         return false;
     }
 
-    const std::string authCode = response.substr( codeStart, codeEnd - codeStart );
     InfoLog( "[%s] Auth code received!", __FUNCTION__ );
     LogDebug( "[%s] Auth code: %s", __FUNCTION__, authCode.c_str( ) );
 

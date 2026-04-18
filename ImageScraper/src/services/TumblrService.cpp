@@ -166,29 +166,22 @@ bool ImageScraper::TumblrService::HandleExternalAuth( const std::string& respons
         return false;
     }
 
-    const std::string codeKey = "code=";
-    const int codeKeyLength = static_cast< int >( codeKey.length( ) );
-    std::size_t codeStart = response.find( codeKey );
-    if( codeStart == std::string::npos )
+    const std::string receivedState = ExtractQueryParam( "state" );
+    if( receivedState.empty( ) || receivedState != m_StateId )
     {
-        LogDebug( "[%s] TumblrService::HandleExternalAuth failed, could not find auth code start!", __FUNCTION__ );
+        LogError( "[%s] Tumblr OAuth state mismatch - possible CSRF attack. Expected: %s, Received: %s",
+                  __FUNCTION__, m_StateId.c_str( ), receivedState.c_str( ) );
+        m_Sink->OnSignInComplete( m_ContentProvider );
         return false;
     }
 
-    codeStart += codeKeyLength;
-
-    // Use both '&' and ' ' as terminators - take the minimum valid position
-    const std::size_t ampPos   = response.find( "&", codeStart );
-    const std::size_t spacePos = response.find( " ", codeStart );
-    const std::size_t codeEnd  = (std::min)( ampPos, spacePos );
-
-    if( codeEnd == std::string::npos )
+    const std::string authCode = ExtractQueryParam( "code" );
+    if( authCode.empty( ) )
     {
-        LogDebug( "[%s] TumblrService::HandleExternalAuth failed, could not find auth code end!", __FUNCTION__ );
+        LogDebug( "[%s] TumblrService::HandleExternalAuth failed, could not find auth code!", __FUNCTION__ );
         return false;
     }
 
-    const std::string authCode = response.substr( codeStart, codeEnd - codeStart );
     InfoLog( "[%s] Tumblr auth code received!", __FUNCTION__ );
     LogDebug( "[%s] Auth code: %s", __FUNCTION__, authCode.c_str( ) );
 
