@@ -1,10 +1,10 @@
 #pragma once
 #include "services/Service.h"
+#include "auth/OAuthClient.h"
 #include "nlohmann/json.hpp"
 
 #include <string>
 #include <memory>
-#include <chrono>
 #include <mutex>
 
 namespace ImageScraper
@@ -32,16 +32,9 @@ namespace ImageScraper
         bool IsCancelled( ) override;
 
     private:
-        const bool IsAuthenticated( ) const;
-        void FetchAccessToken( const std::string& authCode );
         void DownloadContent( const UserInputOptions& inputOptions );
         bool TryPerformAppOnlyAuth( );
-        bool TryPerformAuthTokenRefresh( );
         std::vector<std::string> GetMediaUrls( const Json& postData );
-        bool TryParseAccessTokenAndExpiry( const Json& response );
-        bool TryParseRefreshToken( const Json& response );
-        void ClearRefreshToken( );
-        void ClearAccessToken( );
         void FetchCurrentUser( );
 
         static const std::string s_RedirectUrl;
@@ -50,19 +43,12 @@ namespace ImageScraper
         static const std::string s_UserDataKey_ClientId;
         static const std::string s_UserDataKey_ClientSecret;
 
-        std::string m_DeviceId{ };
-
         // Used for pagination
         std::string m_AfterParam{ };
 
         mutable std::mutex m_UsernameMutex{ };
         std::string m_Username{ };
 
-        mutable std::mutex m_RefreshTokenMutex{ };
-        std::string m_RefreshToken{ };
-        mutable std::mutex m_AccessTokenMutex{ };
-        std::string m_AccessToken{ };
-        std::chrono::seconds m_AuthExpireSeconds{ };
-        std::chrono::system_clock::time_point m_TokenReceived{ };
+        std::unique_ptr<OAuthClient> m_OAuthClient;
     };
 }

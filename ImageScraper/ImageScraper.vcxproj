@@ -211,6 +211,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\auth\OAuthClient.cpp" />
     <ClCompile Include="src\app\App.cpp" />
     <ClCompile Include="src\async\ThreadPool.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp" />
@@ -260,6 +261,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\stb\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\auth\OAuthClient.h" />
     <ClInclude Include="include\app\App.h" />
     <ClInclude Include="include\async\TaskManager.h" />
     <ClInclude Include="include\async\ThreadPool.h" />

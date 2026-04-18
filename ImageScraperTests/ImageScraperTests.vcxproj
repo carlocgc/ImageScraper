@@ -126,6 +126,8 @@
     <ClCompile Include="..\ImageScraper\src\requests\reddit\RefreshAccessTokenRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\reddit\FetchSubredditPostsRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\tumblr\RetrievePublishedPostsRequest.cpp" />
+    <ClCompile Include="..\ImageScraper\src\auth\OAuthClient.cpp" />
+    <ClCompile Include="src\tests\OAuthClientTests.cpp" />
     <ClCompile Include="src\tests\SanityTests.cpp" />
     <ClCompile Include="src\tests\RequestTypesTests.cpp" />
     <ClCompile Include="src\tests\DownloadUtilsTests.cpp" />
