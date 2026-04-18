@@ -35,8 +35,8 @@ ImageScraper::CredentialsPanel::CredentialsPanel( std::shared_ptr<JsonFile> user
 
     load( s_Key_RedditClientId,      m_RedditClientId );
     load( s_Key_RedditClientSecret,  m_RedditClientSecret );
-    load( s_Key_TumblrConsumerKey,    m_TumblrApiKey );
-    load( s_Key_TumblrConsumerSecret, m_TumblrClientSecret );
+    load( s_Key_TumblrConsumerKey,    m_TumblrConsumerKey );
+    load( s_Key_TumblrConsumerSecret, m_TumblrConsumerSecret );
     load( s_Key_DiscordClientId,     m_DiscordClientId );
     load( s_Key_DiscordClientSecret, m_DiscordClientSecret );
 }
@@ -129,8 +129,8 @@ void ImageScraper::CredentialsPanel::Update( )
 
     // --- Tumblr ---
     ImGui::SeparatorText( "Tumblr" );
-    InputField( "Consumer Key",    "##tumblr_key",    m_TumblrApiKey,       m_ShowTumblrKey,    false, s_Key_TumblrConsumerKey,    true,  "OAuth Consumer Key - required for downloads.",     "https://www.tumblr.com/oauth/apps" );
-    InputField( "Consumer Secret", "##tumblr_secret", m_TumblrClientSecret, m_ShowTumblrSecret, true,  s_Key_TumblrConsumerSecret, false, "OAuth Consumer Secret - only needed for Sign In." );
+    InputField( "Consumer Key",    "##tumblr_key",    m_TumblrConsumerKey,       m_ShowTumblrKey,    false, s_Key_TumblrConsumerKey,    true,  "OAuth Consumer Key - required for downloads.",     "https://www.tumblr.com/oauth/apps" );
+    InputField( "Consumer Secret", "##tumblr_secret", m_TumblrConsumerSecret, m_ShowTumblrSecret, true,  s_Key_TumblrConsumerSecret, false, "OAuth Consumer Secret - only needed for Sign In." );
 
     ImGui::Spacing( );
 
