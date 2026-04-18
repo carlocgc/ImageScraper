@@ -55,6 +55,7 @@ namespace ImageScraper
         bool m_Running{ false };
         bool m_OpenWarningPopup{ false };
         std::string m_WarningMessage{ };
+        std::shared_ptr<JsonFile> m_AppConfig{ };
         std::atomic_bool m_DownloadCancelled{ false };
         std::atomic<int> m_SigningInProvider{ INVALID_CONTENT_PROVIDER };
     };
