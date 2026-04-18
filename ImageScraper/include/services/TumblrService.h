@@ -39,8 +39,8 @@ namespace ImageScraper
         void FetchCurrentUser( );
 
         static const std::string s_RedirectUrl;
-        static const std::string s_UserDataKey_ClientId;
-        static const std::string s_UserDataKey_ClientSecret;
+        static const std::string s_UserDataKey_ConsumerKey;
+        static const std::string s_UserDataKey_ConsumerSecret;
         static const std::string s_AppDataKey_RefreshToken;
         static const std::string s_AppDataKey_StateId;
 

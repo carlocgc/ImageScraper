@@ -22,8 +22,8 @@ using namespace ImageScraper::Tumblr;
 using Json = nlohmann::json;
 
 const std::string ImageScraper::TumblrService::s_RedirectUrl              = "http://localhost:8080";
-const std::string ImageScraper::TumblrService::s_UserDataKey_ClientId     = "tumblr_consumer_key";
-const std::string ImageScraper::TumblrService::s_UserDataKey_ClientSecret = "tumblr_consumer_secret";
+const std::string ImageScraper::TumblrService::s_UserDataKey_ConsumerKey     = "tumblr_consumer_key";
+const std::string ImageScraper::TumblrService::s_UserDataKey_ConsumerSecret = "tumblr_consumer_secret";
 const std::string ImageScraper::TumblrService::s_AppDataKey_RefreshToken  = "tumblr_refresh_token";
 const std::string ImageScraper::TumblrService::s_AppDataKey_StateId       = "tumblr_state_id";
 
@@ -33,8 +33,8 @@ ImageScraper::TumblrService::TumblrService( std::shared_ptr<JsonFile> appConfig,
     OAuthConfig oauthConfig{
         "https://www.tumblr.com/oauth2/authorize",
         "basic%20offline_access",
-        s_UserDataKey_ClientId,
-        s_UserDataKey_ClientSecret,
+        s_UserDataKey_ConsumerKey,
+        s_UserDataKey_ConsumerSecret,
         s_AppDataKey_StateId,
         s_AppDataKey_RefreshToken,
         // redirect_uri intentionally omitted - Tumblr's OAuth2 server mismatches
@@ -70,7 +70,7 @@ bool ImageScraper::TumblrService::HasRequiredCredentials( ) const
     // Consumer Key (api_key) is sufficient for anonymous downloads.
     // Consumer Secret is only needed for OAuth sign-in.
     std::string clientId;
-    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, clientId );
+    m_UserConfig->GetValue<std::string>( s_UserDataKey_ConsumerKey, clientId );
     return !clientId.empty( );
 }
 
@@ -79,8 +79,8 @@ bool ImageScraper::TumblrService::HasSignInCredentials( ) const
     // Sign-in requires both Consumer Key and Consumer Secret.
     std::string clientId;
     std::string clientSecret;
-    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, clientId );
-    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientSecret, clientSecret );
+    m_UserConfig->GetValue<std::string>( s_UserDataKey_ConsumerKey, clientId );
+    m_UserConfig->GetValue<std::string>( s_UserDataKey_ConsumerSecret, clientSecret );
     return !clientId.empty( ) && !clientSecret.empty( );
 }
 
@@ -288,14 +288,14 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
                 {
                     // Refresh failed - fall through to api_key auth
                     std::string apiKey;
-                    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, apiKey );
+                    m_UserConfig->GetValue<std::string>( s_UserDataKey_ConsumerKey, apiKey );
                     retrievePostsOptions.m_QueryParams.push_back( { "api_key", apiKey } );
                 }
             }
             else
             {
                 std::string apiKey;
-                m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, apiKey );
+                m_UserConfig->GetValue<std::string>( s_UserDataKey_ConsumerKey, apiKey );
                 retrievePostsOptions.m_QueryParams.push_back( { "api_key", apiKey } );
             }
 
