@@ -26,7 +26,6 @@ const std::string ImageScraper::TumblrService::s_UserDataKey_ClientId     = "tum
 const std::string ImageScraper::TumblrService::s_UserDataKey_ClientSecret = "tumblr_consumer_secret";
 const std::string ImageScraper::TumblrService::s_AppDataKey_RefreshToken  = "tumblr_refresh_token";
 const std::string ImageScraper::TumblrService::s_AppDataKey_StateId       = "tumblr_state_id";
-const std::string ImageScraper::TumblrService::s_UserDataKey_ApiKey       = "tumblr_consumer_key";
 
 ImageScraper::TumblrService::TumblrService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
     : Service( ContentProvider::Tumblr, appConfig, userConfig, caBundle, outputDir, sink )
@@ -289,14 +288,14 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
                 {
                     // Refresh failed - fall through to api_key auth
                     std::string apiKey;
-                    m_UserConfig->GetValue<std::string>( s_UserDataKey_ApiKey, apiKey );
+                    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, apiKey );
                     retrievePostsOptions.m_QueryParams.push_back( { "api_key", apiKey } );
                 }
             }
             else
             {
                 std::string apiKey;
-                m_UserConfig->GetValue<std::string>( s_UserDataKey_ApiKey, apiKey );
+                m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, apiKey );
                 retrievePostsOptions.m_QueryParams.push_back( { "api_key", apiKey } );
             }
 

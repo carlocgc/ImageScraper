@@ -43,7 +43,6 @@ namespace ImageScraper
         static const std::string s_UserDataKey_ClientSecret;
         static const std::string s_AppDataKey_RefreshToken;
         static const std::string s_AppDataKey_StateId;
-        static const std::string s_UserDataKey_ApiKey;
 
         mutable std::mutex m_UsernameMutex{ };
         std::string m_Username{ };
