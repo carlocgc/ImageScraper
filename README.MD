@@ -27,7 +27,8 @@ A Windows desktop application for downloading media from social platforms. Built
 - Thumbnail previews on hover in download history
 
 ### Networking
-- OAuth2 authentication flow for Reddit (full PKCE redirect flow via embedded HTTP listener)
+- OAuth2 authentication for Reddit and Tumblr — shared `OAuthClient` component handles state generation, browser launch, embedded HTTP listener handshake, token exchange, refresh, and persistence
+- Reddit app-only auth — unauthenticated downloads use a client-credentials bearer token so no sign-in is required to start scraping
 - Retry decorator with exponential backoff and 429 rate-limit handling
 - Configurable download limits, sort scopes, and timeframes per provider
 - TLS via libcurl with bundled CA certificate
@@ -51,8 +52,8 @@ A Windows desktop application for downloading media from social platforms. Built
 
 | Platform | Auth | Media Types |
 |---|---|---|
-| Reddit | OAuth2 | Images, GIFs, Videos, Galleries |
-| Tumblr | API Key | Images, Videos |
+| Reddit | OAuth2 (signed in), App-only auth (anonymous) | Images, GIFs, Videos, Galleries |
+| Tumblr | OAuth2 (signed in), API Key (anonymous) | Images, Videos |
 | 4chan | None required | Images, GIFs |
 | Discord | OAuth2 (in progress) | — |
 
@@ -94,7 +95,9 @@ Credentials are entered directly in the **Credentials** panel inside the app. Fi
 ### ![Tumblr](https://img.shields.io/badge/Tumblr-%2336465D.svg?style=flat&logo=Tumblr&logoColor=white)
 
 1. Register an app at https://www.tumblr.com/oauth/apps
-2. Enter the **OAuth Consumer Key** in the Credentials panel
+2. Enter credentials in the Credentials panel:
+   - **Consumer Key only** — enables API Key mode; downloads work without signing in
+   - **Consumer Key + Consumer Secret** — enables full OAuth2 sign-in via browser redirect; required to access content that needs an authenticated session
 
 ### 4chan
 
