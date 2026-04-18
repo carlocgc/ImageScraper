@@ -21,35 +21,49 @@
 using namespace ImageScraper::Tumblr;
 using Json = nlohmann::json;
 
-const std::string ImageScraper::TumblrService::s_RedirectUrl            = "http://localhost:8080";
-const std::string ImageScraper::TumblrService::s_UserDataKey_ClientId   = "tumblr_consumer_key";
+const std::string ImageScraper::TumblrService::s_RedirectUrl              = "http://localhost:8080";
+const std::string ImageScraper::TumblrService::s_UserDataKey_ClientId     = "tumblr_consumer_key";
 const std::string ImageScraper::TumblrService::s_UserDataKey_ClientSecret = "tumblr_consumer_secret";
-const std::string ImageScraper::TumblrService::s_AppDataKey_RefreshToken = "tumblr_refresh_token";
-const std::string ImageScraper::TumblrService::s_AppDataKey_StateId     = "tumblr_state_id";
-const std::string ImageScraper::TumblrService::s_UserDataKey_ApiKey     = "tumblr_consumer_key";
+const std::string ImageScraper::TumblrService::s_AppDataKey_RefreshToken  = "tumblr_refresh_token";
+const std::string ImageScraper::TumblrService::s_AppDataKey_StateId       = "tumblr_state_id";
+const std::string ImageScraper::TumblrService::s_UserDataKey_ApiKey       = "tumblr_consumer_key";
 
 ImageScraper::TumblrService::TumblrService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
     : Service( ContentProvider::Tumblr, appConfig, userConfig, caBundle, outputDir, sink )
 {
-    if( !m_AppConfig->GetValue<std::string>( s_AppDataKey_StateId, m_StateId ) || m_StateId.empty( ) )
-    {
-        m_StateId = StringUtils::CreateGuid( 30 );
-        m_AppConfig->SetValue<std::string>( s_AppDataKey_StateId, m_StateId );
-        m_AppConfig->Serialise( );
-        LogDebug( "[%s] Created new Tumblr state id: %s", __FUNCTION__, m_StateId.c_str( ) );
-    }
+    OAuthConfig oauthConfig{
+        "https://www.tumblr.com/oauth2/authorize",
+        "basic%20offline_access",
+        s_UserDataKey_ClientId,
+        s_UserDataKey_ClientSecret,
+        s_AppDataKey_StateId,
+        s_AppDataKey_RefreshToken,
+        // redirect_uri intentionally omitted - Tumblr's OAuth2 server mismatches
+        // the parameter even when it matches the registered URL exactly. Omitting it
+        // causes Tumblr to redirect to the sole registered callback URL automatically,
+        // which is valid per RFC 6749 s4.1.1 when only one URI is registered.
+        "",
+        {}
+    };
 
-    {
-        std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
-        if( m_AppConfig->GetValue<std::string>( s_AppDataKey_RefreshToken, m_RefreshToken ) && !m_RefreshToken.empty( ) )
+    auto fetchFn = [ ]( const RequestOptions& opts )
         {
-            LogDebug( "[%s] Tumblr refresh token found!", __FUNCTION__ );
-        }
-        else
+            return TumblrFetchAccessTokenRequest{ }.Perform( opts );
+        };
+
+    auto refreshFn = [ ]( const RequestOptions& opts )
         {
-            LogDebug( "[%s] No Tumblr refresh token found.", __FUNCTION__ );
-        }
-    }
+            return TumblrRefreshAccessTokenRequest{ }.Perform( opts );
+        };
+
+    m_OAuthClient = std::make_unique<OAuthClient>(
+        std::move( oauthConfig ),
+        m_AppConfig,
+        m_UserConfig,
+        m_CaBundle,
+        m_UserAgent,
+        fetchFn,
+        refreshFn );
 }
 
 bool ImageScraper::TumblrService::HasRequiredCredentials( ) const
@@ -84,29 +98,7 @@ bool ImageScraper::TumblrService::HandleUserInput( const UserInputOptions& optio
 
 bool ImageScraper::TumblrService::OpenExternalAuth( )
 {
-    std::string clientId;
-    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, clientId );
-
-    std::wstring wurl = L"https://www.tumblr.com/oauth2/authorize";
-    wurl += L"?client_id=" + StringUtils::Utf8ToWideString( clientId, false );
-    wurl += L"&response_type=code";
-    wurl += L"&scope=basic%20offline_access";
-    wurl += L"&state=" + StringUtils::Utf8ToWideString( m_StateId, false );
-    // redirect_uri is intentionally omitted - Tumblr's OAuth2 server mismatches
-    // the parameter even when it matches the registered URL exactly. Omitting it
-    // causes Tumblr to redirect to the sole registered callback URL automatically,
-    // which is valid per RFC 6749 s4.1.1 when only one URI is registered.
-
-    if( ShellExecute( NULL, L"open", wurl.c_str( ), NULL, NULL, SW_SHOWNORMAL ) )
-    {
-        const std::string url = StringUtils::WideStringToUtf8String( wurl, true );
-        InfoLog( "[%s] Opened Tumblr external auth in browser!", __FUNCTION__ );
-        LogDebug( "[%s] External auth url: %s", __FUNCTION__, url.c_str( ) );
-        return true;
-    }
-
-    LogError( "[%s] Could not open default browser, make sure a default browser is set in OS settings!", __FUNCTION__ );
-    return false;
+    return m_OAuthClient->OpenAuth( );
 }
 
 bool ImageScraper::TumblrService::HandleExternalAuth( const std::string& response )
@@ -130,49 +122,34 @@ bool ImageScraper::TumblrService::HandleExternalAuth( const std::string& respons
         return false;
     }
 
-    const bool hasError = response.find( "?error=" ) != std::string::npos
-                       || response.find( "&error=" ) != std::string::npos;
-
-    if( hasError )
-    {
-        const std::string error = StringUtils::ExtractQueryParam( response, "error" );
-        const std::string desc  = StringUtils::UrlDecode( StringUtils::ExtractQueryParam( response, "error_description" ) );
-        WarningLog( "[%s] Tumblr OAuth error: %s - %s", __FUNCTION__, error.c_str( ), desc.c_str( ) );
-        if( error == "redirect_uri_mismatch" )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, response ]( )
         {
-            WarningLog( "[%s] Ensure the callback URL in your Tumblr app settings is set to: %s", __FUNCTION__, s_RedirectUrl.c_str( ) );
-        }
-        m_Sink->OnSignInComplete( m_ContentProvider );
-        return false;
-    }
+            if( m_OAuthClient->HandleAuth( response, "Tumblr" ) )
+            {
+                FetchCurrentUser( );
+                TaskManager::Instance( ).SubmitMain( [ this ]( )
+                    {
+                        m_Sink->OnSignInComplete( ContentProvider::Tumblr );
+                        InfoLog( "[%s] Tumblr signed in successfully!", __FUNCTION__ );
+                    } );
+            }
+            else
+            {
+                TaskManager::Instance( ).SubmitMain( [ this ]( )
+                    {
+                        m_Sink->OnSignInComplete( ContentProvider::Tumblr );
+                        LogError( "[%s] Tumblr sign in failed.", __FUNCTION__ );
+                    } );
+            }
+        } );
 
-    const std::string receivedState = StringUtils::ExtractQueryParam( response, "state" );
-    if( receivedState.empty( ) || receivedState != m_StateId )
-    {
-        LogError( "[%s] Tumblr OAuth state mismatch - possible CSRF attack. Expected: %s, Received: %s",
-                  __FUNCTION__, m_StateId.c_str( ), receivedState.c_str( ) );
-        m_Sink->OnSignInComplete( m_ContentProvider );
-        return false;
-    }
-
-    const std::string authCode = StringUtils::ExtractQueryParam( response, "code" );
-    if( authCode.empty( ) )
-    {
-        LogDebug( "[%s] TumblrService::HandleExternalAuth failed, could not find auth code!", __FUNCTION__ );
-        return false;
-    }
-
-    InfoLog( "[%s] Tumblr auth code received!", __FUNCTION__ );
-    LogDebug( "[%s] Auth code: %s", __FUNCTION__, authCode.c_str( ) );
-
-    FetchAccessToken( authCode );
+    ( void )task;
     return true;
 }
 
 bool ImageScraper::TumblrService::IsSignedIn( ) const
 {
-    std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
-    return !m_RefreshToken.empty( );
+    return m_OAuthClient->IsSignedIn( );
 }
 
 std::string ImageScraper::TumblrService::GetSignedInUser( ) const
@@ -197,8 +174,9 @@ void ImageScraper::TumblrService::Authenticate( AuthenticateCallback callback )
 
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, onComplete, onFail ]( )
         {
-            if( TryPerformAuthTokenRefresh( ) )
+            if( m_OAuthClient->TryRefreshToken( ) )
             {
+                FetchCurrentUser( );
                 onComplete( );
             }
             else
@@ -217,8 +195,7 @@ bool ImageScraper::TumblrService::IsCancelled( )
 
 void ImageScraper::TumblrService::SignOut( )
 {
-    ClearAccessToken( );
-    ClearRefreshToken( );
+    m_OAuthClient->SignOut( );
     {
         std::unique_lock<std::mutex> lock( m_UsernameMutex );
         m_Username.clear( );
@@ -229,16 +206,10 @@ void ImageScraper::TumblrService::SignOut( )
 
 void ImageScraper::TumblrService::FetchCurrentUser( )
 {
-    std::string accessToken{ };
-    {
-        std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
-        accessToken = m_AccessToken;
-    }
-
     RequestOptions options{ };
     options.m_CaBundle    = m_CaBundle;
     options.m_UserAgent   = m_UserAgent;
-    options.m_AccessToken = accessToken;
+    options.m_AccessToken = m_OAuthClient->GetAccessToken( );
 
     TumblrGetCurrentUserRequest request{ };
     RequestResult result = request.Perform( options );
@@ -273,196 +244,6 @@ void ImageScraper::TumblrService::FetchCurrentUser( )
     }
 }
 
-bool ImageScraper::TumblrService::IsAuthenticated( ) const
-{
-    std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
-
-    if( m_AccessToken.empty( ) )
-    {
-        return false;
-    }
-
-    const std::chrono::system_clock::time_point now = std::chrono::system_clock::now( );
-    if( m_TokenReceived + m_AuthExpireSeconds <= now )
-    {
-        return false;
-    }
-
-    return true;
-}
-
-void ImageScraper::TumblrService::FetchAccessToken( const std::string& authCode )
-{
-    auto onComplete = [ this ]( )
-    {
-        FetchCurrentUser( );
-        m_Sink->OnSignInComplete( ContentProvider::Tumblr );
-        InfoLog( "[%s] Tumblr signed in successfully!", __FUNCTION__ );
-    };
-
-    auto onFail = [ this ]( const std::string error )
-    {
-        m_Sink->OnSignInComplete( ContentProvider::Tumblr );
-        LogError( "[%s] Tumblr sign in failed, error: %s", __FUNCTION__, error.c_str( ) );
-    };
-
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, authCode, onComplete, onFail ]( )
-        {
-            InfoLog( "[%s] Started Tumblr OAuth process!", __FUNCTION__ );
-            LogDebug( "[%s] authCode: %s", __FUNCTION__, authCode.c_str( ) );
-
-            std::string clientId;
-            std::string clientSecret;
-            m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, clientId );
-            m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientSecret, clientSecret );
-
-            RequestOptions fetchOptions{ };
-            fetchOptions.m_ClientId     = clientId;
-            fetchOptions.m_ClientSecret = clientSecret;
-            fetchOptions.m_CaBundle     = m_CaBundle;
-            fetchOptions.m_UserAgent    = m_UserAgent;
-            fetchOptions.m_QueryParams.push_back( { "code", authCode } );
-            // redirect_uri omitted - not sent in the auth request so not required here.
-
-            TumblrFetchAccessTokenRequest fetchRequest{ };
-            RequestResult fetchResult = fetchRequest.Perform( fetchOptions );
-
-            if( !fetchResult.m_Success )
-            {
-                TaskManager::Instance( ).SubmitMain( onFail, fetchResult.m_Error.m_ErrorString );
-                return;
-            }
-
-            const Json response = Json::parse( fetchResult.m_Response );
-
-            if( !TryParseAccessTokenAndExpiry( response ) )
-            {
-                TaskManager::Instance( ).SubmitMain( onFail, std::string( "Could not parse access token and expiry" ) );
-                return;
-            }
-
-            if( !TryParseRefreshToken( response ) )
-            {
-                TaskManager::Instance( ).SubmitMain( onFail, std::string( "Could not parse refresh token" ) );
-                return;
-            }
-
-            TaskManager::Instance( ).SubmitMain( onComplete );
-        } );
-
-    ( void )task;
-}
-
-bool ImageScraper::TumblrService::TryPerformAuthTokenRefresh( )
-{
-    RequestOptions authOptions{ };
-
-    {
-        std::unique_lock<std::mutex> lock{ m_RefreshTokenMutex };
-
-        if( m_RefreshToken.empty( ) )
-        {
-            LogDebug( "[%s] Tumblr refresh token not found!", __FUNCTION__ );
-            return false;
-        }
-
-        authOptions.m_QueryParams.push_back( { "refresh_token", m_RefreshToken } );
-    }
-
-    std::string clientId;
-    std::string clientSecret;
-    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientId, clientId );
-    m_UserConfig->GetValue<std::string>( s_UserDataKey_ClientSecret, clientSecret );
-
-    authOptions.m_CaBundle     = m_CaBundle;
-    authOptions.m_UserAgent    = m_UserAgent;
-    authOptions.m_ClientId     = clientId;
-    authOptions.m_ClientSecret = clientSecret;
-
-    TumblrRefreshAccessTokenRequest authRequest{ };
-    RequestResult authResult = authRequest.Perform( authOptions );
-
-    if( !authResult.m_Success )
-    {
-        LogError( "[%s] Failed to refresh Tumblr access token, error: %s", __FUNCTION__, authResult.m_Error.m_ErrorString.c_str( ) );
-        ClearRefreshToken( );
-        return false;
-    }
-
-    const Json authResponse = Json::parse( authResult.m_Response );
-
-    if( !TryParseAccessTokenAndExpiry( authResponse ) )
-    {
-        LogError( "[%s] Could not parse Tumblr access token or expiry!", __FUNCTION__ );
-        return false;
-    }
-
-    if( !TryParseRefreshToken( authResponse ) )
-    {
-        LogError( "[%s] Could not parse Tumblr refresh token!", __FUNCTION__ );
-        return false;
-    }
-
-    InfoLog( "[%s] Tumblr access token refreshed successfully!", __FUNCTION__ );
-    FetchCurrentUser( );
-    return true;
-}
-
-bool ImageScraper::TumblrService::TryParseAccessTokenAndExpiry( const Json& response )
-{
-    if( !response.contains( "access_token" ) || !response.contains( "expires_in" ) )
-    {
-        return false;
-    }
-
-    std::string accessToken = response[ "access_token" ].get<std::string>( );
-    int expireSeconds       = response[ "expires_in" ].get<int>( );
-
-    std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
-    m_AccessToken = accessToken;
-    constexpr int expireDelta = 180; // 3 minutes safety margin
-    m_AuthExpireSeconds = std::chrono::seconds{ expireSeconds - expireDelta };
-    m_TokenReceived = std::chrono::system_clock::now( );
-
-    LogDebug( "[%s] Tumblr access token parsed.", __FUNCTION__ );
-    return true;
-}
-
-bool ImageScraper::TumblrService::TryParseRefreshToken( const Json& response )
-{
-    if( !response.contains( "refresh_token" ) )
-    {
-        // Tumblr only returns a refresh_token when offline_access scope is granted.
-        LogError( "[%s] refresh_token missing from token response - ensure offline_access scope is requested.", __FUNCTION__ );
-        return false;
-    }
-
-    std::string refreshToken = response[ "refresh_token" ].get<std::string>( );
-
-    std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
-    m_RefreshToken = refreshToken;
-    m_AppConfig->SetValue( s_AppDataKey_RefreshToken, m_RefreshToken );
-    m_AppConfig->Serialise( );
-
-    LogDebug( "[%s] Tumblr refresh token parsed and persisted.", __FUNCTION__ );
-    return true;
-}
-
-void ImageScraper::TumblrService::ClearRefreshToken( )
-{
-    std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
-    m_RefreshToken.clear( );
-    m_AppConfig->SetValue( s_AppDataKey_RefreshToken, m_RefreshToken );
-    m_AppConfig->Serialise( );
-}
-
-void ImageScraper::TumblrService::ClearAccessToken( )
-{
-    std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
-    m_AccessToken.clear( );
-    m_AuthExpireSeconds = std::chrono::seconds{ 0 };
-}
-
 void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& inputOptions )
 {
     InfoLog( "[%s] Starting Tumblr media download!", __FUNCTION__ );
@@ -494,21 +275,19 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
             retrievePostsOptions.m_CaBundle  = m_CaBundle;
             retrievePostsOptions.m_UserAgent = m_UserAgent;
 
-            if( IsAuthenticated( ) )
+            if( m_OAuthClient->IsAuthenticated( ) )
             {
-                std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
-                retrievePostsOptions.m_AccessToken = m_AccessToken;
+                retrievePostsOptions.m_AccessToken = m_OAuthClient->GetAccessToken( );
             }
-            else if( !m_RefreshToken.empty( ) )
+            else if( m_OAuthClient->IsSignedIn( ) )
             {
-                if( TryPerformAuthTokenRefresh( ) )
+                if( m_OAuthClient->TryRefreshToken( ) )
                 {
-                    std::unique_lock<std::mutex> lock( m_AccessTokenMutex );
-                    retrievePostsOptions.m_AccessToken = m_AccessToken;
+                    retrievePostsOptions.m_AccessToken = m_OAuthClient->GetAccessToken( );
                 }
                 else
                 {
-                    // Fall through to api_key auth
+                    // Refresh failed - fall through to api_key auth
                     std::string apiKey;
                     m_UserConfig->GetValue<std::string>( s_UserDataKey_ApiKey, apiKey );
                     retrievePostsOptions.m_QueryParams.push_back( { "api_key", apiKey } );
