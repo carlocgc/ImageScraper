@@ -86,7 +86,7 @@ Credentials are entered directly in the **Credentials** panel inside the app. Fi
 ### ![Reddit](https://img.shields.io/badge/Reddit-%23FF4500.svg?style=flat&logo=Reddit&logoColor=white)
 
 > [!WARNING]
-> **Reddit has restricted access to its public API.** New app registration at `reddit.com/prefs/apps` is no longer available for general use — existing client credentials cannot be created. The instructions below are kept for reference in case access is restored.
+> **Reddit has restricted access to its public API.** New app registrations at `reddit.com/prefs/apps` are no longer available for general use — new client credentials cannot be obtained. The instructions below are kept for reference in case access is restored.
 
 1. Create a web app at https://www.reddit.com/prefs/apps
 2. Set the redirect URI to `http://localhost:8080`
