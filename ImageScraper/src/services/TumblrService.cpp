@@ -22,11 +22,11 @@ using namespace ImageScraper::Tumblr;
 using Json = nlohmann::json;
 
 const std::string ImageScraper::TumblrService::s_RedirectUrl            = "http://localhost:8080";
-const std::string ImageScraper::TumblrService::s_UserDataKey_ClientId   = "tumblr_api_key";
-const std::string ImageScraper::TumblrService::s_UserDataKey_ClientSecret = "tumblr_client_secret";
+const std::string ImageScraper::TumblrService::s_UserDataKey_ClientId   = "tumblr_consumer_key";
+const std::string ImageScraper::TumblrService::s_UserDataKey_ClientSecret = "tumblr_consumer_secret";
 const std::string ImageScraper::TumblrService::s_AppDataKey_RefreshToken = "tumblr_refresh_token";
 const std::string ImageScraper::TumblrService::s_AppDataKey_StateId     = "tumblr_state_id";
-const std::string ImageScraper::TumblrService::s_UserDataKey_ApiKey     = "tumblr_api_key";
+const std::string ImageScraper::TumblrService::s_UserDataKey_ApiKey     = "tumblr_consumer_key";
 
 ImageScraper::TumblrService::TumblrService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
     : Service( ContentProvider::Tumblr, appConfig, userConfig, caBundle, outputDir, sink )

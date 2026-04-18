@@ -9,8 +9,8 @@
 
 static const std::string s_Key_RedditClientId     = "reddit_client_id";
 static const std::string s_Key_RedditClientSecret = "reddit_client_secret";
-static const std::string s_Key_TumblrApiKey        = "tumblr_api_key";
-static const std::string s_Key_TumblrClientSecret = "tumblr_client_secret";
+static const std::string s_Key_TumblrConsumerKey    = "tumblr_consumer_key";
+static const std::string s_Key_TumblrConsumerSecret = "tumblr_consumer_secret";
 static const std::string s_Key_DiscordClientId     = "discord_client_id";
 static const std::string s_Key_DiscordClientSecret = "discord_client_secret";
 
@@ -35,8 +35,8 @@ ImageScraper::CredentialsPanel::CredentialsPanel( std::shared_ptr<JsonFile> user
 
     load( s_Key_RedditClientId,      m_RedditClientId );
     load( s_Key_RedditClientSecret,  m_RedditClientSecret );
-    load( s_Key_TumblrApiKey,        m_TumblrApiKey );
-    load( s_Key_TumblrClientSecret,  m_TumblrClientSecret );
+    load( s_Key_TumblrConsumerKey,    m_TumblrApiKey );
+    load( s_Key_TumblrConsumerSecret, m_TumblrClientSecret );
     load( s_Key_DiscordClientId,     m_DiscordClientId );
     load( s_Key_DiscordClientSecret, m_DiscordClientSecret );
 }
@@ -129,8 +129,8 @@ void ImageScraper::CredentialsPanel::Update( )
 
     // --- Tumblr ---
     ImGui::SeparatorText( "Tumblr" );
-    InputField( "Consumer Key",    "##tumblr_key",    m_TumblrApiKey,       m_ShowTumblrKey,    false, s_Key_TumblrApiKey,       true,  "OAuth Consumer Key - required for downloads.",     "https://www.tumblr.com/oauth/apps" );
-    InputField( "Consumer Secret", "##tumblr_secret", m_TumblrClientSecret, m_ShowTumblrSecret, true,  s_Key_TumblrClientSecret, false, "OAuth Consumer Secret - only needed for Sign In." );
+    InputField( "Consumer Key",    "##tumblr_key",    m_TumblrApiKey,       m_ShowTumblrKey,    false, s_Key_TumblrConsumerKey,    true,  "OAuth Consumer Key - required for downloads.",     "https://www.tumblr.com/oauth/apps" );
+    InputField( "Consumer Secret", "##tumblr_secret", m_TumblrClientSecret, m_ShowTumblrSecret, true,  s_Key_TumblrConsumerSecret, false, "OAuth Consumer Secret - only needed for Sign In." );
 
     ImGui::Spacing( );
 
