@@ -117,6 +117,9 @@ void ImageScraper::FrontEnd::Update( )
 
     m_CredentialsPanel->Update( );
     m_MediaPreviewPanel->Update( );
+    m_DownloadHistoryPanel->SetBlocked(
+        m_DownloadOptionsPanel->IsRunning( ) ||
+        m_DownloadOptionsPanel->GetSigningInProvider( ) != INVALID_CONTENT_PROVIDER );
     m_DownloadHistoryPanel->Update( );
     m_LogPanel->Update( );
 

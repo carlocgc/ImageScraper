@@ -20,9 +20,9 @@ namespace ImageScraper
         void             OnSearchCommitted( ) override;
 
     private:
-        SearchHistory m_SearchHistory{ };
-        std::string   m_FourChanBoard{ };
-        int           m_FourChanMaxThreads{ FOURCHAN_THREAD_MAX };
-        int           m_FourChanMaxMediaItems{ FOURCHAN_MEDIA_DEFAULT };
+        SearchHistory   m_SearchHistory{ };
+        std::string     m_FourChanBoard{ };
+        int             m_FourChanMaxThreads{ FOURCHAN_THREAD_MAX };
+        int             m_FourChanMaxMediaItems{ FOURCHAN_MEDIA_DEFAULT };
     };
 }

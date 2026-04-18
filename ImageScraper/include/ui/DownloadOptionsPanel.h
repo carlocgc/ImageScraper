@@ -46,8 +46,8 @@ namespace ImageScraper
         IProviderPanel*          GetActivePanel( ) const;
         std::shared_ptr<Service> GetCurrentService( ) const;
 
-        std::vector<std::shared_ptr<Service>>    m_Services{ };
-        std::vector<std::unique_ptr<IProviderPanel>> m_ProviderPanels{ };
+        std::vector<std::shared_ptr<Service>>         m_Services{ };
+        std::vector<std::unique_ptr<IProviderPanel>>  m_ProviderPanels{ };
         InputState m_InputState{ InputState::Free };
 
         int  m_ContentProvider{ 0 };

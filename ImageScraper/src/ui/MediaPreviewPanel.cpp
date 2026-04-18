@@ -246,12 +246,30 @@ void ImageScraper::MediaPreviewPanel::OnFileDownloaded( const std::string& filep
 
 void ImageScraper::MediaPreviewPanel::RequestPreview( const std::string& filepath )
 {
+    if( filepath.empty( ) )
+    {
+        ClearPreview( );
+        return;
+    }
     {
         std::lock_guard<std::mutex> lock( m_PathMutex );
         m_LatestPath    = filepath;
         m_HasLatestPath = true;
     }
     m_ForceLoad = true;
+}
+
+void ImageScraper::MediaPreviewPanel::ClearPreview( )
+{
+    {
+        std::lock_guard<std::mutex> lock( m_PathMutex );
+        m_HasLatestPath = false;
+    }
+    FreeTextures( );
+    m_VideoPlayer.reset( );
+    m_MediaState      = MediaState::None;
+    m_CurrentFilePath = "";
+    m_LoadingFileName = "";
 }
 
 void ImageScraper::MediaPreviewPanel::KickDecodeIfNeeded( )

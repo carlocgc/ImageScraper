@@ -34,6 +34,7 @@ namespace ImageScraper
         std::shared_ptr<ListenServer> m_ListenServer{ nullptr };
 
         std::string m_AuthHtmlPath{ };
+        std::string m_OutputDirPath{ };
         std::vector<std::shared_ptr<Service>> m_Services{ };
 
         int m_AuthenticatingCount{ 0 };

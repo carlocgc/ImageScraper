@@ -11,6 +11,7 @@
 #include <memory>
 #include <mutex>
 #include <functional>
+#include <filesystem>
 #include <unordered_map>
 
 namespace ImageScraper
@@ -45,13 +46,21 @@ namespace ImageScraper
         // Thread-safe - may be called from a worker thread
         void OnFileDownloaded( const std::string& filepath, const std::string& sourceUrl );
 
+        // Called by FrontEnd each frame before Update() to propagate blocked state.
+        void SetBlocked( bool blocked ) { m_Blocked = blocked; }
+
     private:
         void FlushPending( );
         void Save( );
+        void EvictThumbnail( const std::string& filepath );
+        void AdvanceSelectionAndPreview( );
+        void RemoveEntriesWithPrefix( const std::string& rootDir );
         static void OpenInExplorer( const std::string& filepath );
         static std::string FormatTimestamp( );
         static std::string ExtractFileName( const std::string& filepath );
         static std::string FormatFileSize( const std::string& filepath );
+        static std::filesystem::path GetProviderRoot( const std::string& filepath );
+        static std::string           GetProviderName( const std::string& filepath );
 
         // Returns thumbnail entry for the filepath; entry.m_Texture == 0 means unavailable.
         // Loads on first call, caches the result - never retries failed loads.
@@ -73,5 +82,8 @@ namespace ImageScraper
 
         // Thumbnail cache: filepath → texture + dimensions (texture == 0 means failed/skipped)
         std::unordered_map<std::string, ThumbnailEntry> m_ThumbnailCache{ };
+
+        int  m_SelectedIndex{ -1 };
+        bool m_Blocked{ false };
     };
 }

@@ -232,3 +232,62 @@ TEST_CASE( "Range-based for covers all elements when buffer has not wrapped", "[
     REQUIRE( result[ 1 ] == 20 );
     REQUIRE( result[ 2 ] == 30 );
 }
+
+// ---------------------------------------------------------------------------
+// RemoveAt
+// ---------------------------------------------------------------------------
+
+TEST_CASE( "RemoveAt middle element shifts remaining elements correctly", "[RingBuffer]" )
+{
+    RingBuffer<int> rb( 8 );
+    rb.Push( 0 );
+    rb.Push( 1 );
+    rb.Push( 2 );
+    rb.Push( 3 );
+    rb.Push( 4 );
+
+    rb.RemoveAt( 2 ); // remove element with value 2
+
+    REQUIRE( rb.GetSize( ) == 4 );
+    REQUIRE( rb[ 0 ] == 0 );
+    REQUIRE( rb[ 1 ] == 1 );
+    REQUIRE( rb[ 2 ] == 3 );
+    REQUIRE( rb[ 3 ] == 4 );
+}
+
+TEST_CASE( "RemoveAt first element shifts remaining elements correctly", "[RingBuffer]" )
+{
+    RingBuffer<int> rb( 8 );
+    rb.Push( 10 );
+    rb.Push( 20 );
+    rb.Push( 30 );
+
+    rb.RemoveAt( 0 );
+
+    REQUIRE( rb.GetSize( ) == 2 );
+    REQUIRE( rb.Front( ) == 20 );
+}
+
+TEST_CASE( "RemoveAt last element decrements size without affecting earlier items", "[RingBuffer]" )
+{
+    RingBuffer<int> rb( 8 );
+    rb.Push( 10 );
+    rb.Push( 20 );
+    rb.Push( 30 );
+
+    rb.RemoveAt( 2 );
+
+    REQUIRE( rb.GetSize( ) == 2 );
+    REQUIRE( rb.Back( ) == 20 );
+}
+
+TEST_CASE( "RemoveAt out-of-range index is a no-op", "[RingBuffer]" )
+{
+    RingBuffer<int> rb( 8 );
+    rb.Push( 1 );
+    rb.Push( 2 );
+
+    rb.RemoveAt( 5 );
+
+    REQUIRE( rb.GetSize( ) == 2 );
+}

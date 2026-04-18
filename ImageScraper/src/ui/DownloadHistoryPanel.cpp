@@ -51,6 +51,84 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         return;
     }
 
+    // --- action buttons ---
+    const bool hasSelection =
+        m_SelectedIndex >= 0 && m_SelectedIndex < m_History.GetSize( );
+    const std::string providerName =
+        hasSelection ? GetProviderName( m_History[ m_SelectedIndex ].m_FilePath ) : "";
+    const bool hasProvider = !providerName.empty( );
+
+    ImGui::BeginDisabled( !hasSelection || m_Blocked );
+    if( ImGui::Button( "Delete Selected", ImVec2( 0, 0 ) ) )
+    {
+        const std::string filepath = m_History[ m_SelectedIndex ].m_FilePath;
+        std::error_code ec;
+        std::filesystem::remove( filepath, ec );
+        if( ec )
+        {
+            WarningLog( "[%s] Failed to delete file: %s",
+                        __FUNCTION__, ec.message( ).c_str( ) );
+        }
+        EvictThumbnail( filepath );
+        m_History.RemoveAt( m_SelectedIndex );
+        AdvanceSelectionAndPreview( );
+        Save( );
+    }
+    ImGui::EndDisabled( );
+
+    ImGui::SameLine( );
+
+    const std::string delAllLabel =
+        hasProvider ? ( "Delete All " + providerName ) : "Delete All";
+
+    ImGui::BeginDisabled( !hasSelection || !hasProvider || m_Blocked );
+    if( ImGui::Button( delAllLabel.c_str( ), ImVec2( 0, 0 ) ) )
+    {
+        ImGui::OpenPopup( "Confirm Delete All##hist" );
+    }
+    ImGui::EndDisabled( );
+
+    ImGui::SetNextWindowSize( ImVec2( 380, 0 ), ImGuiCond_Always );
+    if( ImGui::BeginPopupModal( "Confirm Delete All##hist", nullptr,
+            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize ) )
+    {
+        ImGui::Spacing( );
+        ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 1.0f, 0.6f, 0.1f, 1.0f ) );
+        ImGui::TextWrapped(
+            "This will permanently delete all downloaded %s content from disk.",
+            providerName.c_str( ) );
+        ImGui::PopStyleColor( );
+        ImGui::Spacing( );
+
+        ImGui::PushStyleColor( ImGuiCol_Button,        ImVec4( 0.7f, 0.3f, 0.0f, 1.0f ) );
+        ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.9f, 0.4f, 0.0f, 1.0f ) );
+        ImGui::PushStyleColor( ImGuiCol_ButtonActive,  ImVec4( 0.5f, 0.2f, 0.0f, 1.0f ) );
+
+        if( ImGui::Button( "Delete All", ImVec2( 110, 0 ) ) )
+        {
+            const auto providerRoot =
+                GetProviderRoot( m_History[ m_SelectedIndex ].m_FilePath );
+            std::error_code ec;
+            std::filesystem::remove_all( providerRoot, ec );
+            if( ec )
+            {
+                LogError( "[%s] Failed to delete %s downloads: %s",
+                          __FUNCTION__, providerName.c_str( ), ec.message( ).c_str( ) );
+            }
+            RemoveEntriesWithPrefix( providerRoot.string( ) );
+            AdvanceSelectionAndPreview( );
+            ImGui::CloseCurrentPopup( );
+        }
+
+        ImGui::PopStyleColor( 3 );
+        ImGui::SameLine( );
+        if( ImGui::Button( "Cancel", ImVec2( 100, 0 ) ) )
+        {
+            ImGui::CloseCurrentPopup( );
+        }
+        ImGui::EndPopup( );
+    }
+
     constexpr ImGuiTableFlags tableFlags =
         ImGuiTableFlags_Borders |
         ImGuiTableFlags_RowBg |
@@ -88,7 +166,13 @@ void ImageScraper::DownloadHistoryPanel::Update( )
             ImGui::TextUnformatted( entry.m_FileSize.c_str( ) );
 
             ImGui::TableSetColumnIndex( 2 );
-            ImGui::Selectable( entry.m_FileName.c_str( ), false, ImGuiSelectableFlags_SpanAllColumns );
+            const bool isSelected = ( m_SelectedIndex == i );
+            ImGui::Selectable( entry.m_FileName.c_str( ), isSelected, ImGuiSelectableFlags_SpanAllColumns );
+
+            if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) )
+            {
+                m_SelectedIndex = i;
+            }
 
             if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && m_OnPreviewRequested )
             {
@@ -137,7 +221,132 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         ImGui::EndTable( );
     }
 
+    if( m_SelectedIndex >= 0
+        && m_SelectedIndex < m_History.GetSize( )
+        && ImGui::IsWindowFocused( ImGuiFocusedFlags_ChildWindows )
+        && ImGui::IsKeyPressed( ImGuiKey_Delete ) )
+    {
+        const std::string filepath = m_History[ m_SelectedIndex ].m_FilePath;
+
+        std::error_code ec;
+        std::filesystem::remove( filepath, ec );
+        if( ec )
+        {
+            WarningLog( "[%s] Failed to delete file: %s", __FUNCTION__, ec.message( ).c_str( ) );
+        }
+
+        EvictThumbnail( filepath );
+        m_History.RemoveAt( m_SelectedIndex );
+        AdvanceSelectionAndPreview( );
+        Save( );
+    }
+
     ImGui::End( );
+}
+
+void ImageScraper::DownloadHistoryPanel::RemoveEntriesWithPrefix( const std::string& rootDir )
+{
+    const std::string prefix = std::filesystem::path( rootDir ).make_preferred( ).string( );
+    bool changed = false;
+
+    for( int i = m_History.GetSize( ) - 1; i >= 0; --i )
+    {
+        const std::string& fp     = m_History[ i ].m_FilePath;
+        const std::string  native = std::filesystem::path( fp ).make_preferred( ).string( );
+        if( native.rfind( prefix, 0 ) != 0 )
+        {
+            continue;
+        }
+
+        EvictThumbnail( fp );
+        m_History.RemoveAt( i );
+        changed = true;
+    }
+
+    if( m_SelectedIndex >= m_History.GetSize( ) )
+    {
+        m_SelectedIndex = -1;
+    }
+
+    if( changed )
+    {
+        Save( );
+    }
+}
+
+void ImageScraper::DownloadHistoryPanel::EvictThumbnail( const std::string& filepath )
+{
+    auto it = m_ThumbnailCache.find( filepath );
+    if( it != m_ThumbnailCache.end( ) )
+    {
+        if( it->second.m_Texture != 0 )
+        {
+            glDeleteTextures( 1, &it->second.m_Texture );
+        }
+        m_ThumbnailCache.erase( it );
+    }
+}
+
+void ImageScraper::DownloadHistoryPanel::AdvanceSelectionAndPreview( )
+{
+    const int size = m_History.GetSize( );
+    if( size == 0 )
+    {
+        m_SelectedIndex = -1;
+        m_OnPreviewRequested( "" );
+        return;
+    }
+
+    const int start = std::min( m_SelectedIndex, size - 1 );
+
+    // Search toward older items first (lower index)
+    for( int i = start; i >= 0; --i )
+    {
+        if( std::filesystem::exists( m_History[ i ].m_FilePath ) )
+        {
+            m_SelectedIndex = i;
+            m_OnPreviewRequested( m_History[ i ].m_FilePath );
+            return;
+        }
+    }
+
+    // Then toward newer
+    for( int i = start + 1; i < size; ++i )
+    {
+        if( std::filesystem::exists( m_History[ i ].m_FilePath ) )
+        {
+            m_SelectedIndex = i;
+            m_OnPreviewRequested( m_History[ i ].m_FilePath );
+            return;
+        }
+    }
+
+    m_SelectedIndex = -1;
+    m_OnPreviewRequested( "" );
+}
+
+std::filesystem::path ImageScraper::DownloadHistoryPanel::GetProviderRoot( const std::string& filepath )
+{
+    std::filesystem::path result;
+    bool foundDownloads = false;
+    for( const auto& part : std::filesystem::path( filepath ) )
+    {
+        result /= part;
+        if( foundDownloads )
+        {
+            return result;    // first component after "Downloads" = provider root
+        }
+        if( part == "Downloads" )
+        {
+            foundDownloads = true;
+        }
+    }
+    return { };
+}
+
+std::string ImageScraper::DownloadHistoryPanel::GetProviderName( const std::string& filepath )
+{
+    return GetProviderRoot( filepath ).filename( ).string( );
 }
 
 void ImageScraper::DownloadHistoryPanel::OnFileDownloaded( const std::string& filepath, const std::string& sourceUrl )

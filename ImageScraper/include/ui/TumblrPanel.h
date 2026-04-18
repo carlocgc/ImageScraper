@@ -20,8 +20,8 @@ namespace ImageScraper
         void             OnSearchCommitted( ) override;
 
     private:
-        SearchHistory m_SearchHistory{ };
-        std::string   m_TumblrUser{ };
-        int           m_TumblrMaxMediaItems{ TUMBLR_LIMIT_DEFAULT };
+        SearchHistory   m_SearchHistory{ };
+        std::string     m_TumblrUser{ };
+        int             m_TumblrMaxMediaItems{ TUMBLR_LIMIT_DEFAULT };
     };
 }

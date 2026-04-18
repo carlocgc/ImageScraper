@@ -42,6 +42,23 @@ namespace ImageScraper
             m_Size--;
         }
 
+        void RemoveAt( int index )
+        {
+            if( index < 0 || index >= static_cast<int>( m_Size ) )
+            {
+                return;
+            }
+
+            for( int i = index; i < static_cast<int>( m_Size ) - 1; ++i )
+            {
+                m_Buffer[ ( m_Start + i ) % m_Buffer.size( ) ] =
+                    m_Buffer[ ( m_Start + i + 1 ) % m_Buffer.size( ) ];
+            }
+
+            m_End = ( m_End + m_Buffer.size( ) - 1 ) % m_Buffer.size( );
+            m_Size--;
+        }
+
         T Front( ) const
         {
             return m_Buffer[ m_Start ];
