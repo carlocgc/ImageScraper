@@ -12,11 +12,11 @@ ImageScraper::DownloadOptionsPanel::DownloadOptionsPanel( const std::vector<std:
     m_ProviderPanels.push_back( std::make_unique<FourChanPanel>( ) );
 }
 
-void ImageScraper::DownloadOptionsPanel::LoadSearchHistory( std::shared_ptr<JsonFile> appConfig )
+void ImageScraper::DownloadOptionsPanel::LoadPanelState( std::shared_ptr<JsonFile> appConfig )
 {
     for( auto& panel : m_ProviderPanels )
     {
-        panel->LoadSearchHistory( appConfig );
+        panel->LoadPanelState( appConfig );
     }
 
     m_AppConfig = appConfig;

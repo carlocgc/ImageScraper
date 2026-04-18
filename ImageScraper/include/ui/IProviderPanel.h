@@ -19,7 +19,7 @@ namespace ImageScraper
 
         // Load persisted search inputs from appConfig; save back on every change.
         // Default no-op - override in panels that have persistent inputs.
-        virtual void LoadSearchHistory( std::shared_ptr<JsonFile> ) { }
+        virtual void LoadPanelState( std::shared_ptr<JsonFile> ) { }
 
         // Called by DownloadOptionsPanel when a search is successfully submitted.
         // Panels push the current search term to their history list here.
