@@ -120,14 +120,14 @@
   - Call after successful sign-in (`FetchAccessToken` on complete) and after a successful token refresh (`TryPerformAuthTokenRefresh`); store username in `RedditService::m_Username`
   - Add `virtual std::string GetSignedInUser() const { return {}; }` to `Service` base class
   - `DownloadOptionsPanel::UpdateSignInButton()` — when signed in, render a small styled badge showing `u/<username>` alongside the Sign Out button; clear `m_Username` on sign-out
-- [ ] Extract OAuth2 into a reusable `OAuthClient` component — both Reddit and Tumblr follow the same Authorization Code flow; extract the shared steps (state generation, browser launch, listen-server handshake, token exchange, token refresh, token persistence) into a standalone component that services configure via a struct of platform-specific parameters (auth URL, token URL, scopes, client id/secret keys, redirect URI policy); services become thin wrappers around `OAuthClient` rather than owning the full flow; makes adding OAuth2 to future providers (Discord, Twitter/X, Bluesky) a configuration exercise rather than a re-implementation
+- [x] Extract OAuth2 into a reusable `OAuthClient` component — both Reddit and Tumblr follow the same Authorization Code flow; extract the shared steps (state generation, browser launch, listen-server handshake, token exchange, token refresh, token persistence) into a standalone component that services configure via a struct of platform-specific parameters (auth URL, token URL, scopes, client id/secret keys, redirect URI policy); services become thin wrappers around `OAuthClient` rather than owning the full flow; makes adding OAuth2 to future providers (Discord, Twitter/X, Bluesky) a configuration exercise rather than a re-implementation
 - [ ] Reddit deauthorise all sessions — explicit server-side token revocation as a separate destructive action distinct from sign-out
   - Calls `RevokeAccessTokenRequest` (already implemented) to hit `POST /api/v1/revoke_token`; invalidates the refresh token and all associated access tokens on Reddit's servers
   - Exposed as a separate button (e.g. "Deauthorise App") rather than part of the normal Sign Out flow, since it carries the multi-minute re-auth delay; user should be warned before proceeding
   - After the revoke request completes, calls `SignOut()` to clear tokens locally
   - Useful when the user suspects their credentials are compromised or wants to fully revoke app access from Reddit's end
-- [ ] OAuth2 for Tumblr — implement OAuth2 sign-in flow (similar to Reddit); update `TumblrPanel` and request classes
-- [ ] Sign-out for Tumblr — same pattern as Reddit once OAuth2 is implemented
+- [x] OAuth2 for Tumblr — implemented via shared `OAuthClient`; Consumer Key + Secret enables full OAuth2 sign-in; Consumer Key alone falls back to API Key (anonymous) mode
+- [x] Sign-out for Tumblr — clears tokens locally via `OAuthClient::ClearTokens`; same pattern as Reddit
 - [x] Remove `CanSignIn()` from `FourChanPanel` / hide sign-in UI for 4chan — `CanSignIn()` returns `false`; `DownloadOptionsPanel::UpdateSignInButton()` early-returns, so no sign-in UI is rendered for 4chan
 - [x] OAuth2 redirect HTML polish — dark-themed page with Reddit brand colour, checkmark icon, clear "Signed in to Reddit — close this tab" copy; removed external image fetch
 
@@ -144,6 +144,7 @@
 - [x] `MediaPreviewPanel` — loads last downloaded image into an OpenGL texture (stb_image) and renders it in a dockable ImGui window; supports static images and animated GIFs (frame stepping)
 - [x] `DownloadHistoryPanel` — ring buffer of completed downloads showing filename, source URL, and timestamp; clicking an entry opens it in explorer
 - [x] `DownloadProgressPanel` — extract current and total download progress bars out of `LogPanel` into a dedicated dockable panel; `LogPanel` retains log lines only
+- [x] `DownloadHistoryPanel` content deletion — Delete Selected and Delete All \<Provider\> buttons at the top of the panel; Delete All shows an orange confirmation modal and removes the entire provider download directory; after any deletion the preview advances to the nearest remaining item (or clears); buttons are greyed out during active downloads and sign-in
 - [ ] `DownloadHistoryPanel` provider tabs — add a tab strip per provider so history is filterable by source; an "All" tab shows the combined view
 - [ ] `DownloadHistoryPanel` extra param columns — show provider-specific download parameters as additional columns (e.g. Download Scope / sort for Reddit: Hot, Best, New, Top, etc.)
 - [x] `DownloadHistoryPanel` hover tooltip preview — show a small single-frame thumbnail of the image in an ImGui tooltip when hovering a history entry; skip non-image and large files gracefully
@@ -152,7 +153,9 @@
 
 ### Persistence
 - [x] Persistent download history — serialize the `DownloadHistoryPanel` ring buffer to disk (e.g. JSON) and reload it on launch so history survives restarts
-- [x] Persistent search history — last-used search input per provider (subreddit, Tumblr user, 4chan board) persisted to AppConfig JSON and restored on launch; dropdown history surface deferred to a future task
+- [x] Persistent search history — last-used search input per provider (subreddit, Tumblr user, 4chan board) persisted to AppConfig JSON and restored on launch; dropdown history (arrow button reveals capped list of recent searches; selecting an item restores the term) shipped in same pass
+- [x] Persistent active provider — last-selected content provider restored on launch (`active_provider` key in AppConfig)
+- [x] Persistent max downloads — max downloads value per provider persisted to AppConfig and restored on launch (`reddit_max_downloads`, `tumblr_max_downloads`, `fourchan_max_downloads`)
 
 ---
 
