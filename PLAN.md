@@ -120,6 +120,7 @@
   - Call after successful sign-in (`FetchAccessToken` on complete) and after a successful token refresh (`TryPerformAuthTokenRefresh`); store username in `RedditService::m_Username`
   - Add `virtual std::string GetSignedInUser() const { return {}; }` to `Service` base class
   - `DownloadOptionsPanel::UpdateSignInButton()` — when signed in, render a small styled badge showing `u/<username>` alongside the Sign Out button; clear `m_Username` on sign-out
+- [ ] Extract OAuth2 into a reusable `OAuthClient` component — both Reddit and Tumblr follow the same Authorization Code flow; extract the shared steps (state generation, browser launch, listen-server handshake, token exchange, token refresh, token persistence) into a standalone component that services configure via a struct of platform-specific parameters (auth URL, token URL, scopes, client id/secret keys, redirect URI policy); services become thin wrappers around `OAuthClient` rather than owning the full flow; makes adding OAuth2 to future providers (Discord, Twitter/X, Bluesky) a configuration exercise rather than a re-implementation
 - [ ] Reddit deauthorise all sessions — explicit server-side token revocation as a separate destructive action distinct from sign-out
   - Calls `RevokeAccessTokenRequest` (already implemented) to hit `POST /api/v1/revoke_token`; invalidates the refresh token and all associated access tokens on Reddit's servers
   - Exposed as a separate button (e.g. "Deauthorise App") rather than part of the normal Sign Out flow, since it carries the multi-minute re-auth delay; user should be warned before proceeding
@@ -135,6 +136,9 @@
   - Download Options: subreddit field ("The subreddit to scrape, without the r/ prefix"), max downloads ("Maximum number of files to download per run; capped at ..."), Reddit scope/time frame combos ("Controls post sort order / time window for Top and Controversial scopes"), Tumblr user ("Tumblr blog username to scrape"), 4chan board ("Board short name, e.g. `g`, `v`, `sci`"), 4chan max downloads ("Maximum number of media files to download across all matching threads")
   - Credentials: each field tooltip explains what the value is and where to get it; right-clicking a field copies the relevant registration/account page URL to the clipboard (e.g. right-click Reddit Client ID copies `https://www.reddit.com/prefs/apps`, right-click Tumblr OAuth Consumer Key copies `https://www.tumblr.com/oauth/apps`)
 - [ ] Reddit deprecation notice in Download Options panel — display a short inline warning beneath the Reddit provider controls (matching the README warning) noting that new Reddit app registrations are restricted and the integration may not be functional; keep it unobtrusive (small `ImGui::TextColored` in amber, one line)
+
+### Provider Enhancements
+- [ ] Tumblr text post media extraction — `GetMediaUrlsFromResponse` currently handles `photo` and `video` post types only; many Tumblr users embed images and videos inside `text` (reblog) posts as inline HTML; parse the `body` field of text posts for `<img src="...">` and `<video src="...">` / `<source src="...">` tags and include those URLs in the download set; add tests in `TumblrUtilsTests.cpp` covering text posts with and without embedded media
 
 ### New windows
 - [x] `MediaPreviewPanel` — loads last downloaded image into an OpenGL texture (stb_image) and renders it in a dockable ImGui window; supports static images and animated GIFs (frame stepping)
