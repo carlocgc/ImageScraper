@@ -3,10 +3,20 @@
 
 #include <algorithm>
 
-void ImageScraper::TumblrPanel::LoadSearchHistory( std::shared_ptr<JsonFile> appConfig )
+void ImageScraper::TumblrPanel::LoadPanelState( std::shared_ptr<JsonFile> appConfig )
 {
+    m_AppConfig = appConfig;
     m_SearchHistory.Load( std::move( appConfig ), "tumblr_user_history" );
     m_TumblrUser = m_SearchHistory.GetMostRecent( );
+
+    if( m_AppConfig )
+    {
+        int saved = TUMBLR_LIMIT_DEFAULT;
+        if( m_AppConfig->GetValue<int>( "tumblr_max_downloads", saved ) )
+        {
+            m_TumblrMaxMediaItems = std::clamp( saved, TUMBLR_LIMIT_MIN, TUMBLR_LIMIT_MAX );
+        }
+    }
 }
 
 void ImageScraper::TumblrPanel::OnSearchCommitted( )
@@ -67,8 +77,14 @@ void ImageScraper::TumblrPanel::Update( )
 
     if( ImGui::BeginChild( "TumblrMaxMediaItems", ImVec2( 500, 25 ), false ) )
     {
+        const int prev = m_TumblrMaxMediaItems;
         ImGui::InputInt( "Max Downloads", &m_TumblrMaxMediaItems );
         m_TumblrMaxMediaItems = std::clamp( m_TumblrMaxMediaItems, TUMBLR_LIMIT_MIN, TUMBLR_LIMIT_MAX );
+        if( m_TumblrMaxMediaItems != prev && m_AppConfig )
+        {
+            m_AppConfig->SetValue<int>( "tumblr_max_downloads", m_TumblrMaxMediaItems );
+            m_AppConfig->Serialise( );
+        }
     }
 
     ImGui::EndChild( );

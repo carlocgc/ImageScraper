@@ -20,7 +20,7 @@ namespace ImageScraper
         DownloadOptionsPanel( const std::vector<std::shared_ptr<Service>>& services );
 
         void Update( ) override;
-        void LoadSearchHistory( std::shared_ptr<JsonFile> appConfig );
+        void LoadPanelState( std::shared_ptr<JsonFile> appConfig );
 
         // State queries used by FrontEnd to coordinate with other panels
         bool IsRunning( ) const { return m_Running; }

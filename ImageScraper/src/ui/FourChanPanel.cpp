@@ -3,10 +3,20 @@
 
 #include <algorithm>
 
-void ImageScraper::FourChanPanel::LoadSearchHistory( std::shared_ptr<JsonFile> appConfig )
+void ImageScraper::FourChanPanel::LoadPanelState( std::shared_ptr<JsonFile> appConfig )
 {
+    m_AppConfig = appConfig;
     m_SearchHistory.Load( std::move( appConfig ), "fourchan_board_history" );
     m_FourChanBoard = m_SearchHistory.GetMostRecent( );
+
+    if( m_AppConfig )
+    {
+        int saved = FOURCHAN_MEDIA_DEFAULT;
+        if( m_AppConfig->GetValue<int>( "fourchan_max_downloads", saved ) )
+        {
+            m_FourChanMaxMediaItems = std::clamp( saved, FOURCHAN_MEDIA_MIN, FOURCHAN_MEDIA_MAX );
+        }
+    }
 }
 
 void ImageScraper::FourChanPanel::OnSearchCommitted( )
@@ -67,8 +77,14 @@ void ImageScraper::FourChanPanel::Update( )
 
     if( ImGui::BeginChild( "FourChanMaxMediaItems", ImVec2( 500, 25 ), false ) )
     {
+        const int prev = m_FourChanMaxMediaItems;
         ImGui::InputInt( "Max Downloads", &m_FourChanMaxMediaItems );
         m_FourChanMaxMediaItems = std::clamp( m_FourChanMaxMediaItems, FOURCHAN_MEDIA_MIN, FOURCHAN_MEDIA_MAX );
+        if( m_FourChanMaxMediaItems != prev && m_AppConfig )
+        {
+            m_AppConfig->SetValue<int>( "fourchan_max_downloads", m_FourChanMaxMediaItems );
+            m_AppConfig->Serialise( );
+        }
     }
 
     ImGui::EndChild( );

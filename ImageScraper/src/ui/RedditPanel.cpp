@@ -4,10 +4,20 @@
 #include <algorithm>
 #include <cctype>
 
-void ImageScraper::RedditPanel::LoadSearchHistory( std::shared_ptr<JsonFile> appConfig )
+void ImageScraper::RedditPanel::LoadPanelState( std::shared_ptr<JsonFile> appConfig )
 {
+    m_AppConfig = appConfig;
     m_SearchHistory.Load( std::move( appConfig ), "reddit_subreddit_history" );
     m_SubredditName = m_SearchHistory.GetMostRecent( );
+
+    if( m_AppConfig )
+    {
+        int saved = REDDIT_LIMIT_DEFAULT;
+        if( m_AppConfig->GetValue<int>( "reddit_max_downloads", saved ) )
+        {
+            m_RedditMaxMediaItems = std::clamp( saved, REDDIT_LIMIT_MIN, REDDIT_LIMIT_MAX );
+        }
+    }
 }
 
 void ImageScraper::RedditPanel::OnSearchCommitted( )
@@ -93,8 +103,14 @@ void ImageScraper::RedditPanel::Update( )
 
     if( ImGui::BeginChild( "RedditMaxMediaItems", ImVec2( 500, 25 ), false ) )
     {
+        const int prev = m_RedditMaxMediaItems;
         ImGui::InputInt( "Max Downloads", &m_RedditMaxMediaItems );
         m_RedditMaxMediaItems = std::clamp( m_RedditMaxMediaItems, REDDIT_LIMIT_MIN, REDDIT_LIMIT_MAX );
+        if( m_RedditMaxMediaItems != prev && m_AppConfig )
+        {
+            m_AppConfig->SetValue<int>( "reddit_max_downloads", m_RedditMaxMediaItems );
+            m_AppConfig->Serialise( );
+        }
     }
 
     ImGui::EndChild( );
