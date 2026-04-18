@@ -178,11 +178,11 @@ void ImageScraper::DownloadHistoryPanel::Update( )
             if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) )
             {
                 m_SelectedIndex = i;
-            }
-
-            if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && m_OnPreviewRequested )
-            {
-                m_OnPreviewRequested( entry.m_FilePath );
+                SaveSelectedPath( );
+                if( m_OnPreviewRequested )
+                {
+                    m_OnPreviewRequested( entry.m_FilePath );
+                }
             }
 
             if( ImGui::IsItemClicked( ImGuiMouseButton_Right ) )
@@ -340,6 +340,7 @@ void ImageScraper::DownloadHistoryPanel::SelectNext( )
             m_SelectedIndex    = i;
             m_ScrollToSelected = true;
             m_OnPreviewRequested( m_History[ i ].m_FilePath );
+            SaveSelectedPath( );
             return;
         }
     }
@@ -355,6 +356,7 @@ void ImageScraper::DownloadHistoryPanel::SelectPrevious( )
             m_SelectedIndex    = i;
             m_ScrollToSelected = true;
             m_OnPreviewRequested( m_History[ i ].m_FilePath );
+            SaveSelectedPath( );
             return;
         }
     }
@@ -452,6 +454,41 @@ void ImageScraper::DownloadHistoryPanel::Load( std::shared_ptr<JsonFile> appConf
     }
 
     LogDebug( "[%s] Loaded %d history entries", __FUNCTION__, m_History.GetSize( ) );
+
+    // Restore the last selected item, or default to the newest entry
+    const int histSize = m_History.GetSize( );
+    if( histSize == 0 )
+    {
+        return;
+    }
+
+    std::string selectedPath;
+    m_AppConfig->GetValue<std::string>( "history_selected_path", selectedPath );
+
+    if( !selectedPath.empty( ) )
+    {
+        for( int i = 0; i < histSize; ++i )
+        {
+            if( m_History[ i ].m_FilePath == selectedPath )
+            {
+                m_SelectedIndex    = i;
+                m_ScrollToSelected = true;
+                if( m_OnPreviewRequested )
+                {
+                    m_OnPreviewRequested( m_History[ i ].m_FilePath );
+                }
+                return;
+            }
+        }
+    }
+
+    // Fall back to the most recent entry
+    m_SelectedIndex    = histSize - 1;
+    m_ScrollToSelected = true;
+    if( m_OnPreviewRequested )
+    {
+        m_OnPreviewRequested( m_History[ m_SelectedIndex ].m_FilePath );
+    }
 }
 
 void ImageScraper::DownloadHistoryPanel::Save( )
@@ -484,6 +521,20 @@ void ImageScraper::DownloadHistoryPanel::Save( )
     {
         WarningLog( "[%s] Failed to save download history", __FUNCTION__ );
     }
+}
+
+void ImageScraper::DownloadHistoryPanel::SaveSelectedPath( )
+{
+    if( !m_AppConfig )
+    {
+        return;
+    }
+
+    const std::string path =
+        ( m_SelectedIndex >= 0 && m_SelectedIndex < m_History.GetSize( ) )
+        ? m_History[ m_SelectedIndex ].m_FilePath : "";
+    m_AppConfig->SetValue<std::string>( "history_selected_path", path );
+    m_AppConfig->Serialise( );
 }
 
 void ImageScraper::DownloadHistoryPanel::FlushPending( )

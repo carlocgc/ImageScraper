@@ -194,7 +194,7 @@ void ImageScraper::FrontEnd::SetupDefaultLayout( ImGuiID dockspaceId )
 
     // Split right node: narrow controls strip at the bottom, main preview above
     ImGuiID dockRightMain, dockRightControls;
-    ImGui::DockBuilderSplitNode( dockRight, ImGuiDir_Down, 55.0f / 841.0f,
+    ImGui::DockBuilderSplitNode( dockRight, ImGuiDir_Down, 80.0f / 841.0f,
                                  &dockRightControls, &dockRightMain );
 
     // Dock all panels

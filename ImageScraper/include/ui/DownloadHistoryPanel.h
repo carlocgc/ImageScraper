@@ -64,6 +64,7 @@ namespace ImageScraper
     private:
         void FlushPending( );
         void Save( );
+        void SaveSelectedPath( );
         void EvictThumbnail( const std::string& filepath );
         void AdvanceSelectionAndPreview( );
         void RemoveEntriesWithPrefix( const std::string& rootDir );
