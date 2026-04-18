@@ -18,6 +18,14 @@ void ImageScraper::DownloadOptionsPanel::LoadSearchHistory( std::shared_ptr<Json
     {
         panel->LoadSearchHistory( appConfig );
     }
+
+    m_AppConfig = appConfig;
+
+    int savedProvider = 0;
+    if( appConfig->GetValue<int>( "active_provider", savedProvider ) )
+    {
+        m_ContentProvider = savedProvider;
+    }
 }
 
 void ImageScraper::DownloadOptionsPanel::Update( )
@@ -113,7 +121,13 @@ void ImageScraper::DownloadOptionsPanel::UpdateProviderWidgets( )
 
     if( ImGui::BeginChild( "ContentProvider", ImVec2( 500, 25 ), false ) )
     {
+        const int prevProvider = m_ContentProvider;
         ImGui::Combo( "Content Provider", &m_ContentProvider, s_ContentProviderStrings, IM_ARRAYSIZE( s_ContentProviderStrings ) );
+        if( m_ContentProvider != prevProvider && m_AppConfig )
+        {
+            m_AppConfig->SetValue<int>( "active_provider", m_ContentProvider );
+            m_AppConfig->Serialise( );
+        }
     }
 
     ImGui::EndChild( );

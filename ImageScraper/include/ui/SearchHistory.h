@@ -29,7 +29,7 @@ namespace ImageScraper
     private:
         void Save( );
 
-        static constexpr int k_MaxItems = 5;
+        static constexpr int k_MaxItems = 10;
 
         std::shared_ptr<JsonFile> m_AppConfig{ };
         std::string               m_ConfigKey{ };
