@@ -169,6 +169,12 @@ void ImageScraper::DownloadHistoryPanel::Update( )
             const bool isSelected = ( m_SelectedIndex == i );
             ImGui::Selectable( entry.m_FileName.c_str( ), isSelected, ImGuiSelectableFlags_SpanAllColumns );
 
+            if( isSelected && m_ScrollToSelected )
+            {
+                ImGui::SetScrollHereY( 0.5f );
+                m_ScrollToSelected = false;
+            }
+
             if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) )
             {
                 m_SelectedIndex = i;
@@ -323,6 +329,60 @@ void ImageScraper::DownloadHistoryPanel::AdvanceSelectionAndPreview( )
 
     m_SelectedIndex = -1;
     m_OnPreviewRequested( "" );
+}
+
+void ImageScraper::DownloadHistoryPanel::SelectNext( )
+{
+    for( int i = m_SelectedIndex - 1; i >= 0; --i )
+    {
+        if( std::filesystem::exists( m_History[ i ].m_FilePath ) )
+        {
+            m_SelectedIndex    = i;
+            m_ScrollToSelected = true;
+            m_OnPreviewRequested( m_History[ i ].m_FilePath );
+            return;
+        }
+    }
+}
+
+void ImageScraper::DownloadHistoryPanel::SelectPrevious( )
+{
+    const int size = m_History.GetSize( );
+    for( int i = m_SelectedIndex + 1; i < size; ++i )
+    {
+        if( std::filesystem::exists( m_History[ i ].m_FilePath ) )
+        {
+            m_SelectedIndex    = i;
+            m_ScrollToSelected = true;
+            m_OnPreviewRequested( m_History[ i ].m_FilePath );
+            return;
+        }
+    }
+}
+
+bool ImageScraper::DownloadHistoryPanel::HasNext( ) const
+{
+    for( int i = m_SelectedIndex - 1; i >= 0; --i )
+    {
+        if( std::filesystem::exists( m_History[ i ].m_FilePath ) )
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ImageScraper::DownloadHistoryPanel::HasPrevious( ) const
+{
+    const int size = m_History.GetSize( );
+    for( int i = m_SelectedIndex + 1; i < size; ++i )
+    {
+        if( std::filesystem::exists( m_History[ i ].m_FilePath ) )
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 std::filesystem::path ImageScraper::DownloadHistoryPanel::GetProviderRoot( const std::string& filepath )

@@ -49,6 +49,18 @@ namespace ImageScraper
         // Called by FrontEnd each frame before Update() to propagate blocked state.
         void SetBlocked( bool blocked ) { m_Blocked = blocked; }
 
+        // Navigate to the next-older item in the history list; fires preview callback.
+        void SelectNext( );
+
+        // Navigate to the next-newer item in the history list; fires preview callback.
+        void SelectPrevious( );
+
+        // True if there is a valid older item to navigate to.
+        bool HasNext( ) const;
+
+        // True if there is a valid newer item to navigate to.
+        bool HasPrevious( ) const;
+
     private:
         void FlushPending( );
         void Save( );
@@ -85,5 +97,6 @@ namespace ImageScraper
 
         int  m_SelectedIndex{ -1 };
         bool m_Blocked{ false };
+        bool m_ScrollToSelected{ false };
     };
 }

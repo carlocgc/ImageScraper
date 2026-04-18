@@ -29,6 +29,15 @@ namespace ImageScraper
         // Main-thread only - synchronously clears all display state
         void ClearPreview( );
 
+        // Main-thread only - toggle between playing and paused; no-op when no media or loading
+        void TogglePlayPause( );
+
+        // True when media is actively animating (GifPlaying or VideoPlaying)
+        bool IsPlaying( ) const;
+
+        // True when TogglePlayPause would have any effect
+        bool CanPlayPause( ) const;
+
     private:
         enum class MediaState
         {

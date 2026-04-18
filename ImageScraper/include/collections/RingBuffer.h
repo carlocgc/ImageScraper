@@ -140,6 +140,16 @@ namespace ImageScraper
             return m_Buffer[ ( m_Start + i ) % m_Buffer.size( ) ];
         }
 
+        const T& operator[]( const int i ) const
+        {
+            if( i >= static_cast<int>( m_Size ) )
+            {
+                throw std::out_of_range( "Index out of range" );
+            }
+
+            return m_Buffer[ ( m_Start + i ) % m_Buffer.size( ) ];
+        }
+
     private:
         std::vector<T> m_Buffer{ };
         std::size_t m_Capacity{ 0 };
