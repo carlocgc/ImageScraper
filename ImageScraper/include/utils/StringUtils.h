@@ -52,6 +52,28 @@ namespace ImageScraper
             return utf8_string;
         }
 
+        // Extracts the value of a named parameter from an HTTP request line or query string.
+        // Searches for "key=" and returns the substring up to the next '&' or ' '.
+        // Returns an empty string if the key is not found.
+        static std::string ExtractQueryParam( const std::string& str, const std::string& key )
+        {
+            const std::string search = key + "=";
+            std::size_t start = str.find( search );
+            if( start == std::string::npos )
+            {
+                return { };
+            }
+            start += search.length( );
+            const std::size_t ampPos   = str.find( "&", start );
+            const std::size_t spacePos = str.find( " ", start );
+            const std::size_t end      = ( ampPos < spacePos ) ? ampPos : spacePos;
+            if( end == std::string::npos )
+            {
+                return { };
+            }
+            return str.substr( start, end - start );
+        }
+
         // Percent-encodes a string for use as a URI query parameter value (RFC 3986).
         // Unreserved characters (alpha, digit, '-', '_', '.', '~') are left as-is;
         // everything else is encoded as %XX.

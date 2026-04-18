@@ -122,24 +122,9 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
         return false;
     }
 
-    // Extract a named query parameter from the HTTP request line.
     auto ExtractQueryParam = [ & ]( const std::string& key ) -> std::string
         {
-            const std::string search = key + "=";
-            std::size_t start = response.find( search );
-            if( start == std::string::npos )
-            {
-                return { };
-            }
-            start += search.length( );
-            const std::size_t ampPos   = response.find( "&", start );
-            const std::size_t spacePos = response.find( " ", start );
-            const std::size_t end      = (std::min)( ampPos, spacePos );
-            if( end == std::string::npos )
-            {
-                return { };
-            }
-            return response.substr( start, end - start );
+            return StringUtils::ExtractQueryParam( response, key );
         };
 
     const bool hasError = response.find( "?error=" ) != std::string::npos
