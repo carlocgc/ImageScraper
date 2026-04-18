@@ -45,6 +45,10 @@ namespace ImageScraper
         // Thread-safe - may be called from a worker thread
         void OnFileDownloaded( const std::string& filepath, const std::string& sourceUrl );
 
+        // Remove all history entries whose file path starts with rootDir, free their textures, save.
+        // Called when Delete All is confirmed on a provider panel.
+        void RemoveEntriesWithPrefix( const std::string& rootDir );
+
     private:
         void FlushPending( );
         void Save( );
@@ -73,5 +77,7 @@ namespace ImageScraper
 
         // Thumbnail cache: filepath → texture + dimensions (texture == 0 means failed/skipped)
         std::unordered_map<std::string, ThumbnailEntry> m_ThumbnailCache{ };
+
+        int m_SelectedIndex{ -1 };
     };
 }

@@ -38,7 +38,7 @@ namespace ImageScraper
         FrontEnd( int maxLogLines );
         ~FrontEnd( );
 
-        bool Init( const std::vector<std::shared_ptr<Service>>& services, std::shared_ptr<JsonFile> userConfig, std::shared_ptr<JsonFile> appConfig );
+        bool Init( const std::vector<std::shared_ptr<Service>>& services, std::shared_ptr<JsonFile> userConfig, std::shared_ptr<JsonFile> appConfig, const std::string& outputDir );
         void Update( );
         void SetInputState( InputState state );
         void Render( );

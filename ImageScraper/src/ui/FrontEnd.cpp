@@ -20,7 +20,7 @@ ImageScraper::FrontEnd::~FrontEnd( )
     glfwTerminate( );
 }
 
-bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& services, std::shared_ptr<JsonFile> userConfig, std::shared_ptr<JsonFile> appConfig )
+bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& services, std::shared_ptr<JsonFile> userConfig, std::shared_ptr<JsonFile> appConfig, const std::string& outputDir )
 {
     m_DownloadOptionsPanel  = std::make_unique<DownloadOptionsPanel>( services );
     m_DownloadProgressPanel = std::make_unique<DownloadProgressPanel>( );
@@ -30,6 +30,12 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     m_CredentialsPanel      = std::make_unique<CredentialsPanel>( userConfig );
     m_DownloadHistoryPanel->Load( appConfig );
     m_DownloadOptionsPanel->LoadSearchHistory( appConfig );
+    m_DownloadOptionsPanel->SetOutputDir( outputDir );
+    m_DownloadOptionsPanel->SetDeleteAllCallback(
+        [ this ]( const std::string& deletedDir )
+        {
+            m_DownloadHistoryPanel->RemoveEntriesWithPrefix( deletedDir );
+        } );
 
     glfwSetErrorCallback( GLFW_ErrorCallback );
     if( !glfwInit( ) )

@@ -88,7 +88,13 @@ void ImageScraper::DownloadHistoryPanel::Update( )
             ImGui::TextUnformatted( entry.m_FileSize.c_str( ) );
 
             ImGui::TableSetColumnIndex( 2 );
-            ImGui::Selectable( entry.m_FileName.c_str( ), false, ImGuiSelectableFlags_SpanAllColumns );
+            const bool isSelected = ( m_SelectedIndex == i );
+            ImGui::Selectable( entry.m_FileName.c_str( ), isSelected, ImGuiSelectableFlags_SpanAllColumns );
+
+            if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) )
+            {
+                m_SelectedIndex = i;
+            }
 
             if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && m_OnPreviewRequested )
             {
@@ -137,7 +143,75 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         ImGui::EndTable( );
     }
 
+    if( m_SelectedIndex >= 0
+        && m_SelectedIndex < m_History.GetSize( )
+        && ImGui::IsWindowFocused( )
+        && ImGui::IsKeyPressed( ImGuiKey_Delete ) )
+    {
+        const std::string filepath = m_History[ m_SelectedIndex ].m_FilePath;
+
+        std::error_code ec;
+        std::filesystem::remove( filepath, ec );
+        if( ec )
+        {
+            WarningLog( "[%s] Failed to delete file: %s", __FUNCTION__, ec.message( ).c_str( ) );
+        }
+
+        auto it = m_ThumbnailCache.find( filepath );
+        if( it != m_ThumbnailCache.end( ) )
+        {
+            if( it->second.m_Texture != 0 )
+            {
+                glDeleteTextures( 1, &it->second.m_Texture );
+            }
+            m_ThumbnailCache.erase( it );
+        }
+
+        m_History.RemoveAt( m_SelectedIndex );
+        m_SelectedIndex = -1;
+        Save( );
+    }
+
     ImGui::End( );
+}
+
+void ImageScraper::DownloadHistoryPanel::RemoveEntriesWithPrefix( const std::string& rootDir )
+{
+    const std::string prefix = std::filesystem::path( rootDir ).make_preferred( ).string( );
+    bool changed = false;
+
+    for( int i = m_History.GetSize( ) - 1; i >= 0; --i )
+    {
+        const std::string& fp     = m_History[ i ].m_FilePath;
+        const std::string  native = std::filesystem::path( fp ).make_preferred( ).string( );
+        if( native.rfind( prefix, 0 ) != 0 )
+        {
+            continue;
+        }
+
+        auto it = m_ThumbnailCache.find( fp );
+        if( it != m_ThumbnailCache.end( ) )
+        {
+            if( it->second.m_Texture != 0 )
+            {
+                glDeleteTextures( 1, &it->second.m_Texture );
+            }
+            m_ThumbnailCache.erase( it );
+        }
+
+        m_History.RemoveAt( i );
+        changed = true;
+    }
+
+    if( m_SelectedIndex >= m_History.GetSize( ) )
+    {
+        m_SelectedIndex = -1;
+    }
+
+    if( changed )
+    {
+        Save( );
+    }
 }
 
 void ImageScraper::DownloadHistoryPanel::OnFileDownloaded( const std::string& filepath, const std::string& sourceUrl )

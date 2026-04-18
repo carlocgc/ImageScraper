@@ -2,6 +2,24 @@
 #include "log/Logger.h"
 
 #include <algorithm>
+#include <filesystem>
+
+static bool HasAnyFile( const std::filesystem::path& dir )
+{
+    if( !std::filesystem::exists( dir ) )
+    {
+        return false;
+    }
+    std::error_code ec;
+    for( const auto& entry : std::filesystem::recursive_directory_iterator( dir, ec ) )
+    {
+        if( entry.is_regular_file( ) )
+        {
+            return true;
+        }
+    }
+    return false;
+}
 
 void ImageScraper::FourChanPanel::LoadSearchHistory( std::shared_ptr<JsonFile> appConfig )
 {
@@ -72,6 +90,62 @@ void ImageScraper::FourChanPanel::Update( )
     }
 
     ImGui::EndChild( );
+
+    const std::filesystem::path fourChanDir =
+        std::filesystem::path( m_OutputDir ) / "Downloads" / "4chan";
+    const bool hasContent = HasAnyFile( fourChanDir );
+
+    ImGui::BeginDisabled( !hasContent || m_SigningIn );
+
+    if( ImGui::Button( "Delete All##fourchan", ImVec2( 100, 40 ) ) )
+    {
+        ImGui::OpenPopup( "Confirm Delete All##fourchan" );
+    }
+
+    ImGui::EndDisabled( );
+
+    ImGui::SetNextWindowSize( ImVec2( 380, 0 ), ImGuiCond_Always );
+    if( ImGui::BeginPopupModal( "Confirm Delete All##fourchan", nullptr,
+            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize ) )
+    {
+        ImGui::Spacing( );
+        ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 1.0f, 0.6f, 0.1f, 1.0f ) );
+        ImGui::TextWrapped( "This will permanently delete all downloaded 4chan content from disk." );
+        ImGui::PopStyleColor( );
+        ImGui::Spacing( );
+
+        ImGui::PushStyleColor( ImGuiCol_Button,        ImVec4( 0.7f, 0.3f, 0.0f, 1.0f ) );
+        ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.9f, 0.4f, 0.0f, 1.0f ) );
+        ImGui::PushStyleColor( ImGuiCol_ButtonActive,  ImVec4( 0.5f, 0.2f, 0.0f, 1.0f ) );
+
+        if( ImGui::Button( "Delete All", ImVec2( 110, 0 ) ) )
+        {
+            std::error_code ec;
+            std::filesystem::remove_all( fourChanDir, ec );
+            if( ec )
+            {
+                LogError( "[%s] Failed to delete 4chan downloads: %s",
+                          __FUNCTION__, ec.message( ).c_str( ) );
+            }
+
+            if( m_OnDeleteAll )
+            {
+                m_OnDeleteAll( fourChanDir.string( ) );
+            }
+
+            ImGui::CloseCurrentPopup( );
+        }
+
+        ImGui::PopStyleColor( 3 );
+
+        ImGui::SameLine( );
+        if( ImGui::Button( "Cancel", ImVec2( 100, 0 ) ) )
+        {
+            ImGui::CloseCurrentPopup( );
+        }
+
+        ImGui::EndPopup( );
+    }
 }
 
 ImageScraper::UserInputOptions ImageScraper::FourChanPanel::BuildInputOptions( ) const

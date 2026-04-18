@@ -58,18 +58,18 @@ ImageScraper::App::App( )
         InfoLog( "[%s] User Config Loaded!", __FUNCTION__ );
     }
 
-    const std::string caBundlePath  = ( exeDir / s_CaBundleFile ).generic_string( );
-    const std::string outputDirPath = exeDir.generic_string( );
-    m_Services.push_back( std::make_shared<RedditService>(   m_AppConfig, m_UserConfig, caBundlePath, outputDirPath, m_FrontEnd ) );
-    m_Services.push_back( std::make_shared<TumblrService>(   m_AppConfig, m_UserConfig, caBundlePath, outputDirPath, m_FrontEnd ) );
-    m_Services.push_back( std::make_shared<FourChanService>( m_AppConfig, m_UserConfig, caBundlePath, outputDirPath, m_FrontEnd ) );
+    const std::string caBundlePath = ( exeDir / s_CaBundleFile ).generic_string( );
+    m_OutputDirPath = exeDir.generic_string( );
+    m_Services.push_back( std::make_shared<RedditService>(   m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
+    m_Services.push_back( std::make_shared<TumblrService>(   m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
+    m_Services.push_back( std::make_shared<FourChanService>( m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
 
     m_ListenServer = std::make_shared<ListenServer>( );
 }
 
 int ImageScraper::App::Run( )
 {
-    if( !m_FrontEnd || !m_FrontEnd->Init( m_Services, m_UserConfig, m_AppConfig ) )
+    if( !m_FrontEnd || !m_FrontEnd->Init( m_Services, m_UserConfig, m_AppConfig, m_OutputDirPath ) )
     {
         LogError( "[%s] Could not start FrontEnd!", __FUNCTION__ );
         return EXIT_FAILURE;
