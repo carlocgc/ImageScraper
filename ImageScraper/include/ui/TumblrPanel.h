@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ui/IProviderPanel.h"
-#include "ui/DeleteAllButton.h"
 #include "ui/SearchHistory.h"
 #include "imgui/imgui.h"
 
@@ -24,6 +23,5 @@ namespace ImageScraper
         SearchHistory   m_SearchHistory{ };
         std::string     m_TumblrUser{ };
         int             m_TumblrMaxMediaItems{ TUMBLR_LIMIT_DEFAULT };
-        DeleteAllButton m_DeleteAllButton{ "Tumblr", "Tumblr" };
     };
 }

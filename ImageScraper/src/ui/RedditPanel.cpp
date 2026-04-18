@@ -98,8 +98,6 @@ void ImageScraper::RedditPanel::Update( )
     }
 
     ImGui::EndChild( );
-
-    m_DeleteAllButton.Update( m_OutputDir, m_OnDeleteAll, m_SigningIn );
 }
 
 ImageScraper::UserInputOptions ImageScraper::RedditPanel::BuildInputOptions( ) const

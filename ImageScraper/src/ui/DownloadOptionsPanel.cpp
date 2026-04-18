@@ -12,23 +12,6 @@ ImageScraper::DownloadOptionsPanel::DownloadOptionsPanel( const std::vector<std:
     m_ProviderPanels.push_back( std::make_unique<FourChanPanel>( ) );
 }
 
-void ImageScraper::DownloadOptionsPanel::SetOutputDir( const std::string& outputDir )
-{
-    for( auto& panel : m_ProviderPanels )
-    {
-        panel->SetOutputDir( outputDir );
-    }
-}
-
-void ImageScraper::DownloadOptionsPanel::SetDeleteAllCallback( std::function<void( const std::string& )> fn )
-{
-    m_DeleteAllCallback = fn;
-    for( auto& panel : m_ProviderPanels )
-    {
-        panel->SetDeleteAllCallback( fn );
-    }
-}
-
 void ImageScraper::DownloadOptionsPanel::LoadSearchHistory( std::shared_ptr<JsonFile> appConfig )
 {
     for( auto& panel : m_ProviderPanels )
@@ -151,7 +134,6 @@ void ImageScraper::DownloadOptionsPanel::UpdateProviderWidgets( )
 
     if( IProviderPanel* panel = GetActivePanel( ) )
     {
-        panel->SetSigningIn( m_SigningInProvider.load( ) != INVALID_CONTENT_PROVIDER );
         panel->Update( );
     }
 

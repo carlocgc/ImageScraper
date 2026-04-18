@@ -26,6 +26,9 @@ namespace ImageScraper
         // Main-thread only - forces a load even if media is currently playing
         void RequestPreview( const std::string& filepath );
 
+        // Main-thread only - synchronously clears all display state
+        void ClearPreview( );
+
     private:
         enum class MediaState
         {

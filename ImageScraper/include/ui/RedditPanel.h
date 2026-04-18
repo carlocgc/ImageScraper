@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ui/IProviderPanel.h"
-#include "ui/DeleteAllButton.h"
 #include "ui/SearchHistory.h"
 #include "imgui/imgui.h"
 
@@ -26,6 +25,5 @@ namespace ImageScraper
         RedditScope          m_RedditScope{ RedditScope::Hot };
         RedditScopeTimeFrame m_RedditScopeTimeFrame{ RedditScopeTimeFrame::All };
         int                  m_RedditMaxMediaItems{ REDDIT_LIMIT_DEFAULT };
-        DeleteAllButton      m_DeleteAllButton{ "Reddit", "Reddit" };
     };
 }

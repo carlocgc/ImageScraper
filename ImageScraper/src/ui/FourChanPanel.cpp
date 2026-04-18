@@ -72,8 +72,6 @@ void ImageScraper::FourChanPanel::Update( )
     }
 
     ImGui::EndChild( );
-
-    m_DeleteAllButton.Update( m_OutputDir, m_OnDeleteAll, m_SigningIn );
 }
 
 ImageScraper::UserInputOptions ImageScraper::FourChanPanel::BuildInputOptions( ) const

@@ -7,7 +7,6 @@
 #include "services/IServiceSink.h"
 #include "imgui/imgui.h"
 
-#include <functional>
 #include <vector>
 #include <memory>
 #include <atomic>
@@ -22,8 +21,6 @@ namespace ImageScraper
 
         void Update( ) override;
         void LoadSearchHistory( std::shared_ptr<JsonFile> appConfig );
-        void SetOutputDir( const std::string& outputDir );
-        void SetDeleteAllCallback( std::function<void( const std::string& )> fn );
 
         // State queries used by FrontEnd to coordinate with other panels
         bool IsRunning( ) const { return m_Running; }
@@ -51,7 +48,6 @@ namespace ImageScraper
 
         std::vector<std::shared_ptr<Service>>         m_Services{ };
         std::vector<std::unique_ptr<IProviderPanel>>  m_ProviderPanels{ };
-        std::function<void( const std::string& )>     m_DeleteAllCallback{ };
         InputState m_InputState{ InputState::Free };
 
         int  m_ContentProvider{ 0 };

@@ -248,7 +248,6 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\services\RedditService.cpp" />
     <ClCompile Include="src\ui\FrontEnd.cpp" />
     <ClCompile Include="src\ui\LogPanel.cpp" />
-    <ClCompile Include="src\ui\DeleteAllButton.cpp" />
     <ClCompile Include="src\ui\DownloadOptionsPanel.cpp" />
     <ClCompile Include="src\ui\RedditPanel.cpp" />
     <ClCompile Include="src\ui\TumblrPanel.cpp" />
@@ -367,7 +366,6 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\ui\IUiPanel.h" />
     <ClInclude Include="include\ui\IProviderPanel.h" />
     <ClInclude Include="include\ui\LogPanel.h" />
-    <ClInclude Include="include\ui\DeleteAllButton.h" />
     <ClInclude Include="include\ui\DownloadOptionsPanel.h" />
     <ClInclude Include="include\ui\RedditPanel.h" />
     <ClInclude Include="include\ui\TumblrPanel.h" />
