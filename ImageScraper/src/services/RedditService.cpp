@@ -122,18 +122,13 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
         return false;
     }
 
-    auto ExtractQueryParam = [ & ]( const std::string& key ) -> std::string
-        {
-            return StringUtils::ExtractQueryParam( response, key );
-        };
-
     const bool hasError = response.find( "?error=" ) != std::string::npos
                        || response.find( "&error=" ) != std::string::npos;
 
     if( hasError )
     {
-        const std::string error = ExtractQueryParam( "error" );
-        const std::string desc  = StringUtils::UrlDecode( ExtractQueryParam( "error_description" ) );
+        const std::string error = StringUtils::ExtractQueryParam( response, "error" );
+        const std::string desc  = StringUtils::UrlDecode( StringUtils::ExtractQueryParam( response, "error_description" ) );
         WarningLog( "[%s] Reddit OAuth error: %s - %s", __FUNCTION__, error.c_str( ), desc.c_str( ) );
         if( error == "redirect_uri_mismatch" )
         {
@@ -143,7 +138,7 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
         return false;
     }
 
-    const std::string receivedState = ExtractQueryParam( "state" );
+    const std::string receivedState = StringUtils::ExtractQueryParam( response, "state" );
     if( receivedState.empty( ) || receivedState != m_DeviceId )
     {
         LogError( "[%s] Reddit OAuth state mismatch - possible CSRF attack. Expected: %s, Received: %s",
@@ -152,7 +147,7 @@ bool ImageScraper::RedditService::HandleExternalAuth( const std::string& respons
         return false;
     }
 
-    const std::string authCode = ExtractQueryParam( "code" );
+    const std::string authCode = StringUtils::ExtractQueryParam( response, "code" );
     if( authCode.empty( ) )
     {
         LogDebug( "[%s] RedditService::HandleExternalAuth failed, could not find auth code!", __FUNCTION__ );
