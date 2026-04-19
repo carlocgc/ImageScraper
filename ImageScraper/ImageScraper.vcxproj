@@ -254,6 +254,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\ui\TumblrPanel.cpp" />
     <ClCompile Include="src\ui\FourChanPanel.cpp" />
     <ClCompile Include="src\ui\MediaPreviewPanel.cpp" />
+    <ClCompile Include="src\ui\ProviderSearchInput.cpp" />
     <ClCompile Include="src\ui\VideoPlayer.cpp" />
     <ClCompile Include="src\ui\DownloadHistoryPanel.cpp" />
     <ClCompile Include="src\ui\SearchHistory.cpp" />
@@ -369,6 +370,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\ui\IProviderPanel.h" />
     <ClInclude Include="include\ui\LogPanel.h" />
     <ClInclude Include="include\ui\DownloadOptionsPanel.h" />
+    <ClInclude Include="include\ui\ProviderSearchInput.h" />
     <ClInclude Include="include\ui\RedditPanel.h" />
     <ClInclude Include="include\ui\TumblrPanel.h" />
     <ClInclude Include="include\ui\FourChanPanel.h" />
