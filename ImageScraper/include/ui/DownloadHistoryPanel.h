@@ -28,7 +28,9 @@ namespace ImageScraper
     class DownloadHistoryPanel : public IUiPanel
     {
     public:
-        using PreviewCallback = std::function<void( const std::string& filepath )>;
+        using PreviewCallback  = std::function<void( const std::string& filepath )>;
+        // Called before a file is deleted on disk; impl should release any open handle for that file.
+        using ReleaseCallback = std::function<void( const std::string& filepath )>;
 
         struct ThumbnailEntry
         {
@@ -37,7 +39,7 @@ namespace ImageScraper
             int    m_Height{ 0 };
         };
 
-        explicit DownloadHistoryPanel( PreviewCallback onPreviewRequested );
+        DownloadHistoryPanel( PreviewCallback onPreviewRequested, ReleaseCallback onReleaseRequested );
         ~DownloadHistoryPanel( );
         void Update( ) override;
 
@@ -87,6 +89,7 @@ namespace ImageScraper
         static constexpr float      k_TooltipMaxSize    = 200.f;
 
         PreviewCallback                   m_OnPreviewRequested{ };
+        ReleaseCallback                   m_OnReleaseRequested{ };
         RingBuffer<DownloadHistoryEntry>  m_History{ k_Capacity };
         std::shared_ptr<JsonFile>         m_AppConfig{ };
 

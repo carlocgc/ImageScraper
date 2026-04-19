@@ -24,7 +24,6 @@ void ImageScraper::MediaPreviewPanel::Update( )
         if( decoded )
         {
             UploadDecoded( *decoded );
-            m_LoadingFileName.clear( );
         }
     }
 
@@ -196,15 +195,39 @@ void ImageScraper::MediaPreviewPanel::RequestPreview( const std::string& filepat
 
 void ImageScraper::MediaPreviewPanel::ClearPreview( )
 {
+    // Wait for any in-progress background decode to complete so its file handle is released.
+    if( m_DecodeFuture.valid( ) )
+    {
+        m_DecodeFuture.wait( );
+    }
+
+    // Drain any decoded result that arrived while we were waiting so it is not
+    // re-uploaded on the next Update() call after the clear.
+    {
+        std::lock_guard<std::mutex> lock( m_DecodedMutex );
+        m_PendingDecoded.reset( );
+    }
+
     {
         std::lock_guard<std::mutex> lock( m_PathMutex );
         m_HasLatestPath = false;
     }
+
     FreeTextures( );
     m_VideoPlayer.reset( );
     m_MediaState      = MediaState::None;
     m_CurrentFilePath = "";
-    m_LoadingFileName = "";
+    m_LoadingFilePath = "";
+}
+
+void ImageScraper::MediaPreviewPanel::ReleaseFileIfCurrent( const std::string& filepath )
+{
+    if( m_CurrentFilePath != filepath && m_LoadingFilePath != filepath )
+    {
+        return;
+    }
+
+    ClearPreview( );
 }
 
 void ImageScraper::MediaPreviewPanel::TogglePlayPause( )
@@ -274,7 +297,7 @@ void ImageScraper::MediaPreviewPanel::KickDecodeIfNeeded( )
         return;
     }
 
-    m_LoadingFileName = std::filesystem::path( filepath ).filename( ).string( );
+    m_LoadingFilePath = filepath;
     m_IsDecoding      = true;
 
     // Always decode only the first frame - fast for both images and GIFs
@@ -299,7 +322,7 @@ void ImageScraper::MediaPreviewPanel::KickFullGifDecode( )
     }
 
     m_MediaState      = MediaState::LoadingFullFrames;
-    m_LoadingFileName = std::filesystem::path( m_CurrentFilePath ).filename( ).string( );
+    m_LoadingFilePath = m_CurrentFilePath;
     m_IsDecoding      = true;
 
     const std::string filepath = m_CurrentFilePath;

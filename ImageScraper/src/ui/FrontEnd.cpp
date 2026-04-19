@@ -26,7 +26,8 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     m_DownloadProgressPanel = std::make_unique<DownloadProgressPanel>( );
     m_MediaPreviewPanel     = std::make_unique<MediaPreviewPanel>( );
     m_DownloadHistoryPanel  = std::make_unique<DownloadHistoryPanel>(
-        [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->RequestPreview( filepath ); } );
+        [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->RequestPreview( filepath ); },
+        [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->ReleaseFileIfCurrent( filepath ); } );
     m_CredentialsPanel      = std::make_unique<CredentialsPanel>( userConfig );
     m_MediaPreviewControlPanel = std::make_unique<MediaPreviewControlPanel>(
         m_MediaPreviewPanel.get( ), m_DownloadHistoryPanel.get( ) );

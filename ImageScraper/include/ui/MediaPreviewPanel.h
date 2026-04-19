@@ -26,8 +26,13 @@ namespace ImageScraper
         // Main-thread only - forces a load even if media is currently playing
         void RequestPreview( const std::string& filepath );
 
-        // Main-thread only - synchronously clears all display state
+        // Main-thread only - synchronously clears all display state;
+        // waits for any in-progress background decode to finish so file handles are released.
         void ClearPreview( );
+
+        // Main-thread only - clears the preview if the given filepath is currently loaded
+        // or being decoded; no-op otherwise. Waits for any in-progress decode to finish.
+        void ReleaseFileIfCurrent( const std::string& filepath );
 
         // Main-thread only - toggle between playing and paused; no-op when no media or loading
         void TogglePlayPause( );
@@ -86,7 +91,7 @@ namespace ImageScraper
 
         std::atomic_bool    m_IsDecoding{ false };
         std::future<void>   m_DecodeFuture{ };
-        std::string         m_LoadingFileName{ };
+        std::string         m_LoadingFilePath{ };  // full path of file currently being decoded
         bool                m_ForceLoad{ false };
 
         // Current display state - only touched on the main thread
