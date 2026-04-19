@@ -14,10 +14,13 @@ ImageScraper::MediaPreviewPanel::~MediaPreviewPanel( )
 
 void ImageScraper::MediaPreviewPanel::Update( )
 {
-    // Apply any deferred display clear requested by RequestPreview.
-    // Must happen before the upload block so we drain m_PendingDecoded first
-    // and don't immediately re-display the old item.
-    if( m_PendingClear )
+    // Apply any deferred display clear requested by RequestPreview, but only
+    // once any in-flight decode has finished. While m_IsDecoding is true the
+    // background task still holds m_IsDecoding; clearing and then calling
+    // KickDecodeIfNeeded before that flag drops means the new decode never
+    // starts. Leaving m_PendingClear set and retrying next frame guarantees
+    // the clear and the new-decode kick happen in the same Update() call.
+    if( m_PendingClear && !m_IsDecoding )
     {
         m_PendingClear = false;
 
