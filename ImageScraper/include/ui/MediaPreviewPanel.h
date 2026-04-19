@@ -90,6 +90,7 @@ namespace ImageScraper
         std::unique_ptr<DecodedImage> m_PendingDecoded{ };
 
         std::atomic_bool    m_IsDecoding{ false };
+        std::atomic_bool    m_CancelDecode{ false };  // set by RequestPreview to discard in-flight result
         std::future<void>   m_DecodeFuture{ };
         std::string         m_LoadingFilePath{ };  // full path of file currently being decoded
         bool                m_ForceLoad{ false };
@@ -106,6 +107,7 @@ namespace ImageScraper
 
         // Video playback - single reused texture, decoded frame-by-frame
         std::unique_ptr<VideoPlayer> m_VideoPlayer{ };
+        int m_VideoFrameIndex{ 0 };  // frames decoded since last open/seek, for progress bar
         std::vector<uint8_t>         m_VideoFrameBuffer{ };  // reused RGBA scratch buffer
     };
 }

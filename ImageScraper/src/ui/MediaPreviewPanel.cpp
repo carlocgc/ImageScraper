@@ -113,9 +113,8 @@ void ImageScraper::MediaPreviewPanel::Update( )
         constexpr float k_Pad      = 6.0f;
         constexpr float k_BadgePad = 3.0f;
         ImDrawList* dl             = ImGui::GetForegroundDrawList( );
-        const ImU32 colText        = ImGui::GetColorU32( ImGuiCol_Text );
-        const ImU32 colBadgeBg     = IM_COL32( 0, 0, 0, 140 );
-        const float lineH          = ImGui::GetTextLineHeight( );
+        const ImU32 colText    = ImGui::GetColorU32( ImGuiCol_Text );
+        const ImU32 colBadgeBg = IM_COL32( 0, 0, 0, 140 );
 
         auto DrawBadge = [ & ]( ImVec2 pos, const char* text )
         {
@@ -136,12 +135,45 @@ void ImageScraper::MediaPreviewPanel::Update( )
             DrawBadge( ImVec2( contentScreenMin.x + k_Pad, badgeY ), name.c_str( ) );
         }
 
-        // Bottom-left: frame counter while GIF is playing or paused
-        if( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::StaticFrame ) && m_Textures.size( ) > 1 )
+        // Bottom: playback progress bar for multi-frame GIFs and videos
         {
-            char buf[ 32 ];
-            snprintf( buf, sizeof( buf ), "Frame %d / %d", m_CurrentFrame + 1, static_cast<int>( m_Textures.size( ) ) );
-            DrawBadge( ImVec2( contentScreenMin.x + k_Pad, contentScreenMax.y - lineH - k_Pad - k_BadgePad * 2 ), buf );
+            float progress = -1.0f;  // negative means "don't draw"
+
+            if( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::StaticFrame )
+                && m_Textures.size( ) > 1 )
+            {
+                // GIF: position within the current loop
+                progress = static_cast<float>( m_CurrentFrame ) /
+                           static_cast<float>( m_Textures.size( ) - 1 );
+            }
+            else if( ( m_MediaState == MediaState::VideoPlaying || m_MediaState == MediaState::VideoPaused )
+                     && m_VideoPlayer )
+            {
+                const double duration = m_VideoPlayer->GetDuration( );
+                if( duration > 0.0 )
+                {
+                    const double currentTime =
+                        static_cast<double>( m_VideoFrameIndex ) / m_VideoPlayer->GetFPS( );
+                    progress = static_cast<float>( currentTime / duration );
+                }
+            }
+
+            if( progress >= 0.0f )
+            {
+                constexpr float k_BarH = 4.0f;
+                const float barW  = contentScreenMax.x - contentScreenMin.x;
+                const float barY0 = contentScreenMax.y - k_BarH;
+                const float barY1 = contentScreenMax.y;
+
+                dl->AddRectFilled(
+                    ImVec2( contentScreenMin.x, barY0 ),
+                    ImVec2( contentScreenMax.x, barY1 ),
+                    IM_COL32( 0, 0, 0, 120 ) );
+                dl->AddRectFilled(
+                    ImVec2( contentScreenMin.x, barY0 ),
+                    ImVec2( contentScreenMin.x + barW * progress, barY1 ),
+                    IM_COL32( 100, 180, 255, 220 ) );
+            }
         }
 
         // Bottom: indeterminate loading bar during full GIF decode
@@ -185,6 +217,11 @@ void ImageScraper::MediaPreviewPanel::RequestPreview( const std::string& filepat
         ClearPreview( );
         return;
     }
+
+    // Signal any in-progress decode to discard its result so the new file
+    // can start loading as soon as the background thread finishes.
+    m_CancelDecode = true;
+
     {
         std::lock_guard<std::mutex> lock( m_PathMutex );
         m_LatestPath    = filepath;
@@ -218,6 +255,7 @@ void ImageScraper::MediaPreviewPanel::ClearPreview( )
     m_MediaState      = MediaState::None;
     m_CurrentFilePath = "";
     m_LoadingFilePath = "";
+    m_VideoFrameIndex = 0;
 }
 
 void ImageScraper::MediaPreviewPanel::ReleaseFileIfCurrent( const std::string& filepath )
@@ -298,6 +336,7 @@ void ImageScraper::MediaPreviewPanel::KickDecodeIfNeeded( )
     }
 
     m_LoadingFilePath = filepath;
+    m_CancelDecode    = false;
     m_IsDecoding      = true;
 
     // Always decode only the first frame - fast for both images and GIFs
@@ -305,6 +344,8 @@ void ImageScraper::MediaPreviewPanel::KickDecodeIfNeeded( )
     {
         auto decoded = DecodeFile( filepath, true );
 
+        // Only commit the result if the request was not superseded by a newer selection.
+        if( !m_CancelDecode )
         {
             std::lock_guard<std::mutex> lock( m_DecodedMutex );
             m_PendingDecoded = std::move( decoded );
@@ -331,6 +372,8 @@ void ImageScraper::MediaPreviewPanel::KickFullGifDecode( )
     {
         auto decoded = DecodeFile( filepath, false );
 
+        // Only commit the result if the request was not superseded by a newer selection.
+        if( !m_CancelDecode )
         {
             std::lock_guard<std::mutex> lock( m_DecodedMutex );
             m_PendingDecoded = std::move( decoded );
@@ -394,8 +437,9 @@ void ImageScraper::MediaPreviewPanel::OpenVideo( const std::string& filepath )
         m_Textures.push_back( tex );
     }
 
-    m_CurrentFrame = 0;
-    m_MediaState   = MediaState::VideoPaused;
+    m_CurrentFrame     = 0;
+    m_VideoFrameIndex  = 0;
+    m_MediaState       = MediaState::VideoPaused;
 }
 
 void ImageScraper::MediaPreviewPanel::AdvanceVideoFrame( )
@@ -415,11 +459,16 @@ void ImageScraper::MediaPreviewPanel::AdvanceVideoFrame( )
 
     m_FrameAccumMs -= frameDurationMs;
 
-    if( !m_VideoPlayer->DecodeNextFrame( m_VideoFrameBuffer ) )
+    if( m_VideoPlayer->DecodeNextFrame( m_VideoFrameBuffer ) )
+    {
+        m_VideoFrameIndex++;
+    }
+    else
     {
         // EOF - loop back to start
         m_VideoPlayer->SeekToStart( );
         m_VideoPlayer->DecodeNextFrame( m_VideoFrameBuffer );
+        m_VideoFrameIndex = 0;
     }
 
     // Upload the new frame - dimensions are constant for a given video so glTexImage2D is fine

@@ -32,10 +32,11 @@ namespace ImageScraper
         void SeekToStart( );
         void Close( );
 
-        bool   IsOpen( )   const { return m_FormatCtx != nullptr; }
-        int    GetWidth( )  const { return m_Width; }
-        int    GetHeight( ) const { return m_Height; }
-        double GetFPS( )    const { return m_Fps; }
+        bool   IsOpen( )      const { return m_FormatCtx != nullptr; }
+        int    GetWidth( )    const { return m_Width; }
+        int    GetHeight( )   const { return m_Height; }
+        double GetFPS( )      const { return m_Fps; }
+        double GetDuration( ) const; // total duration in seconds; 0 if unknown
 
     private:
         bool ConvertFrame( std::vector<uint8_t>& rgbaOut );
