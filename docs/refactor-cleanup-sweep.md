@@ -323,7 +323,7 @@ Recommended refactor:
 
 - [x] Shared download/write pipeline
 - [x] Shared OAuth-backed service behavior
-- [ ] Shared provider-panel search input helper
+- [x] Shared provider-panel search input helper
 
 ### Phase 3: Iteration and container cleanup
 

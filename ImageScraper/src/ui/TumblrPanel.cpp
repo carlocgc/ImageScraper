@@ -1,4 +1,5 @@
 #include "ui/TumblrPanel.h"
+#include "ui/ProviderSearchInput.h"
 #include "log/Logger.h"
 
 #include <algorithm>
@@ -26,54 +27,17 @@ void ImageScraper::TumblrPanel::OnSearchCommitted( )
 
 void ImageScraper::TumblrPanel::Update( )
 {
-    if( ImGui::BeginChild( "TumblrUser", ImVec2( 500, 25 ), false ) )
-    {
-        char buffer[ INPUT_STRING_MAX ] = "";
-        strcpy_s( buffer, INPUT_STRING_MAX, m_TumblrUser.c_str( ) );
-        const float arrowW  = ImGui::GetFrameHeight( );
-        const float spacing = ImGui::GetStyle( ).ItemInnerSpacing.x;
-        ImGui::SetNextItemWidth( ImGui::CalcItemWidth( ) - arrowW - spacing );
-        if( ImGui::InputText( "##tumblr_user", buffer, INPUT_STRING_MAX, ImGuiInputTextFlags_CharsNoBlank ) )
+    ProviderSearchInput::Draw(
         {
-            m_TumblrUser = buffer;
-        }
-
-        const ImVec2 inputMin = ImGui::GetItemRectMin( );
-        const ImVec2 inputMax = ImGui::GetItemRectMax( );
-
-        ImGui::SameLine( 0.f, spacing );
-        if( ImGui::ArrowButton( "##tumblr_hist_btn", ImGuiDir_Down ) )
-        {
-            ImGui::OpenPopup( "##tumblr_hist" );
-        }
-
-        ImGui::SameLine( 0.f, spacing );
-        ImGui::TextUnformatted( "Tumblr User" );
-
-        const float popupW = ( inputMax.x - inputMin.x ) + spacing + arrowW;
-        ImGui::SetNextWindowPos( ImVec2( inputMin.x, inputMax.y ), ImGuiCond_Always );
-        ImGui::SetNextWindowSize( ImVec2( popupW, 0.f ), ImGuiCond_Always );
-        if( ImGui::BeginPopup( "##tumblr_hist", ImGuiWindowFlags_NoFocusOnAppearing ) )
-        {
-            if( m_SearchHistory.IsEmpty( ) )
-            {
-                ImGui::TextDisabled( "No history yet" );
-            }
-            else
-            {
-                for( const auto& item : m_SearchHistory.GetItems( ) )
-                {
-                    if( ImGui::Selectable( item.c_str( ) ) )
-                    {
-                        m_TumblrUser = item;
-                    }
-                }
-            }
-            ImGui::EndPopup( );
-        }
-    }
-
-    ImGui::EndChild( );
+            "TumblrUser",
+            "##tumblr_user",
+            "##tumblr_hist_btn",
+            "##tumblr_hist",
+            "Tumblr User",
+            ImGuiInputTextFlags_CharsNoBlank
+        },
+        m_TumblrUser,
+        m_SearchHistory );
 
     if( ImGui::BeginChild( "TumblrMaxMediaItems", ImVec2( 500, 25 ), false ) )
     {
