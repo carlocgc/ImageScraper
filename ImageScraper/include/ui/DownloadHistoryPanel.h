@@ -74,8 +74,12 @@ namespace ImageScraper
         static std::string FormatTimestamp( );
         static std::string ExtractFileName( const std::string& filepath );
         static std::string FormatFileSize( const std::string& filepath );
-        static std::filesystem::path GetProviderRoot( const std::string& filepath );
-        static std::string           GetProviderName( const std::string& filepath );
+        static std::filesystem::path GetProviderRoot(   const std::string& filepath );
+        static std::string           GetProviderName(   const std::string& filepath );
+        // Absolute path of the content subfolder one level below the provider root.
+        static std::filesystem::path GetSubfolderPath(  const std::string& filepath );
+        // Display-formatted label for the subfolder (e.g. "r/aww", "/g/", "username").
+        static std::string           GetSubfolderLabel( const std::string& filepath );
 
         // Returns thumbnail entry for the filepath; entry.m_Texture == 0 means unavailable.
         // Loads on first call, caches the result - never retries failed loads.

@@ -58,6 +58,9 @@ void ImageScraper::DownloadHistoryPanel::Update( )
     const std::string providerName =
         hasSelection ? GetProviderName( m_History[ m_SelectedIndex ].m_FilePath ) : "";
     const bool hasProvider = !providerName.empty( );
+    const std::string subfolderLabel =
+        hasSelection ? GetSubfolderLabel( m_History[ m_SelectedIndex ].m_FilePath ) : "";
+    const bool hasSubfolder = !subfolderLabel.empty( );
 
     ImGui::BeginDisabled( !hasSelection || m_Blocked );
     if( ImGui::Button( "Delete Selected", ImVec2( 0, 0 ) ) )
@@ -86,6 +89,68 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         }
     }
     ImGui::EndDisabled( );
+
+    ImGui::SameLine( );
+
+    const std::string delSubLabel =
+        hasSubfolder ? ( "Delete " + subfolderLabel ) : "Delete Subfolder";
+
+    ImGui::BeginDisabled( !hasSelection || !hasSubfolder || m_Blocked );
+    if( ImGui::Button( delSubLabel.c_str( ), ImVec2( 0, 0 ) ) )
+    {
+        ImGui::OpenPopup( "Confirm Delete Subfolder##hist" );
+    }
+    ImGui::EndDisabled( );
+
+    ImGui::SetNextWindowSize( ImVec2( 380, 0 ), ImGuiCond_Always );
+    if( ImGui::BeginPopupModal( "Confirm Delete Subfolder##hist", nullptr,
+            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize ) )
+    {
+        ImGui::Spacing( );
+        ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 1.0f, 0.6f, 0.1f, 1.0f ) );
+        ImGui::TextWrapped(
+            "This will permanently delete all content in %s from disk.",
+            subfolderLabel.c_str( ) );
+        ImGui::PopStyleColor( );
+        ImGui::Spacing( );
+
+        ImGui::PushStyleColor( ImGuiCol_Button,        ImVec4( 0.7f, 0.3f, 0.0f, 1.0f ) );
+        ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.9f, 0.4f, 0.0f, 1.0f ) );
+        ImGui::PushStyleColor( ImGuiCol_ButtonActive,  ImVec4( 0.5f, 0.2f, 0.0f, 1.0f ) );
+
+        if( ImGui::Button( "Delete", ImVec2( 110, 0 ) ) )
+        {
+            const auto subfolderPath =
+                GetSubfolderPath( m_History[ m_SelectedIndex ].m_FilePath );
+
+            // Clear the media preview before deleting so any open file handle is released.
+            if( m_OnPreviewRequested )
+            {
+                m_OnPreviewRequested( "" );
+            }
+
+            std::error_code ec;
+            std::filesystem::remove_all( subfolderPath, ec );
+            if( ec )
+            {
+                LogError( "[%s] Failed to delete subfolder %s: %s",
+                          __FUNCTION__, subfolderLabel.c_str( ), ec.message( ).c_str( ) );
+            }
+
+            // Only remove history entries for files that were actually deleted.
+            RemoveEntriesWithPrefix( subfolderPath.string( ) );
+            AdvanceSelectionAndPreview( );
+            ImGui::CloseCurrentPopup( );
+        }
+
+        ImGui::PopStyleColor( 3 );
+        ImGui::SameLine( );
+        if( ImGui::Button( "Cancel", ImVec2( 100, 0 ) ) )
+        {
+            ImGui::CloseCurrentPopup( );
+        }
+        ImGui::EndPopup( );
+    }
 
     ImGui::SameLine( );
 
@@ -443,6 +508,64 @@ std::filesystem::path ImageScraper::DownloadHistoryPanel::GetProviderRoot( const
 std::string ImageScraper::DownloadHistoryPanel::GetProviderName( const std::string& filepath )
 {
     return GetProviderRoot( filepath ).filename( ).string( );
+}
+
+std::filesystem::path ImageScraper::DownloadHistoryPanel::GetSubfolderPath( const std::string& filepath )
+{
+    const auto provRoot = GetProviderRoot( filepath );
+    if( provRoot.empty( ) )
+    {
+        return { };
+    }
+
+    const auto fileDir = std::filesystem::path( filepath ).parent_path( );
+    std::error_code ec;
+    const auto rel = std::filesystem::relative( fileDir, provRoot, ec );
+    if( ec || rel.empty( ) || rel == std::filesystem::path( "." ) )
+    {
+        return { };
+    }
+
+    // fileDir IS the subfolder (files are stored directly inside it)
+    return fileDir;
+}
+
+std::string ImageScraper::DownloadHistoryPanel::GetSubfolderLabel( const std::string& filepath )
+{
+    const auto provRoot = GetProviderRoot( filepath );
+    if( provRoot.empty( ) )
+    {
+        return { };
+    }
+
+    const auto fileDir = std::filesystem::path( filepath ).parent_path( );
+    std::error_code ec;
+    const auto rel = std::filesystem::relative( fileDir, provRoot, ec );
+    if( ec || rel.empty( ) || rel == std::filesystem::path( "." ) )
+    {
+        return { };
+    }
+
+    // Use generic_string() so path separators are always forward slashes in the label
+    const std::string subName      = rel.generic_string( );
+    const std::string providerName = provRoot.filename( ).string( );
+
+    if( providerName == "4chan" )
+    {
+        return "/" + subName + "/";
+    }
+
+    if( providerName == "Reddit" )
+    {
+        return "r/" + subName;
+    }
+
+    if( providerName == "Tumblr" )
+    {
+        return "@" + subName;
+    }
+
+    return subName;
 }
 
 void ImageScraper::DownloadHistoryPanel::OnFileDownloaded( const std::string& filepath, const std::string& sourceUrl )

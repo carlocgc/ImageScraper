@@ -158,6 +158,15 @@ bool ImageScraper::VideoPlayer::DecodeNextFrame( std::vector<uint8_t>& rgbaOut )
     }
 }
 
+double ImageScraper::VideoPlayer::GetDuration( ) const
+{
+    if( !m_FormatCtx || m_FormatCtx->duration == AV_NOPTS_VALUE )
+    {
+        return 0.0;
+    }
+    return static_cast<double>( m_FormatCtx->duration ) / static_cast<double>( AV_TIME_BASE );
+}
+
 void ImageScraper::VideoPlayer::SeekToStart( )
 {
     if( !m_FormatCtx )

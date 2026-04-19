@@ -393,7 +393,10 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 RequestResult result = request.Perform( dlOptions );
                 if( !result.m_Success )
                 {
-                    LogError( "[%s] Download failed, error: %s, url: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ), url.c_str( ) );
+                    if( !IsCancelled( ) )
+                    {
+                        LogError( "[%s] Download failed, error: %s, url: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ), url.c_str( ) );
+                    }
                     continue;
                 }
 
