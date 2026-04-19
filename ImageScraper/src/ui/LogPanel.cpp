@@ -54,15 +54,14 @@ void ImageScraper::LogPanel::Update( )
             ImGui::LogToClipboard( );
         }
 
-        const int size = m_LogContent.GetSize( );
-        for( int i = 0; i < size; i++ )
+        for( const LogLine& line : m_LogContent )
         {
-            if( m_LogContent[ i ].m_Level > m_LogLevel )
+            if( line.m_Level > m_LogLevel )
             {
                 continue;
             }
 
-            const char* item = m_LogContent[ i ].m_String.c_str( );
+            const char* item = line.m_String.c_str( );
             if( !m_Filter.PassFilter( item ) )
             {
                 continue;
@@ -70,12 +69,12 @@ void ImageScraper::LogPanel::Update( )
 
             ImVec4 color;
             bool has_color = false;
-            if( m_LogContent[ i ].m_Level == LogLevel::Error )
+            if( line.m_Level == LogLevel::Error )
             {
                 color = ImVec4( 1.0f, 0.4f, 0.4f, 1.0f );
                 has_color = true;
             }
-            else if( m_LogContent[ i ].m_Level == LogLevel::Warning )
+            else if( line.m_Level == LogLevel::Warning )
             {
                 color = ImVec4( 1.0f, 0.8f, 0.0f, 1.0f );
                 has_color = true;
