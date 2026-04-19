@@ -24,7 +24,6 @@ void ImageScraper::MediaPreviewPanel::Update( )
         if( decoded )
         {
             UploadDecoded( *decoded );
-            m_LoadingFileName.clear( );
         }
     }
 
@@ -218,7 +217,6 @@ void ImageScraper::MediaPreviewPanel::ClearPreview( )
     m_VideoPlayer.reset( );
     m_MediaState      = MediaState::None;
     m_CurrentFilePath = "";
-    m_LoadingFileName = "";
     m_LoadingFilePath = "";
 }
 
@@ -299,7 +297,6 @@ void ImageScraper::MediaPreviewPanel::KickDecodeIfNeeded( )
         return;
     }
 
-    m_LoadingFileName = std::filesystem::path( filepath ).filename( ).string( );
     m_LoadingFilePath = filepath;
     m_IsDecoding      = true;
 
@@ -325,7 +322,6 @@ void ImageScraper::MediaPreviewPanel::KickFullGifDecode( )
     }
 
     m_MediaState      = MediaState::LoadingFullFrames;
-    m_LoadingFileName = std::filesystem::path( m_CurrentFilePath ).filename( ).string( );
     m_LoadingFilePath = m_CurrentFilePath;
     m_IsDecoding      = true;
 

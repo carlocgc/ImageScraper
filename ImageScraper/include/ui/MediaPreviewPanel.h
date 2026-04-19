@@ -91,8 +91,7 @@ namespace ImageScraper
 
         std::atomic_bool    m_IsDecoding{ false };
         std::future<void>   m_DecodeFuture{ };
-        std::string         m_LoadingFileName{ };  // filename only, for badge display
-        std::string         m_LoadingFilePath{ };  // full path, for release-file matching
+        std::string         m_LoadingFilePath{ };  // full path of file currently being decoded
         bool                m_ForceLoad{ false };
 
         // Current display state - only touched on the main thread
