@@ -84,6 +84,9 @@
     <ClCompile Include="src\services\OAuthServiceHelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\services\Service.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\requests\fourchan\GetBoardsRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

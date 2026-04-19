@@ -245,6 +245,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\services\DiscordService.cpp" />
     <ClCompile Include="src\services\FourChanService.cpp" />
     <ClCompile Include="src\services\OAuthServiceHelpers.cpp" />
+    <ClCompile Include="src\services\Service.cpp" />
     <ClCompile Include="src\services\TumblrService.cpp" />
     <ClCompile Include="src\services\RedditService.cpp" />
     <ClCompile Include="src\ui\FrontEnd.cpp" />
