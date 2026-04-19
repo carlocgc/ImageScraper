@@ -258,6 +258,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\ui\SearchHistory.cpp" />
     <ClCompile Include="src\ui\DownloadProgressPanel.cpp" />
     <ClCompile Include="src\ui\CredentialsPanel.cpp" />
+    <ClCompile Include="src\ui\MediaPreviewControlPanel.cpp" />
     <ClCompile Include="src\stb\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -376,6 +377,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\ui\SearchHistory.h" />
     <ClInclude Include="include\ui\DownloadProgressPanel.h" />
     <ClInclude Include="include\ui\CredentialsPanel.h" />
+    <ClInclude Include="include\ui\MediaPreviewControlPanel.h" />
     <ClInclude Include="include\stb\stb_image.h" />
     <ClInclude Include="include\utils\DownloadUtils.h" />
     <ClInclude Include="include\utils\RedditUtils.h" />

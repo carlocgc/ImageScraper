@@ -41,8 +41,6 @@ void ImageScraper::MediaPreviewPanel::Update( )
     ImVec2 contentScreenMin{ 0.0f, 0.0f };
     ImVec2 contentScreenMax{ 0.0f, 0.0f };
     bool   windowOpen = false;
-    bool   imageClicked = false;
-
     ImGui::SetNextWindowSize( ImVec2( 480, 480 ), ImGuiCond_FirstUseEver );
 
     if( ImGui::Begin( "Media Preview", nullptr ) )
@@ -102,11 +100,6 @@ void ImageScraper::MediaPreviewPanel::Update( )
             const GLuint tex = m_Textures[ m_CurrentFrame ];
             ImGui::Image( static_cast<ImTextureID>( tex ), ImVec2( drawW, drawH ) );
 
-            if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) )
-            {
-                imageClicked = true;
-            }
-
             if( ImGui::IsItemHovered( ) )
             {
                 ImGui::SetTooltip( "%s", m_CurrentFilePath.c_str( ) );
@@ -114,35 +107,6 @@ void ImageScraper::MediaPreviewPanel::Update( )
         }
     }
     ImGui::End( );
-
-    // Handle click - toggle play/pause
-    if( imageClicked )
-    {
-        if( m_MediaState == MediaState::StaticFrame )
-        {
-            if( m_Textures.size( ) > 1 )
-            {
-                m_MediaState = MediaState::GifPlaying;
-            }
-            else
-            {
-                KickFullGifDecode( );
-            }
-        }
-        else if( m_MediaState == MediaState::GifPlaying )
-        {
-            m_MediaState   = MediaState::StaticFrame;
-            m_FrameAccumMs = 0.0f;
-        }
-        else if( m_MediaState == MediaState::VideoPlaying )
-        {
-            m_MediaState = MediaState::VideoPaused;
-        }
-        else if( m_MediaState == MediaState::VideoPaused )
-        {
-            m_MediaState = MediaState::VideoPlaying;
-        }
-    }
 
     // Foreground badge overlays
     if( windowOpen )
@@ -171,35 +135,6 @@ void ImageScraper::MediaPreviewPanel::Update( )
         {
             const std::string name = std::filesystem::path( m_CurrentFilePath ).filename( ).string( );
             DrawBadge( ImVec2( contentScreenMin.x + k_Pad, badgeY ), name.c_str( ) );
-        }
-
-        // Top-right: context-sensitive status
-        std::string statusMsg;
-        if( m_IsDecoding && m_MediaState == MediaState::LoadingFullFrames )
-        {
-            statusMsg = "Loading: " + m_LoadingFileName;
-        }
-        else if( m_MediaState == MediaState::StaticFrame )
-        {
-            statusMsg = "Click to play";
-        }
-        else if( m_MediaState == MediaState::GifPlaying )
-        {
-            statusMsg = "Click to pause";
-        }
-        else if( m_MediaState == MediaState::VideoPlaying )
-        {
-            statusMsg = "Click to pause";
-        }
-        else if( m_MediaState == MediaState::VideoPaused )
-        {
-            statusMsg = "Click to play";
-        }
-
-        if( !statusMsg.empty( ) )
-        {
-            const ImVec2 sz = ImGui::CalcTextSize( statusMsg.c_str( ) );
-            DrawBadge( ImVec2( contentScreenMax.x - sz.x - k_Pad, badgeY ), statusMsg.c_str( ) );
         }
 
         // Bottom-left: frame counter while GIF is playing or paused
@@ -270,6 +205,48 @@ void ImageScraper::MediaPreviewPanel::ClearPreview( )
     m_MediaState      = MediaState::None;
     m_CurrentFilePath = "";
     m_LoadingFileName = "";
+}
+
+void ImageScraper::MediaPreviewPanel::TogglePlayPause( )
+{
+    if( m_MediaState == MediaState::StaticFrame )
+    {
+        if( m_Textures.size( ) > 1 )
+        {
+            m_MediaState = MediaState::GifPlaying;
+        }
+        else
+        {
+            KickFullGifDecode( );
+        }
+    }
+    else if( m_MediaState == MediaState::GifPlaying )
+    {
+        m_MediaState   = MediaState::StaticFrame;
+        m_FrameAccumMs = 0.0f;
+    }
+    else if( m_MediaState == MediaState::VideoPlaying )
+    {
+        m_MediaState = MediaState::VideoPaused;
+    }
+    else if( m_MediaState == MediaState::VideoPaused )
+    {
+        m_MediaState = MediaState::VideoPlaying;
+    }
+}
+
+bool ImageScraper::MediaPreviewPanel::IsPlaying( ) const
+{
+    return m_MediaState == MediaState::GifPlaying ||
+           m_MediaState == MediaState::VideoPlaying;
+}
+
+bool ImageScraper::MediaPreviewPanel::CanPlayPause( ) const
+{
+    return m_MediaState == MediaState::StaticFrame  ||
+           m_MediaState == MediaState::GifPlaying   ||
+           m_MediaState == MediaState::VideoPlaying ||
+           m_MediaState == MediaState::VideoPaused;
 }
 
 void ImageScraper::MediaPreviewPanel::KickDecodeIfNeeded( )

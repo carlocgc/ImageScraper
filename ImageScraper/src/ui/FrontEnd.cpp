@@ -28,6 +28,8 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     m_DownloadHistoryPanel  = std::make_unique<DownloadHistoryPanel>(
         [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->RequestPreview( filepath ); } );
     m_CredentialsPanel      = std::make_unique<CredentialsPanel>( userConfig );
+    m_MediaPreviewControlPanel = std::make_unique<MediaPreviewControlPanel>(
+        m_MediaPreviewPanel.get( ), m_DownloadHistoryPanel.get( ) );
     m_DownloadHistoryPanel->Load( appConfig );
     m_DownloadOptionsPanel->LoadPanelState( appConfig );
 
@@ -117,6 +119,7 @@ void ImageScraper::FrontEnd::Update( )
 
     m_CredentialsPanel->Update( );
     m_MediaPreviewPanel->Update( );
+    m_MediaPreviewControlPanel->Update( );
     m_DownloadHistoryPanel->SetBlocked(
         m_DownloadOptionsPanel->IsRunning( ) ||
         m_DownloadOptionsPanel->GetSigningInProvider( ) != INVALID_CONTENT_PROVIDER );
@@ -189,12 +192,18 @@ void ImageScraper::FrontEnd::SetupDefaultLayout( ImGuiID dockspaceId )
     ImGuiID dockTopLeft, dockBottomLeft;
     ImGui::DockBuilderSplitNode( dockLeft, ImGuiDir_Up, 350.0f / 841.0f, &dockTopLeft, &dockBottomLeft );
 
+    // Split right node: narrow controls strip at the bottom, main preview above
+    ImGuiID dockRightMain, dockRightControls;
+    ImGui::DockBuilderSplitNode( dockRight, ImGuiDir_Down, 80.0f / 841.0f,
+                                 &dockRightControls, &dockRightMain );
+
     // Dock all panels
-    ImGui::DockBuilderDockWindow( "Download Options", dockTopLeft );
-    ImGui::DockBuilderDockWindow( "Credentials",      dockTopLeft );
-    ImGui::DockBuilderDockWindow( "Output",           dockBottomLeft );
-    ImGui::DockBuilderDockWindow( "Download History", dockBottomLeft );
-    ImGui::DockBuilderDockWindow( "Media Preview",    dockRight );
+    ImGui::DockBuilderDockWindow( "Download Options",  dockTopLeft );
+    ImGui::DockBuilderDockWindow( "Credentials",       dockTopLeft );
+    ImGui::DockBuilderDockWindow( "Output",            dockBottomLeft );
+    ImGui::DockBuilderDockWindow( "Download History",  dockBottomLeft );
+    ImGui::DockBuilderDockWindow( "Media Preview",     dockRightMain );
+    ImGui::DockBuilderDockWindow( "Media Controls",    dockRightControls );
     ImGui::DockBuilderDockWindow( "Download Progress", dockBottom );
 
 #ifdef _DEBUG
