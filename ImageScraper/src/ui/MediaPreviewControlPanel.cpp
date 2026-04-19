@@ -98,27 +98,38 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         return { pressed, center, iconCol };
     };
 
-    // --- Back (◄◄) - toward oldest ---
+    // --- Back (|◄◄) - toward oldest ---
     {
         auto [ pressed, center, iconCol ] = CircleBtn( "##back", 0.f, navOffY, k_NavR, !canGoBack );
 
-        // Two left-pointing solid triangles, pair centred on the button
-        const float tw = k_NavR * 0.38f;   // horizontal extent of each triangle
-        const float th = k_NavR * 0.35f;   // vertical half-height of each triangle
-        const float sp = k_NavR * 0.28f;   // gap between the two triangles
+        // Two left-pointing triangles (slightly overlapping) + vertical bar on the left (tip) side
+        const float tw     = k_NavR * 0.36f;   // each triangle's horizontal width
+        const float th     = k_NavR * 0.40f;   // each triangle's vertical half-height
+        const float ov     = k_NavR * 0.07f;   // overlap between the two triangles
+        const float bw     = k_NavR * 0.10f;   // bar width
+        const float bg     = k_NavR * 0.04f;   // gap between bar and first triangle tip
+        const float totalW = tw + ( tw - ov ) + bg + bw;
+        const float rx     = center.x + totalW * 0.5f;  // right edge of icon
 
-        // Left triangle of the pair
+        // Right triangle of pair (rightmost, drawn first so left one overlaps it)
         dl->AddTriangleFilled(
-            ImVec2( center.x - tw - sp * 0.5f, center.y ),        // tip
-            ImVec2( center.x - sp * 0.5f,       center.y - th ),   // top-right
-            ImVec2( center.x - sp * 0.5f,       center.y + th ),   // bottom-right
+            ImVec2( rx,           center.y - th ),   // base top
+            ImVec2( rx,           center.y + th ),   // base bottom
+            ImVec2( rx - tw,      center.y ),         // tip
             iconCol );
 
-        // Right triangle of the pair
+        // Left triangle of pair (overlaps the right one slightly)
         dl->AddTriangleFilled(
-            ImVec2( center.x + sp * 0.5f,        center.y ),        // tip
-            ImVec2( center.x + tw + sp * 0.5f,   center.y - th ),   // top-right
-            ImVec2( center.x + tw + sp * 0.5f,   center.y + th ),   // bottom-right
+            ImVec2( rx - tw + ov,          center.y - th ),   // base top
+            ImVec2( rx - tw + ov,          center.y + th ),   // base bottom
+            ImVec2( rx - 2.f * tw + ov,   center.y ),         // tip
+            iconCol );
+
+        // Vertical bar on the left (tip) side
+        const float barRight = rx - 2.f * tw + ov - bg;
+        dl->AddRectFilled(
+            ImVec2( barRight - bw, center.y - th ),
+            ImVec2( barRight,      center.y + th ),
             iconCol );
 
         if( pressed )
@@ -162,27 +173,38 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         }
     }
 
-    // --- Forward (►►) - toward latest ---
+    // --- Forward (►►|) - toward latest ---
     {
         auto [ pressed, center, iconCol ] = CircleBtn( "##forward", k_NavDia + k_Spacing + k_PlayDia + k_Spacing, navOffY, k_NavR, !canGoForward );
 
-        // Two right-pointing solid triangles, pair centred on the button
-        const float tw = k_NavR * 0.38f;
-        const float th = k_NavR * 0.35f;
-        const float sp = k_NavR * 0.28f;
+        // Two right-pointing triangles (slightly overlapping) + vertical bar on the right (tip) side
+        const float tw     = k_NavR * 0.36f;
+        const float th     = k_NavR * 0.40f;
+        const float ov     = k_NavR * 0.07f;
+        const float bw     = k_NavR * 0.10f;
+        const float bg     = k_NavR * 0.04f;
+        const float totalW = tw + ( tw - ov ) + bg + bw;
+        const float lx     = center.x - totalW * 0.5f;  // left edge of icon
 
-        // Left triangle of the pair
+        // Left triangle of pair (drawn first so right one overlaps it)
         dl->AddTriangleFilled(
-            ImVec2( center.x - tw - sp * 0.5f,  center.y - th ),   // top-left
-            ImVec2( center.x - tw - sp * 0.5f,  center.y + th ),   // bottom-left
-            ImVec2( center.x - sp * 0.5f,        center.y ),        // tip
+            ImVec2( lx,           center.y - th ),   // base top
+            ImVec2( lx,           center.y + th ),   // base bottom
+            ImVec2( lx + tw,      center.y ),         // tip
             iconCol );
 
-        // Right triangle of the pair
+        // Right triangle of pair (overlaps the left one slightly)
         dl->AddTriangleFilled(
-            ImVec2( center.x + sp * 0.5f,        center.y - th ),   // top-left
-            ImVec2( center.x + sp * 0.5f,        center.y + th ),   // bottom-left
-            ImVec2( center.x + tw + sp * 0.5f,   center.y ),        // tip
+            ImVec2( lx + tw - ov,          center.y - th ),   // base top
+            ImVec2( lx + tw - ov,          center.y + th ),   // base bottom
+            ImVec2( lx + 2.f * tw - ov,   center.y ),         // tip
+            iconCol );
+
+        // Vertical bar on the right (tip) side
+        const float barLeft = lx + 2.f * tw - ov + bg;
+        dl->AddRectFilled(
+            ImVec2( barLeft,      center.y - th ),
+            ImVec2( barLeft + bw, center.y + th ),
             iconCol );
 
         if( pressed )
