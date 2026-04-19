@@ -554,6 +554,12 @@ void ImageScraper::DownloadHistoryPanel::FlushPending( )
         m_History.Push( std::move( entry ) );
     }
 
+    // Select the newest entry (the last one pushed) so the history highlight
+    // tracks the file that was just shown in the media preview.
+    m_SelectedIndex    = m_History.GetSize( ) - 1;
+    m_ScrollToSelected = true;
+    SaveSelectedPath( );
+
     Save( );
 }
 
