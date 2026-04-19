@@ -98,13 +98,28 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         return { pressed, center, iconCol };
     };
 
-    // --- Back (<<) - toward oldest ---
+    // --- Back (◄◄) - toward oldest ---
     {
         auto [ pressed, center, iconCol ] = CircleBtn( "##back", 0.f, navOffY, k_NavR, !canGoBack );
 
-        const char*  label = "<<";
-        const ImVec2 sz    = ImGui::CalcTextSize( label );
-        dl->AddText( ImVec2( center.x - sz.x * 0.5f, center.y - sz.y * 0.5f ), iconCol, label );
+        // Two left-pointing solid triangles, pair centred on the button
+        const float tw = k_NavR * 0.38f;   // horizontal extent of each triangle
+        const float th = k_NavR * 0.35f;   // vertical half-height of each triangle
+        const float sp = k_NavR * 0.28f;   // gap between the two triangles
+
+        // Left triangle of the pair
+        dl->AddTriangleFilled(
+            ImVec2( center.x - tw - sp * 0.5f, center.y ),        // tip
+            ImVec2( center.x - sp * 0.5f,       center.y - th ),   // top-right
+            ImVec2( center.x - sp * 0.5f,       center.y + th ),   // bottom-right
+            iconCol );
+
+        // Right triangle of the pair
+        dl->AddTriangleFilled(
+            ImVec2( center.x + sp * 0.5f,        center.y ),        // tip
+            ImVec2( center.x + tw + sp * 0.5f,   center.y - th ),   // top-right
+            ImVec2( center.x + tw + sp * 0.5f,   center.y + th ),   // bottom-right
+            iconCol );
 
         if( pressed )
         {
@@ -147,13 +162,28 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         }
     }
 
-    // --- Forward (>>) - toward latest ---
+    // --- Forward (►►) - toward latest ---
     {
         auto [ pressed, center, iconCol ] = CircleBtn( "##forward", k_NavDia + k_Spacing + k_PlayDia + k_Spacing, navOffY, k_NavR, !canGoForward );
 
-        const char*  label = ">>";
-        const ImVec2 sz    = ImGui::CalcTextSize( label );
-        dl->AddText( ImVec2( center.x - sz.x * 0.5f, center.y - sz.y * 0.5f ), iconCol, label );
+        // Two right-pointing solid triangles, pair centred on the button
+        const float tw = k_NavR * 0.38f;
+        const float th = k_NavR * 0.35f;
+        const float sp = k_NavR * 0.28f;
+
+        // Left triangle of the pair
+        dl->AddTriangleFilled(
+            ImVec2( center.x - tw - sp * 0.5f,  center.y - th ),   // top-left
+            ImVec2( center.x - tw - sp * 0.5f,  center.y + th ),   // bottom-left
+            ImVec2( center.x - sp * 0.5f,        center.y ),        // tip
+            iconCol );
+
+        // Right triangle of the pair
+        dl->AddTriangleFilled(
+            ImVec2( center.x + sp * 0.5f,        center.y - th ),   // top-left
+            ImVec2( center.x + sp * 0.5f,        center.y + th ),   // bottom-left
+            ImVec2( center.x + tw + sp * 0.5f,   center.y ),        // tip
+            iconCol );
 
         if( pressed )
         {
