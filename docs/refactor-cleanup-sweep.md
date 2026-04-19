@@ -322,7 +322,7 @@ Recommended refactor:
 ### Phase 2: Shared workflow extraction
 
 - [ ] Shared download/write pipeline
-- [ ] Shared OAuth-backed service behavior
+- [x] Shared OAuth-backed service behavior
 - [ ] Shared provider-panel search input helper
 
 ### Phase 3: Iteration and container cleanup
