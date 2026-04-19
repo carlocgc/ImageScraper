@@ -16,8 +16,9 @@
 #include <cctype>
 #include <unordered_set>
 
-ImageScraper::DownloadHistoryPanel::DownloadHistoryPanel( PreviewCallback onPreviewRequested )
+ImageScraper::DownloadHistoryPanel::DownloadHistoryPanel( PreviewCallback onPreviewRequested, ReleaseCallback onReleaseRequested )
     : m_OnPreviewRequested{ std::move( onPreviewRequested ) }
+    , m_OnReleaseRequested{ std::move( onReleaseRequested ) }
 {
 }
 
@@ -62,6 +63,13 @@ void ImageScraper::DownloadHistoryPanel::Update( )
     if( ImGui::Button( "Delete Selected", ImVec2( 0, 0 ) ) )
     {
         const std::string filepath = m_History[ m_SelectedIndex ].m_FilePath;
+
+        // Release any open handle in the media preview before attempting deletion.
+        if( m_OnReleaseRequested )
+        {
+            m_OnReleaseRequested( filepath );
+        }
+
         std::error_code ec;
         std::filesystem::remove( filepath, ec );
         if( ec )
@@ -69,10 +77,13 @@ void ImageScraper::DownloadHistoryPanel::Update( )
             WarningLog( "[%s] Failed to delete file: %s",
                         __FUNCTION__, ec.message( ).c_str( ) );
         }
-        EvictThumbnail( filepath );
-        m_History.RemoveAt( m_SelectedIndex );
-        AdvanceSelectionAndPreview( );
-        Save( );
+        else
+        {
+            EvictThumbnail( filepath );
+            m_History.RemoveAt( m_SelectedIndex );
+            AdvanceSelectionAndPreview( );
+            Save( );
+        }
     }
     ImGui::EndDisabled( );
 
@@ -108,6 +119,13 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         {
             const auto providerRoot =
                 GetProviderRoot( m_History[ m_SelectedIndex ].m_FilePath );
+
+            // Clear the media preview before deleting so any open file handle is released.
+            if( m_OnPreviewRequested )
+            {
+                m_OnPreviewRequested( "" );
+            }
+
             std::error_code ec;
             std::filesystem::remove_all( providerRoot, ec );
             if( ec )
@@ -115,6 +133,8 @@ void ImageScraper::DownloadHistoryPanel::Update( )
                 LogError( "[%s] Failed to delete %s downloads: %s",
                           __FUNCTION__, providerName.c_str( ), ec.message( ).c_str( ) );
             }
+
+            // Only remove history entries for files that were actually deleted.
             RemoveEntriesWithPrefix( providerRoot.string( ) );
             AdvanceSelectionAndPreview( );
             ImGui::CloseCurrentPopup( );
@@ -234,17 +254,25 @@ void ImageScraper::DownloadHistoryPanel::Update( )
     {
         const std::string filepath = m_History[ m_SelectedIndex ].m_FilePath;
 
+        // Release any open handle in the media preview before attempting deletion.
+        if( m_OnReleaseRequested )
+        {
+            m_OnReleaseRequested( filepath );
+        }
+
         std::error_code ec;
         std::filesystem::remove( filepath, ec );
         if( ec )
         {
             WarningLog( "[%s] Failed to delete file: %s", __FUNCTION__, ec.message( ).c_str( ) );
         }
-
-        EvictThumbnail( filepath );
-        m_History.RemoveAt( m_SelectedIndex );
-        AdvanceSelectionAndPreview( );
-        Save( );
+        else
+        {
+            EvictThumbnail( filepath );
+            m_History.RemoveAt( m_SelectedIndex );
+            AdvanceSelectionAndPreview( );
+            Save( );
+        }
     }
 
     ImGui::End( );
@@ -260,6 +288,12 @@ void ImageScraper::DownloadHistoryPanel::RemoveEntriesWithPrefix( const std::str
         const std::string& fp     = m_History[ i ].m_FilePath;
         const std::string  native = std::filesystem::path( fp ).make_preferred( ).string( );
         if( native.rfind( prefix, 0 ) != 0 )
+        {
+            continue;
+        }
+
+        // Only remove the history entry if the file was actually deleted from disk.
+        if( std::filesystem::exists( fp ) )
         {
             continue;
         }
