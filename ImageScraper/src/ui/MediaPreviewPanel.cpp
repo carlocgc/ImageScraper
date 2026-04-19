@@ -228,6 +228,16 @@ void ImageScraper::MediaPreviewPanel::RequestPreview( const std::string& filepat
         m_HasLatestPath = true;
     }
     m_ForceLoad = true;
+
+    // Immediately clear the displayed content so the panel shows blank rather than
+    // stale media from the previous item while the new decode is pending or in-flight.
+    // m_LoadingFilePath is intentionally kept so ReleaseFileIfCurrent can still
+    // recognise an in-flight decode for the old file and wait for it before deletion.
+    FreeTextures( );
+    m_VideoPlayer.reset( );
+    m_MediaState      = MediaState::None;
+    m_CurrentFilePath = "";
+    m_VideoFrameIndex = 0;
 }
 
 void ImageScraper::MediaPreviewPanel::ClearPreview( )
