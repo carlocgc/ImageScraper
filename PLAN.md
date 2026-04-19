@@ -108,6 +108,11 @@
 ### Code quality
 - [x] Replace `#define` UI constants with `constexpr` — moved 14 integer constants in `ServiceOptionTypes.h` into the `ImageScraper` namespace as `constexpr int` (`INVALID_CONTENT_PROVIDER` was already `constexpr`)
 - [x] `Reset()` should be called explicitly rather than implicitly from `SetInputState` — removed side effect from `SetInputState`; `OnRunComplete` now calls `Reset()` explicitly; `FrontEnd::OnRunComplete` delegates to `DownloadOptionsPanel::OnRunComplete` directly
+- [ ] `RingBuffer::operator[]` — change `int` parameter to `size_t` to match the semantic type of a container index and eliminate the `i < 0` guard (which is only needed because the parameter is signed); requires updating all call sites:
+  - All forward loops using `int` loop variables with `GetSize()` need their loop variable type changed to `size_t` and comparisons with `GetSize()` updated to match
+  - All backward loops of the form `for( int i = size - 1; i >= 0; --i )` must be rewritten — decrementing a `size_t` past zero wraps to `SIZE_MAX`; use the post-decrement idiom `for( size_t i = m_History.GetSize(); i-- > 0; )` instead
+  - `m_SelectedIndex` is `int` with `-1` as its "nothing selected" sentinel so it cannot become `size_t`; every `operator[]` call that passes `m_SelectedIndex` will need `static_cast<size_t>( m_SelectedIndex )` (the surrounding bounds checks already ensure it is non-negative at those points)
+  - Consider also changing `GetSize()` and `GetCapacity()` return types to `size_t` and `RemoveAt()` parameter to `size_t` for full consistency; the same loop-rewrite implications apply to `GetSize()`
 
 ### Authentication & Session Management
 - [x] Reddit sign-out — local-only token clear (server-side revocation deferred)
