@@ -1,4 +1,5 @@
 #include "services/RedditService.h"
+#include "services/OAuthServiceHelpers.h"
 #include "requests/RequestTypes.h"
 #include "requests/reddit/FetchSubredditPostsRequest.h"
 #include "requests/reddit/AppOnlyAuthRequest.h"
@@ -18,8 +19,6 @@
 #include <string>
 #include <map>
 #include <mutex>
-
-#include <Shellapi.h>
 
 using namespace ImageScraper::Reddit;
 using Json = nlohmann::json;
@@ -86,53 +85,15 @@ bool ImageScraper::RedditService::HasRequiredCredentials( ) const
 
 bool ImageScraper::RedditService::OpenExternalAuth( )
 {
-    return m_OAuthClient->OpenAuth( );
+    return OAuthServiceHelpers::OpenExternalAuth( *m_OAuthClient );
 }
 
 bool ImageScraper::RedditService::HandleExternalAuth( const std::string& response )
 {
-    const int signingInProvider = m_Sink->GetSigningInProvider( );
-    if( signingInProvider == INVALID_CONTENT_PROVIDER )
-    {
-        LogError( "[%s] RedditService::HandleExternalAuth skipped, No signing in provider!", __FUNCTION__ );
-        return false;
-    }
-
-    if( static_cast< ContentProvider >( signingInProvider ) != m_ContentProvider )
-    {
-        LogDebug( "[%s] RedditService::HandleExternalAuth skipped, incorrect provider!", __FUNCTION__ );
-        return false;
-    }
-
-    if( response.find( "favicon" ) != std::string::npos )
-    {
-        LogDebug( "[%s] RedditService::HandleExternalAuth skipped, invalid message!", __FUNCTION__ );
-        return false;
-    }
-
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, response ]( )
+    return OAuthServiceHelpers::HandleExternalAuth( m_ContentProvider, GetProviderDisplayName( ), m_Sink, *m_OAuthClient, response, [ this ]( )
         {
-            if( m_OAuthClient->HandleAuth( response, "Reddit" ) )
-            {
-                FetchCurrentUser( );
-                TaskManager::Instance( ).SubmitMain( [ this ]( )
-                    {
-                        m_Sink->OnSignInComplete( ContentProvider::Reddit );
-                        InfoLog( "[%s] Reddit signed in successfully!", __FUNCTION__ );
-                    } );
-            }
-            else
-            {
-                TaskManager::Instance( ).SubmitMain( [ this ]( )
-                    {
-                        m_Sink->OnSignInComplete( ContentProvider::Reddit );
-                        LogError( "[%s] Reddit sign in failed.", __FUNCTION__ );
-                    } );
-            }
+            FetchCurrentUser( );
         } );
-
-    ( void )task;
-    return true;
 }
 
 bool ImageScraper::RedditService::IsSignedIn( ) const
@@ -151,32 +112,10 @@ std::string ImageScraper::RedditService::GetSignedInUser( ) const
 
 void ImageScraper::RedditService::Authenticate( AuthenticateCallback callback )
 {
-    auto onComplete = [ this, completeCallback = callback ]( )
-    {
-        completeCallback( m_ContentProvider, true );
-        LogDebug( "[%s] Reddit authenticated successfully!", __FUNCTION__ );
-    };
-
-    auto onFail = [ this, completeCallback = callback ]( )
-    {
-        completeCallback( m_ContentProvider, false );
-        LogDebug( "[%s] Reddit authentication failed.", __FUNCTION__ );
-    };
-
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, onComplete, onFail ]( )
+    OAuthServiceHelpers::Authenticate( m_ContentProvider, GetProviderDisplayName( ), *m_OAuthClient, callback, [ this ]( )
         {
-            if( m_OAuthClient->TryRefreshToken( ) )
-            {
-                FetchCurrentUser( );
-                onComplete( );
-            }
-            else
-            {
-                onFail( );
-            }
+            FetchCurrentUser( );
         } );
-
-    ( void )task;
 }
 
 bool ImageScraper::RedditService::IsCancelled( )
@@ -192,13 +131,11 @@ void ImageScraper::RedditService::SignOut( )
     // For a desktop app the security trade-off is acceptable - tokens live only on
     // the user's machine and the refresh token is deleted locally, so it cannot be
     // reused. Local-only clear gives instant, clean sign-out with no UX penalty.
-    m_OAuthClient->SignOut( );
-    {
-        std::unique_lock<std::mutex> lock( m_UsernameMutex );
-        m_Username.clear( );
-    }
-
-    InfoLog( "[%s] Reddit signed out.", __FUNCTION__ );
+    OAuthServiceHelpers::SignOut( GetProviderDisplayName( ), *m_OAuthClient, [ this ]( )
+        {
+            std::unique_lock<std::mutex> lock( m_UsernameMutex );
+            m_Username.clear( );
+        } );
 }
 
 void ImageScraper::RedditService::FetchCurrentUser( )
