@@ -14,6 +14,25 @@ ImageScraper::MediaPreviewPanel::~MediaPreviewPanel( )
 
 void ImageScraper::MediaPreviewPanel::Update( )
 {
+    // Apply any deferred display clear requested by RequestPreview.
+    // Must happen before the upload block so we drain m_PendingDecoded first
+    // and don't immediately re-display the old item.
+    if( m_PendingClear )
+    {
+        m_PendingClear = false;
+
+        {
+            std::lock_guard<std::mutex> lock( m_DecodedMutex );
+            m_PendingDecoded.reset( );
+        }
+
+        FreeTextures( );
+        m_VideoPlayer.reset( );
+        m_MediaState      = MediaState::None;
+        m_CurrentFilePath = "";
+        m_VideoFrameIndex = 0;
+    }
+
     // Upload any newly decoded image/GIF (GPU buffer copies - main thread only)
     {
         std::unique_ptr<DecodedImage> decoded;
@@ -229,15 +248,13 @@ void ImageScraper::MediaPreviewPanel::RequestPreview( const std::string& filepat
     }
     m_ForceLoad = true;
 
-    // Immediately clear the displayed content so the panel shows blank rather than
-    // stale media from the previous item while the new decode is pending or in-flight.
-    // m_LoadingFilePath is intentionally kept so ReleaseFileIfCurrent can still
-    // recognise an in-flight decode for the old file and wait for it before deletion.
-    FreeTextures( );
-    m_VideoPlayer.reset( );
-    m_MediaState      = MediaState::None;
-    m_CurrentFilePath = "";
-    m_VideoFrameIndex = 0;
+    // Request a display clear deferred to the start of the next Update() frame.
+    // Doing it there (rather than here) ensures GL texture deletion and state
+    // mutations happen inside the render loop, and that m_PendingDecoded is
+    // drained before any upload check runs for the new item.
+    // m_LoadingFilePath is left intact so ReleaseFileIfCurrent can still match
+    // an in-flight decode for the old file and wait on it before file deletion.
+    m_PendingClear = true;
 }
 
 void ImageScraper::MediaPreviewPanel::ClearPreview( )
