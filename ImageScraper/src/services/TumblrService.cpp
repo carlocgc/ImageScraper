@@ -1,4 +1,5 @@
 #include "services/TumblrService.h"
+#include "services/OAuthServiceHelpers.h"
 #include "io/JsonFile.h"
 #include "log/Logger.h"
 #include "async/TaskManager.h"
@@ -15,8 +16,6 @@
 
 #include <string>
 #include <mutex>
-
-#include <Shellapi.h>
 
 using namespace ImageScraper::Tumblr;
 using Json = nlohmann::json;
@@ -97,53 +96,15 @@ bool ImageScraper::TumblrService::HandleUserInput( const UserInputOptions& optio
 
 bool ImageScraper::TumblrService::OpenExternalAuth( )
 {
-    return m_OAuthClient->OpenAuth( );
+    return OAuthServiceHelpers::OpenExternalAuth( *m_OAuthClient );
 }
 
 bool ImageScraper::TumblrService::HandleExternalAuth( const std::string& response )
 {
-    const int signingInProvider = m_Sink->GetSigningInProvider( );
-    if( signingInProvider == INVALID_CONTENT_PROVIDER )
-    {
-        LogError( "[%s] TumblrService::HandleExternalAuth skipped, no signing in provider!", __FUNCTION__ );
-        return false;
-    }
-
-    if( static_cast< ContentProvider >( signingInProvider ) != m_ContentProvider )
-    {
-        LogDebug( "[%s] TumblrService::HandleExternalAuth skipped, incorrect provider!", __FUNCTION__ );
-        return false;
-    }
-
-    if( response.find( "favicon" ) != std::string::npos )
-    {
-        LogDebug( "[%s] TumblrService::HandleExternalAuth skipped, invalid message!", __FUNCTION__ );
-        return false;
-    }
-
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, response ]( )
+    return OAuthServiceHelpers::HandleExternalAuth( m_ContentProvider, GetProviderDisplayName( ), m_Sink, *m_OAuthClient, response, [ this ]( )
         {
-            if( m_OAuthClient->HandleAuth( response, "Tumblr" ) )
-            {
-                FetchCurrentUser( );
-                TaskManager::Instance( ).SubmitMain( [ this ]( )
-                    {
-                        m_Sink->OnSignInComplete( ContentProvider::Tumblr );
-                        InfoLog( "[%s] Tumblr signed in successfully!", __FUNCTION__ );
-                    } );
-            }
-            else
-            {
-                TaskManager::Instance( ).SubmitMain( [ this ]( )
-                    {
-                        m_Sink->OnSignInComplete( ContentProvider::Tumblr );
-                        LogError( "[%s] Tumblr sign in failed.", __FUNCTION__ );
-                    } );
-            }
+            FetchCurrentUser( );
         } );
-
-    ( void )task;
-    return true;
 }
 
 bool ImageScraper::TumblrService::IsSignedIn( ) const
@@ -159,32 +120,10 @@ std::string ImageScraper::TumblrService::GetSignedInUser( ) const
 
 void ImageScraper::TumblrService::Authenticate( AuthenticateCallback callback )
 {
-    auto onComplete = [ this, completeCallback = callback ]( )
-    {
-        completeCallback( m_ContentProvider, true );
-        LogDebug( "[%s] Tumblr authenticated successfully!", __FUNCTION__ );
-    };
-
-    auto onFail = [ this, completeCallback = callback ]( )
-    {
-        completeCallback( m_ContentProvider, false );
-        LogDebug( "[%s] Tumblr authentication failed.", __FUNCTION__ );
-    };
-
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, onComplete, onFail ]( )
+    OAuthServiceHelpers::Authenticate( m_ContentProvider, GetProviderDisplayName( ), *m_OAuthClient, callback, [ this ]( )
         {
-            if( m_OAuthClient->TryRefreshToken( ) )
-            {
-                FetchCurrentUser( );
-                onComplete( );
-            }
-            else
-            {
-                onFail( );
-            }
+            FetchCurrentUser( );
         } );
-
-    ( void )task;
 }
 
 bool ImageScraper::TumblrService::IsCancelled( )
@@ -194,13 +133,11 @@ bool ImageScraper::TumblrService::IsCancelled( )
 
 void ImageScraper::TumblrService::SignOut( )
 {
-    m_OAuthClient->SignOut( );
-    {
-        std::unique_lock<std::mutex> lock( m_UsernameMutex );
-        m_Username.clear( );
-    }
-
-    InfoLog( "[%s] Tumblr signed out.", __FUNCTION__ );
+    OAuthServiceHelpers::SignOut( GetProviderDisplayName( ), *m_OAuthClient, [ this ]( )
+        {
+            std::unique_lock<std::mutex> lock( m_UsernameMutex );
+            m_Username.clear( );
+        } );
 }
 
 void ImageScraper::TumblrService::FetchCurrentUser( )
