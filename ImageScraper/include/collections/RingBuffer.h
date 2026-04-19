@@ -132,22 +132,22 @@ namespace ImageScraper
 
         T& operator[]( const int i )
         {
-            if( i >= static_cast<int>( m_Size ) )
+            if( i < 0 || i >= static_cast<int>( m_Size ) )
             {
                 throw std::out_of_range( "Index out of range" );
             }
 
-            return m_Buffer[ ( m_Start + i ) % m_Buffer.size( ) ];
+            return m_Buffer[ ( m_Start + static_cast<std::size_t>( i ) ) % m_Buffer.size( ) ];
         }
 
         const T& operator[]( const int i ) const
         {
-            if( i >= static_cast<int>( m_Size ) )
+            if( i < 0 || i >= static_cast<int>( m_Size ) )
             {
                 throw std::out_of_range( "Index out of range" );
             }
 
-            return m_Buffer[ ( m_Start + i ) % m_Buffer.size( ) ];
+            return m_Buffer[ ( m_Start + static_cast<std::size_t>( i ) ) % m_Buffer.size( ) ];
         }
 
     private:
