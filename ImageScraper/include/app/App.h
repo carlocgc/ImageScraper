@@ -1,5 +1,6 @@
 #pragma once
 
+#include "services/ServiceOptionTypes.h"
 #include "traits/TypeTraits.h"
 
 #include <memory>
@@ -27,6 +28,7 @@ namespace ImageScraper
 
     private:
         void AuthenticateServices( );
+        void OnServiceAuthenticationComplete( ContentProvider provider, bool success );
 
         std::shared_ptr<JsonFile> m_AppConfig{ nullptr };
         std::shared_ptr<JsonFile> m_UserConfig{ nullptr };

@@ -33,6 +33,12 @@ namespace ImageScraper
         void OnSignInComplete( ContentProvider provider );
 
     private:
+        bool IsInputBlocked( ) const { return m_InputState == InputState::Blocked; }
+        void BeginRun( );
+        void FinishRun( );
+        void RequestCancel( );
+        void BeginSignIn( ContentProvider provider );
+        void CompleteSignIn( ContentProvider provider );
         void UpdateProviderWidgets( );
         void UpdateSignInButton( );
         void UpdateRunCancelButton( );
@@ -40,7 +46,6 @@ namespace ImageScraper
 
         bool HandleUserInput( );
         void OpenWarning( const std::string& message );
-        void Reset( );
         void CancelSignIn( );
 
         IProviderPanel*          GetActivePanel( ) const;

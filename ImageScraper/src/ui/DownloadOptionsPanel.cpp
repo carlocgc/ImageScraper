@@ -79,10 +79,7 @@ void ImageScraper::DownloadOptionsPanel::Update( )
             IM_COL32( 100, 180, 255, 220 ) );
     }
 
-    if( HandleUserInput( ) )
-    {
-        SetInputState( InputState::Blocked );
-    }
+    HandleUserInput( );
 }
 
 void ImageScraper::DownloadOptionsPanel::SetInputState( InputState state )
@@ -92,23 +89,53 @@ void ImageScraper::DownloadOptionsPanel::SetInputState( InputState state )
 
 void ImageScraper::DownloadOptionsPanel::OnRunComplete( )
 {
+    FinishRun( );
     SetInputState( InputState::Free );
-    Reset( );
 }
 
 void ImageScraper::DownloadOptionsPanel::OnSignInComplete( ContentProvider provider )
 {
-    const int signingInProvider = m_SigningInProvider.load( );
+    CompleteSignIn( provider );
+}
 
-    if( signingInProvider != static_cast<int>( provider ) )
+void ImageScraper::DownloadOptionsPanel::BeginRun( )
+{
+    m_Running = true;
+    m_DownloadCancelled.store( false );
+}
+
+void ImageScraper::DownloadOptionsPanel::FinishRun( )
+{
+    m_Running = false;
+    m_StartProcess = false;
+    m_DownloadCancelled.store( false );
+}
+
+void ImageScraper::DownloadOptionsPanel::RequestCancel( )
+{
+    if( m_Running )
     {
-        LogError( "[%s] Tried to complete sign in for an invalid provider!", __FUNCTION__ );
+        m_DownloadCancelled.store( true );
+    }
+}
+
+void ImageScraper::DownloadOptionsPanel::BeginSignIn( ContentProvider provider )
+{
+    m_SigningInProvider.store( static_cast<int>( provider ) );
+}
+
+void ImageScraper::DownloadOptionsPanel::CompleteSignIn( ContentProvider provider )
+{
+    const int signingInProvider = m_SigningInProvider.load( );
+    if( signingInProvider == INVALID_CONTENT_PROVIDER )
+    {
+        LogDebug( "[%s] Sign in completion ignored, no sign in is active.", __FUNCTION__ );
         return;
     }
 
-    if( signingInProvider == INVALID_CONTENT_PROVIDER )
+    if( signingInProvider != static_cast<int>( provider ) )
     {
-        LogError( "[%s] Tried to complete sign in when no sign in was started!", __FUNCTION__ );
+        LogDebug( "[%s] Sign in completion ignored for inactive provider.", __FUNCTION__ );
         return;
     }
 
@@ -117,7 +144,7 @@ void ImageScraper::DownloadOptionsPanel::OnSignInComplete( ContentProvider provi
 
 void ImageScraper::DownloadOptionsPanel::UpdateProviderWidgets( )
 {
-    ImGui::BeginDisabled( m_InputState >= InputState::Blocked );
+    ImGui::BeginDisabled( IsInputBlocked( ) );
 
     if( ImGui::BeginChild( "ContentProvider", ImVec2( 500, 25 ), false ) )
     {
@@ -179,7 +206,7 @@ void ImageScraper::DownloadOptionsPanel::UpdateSignInButton( )
     {
         if( ImGui::Button( "Cancel Sign In", ImVec2( 120, 40 ) ) )
         {
-            m_SigningInProvider.store( INVALID_CONTENT_PROVIDER );
+            CancelSignIn( );
         }
     }
     else
@@ -189,11 +216,9 @@ void ImageScraper::DownloadOptionsPanel::UpdateSignInButton( )
 
         if( ImGui::Button( "Sign In", ImVec2( 100, 40 ) ) )
         {
-            if( service )
+            if( service && service->OpenExternalAuth( ) )
             {
-                bool success = service->OpenExternalAuth( );
-                ( void )success;
-                m_SigningInProvider.store( static_cast<int>( m_ContentProvider ) );
+                BeginSignIn( static_cast<ContentProvider>( m_ContentProvider ) );
             }
         }
 
@@ -220,7 +245,7 @@ void ImageScraper::DownloadOptionsPanel::UpdateRunCancelButton( )
 
         if( ImGui::Button( "Cancel", ImVec2( 100, 40 ) ) )
         {
-            m_DownloadCancelled.store( true );
+            RequestCancel( );
         }
 
         ImGui::EndDisabled( );
@@ -229,7 +254,7 @@ void ImageScraper::DownloadOptionsPanel::UpdateRunCancelButton( )
 
 bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
 {
-    if( m_InputState >= InputState::Blocked )
+    if( IsInputBlocked( ) )
     {
         return false;
     }
@@ -265,25 +290,20 @@ bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
 
     const UserInputOptions inputOptions = panel->BuildInputOptions( );
 
-    for( auto svc : m_Services )
+    for( const auto& svc : m_Services )
     {
         if( svc->HandleUserInput( inputOptions ) )
         {
             LogDebug( "[%s] User input handled!", __FUNCTION__ );
             panel->OnSearchCommitted( );
-            m_Running = true;
+            BeginRun( );
+            SetInputState( InputState::Blocked );
             return true;
         }
     }
 
     LogDebug( "[%s] User input not handled, check for missing services!", __FUNCTION__ );
     return false;
-}
-
-void ImageScraper::DownloadOptionsPanel::Reset( )
-{
-    m_Running = false;
-    m_DownloadCancelled.store( false );
 }
 
 void ImageScraper::DownloadOptionsPanel::CancelSignIn( )
