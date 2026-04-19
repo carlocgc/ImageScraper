@@ -91,7 +91,6 @@ namespace ImageScraper
 
         std::atomic_bool    m_IsDecoding{ false };
         std::atomic_bool    m_CancelDecode{ false };  // set by RequestPreview to discard in-flight result
-        bool                m_PendingClear{ false };  // deferred display clear applied at start of Update
         std::future<void>   m_DecodeFuture{ };
         std::string         m_LoadingFilePath{ };  // full path of file currently being decoded
         bool                m_ForceLoad{ false };

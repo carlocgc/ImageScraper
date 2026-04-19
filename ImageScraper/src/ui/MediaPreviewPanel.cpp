@@ -14,26 +14,6 @@ ImageScraper::MediaPreviewPanel::~MediaPreviewPanel( )
 
 void ImageScraper::MediaPreviewPanel::Update( )
 {
-    // Apply any deferred display clear requested by RequestPreview.
-    // Fire unconditionally - the panel should go blank immediately.
-    // KickDecodeIfNeeded's own m_IsDecoding guard handles waiting for
-    // the old decode to finish before starting the new one.
-    if( m_PendingClear )
-    {
-        m_PendingClear = false;
-
-        {
-            std::lock_guard<std::mutex> lock( m_DecodedMutex );
-            m_PendingDecoded.reset( );
-        }
-
-        FreeTextures( );
-        m_VideoPlayer.reset( );
-        m_MediaState      = MediaState::None;
-        m_CurrentFilePath = "";
-        m_VideoFrameIndex = 0;
-    }
-
     // Upload any newly decoded image/GIF (GPU buffer copies - main thread only)
     {
         std::unique_ptr<DecodedImage> decoded;
@@ -248,14 +228,6 @@ void ImageScraper::MediaPreviewPanel::RequestPreview( const std::string& filepat
         m_HasLatestPath = true;
     }
     m_ForceLoad = true;
-
-    // Request a display clear deferred to the start of the next Update() frame.
-    // Doing it there (rather than here) ensures GL texture deletion and state
-    // mutations happen inside the render loop, and that m_PendingDecoded is
-    // drained before any upload check runs for the new item.
-    // m_LoadingFilePath is left intact so ReleaseFileIfCurrent can still match
-    // an in-flight decode for the old file and wait on it before file deletion.
-    m_PendingClear = true;
 }
 
 void ImageScraper::MediaPreviewPanel::ClearPreview( )
