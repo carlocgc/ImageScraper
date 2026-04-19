@@ -114,25 +114,44 @@ int ImageScraper::App::Run( )
 
 void ImageScraper::App::AuthenticateServices( )
 {
+    m_AuthenticatingCount = static_cast<int>( m_Services.size( ) );
+    if( m_AuthenticatingCount <= 0 )
+    {
+        m_FrontEnd->SetInputState( InputState::Free );
+        return;
+    }
+
     m_FrontEnd->SetInputState( InputState::Blocked );
 
-    auto callback = [ & ]( ContentProvider provider, bool success )
+    auto callback = [ this ]( ContentProvider provider, bool success )
     {
-        if( !success )
-        {
-            LogDebug( "[%s] %s failed to authenticate!", __FUNCTION__, s_ContentProviderStrings[ static_cast<uint8_t>( provider ) ] );
-        }
-
-        m_AuthenticatingCount--;
-        if( m_AuthenticatingCount <= 0 )
-        {
-            m_FrontEnd->SetInputState( InputState::Free );
-        }
+        auto task = TaskManager::Instance( ).SubmitMain( [ this, provider, success ]( )
+            {
+                OnServiceAuthenticationComplete( provider, success );
+            } );
+        ( void )task;
     };
 
-    for( auto service : m_Services )
+    for( const auto& service : m_Services )
     {
-        ++m_AuthenticatingCount;
         service->Authenticate( callback );
+    }
+}
+
+void ImageScraper::App::OnServiceAuthenticationComplete( ContentProvider provider, bool success )
+{
+    if( !success )
+    {
+        LogDebug( "[%s] %s failed to authenticate!", __FUNCTION__, s_ContentProviderStrings[ static_cast<uint8_t>( provider ) ] );
+    }
+
+    if( m_AuthenticatingCount > 0 )
+    {
+        --m_AuthenticatingCount;
+    }
+
+    if( m_AuthenticatingCount <= 0 )
+    {
+        m_FrontEnd->SetInputState( InputState::Free );
     }
 }
