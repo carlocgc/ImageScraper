@@ -3,9 +3,12 @@
 #include "services/ServiceOptionTypes.h"
 #include "services/IServiceSink.h"
 
+#include <filesystem>
+#include <optional>
 #include <string>
 #include <memory>
 #include <functional>
+#include <vector>
 
 namespace ImageScraper
 {
@@ -43,6 +46,7 @@ namespace ImageScraper
         ContentProvider GetContentProvider( ) const { return m_ContentProvider; }
 
     protected:
+        std::optional<int> DownloadMediaUrls( std::vector<std::string>& mediaUrls, const std::filesystem::path& dir );
         virtual bool IsCancelled( ) = 0;
 
         ContentProvider m_ContentProvider;
