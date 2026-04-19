@@ -555,8 +555,16 @@ std::string ImageScraper::DownloadHistoryPanel::GetSubfolderLabel( const std::st
         return "/" + subName + "/";
     }
 
-    // Reddit stores subreddits as typed (e.g. "r/aww", "u/username") - use as-is.
-    // Tumblr and others use plain usernames - use as-is.
+    if( providerName == "Reddit" )
+    {
+        return "r/" + subName;
+    }
+
+    if( providerName == "Tumblr" )
+    {
+        return "@" + subName;
+    }
+
     return subName;
 }
 
