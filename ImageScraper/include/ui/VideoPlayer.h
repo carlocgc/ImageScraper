@@ -21,7 +21,12 @@ namespace ImageScraper
     class VideoPlayer
     {
     public:
+        VideoPlayer( ) = default;
         ~VideoPlayer( );
+        VideoPlayer( const VideoPlayer& ) = delete;
+        VideoPlayer& operator=( const VideoPlayer& ) = delete;
+        VideoPlayer( VideoPlayer&& other ) noexcept;
+        VideoPlayer& operator=( VideoPlayer&& other ) noexcept;
 
         bool Open( const std::string& filepath );
 

@@ -56,27 +56,28 @@ namespace ImageScraper
             VideoPaused,
         };
 
-        // Holds decoded pixel data produced on a background thread (images + GIFs only)
-        struct DecodedImage
+        // Holds preview data produced on a background thread before texture upload on the main thread.
+        struct DecodedMedia
         {
             std::vector<unsigned char> m_PixelData;     // RGBA, all frames contiguous
             std::vector<int>           m_FrameDelaysMs;
+            std::unique_ptr<VideoPlayer> m_VideoPlayer{ };
             int         m_Width{ 0 };
             int         m_Height{ 0 };
             int         m_Frames{ 1 };
             std::string m_FilePath;
+            bool        m_IsVideo{ false };
         };
 
         void KickDecodeIfNeeded( );
         void KickFullGifDecode( );
-        void UploadDecoded( const DecodedImage& decoded );
+        void UploadDecoded( DecodedMedia&& decoded );
         void FreeTextures( );
 
-        // Video helpers
-        void OpenVideo( const std::string& filepath );
         void AdvanceVideoFrame( );
 
-        static std::unique_ptr<DecodedImage> DecodeFile( const std::string& filepath, bool firstFrameOnly );
+        static std::unique_ptr<DecodedMedia> DecodeFile( const std::string& filepath, bool firstFrameOnly );
+        static std::unique_ptr<DecodedMedia> DecodeVideoFile( const std::string& filepath );
         static bool IsGif( const std::string& filepath );
         static bool IsVideo( const std::string& filepath );
 
@@ -85,9 +86,9 @@ namespace ImageScraper
         std::string m_LatestPath{ };
         bool        m_HasLatestPath{ false };
 
-        // Decoded result posted by the decode task (worker thread → Update) - images/GIFs only
+        // Decoded result posted by the decode task (worker thread → Update)
         std::mutex                    m_DecodedMutex{ };
-        std::unique_ptr<DecodedImage> m_PendingDecoded{ };
+        std::unique_ptr<DecodedMedia> m_PendingDecoded{ };
 
         std::atomic_bool    m_IsDecoding{ false };
         std::atomic_bool    m_CancelDecode{ false };  // set by RequestPreview to discard in-flight result

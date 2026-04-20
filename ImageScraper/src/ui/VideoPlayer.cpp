@@ -15,6 +15,43 @@ ImageScraper::VideoPlayer::~VideoPlayer( )
     Close( );
 }
 
+ImageScraper::VideoPlayer::VideoPlayer( VideoPlayer&& other ) noexcept
+{
+    *this = std::move( other );
+}
+
+ImageScraper::VideoPlayer& ImageScraper::VideoPlayer::operator=( VideoPlayer&& other ) noexcept
+{
+    if( this == &other )
+    {
+        return *this;
+    }
+
+    Close( );
+
+    m_FormatCtx   = other.m_FormatCtx;
+    m_CodecCtx    = other.m_CodecCtx;
+    m_SwsCtx      = other.m_SwsCtx;
+    m_Frame       = other.m_Frame;
+    m_Packet      = other.m_Packet;
+    m_VideoStream = other.m_VideoStream;
+    m_Width       = other.m_Width;
+    m_Height      = other.m_Height;
+    m_Fps         = other.m_Fps;
+
+    other.m_FormatCtx   = nullptr;
+    other.m_CodecCtx    = nullptr;
+    other.m_SwsCtx      = nullptr;
+    other.m_Frame       = nullptr;
+    other.m_Packet      = nullptr;
+    other.m_VideoStream = -1;
+    other.m_Width       = 0;
+    other.m_Height      = 0;
+    other.m_Fps         = 30.0;
+
+    return *this;
+}
+
 bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
 {
     Close( );
