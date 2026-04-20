@@ -43,14 +43,14 @@ ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig,
         { { "duration", "permanent" } }
     };
 
-    auto fetchFn = [ ]( const RequestOptions& opts )
+    auto fetchFn = [ httpClient = m_HttpClient ]( const RequestOptions& opts )
         {
-            return FetchAccessTokenRequest{ }.Perform( opts );
+            return FetchAccessTokenRequest{ httpClient }.Perform( opts );
         };
 
-    auto refreshFn = [ ]( const RequestOptions& opts )
+    auto refreshFn = [ httpClient = m_HttpClient ]( const RequestOptions& opts )
         {
-            return RefreshAccessTokenRequest{ }.Perform( opts );
+            return RefreshAccessTokenRequest{ httpClient }.Perform( opts );
         };
 
     m_OAuthClient = std::make_unique<OAuthClient>(
@@ -145,7 +145,7 @@ void ImageScraper::RedditService::FetchCurrentUser( )
     options.m_UserAgent   = m_UserAgent;
     options.m_AccessToken = m_OAuthClient->GetAccessToken( );
 
-    GetCurrentUserRequest request{ };
+    GetCurrentUserRequest request{ m_HttpClient };
     RequestResult result = request.Perform( options );
 
     if( !result.m_Success )
@@ -250,7 +250,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 fetchOptions.m_UserAgent = m_UserAgent;
                 fetchOptions.m_AccessToken = m_OAuthClient->GetAccessToken( );
 
-                FetchSubredditPostsRequest fetchRequest{ };
+                FetchSubredditPostsRequest fetchRequest{ m_HttpClient };
                 RequestResult fetchResult = fetchRequest.Perform( fetchOptions );
 
                 if( !fetchResult.m_Success )
@@ -322,7 +322,7 @@ bool ImageScraper::RedditService::TryPerformAppOnlyAuth( )
     authOptions.m_ClientId    = clientId;
     authOptions.m_ClientSecret = clientSecret;
 
-    AppOnlyAuthRequest authRequest{ };
+    AppOnlyAuthRequest authRequest{ m_HttpClient };
     RequestResult authResult = authRequest.Perform( authOptions );
 
     if( !authResult.m_Success )

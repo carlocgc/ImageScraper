@@ -44,14 +44,14 @@ ImageScraper::TumblrService::TumblrService( std::shared_ptr<JsonFile> appConfig,
         {}
     };
 
-    auto fetchFn = [ ]( const RequestOptions& opts )
+    auto fetchFn = [ httpClient = m_HttpClient ]( const RequestOptions& opts )
         {
-            return TumblrFetchAccessTokenRequest{ }.Perform( opts );
+            return TumblrFetchAccessTokenRequest{ httpClient }.Perform( opts );
         };
 
-    auto refreshFn = [ ]( const RequestOptions& opts )
+    auto refreshFn = [ httpClient = m_HttpClient ]( const RequestOptions& opts )
         {
-            return TumblrRefreshAccessTokenRequest{ }.Perform( opts );
+            return TumblrRefreshAccessTokenRequest{ httpClient }.Perform( opts );
         };
 
     m_OAuthClient = std::make_unique<OAuthClient>(
@@ -147,7 +147,7 @@ void ImageScraper::TumblrService::FetchCurrentUser( )
     options.m_UserAgent   = m_UserAgent;
     options.m_AccessToken = m_OAuthClient->GetAccessToken( );
 
-    TumblrGetCurrentUserRequest request{ };
+    TumblrGetCurrentUserRequest request{ m_HttpClient };
     RequestResult result = request.Perform( options );
 
     if( !result.m_Success )
@@ -236,7 +236,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
                 retrievePostsOptions.m_QueryParams.push_back( { "api_key", apiKey } );
             }
 
-            Tumblr::RetrievePublishedPostsRequest retrievePostsRequest{ };
+            Tumblr::RetrievePublishedPostsRequest retrievePostsRequest{ m_HttpClient };
             RequestResult fetchResult = retrievePostsRequest.Perform( retrievePostsOptions );
 
             if( !fetchResult.m_Success )
