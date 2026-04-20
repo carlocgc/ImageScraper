@@ -14,20 +14,20 @@ ImageScraper::MediaPreviewPanel::~MediaPreviewPanel( )
 
 void ImageScraper::MediaPreviewPanel::Update( )
 {
-    // Upload any newly decoded image/GIF (GPU buffer copies - main thread only)
+    // Upload any newly decoded preview media (GPU buffer copies - main thread only).
     {
-        std::unique_ptr<DecodedImage> decoded;
+        std::unique_ptr<DecodedMedia> decoded;
         {
             std::lock_guard<std::mutex> lock( m_DecodedMutex );
             decoded = std::move( m_PendingDecoded );
         }
         if( decoded )
         {
-            UploadDecoded( *decoded );
+            UploadDecoded( std::move( *decoded ) );
         }
     }
 
-    // Kick a fast first-frame decode when a new file arrives (images/GIFs)
+    // Kick a fast first-frame decode when a new file arrives.
     KickDecodeIfNeeded( );
 
     // Advance video frame if playing
@@ -54,7 +54,7 @@ void ImageScraper::MediaPreviewPanel::Update( )
 
         if( m_Textures.empty( ) )
         {
-            ImGui::TextDisabled( "No media loaded yet" );
+            ImGui::TextDisabled( m_IsDecoding ? "Loading preview..." : "No media loaded yet" );
         }
         else
         {
@@ -329,17 +329,11 @@ void ImageScraper::MediaPreviewPanel::KickDecodeIfNeeded( )
         m_HasLatestPath = false;
     }
 
-    if( IsVideo( filepath ) )
-    {
-        OpenVideo( filepath );
-        return;
-    }
-
     m_LoadingFilePath = filepath;
     m_CancelDecode    = false;
     m_IsDecoding      = true;
 
-    // Always decode only the first frame - fast for both images and GIFs
+    // Always decode only the first preview frame - fast for images, GIFs, and videos.
     m_DecodeFuture = std::async( std::launch::async, [ this, filepath ]( )
     {
         auto decoded = DecodeFile( filepath, true );
@@ -383,65 +377,6 @@ void ImageScraper::MediaPreviewPanel::KickFullGifDecode( )
     } );
 }
 
-void ImageScraper::MediaPreviewPanel::OpenVideo( const std::string& filepath )
-{
-    // Close any previous video
-    if( m_VideoPlayer )
-    {
-        m_VideoPlayer->Close( );
-    }
-    else
-    {
-        m_VideoPlayer = std::make_unique<VideoPlayer>( );
-    }
-
-    if( !m_VideoPlayer->Open( filepath ) )
-    {
-        return;
-    }
-
-    m_Width           = m_VideoPlayer->GetWidth( );
-    m_Height          = m_VideoPlayer->GetHeight( );
-    m_CurrentFilePath = filepath;
-    m_FrameAccumMs    = 0.0f;
-
-    // Decode and upload the first frame
-    if( !m_VideoPlayer->DecodeNextFrame( m_VideoFrameBuffer ) )
-    {
-        return;
-    }
-
-    // Reuse existing texture if dimensions match, otherwise recreate
-    if( !m_Textures.empty( ) && m_Textures[ 0 ] != 0 )
-    {
-        glBindTexture( GL_TEXTURE_2D, m_Textures[ 0 ] );
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_VideoFrameBuffer.data( ) );
-        glBindTexture( GL_TEXTURE_2D, 0 );
-        // Keep only one texture
-        while( m_Textures.size( ) > 1 )
-        {
-            glDeleteTextures( 1, &m_Textures.back( ) );
-            m_Textures.pop_back( );
-        }
-    }
-    else
-    {
-        FreeTextures( );
-        GLuint tex = 0;
-        glGenTextures( 1, &tex );
-        glBindTexture( GL_TEXTURE_2D, tex );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_VideoFrameBuffer.data( ) );
-        glBindTexture( GL_TEXTURE_2D, 0 );
-        m_Textures.push_back( tex );
-    }
-
-    m_CurrentFrame     = 0;
-    m_VideoFrameIndex  = 0;
-    m_MediaState       = MediaState::VideoPaused;
-}
-
 void ImageScraper::MediaPreviewPanel::AdvanceVideoFrame( )
 {
     if( !m_VideoPlayer || !m_VideoPlayer->IsOpen( ) || m_Textures.empty( ) )
@@ -477,9 +412,10 @@ void ImageScraper::MediaPreviewPanel::AdvanceVideoFrame( )
     glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
-void ImageScraper::MediaPreviewPanel::UploadDecoded( const DecodedImage& decoded )
+void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
 {
     FreeTextures( );
+    m_VideoPlayer.reset( );
 
     if( decoded.m_PixelData.empty( ) )
     {
@@ -493,6 +429,27 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( const DecodedImage& decoded
     m_CurrentFrame    = 0;
     m_FrameAccumMs    = 0.0f;
     m_FrameDelaysMs   = decoded.m_FrameDelaysMs;
+
+    if( decoded.m_IsVideo )
+    {
+        m_VideoFrameBuffer = std::move( decoded.m_PixelData );
+        m_VideoPlayer      = std::move( decoded.m_VideoPlayer );
+
+        GLuint textureId = 0;
+        glGenTextures( 1, &textureId );
+        glBindTexture( GL_TEXTURE_2D, textureId );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA,
+                      decoded.m_Width, decoded.m_Height, 0,
+                      GL_RGBA, GL_UNSIGNED_BYTE,
+                      m_VideoFrameBuffer.data( ) );
+        glBindTexture( GL_TEXTURE_2D, 0 );
+        m_Textures.push_back( textureId );
+        m_VideoFrameIndex = 0;
+        m_MediaState      = MediaState::VideoPaused;
+        return;
+    }
 
     const int frameBytes = decoded.m_Width * decoded.m_Height * 4;
 
@@ -540,9 +497,14 @@ void ImageScraper::MediaPreviewPanel::FreeTextures( )
 }
 
 // static
-std::unique_ptr<ImageScraper::MediaPreviewPanel::DecodedImage>
+std::unique_ptr<ImageScraper::MediaPreviewPanel::DecodedMedia>
 ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool firstFrameOnly )
 {
+    if( IsVideo( filepath ) )
+    {
+        return DecodeVideoFile( filepath );
+    }
+
     std::ifstream file( filepath, std::ios::binary | std::ios::ate );
     if( !file.is_open( ) )
     {
@@ -559,7 +521,7 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
         return nullptr;
     }
 
-    auto decoded        = std::make_unique<DecodedImage>( );
+    auto decoded        = std::make_unique<DecodedMedia>( );
     decoded->m_FilePath = filepath;
 
     // Full GIF decode - all frames with delays
@@ -618,6 +580,37 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
         decoded->m_PixelData.assign( data, data + static_cast<size_t>( width ) * height * 4 );
 
         stbi_image_free( data );
+    }
+
+    return decoded;
+}
+
+// static
+std::unique_ptr<ImageScraper::MediaPreviewPanel::DecodedMedia>
+ImageScraper::MediaPreviewPanel::DecodeVideoFile( const std::string& filepath )
+{
+    auto decoded        = std::make_unique<DecodedMedia>( );
+    decoded->m_FilePath = filepath;
+    decoded->m_IsVideo  = true;
+    decoded->m_VideoPlayer = std::make_unique<VideoPlayer>( );
+
+    if( !decoded->m_VideoPlayer->Open( filepath ) )
+    {
+        return nullptr;
+    }
+
+    decoded->m_Width  = decoded->m_VideoPlayer->GetWidth( );
+    decoded->m_Height = decoded->m_VideoPlayer->GetHeight( );
+
+    if( !decoded->m_VideoPlayer->DecodeNextFrame( decoded->m_PixelData ) )
+    {
+        return nullptr;
+    }
+
+    const size_t pixelBytes = static_cast<size_t>( decoded->m_Width ) * static_cast<size_t>( decoded->m_Height ) * 4;
+    if( decoded->m_PixelData.size( ) > pixelBytes )
+    {
+        decoded->m_PixelData.resize( pixelBytes );
     }
 
     return decoded;
