@@ -33,6 +33,7 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
         m_MediaPreviewPanel.get( ), m_DownloadHistoryPanel.get( ) );
     m_DownloadHistoryPanel->Load( appConfig );
     m_DownloadOptionsPanel->LoadPanelState( appConfig );
+    m_LogPanel->LoadPanelState( appConfig );
 
     glfwSetErrorCallback( GLFW_ErrorCallback );
     if( !glfwInit( ) )
