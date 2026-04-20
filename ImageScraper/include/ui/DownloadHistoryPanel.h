@@ -131,7 +131,10 @@ namespace ImageScraper
         std::unordered_set<std::string>                   m_InFlightThumbnails{ };
 
         int  m_SelectedIndex{ -1 };
+        int  m_ContextMenuIndex{ -1 };
         bool m_Blocked{ false };
         bool m_ScrollToSelected{ false };
+        ImVec2 m_ContextMenuRowMin{ 0.0f, 0.0f };
+        ImVec2 m_ContextMenuRowMax{ 0.0f, 0.0f };
     };
 }
