@@ -19,7 +19,6 @@ namespace ImageScraper
         bool IsFloatZero( float value, float epsilon = 1e-6 );
         void CleanupPartialOutputFile( );
 
-        std::vector<char>* m_BufferPtr{ nullptr };
         std::ofstream m_OutputFile{ };
         std::filesystem::path m_OutputFilePath{ };
         size_t m_BytesWritten{ 0 };

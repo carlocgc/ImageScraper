@@ -16,7 +16,7 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
 {
     LogDebug( "[%s] DownloadRequest started! URL: %s", __FUNCTION__, options.m_Url.c_str( ) );
 
-    if( options.m_BufferPtr == nullptr && options.m_OutputFilePath.empty( ) )
+    if( options.m_OutputFilePath.empty( ) )
     {
         m_Result.SetError( ResponseErrorCode::InternalServerError );
         LogDebug( "[%s] DownloadRequest failed! error: %s", __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ) );
@@ -24,7 +24,6 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
     }
 
     m_Result = RequestResult{ };
-    m_BufferPtr = options.m_BufferPtr;
     m_OutputFilePath = options.m_OutputFilePath;
     m_BytesWritten = 0;
 
@@ -104,32 +103,24 @@ size_t ImageScraper::DownloadRequest::WriteCallback( char* contents, size_t size
 {
     const size_t realsize = size * nmemb;
 
-    if( m_BufferPtr )
+    if( m_OutputFilePath.empty( ) )
     {
-        m_BufferPtr->insert( m_BufferPtr->begin( ) + static_cast<std::ptrdiff_t>( m_BytesWritten ), contents, contents + realsize );
+        LogError( "[%s] DownloadRequest failed, no output file path specified!", __FUNCTION__ );
+        m_Result.SetError( ResponseErrorCode::InternalServerError );
+        return 0;
     }
 
-    if( !m_OutputFilePath.empty( ) )
+    if( !m_OutputFile.is_open( ) )
     {
-        if( !m_OutputFile.is_open( ) )
-        {
-            LogError( "[%s] DownloadRequest failed, output file invalid!", __FUNCTION__ );
-            m_Result.SetError( ResponseErrorCode::InternalServerError );
-            return 0;
-        }
-
-        m_OutputFile.write( contents, static_cast<std::streamsize>( realsize ) );
-        if( !m_OutputFile.good( ) )
-        {
-            LogError( "[%s] DownloadRequest failed while writing file: %s", __FUNCTION__, m_OutputFilePath.string( ).c_str( ) );
-            m_Result.SetError( ResponseErrorCode::InternalServerError );
-            return 0;
-        }
+        LogError( "[%s] DownloadRequest failed, output file invalid!", __FUNCTION__ );
+        m_Result.SetError( ResponseErrorCode::InternalServerError );
+        return 0;
     }
 
-    if( !m_BufferPtr && m_OutputFilePath.empty( ) )
+    m_OutputFile.write( contents, static_cast<std::streamsize>( realsize ) );
+    if( !m_OutputFile.good( ) )
     {
-        LogError( "[%s] DownloadRequest failed, no valid output target!", __FUNCTION__ );
+        LogError( "[%s] DownloadRequest failed while writing file: %s", __FUNCTION__, m_OutputFilePath.string( ).c_str( ) );
         m_Result.SetError( ResponseErrorCode::InternalServerError );
         return 0;
     }
