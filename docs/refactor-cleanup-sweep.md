@@ -337,7 +337,7 @@ Recommended refactor:
 - [x] Async thumbnail loading
 - [x] Reduce preview decode blocking
 - [x] Drain more main-thread tasks per frame
-- [ ] Reuse HTTP client instances
+- [x] Reuse HTTP client instances
 
 ## Best First Refactor Set
 

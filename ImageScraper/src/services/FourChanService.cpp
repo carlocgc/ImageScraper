@@ -85,7 +85,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
             getBoardOptions.m_CaBundle = m_CaBundle;
             getBoardOptions.m_UserAgent = m_UserAgent;
 
-            FourChan::GetBoardsRequest getBoardRequest{ };
+            FourChan::GetBoardsRequest getBoardRequest{ m_HttpClient };
             RequestResult getBoardResult = getBoardRequest.Perform( getBoardOptions );
 
             if( !getBoardResult.m_Success )
@@ -128,7 +128,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 getThreadOptions.m_UserAgent = m_UserAgent;
                 getThreadOptions.m_UrlExt = options.m_FourChanBoard + '/' + std::to_string( i ) + ".json";
 
-                FourChan::GetThreadsRequest getThreadRequest{ };
+                FourChan::GetThreadsRequest getThreadRequest{ m_HttpClient };
                 RequestResult getThreadResult = getThreadRequest.Perform( getThreadOptions );
 
                 if( !getThreadResult.m_Success )
