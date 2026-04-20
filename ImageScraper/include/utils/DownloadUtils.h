@@ -112,6 +112,69 @@ namespace ImageScraper::DownloadHelpers
         return true;
     }
 
+    static std::filesystem::path GetProviderRoot( const std::string& filepath )
+    {
+        std::filesystem::path result;
+        bool foundDownloads = false;
+        for( const auto& part : std::filesystem::path( filepath ) )
+        {
+            result /= part;
+            if( foundDownloads )
+            {
+                return result;
+            }
+
+            if( part == "Downloads" )
+            {
+                foundDownloads = true;
+            }
+        }
+
+        return { };
+    }
+
+    static std::string GetProviderName( const std::string& filepath )
+    {
+        return GetProviderRoot( filepath ).filename( ).string( );
+    }
+
+    static std::string GetSubfolderLabel( const std::string& filepath )
+    {
+        const auto providerRoot = GetProviderRoot( filepath );
+        if( providerRoot.empty( ) )
+        {
+            return { };
+        }
+
+        const auto fileDir = std::filesystem::path( filepath ).parent_path( );
+        std::error_code ec;
+        const auto relativePath = std::filesystem::relative( fileDir, providerRoot, ec );
+        if( ec || relativePath.empty( ) || relativePath == std::filesystem::path( "." ) )
+        {
+            return { };
+        }
+
+        const std::string subfolderName = relativePath.generic_string( );
+        const std::string providerName = providerRoot.filename( ).string( );
+
+        if( providerName == "4chan" )
+        {
+            return "/" + subfolderName + "/";
+        }
+
+        if( providerName == "Reddit" )
+        {
+            return "r/" + subfolderName;
+        }
+
+        if( providerName == "Tumblr" )
+        {
+            return "@" + subfolderName;
+        }
+
+        return subfolderName;
+    }
+
     static std::string CreateQueryParamString( const std::vector<QueryParam>& params )
     {
         std::string paramString{ };

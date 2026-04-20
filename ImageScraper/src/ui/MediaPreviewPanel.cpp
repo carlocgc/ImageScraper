@@ -1,11 +1,14 @@
 #define NOMINMAX
 #include "ui/MediaPreviewPanel.h"
+#include "utils/DownloadUtils.h"
 #include "log/Logger.h"
 #include "stb/stb_image.h"
 
 #include <fstream>
 #include <algorithm>
 #include <filesystem>
+#include <iomanip>
+#include <sstream>
 
 ImageScraper::MediaPreviewPanel::~MediaPreviewPanel( )
 {
@@ -124,6 +127,7 @@ void ImageScraper::MediaPreviewPanel::Update( )
                 ImVec2( pos.x + sz.x + k_BadgePad, pos.y + sz.y + k_BadgePad ),
                 colBadgeBg, 3.0f );
             dl->AddText( pos, colText, text );
+            return ImVec2( sz.x + ( k_BadgePad * 2.0f ), sz.y + ( k_BadgePad * 2.0f ) );
         };
 
         const float badgeY = contentScreenMin.y + k_Pad;
@@ -132,7 +136,36 @@ void ImageScraper::MediaPreviewPanel::Update( )
         if( !m_CurrentFilePath.empty( ) )
         {
             const std::string name = std::filesystem::path( m_CurrentFilePath ).filename( ).string( );
-            DrawBadge( ImVec2( contentScreenMin.x + k_Pad, badgeY ), name.c_str( ) );
+            const ImVec2 nameBadgeSize = DrawBadge( ImVec2( contentScreenMin.x + k_Pad, badgeY ), name.c_str( ) );
+
+            std::vector<std::string> metadataBadges{ };
+            const std::string providerName = DownloadHelpers::GetProviderName( m_CurrentFilePath );
+            const std::string subfolderLabel = DownloadHelpers::GetSubfolderLabel( m_CurrentFilePath );
+            const std::string fileSize = FormatFileSize( m_CurrentFilePath );
+
+            if( !providerName.empty( ) )
+            {
+                metadataBadges.push_back( providerName );
+            }
+
+            if( !subfolderLabel.empty( ) )
+            {
+                metadataBadges.push_back( subfolderLabel );
+            }
+
+            if( !fileSize.empty( ) )
+            {
+                metadataBadges.push_back( fileSize );
+            }
+
+            float badgeRowY = badgeY + nameBadgeSize.y + 4.0f;
+            const float badgeX = contentScreenMin.x + k_Pad;
+
+            for( const std::string& badgeText : metadataBadges )
+            {
+                const ImVec2 badgeSize = DrawBadge( ImVec2( badgeX, badgeRowY ), badgeText.c_str( ) );
+                badgeRowY += badgeSize.y + 4.0f;
+            }
         }
 
         // Bottom: playback progress bar for multi-frame GIFs and videos
@@ -636,4 +669,30 @@ bool ImageScraper::MediaPreviewPanel::IsVideo( const std::string& filepath )
     std::transform( ext.begin( ), ext.end( ), ext.begin( ),
         []( unsigned char c ) { return static_cast<char>( std::tolower( c ) ); } );
     return ext == "mp4" || ext == "webm" || ext == "mov" || ext == "mkv" || ext == "avi";
+}
+
+std::string ImageScraper::MediaPreviewPanel::FormatFileSize( const std::string& filepath )
+{
+    std::error_code ec;
+    const auto bytes = std::filesystem::file_size( filepath, ec );
+    if( ec )
+    {
+        return { };
+    }
+
+    std::ostringstream ss;
+    if( bytes < 1024 )
+    {
+        ss << bytes << " B";
+    }
+    else if( bytes < 1024 * 1024 )
+    {
+        ss << std::fixed << std::setprecision( 1 ) << ( bytes / 1024.0 ) << " KB";
+    }
+    else
+    {
+        ss << std::fixed << std::setprecision( 1 ) << ( bytes / ( 1024.0 * 1024.0 ) ) << " MB";
+    }
+
+    return ss.str( );
 }
