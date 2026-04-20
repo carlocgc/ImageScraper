@@ -73,6 +73,7 @@ namespace ImageScraper
         void Save( );
         void SaveSelectedPath( );
         void EvictThumbnail( const std::string& filepath );
+        void DeleteSelectedEntry( );
         void AdvanceSelectionAndPreview( );
         int  FindHistoryIndexByPath( const std::string& filepath ) const;
         int  FindExistingHistoryIndexAtOrBefore( int startIndex ) const;
