@@ -74,28 +74,7 @@ void ImageScraper::DownloadHistoryPanel::Update( )
     ImGui::BeginDisabled( !hasSelection || m_Blocked );
     if( ImGui::Button( "Delete Selected", ImVec2( 0, 0 ) ) )
     {
-        const std::string filepath = m_History[ m_SelectedIndex ].m_FilePath;
-
-        // Release any open handle in the media preview before attempting deletion.
-        if( m_OnReleaseRequested )
-        {
-            m_OnReleaseRequested( filepath );
-        }
-
-        std::error_code ec;
-        std::filesystem::remove( filepath, ec );
-        if( ec )
-        {
-            WarningLog( "[%s] Failed to delete file: %s",
-                        __FUNCTION__, ec.message( ).c_str( ) );
-        }
-        else
-        {
-            EvictThumbnail( filepath );
-            m_History.RemoveAt( m_SelectedIndex );
-            AdvanceSelectionAndPreview( );
-            Save( );
-        }
+        DeleteSelectedEntry( );
     }
     ImGui::EndDisabled( );
 
@@ -330,27 +309,7 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         && ImGui::IsWindowFocused( ImGuiFocusedFlags_ChildWindows )
         && ImGui::IsKeyPressed( ImGuiKey_Delete ) )
     {
-        const std::string filepath = m_History[ m_SelectedIndex ].m_FilePath;
-
-        // Release any open handle in the media preview before attempting deletion.
-        if( m_OnReleaseRequested )
-        {
-            m_OnReleaseRequested( filepath );
-        }
-
-        std::error_code ec;
-        std::filesystem::remove( filepath, ec );
-        if( ec )
-        {
-            WarningLog( "[%s] Failed to delete file: %s", __FUNCTION__, ec.message( ).c_str( ) );
-        }
-        else
-        {
-            EvictThumbnail( filepath );
-            m_History.RemoveAt( m_SelectedIndex );
-            AdvanceSelectionAndPreview( );
-            Save( );
-        }
+        DeleteSelectedEntry( );
     }
 
     ImGui::End( );
@@ -410,6 +369,35 @@ void ImageScraper::DownloadHistoryPanel::EvictThumbnail( const std::string& file
         }
         m_ThumbnailCache.erase( it );
     }
+}
+
+void ImageScraper::DownloadHistoryPanel::DeleteSelectedEntry( )
+{
+    if( m_SelectedIndex < 0 || m_SelectedIndex >= m_History.GetSize( ) )
+    {
+        return;
+    }
+
+    const std::string filepath = m_History[ m_SelectedIndex ].m_FilePath;
+
+    // Release any open handle in the media preview before attempting deletion.
+    if( m_OnReleaseRequested )
+    {
+        m_OnReleaseRequested( filepath );
+    }
+
+    std::error_code ec;
+    std::filesystem::remove( filepath, ec );
+    if( ec )
+    {
+        WarningLog( "[%s] Failed to delete file: %s", __FUNCTION__, ec.message( ).c_str( ) );
+        return;
+    }
+
+    EvictThumbnail( filepath );
+    m_History.RemoveAt( m_SelectedIndex );
+    AdvanceSelectionAndPreview( );
+    Save( );
 }
 
 void ImageScraper::DownloadHistoryPanel::AdvanceSelectionAndPreview( )
