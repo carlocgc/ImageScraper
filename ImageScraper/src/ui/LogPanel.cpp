@@ -24,6 +24,13 @@ void ImageScraper::LogPanel::Update( )
     {
         ImGui::Checkbox( "Auto-scroll", &m_AutoScroll );
         ImGui::Checkbox( "Debug Logs", &m_DebugLogging );
+
+        bool wordWrapEnabled = m_WordWrap;
+        if( ImGui::Checkbox( "Word Wrap", &wordWrapEnabled ) )
+        {
+            SetWordWrapEnabled( wordWrapEnabled );
+        }
+
         ImGui::EndPopup( );
     }
 
@@ -36,12 +43,6 @@ void ImageScraper::LogPanel::Update( )
 
     ImGui::SameLine( );
     bool copy_to_clipboard = ImGui::Button( "Copy" );
-
-    ImGui::SameLine( );
-    if( ImGui::Button( m_WordWrap ? "Word Wrap: On" : "Word Wrap: Off" ) )
-    {
-        SetWordWrapEnabled( !m_WordWrap );
-    }
 
     ImGui::SameLine( );
     m_Filter.Draw( "Filter (\"incl,-excl\") (\"error\")", 180 );
