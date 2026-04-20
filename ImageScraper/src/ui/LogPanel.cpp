@@ -5,6 +5,12 @@ ImageScraper::LogPanel::LogPanel( int maxLogLines )
 {
 }
 
+void ImageScraper::LogPanel::LoadPanelState( std::shared_ptr<JsonFile> appConfig )
+{
+    m_AppConfig = std::move( appConfig );
+    m_WordWrap = LoadWordWrapEnabledFromConfig( m_AppConfig );
+}
+
 void ImageScraper::LogPanel::Update( )
 {
     ImGui::SetNextWindowSize( ImVec2( 1280, 360 ), ImGuiCond_FirstUseEver );
@@ -18,6 +24,13 @@ void ImageScraper::LogPanel::Update( )
     {
         ImGui::Checkbox( "Auto-scroll", &m_AutoScroll );
         ImGui::Checkbox( "Debug Logs", &m_DebugLogging );
+
+        bool wordWrapEnabled = m_WordWrap;
+        if( ImGui::Checkbox( "Word Wrap", &wordWrapEnabled ) )
+        {
+            SetWordWrapEnabled( wordWrapEnabled );
+        }
+
         ImGui::EndPopup( );
     }
 
@@ -36,7 +49,10 @@ void ImageScraper::LogPanel::Update( )
 
     ImGui::Separator( );
 
-    if( ImGui::BeginChild( "ScrollingRegion", ImVec2( 0, 0 ), false, ImGuiWindowFlags_HorizontalScrollbar ) )
+    const ImGuiWindowFlags scrollingRegionFlags = m_WordWrap ? ImGuiWindowFlags_None
+                                                             : ImGuiWindowFlags_HorizontalScrollbar;
+
+    if( ImGui::BeginChild( "ScrollingRegion", ImVec2( 0, 0 ), false, scrollingRegionFlags ) )
     {
         if( ImGui::BeginPopupContextWindow( ) )
         {
@@ -52,6 +68,11 @@ void ImageScraper::LogPanel::Update( )
         if( copy_to_clipboard )
         {
             ImGui::LogToClipboard( );
+        }
+
+        if( m_WordWrap )
+        {
+            ImGui::PushTextWrapPos( 0.0f );
         }
 
         for( const LogLine& line : m_LogContent )
@@ -98,6 +119,11 @@ void ImageScraper::LogPanel::Update( )
             }
         }
 
+        if( m_WordWrap )
+        {
+            ImGui::PopTextWrapPos( );
+        }
+
         if( copy_to_clipboard )
         {
             ImGui::LogFinish( );
@@ -126,4 +152,28 @@ void ImageScraper::LogPanel::Log( const LogLine& line )
 void ImageScraper::LogPanel::SetRunning( bool running )
 {
     m_Running = running;
+}
+
+void ImageScraper::LogPanel::SetWordWrapEnabled( bool enabled )
+{
+    if( m_WordWrap == enabled )
+    {
+        return;
+    }
+
+    m_WordWrap = enabled;
+    PersistWordWrapState( );
+}
+
+void ImageScraper::LogPanel::PersistWordWrapState( )
+{
+    if( !m_AppConfig )
+    {
+        return;
+    }
+
+    if( !SaveWordWrapEnabledToConfig( m_AppConfig, m_WordWrap ) )
+    {
+        LogError( "[%s] Failed to save log panel word wrap state.", __FUNCTION__ );
+    }
 }
