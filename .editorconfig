@@ -1,0 +1,28 @@
+root = true
+
+[*.{bat,c,cmd,cpp,filters,gitignore,h,hpp,html,inl,json,md,props,ps1,runsettings,sln,targets,txt,vcxproj,yaml,yml}]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[.gitignore]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+trim_trailing_whitespace = false
+
+[.editorconfig]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[.gitattributes]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
