@@ -84,6 +84,7 @@ namespace ImageScraper
         static void OpenInExplorer( const std::string& filepath );
         static std::string FormatTimestamp( );
         static std::string ExtractFileName( const std::string& filepath );
+        static std::string GetFileTypeLabel( const std::string& filepath );
         static std::string FormatFileSize( const std::string& filepath );
         static std::filesystem::path GetProviderRoot(   const std::string& filepath );
         static std::string           GetProviderName(   const std::string& filepath );
