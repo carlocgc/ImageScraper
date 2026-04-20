@@ -73,13 +73,16 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         ImGuiTableFlags_ScrollY |
         ImGuiTableFlags_SizingStretchProp;
 
-    if( ImGui::BeginTable( "HistoryTable", 4, tableFlags ) )
+    if( ImGui::BeginTable( "HistoryTable", 7, tableFlags ) )
     {
         ImGui::TableSetupScrollFreeze( 0, 1 );
         ImGui::TableSetupColumn( "Time",       ImGuiTableColumnFlags_WidthFixed,   90.0f );
         ImGui::TableSetupColumn( "Size",       ImGuiTableColumnFlags_WidthFixed,   70.0f );
-        ImGui::TableSetupColumn( "Filename",   ImGuiTableColumnFlags_WidthStretch, 0.35f );
-        ImGui::TableSetupColumn( "Source URL", ImGuiTableColumnFlags_WidthStretch, 0.65f );
+        ImGui::TableSetupColumn( "Provider",   ImGuiTableColumnFlags_WidthFixed,   75.0f );
+        ImGui::TableSetupColumn( "Subfolder",  ImGuiTableColumnFlags_WidthFixed,  110.0f );
+        ImGui::TableSetupColumn( "Type",       ImGuiTableColumnFlags_WidthFixed,   60.0f );
+        ImGui::TableSetupColumn( "Filename",   ImGuiTableColumnFlags_WidthStretch, 0.28f );
+        ImGui::TableSetupColumn( "Source URL", ImGuiTableColumnFlags_WidthStretch, 0.72f );
         ImGui::TableHeadersRow( );
 
         int historyIndex = m_History.GetSize( ) - 1;
@@ -103,6 +106,15 @@ void ImageScraper::DownloadHistoryPanel::Update( )
             ImGui::TextUnformatted( entry.m_FileSize.c_str( ) );
 
             ImGui::TableSetColumnIndex( 2 );
+            ImGui::TextUnformatted( GetProviderName( entry.m_FilePath ).c_str( ) );
+
+            ImGui::TableSetColumnIndex( 3 );
+            ImGui::TextUnformatted( GetSubfolderLabel( entry.m_FilePath ).c_str( ) );
+
+            ImGui::TableSetColumnIndex( 4 );
+            ImGui::TextUnformatted( GetFileTypeLabel( entry.m_FilePath ).c_str( ) );
+
+            ImGui::TableSetColumnIndex( 5 );
             const bool isSelected = ( m_SelectedIndex == historyIndex );
             ImGui::Selectable( entry.m_FileName.c_str( ), isSelected, ImGuiSelectableFlags_SpanAllColumns );
             const ImVec2 rowMin = ImGui::GetItemRectMin( );
@@ -170,7 +182,7 @@ void ImageScraper::DownloadHistoryPanel::Update( )
                 ImGui::EndTooltip( );
             }
 
-            ImGui::TableSetColumnIndex( 3 );
+            ImGui::TableSetColumnIndex( 6 );
             ImGui::TextUnformatted( entry.m_SourceUrl.c_str( ) );
 
             ImGui::PopID( );
@@ -866,6 +878,27 @@ std::string ImageScraper::DownloadHistoryPanel::FormatTimestamp( )
 std::string ImageScraper::DownloadHistoryPanel::ExtractFileName( const std::string& filepath )
 {
     return std::filesystem::path( filepath ).filename( ).string( );
+}
+
+std::string ImageScraper::DownloadHistoryPanel::GetFileTypeLabel( const std::string& filepath )
+{
+    std::string extension = std::filesystem::path( filepath ).extension( ).string( );
+    if( extension.empty( ) )
+    {
+        return "-";
+    }
+
+    if( extension.front( ) == '.' )
+    {
+        extension.erase( extension.begin( ) );
+    }
+
+    std::transform( extension.begin( ), extension.end( ), extension.begin( ), []( unsigned char c )
+    {
+        return static_cast<char>( std::toupper( c ) );
+    } );
+
+    return extension.empty( ) ? "-" : extension;
 }
 
 ImageScraper::DownloadHistoryPanel::ThumbnailEntry ImageScraper::DownloadHistoryPanel::GetOrLoadThumbnail( const std::string& filepath )
