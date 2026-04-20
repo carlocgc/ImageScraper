@@ -72,6 +72,8 @@ namespace ImageScraper
         void FlushDecodedThumbnails( );
         void Save( );
         void SaveSelectedPath( );
+        void SetSelection( int index, bool scrollToSelected, bool requestPreview );
+        void ClearSelection( bool requestPreview );
         void EvictThumbnail( const std::string& filepath );
         void DeleteSelectedEntry( );
         void AdvanceSelectionAndPreview( );
