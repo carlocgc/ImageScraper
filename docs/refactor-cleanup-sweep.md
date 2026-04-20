@@ -333,7 +333,7 @@ Recommended refactor:
 
 ### Phase 4: Performance pass
 
-- [ ] Stream downloads directly to disk
+- [x] Stream downloads directly to disk
 - [ ] Async thumbnail loading
 - [ ] Reduce preview decode blocking
 - [ ] Drain more main-thread tasks per frame
