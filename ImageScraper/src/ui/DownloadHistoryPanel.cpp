@@ -4,6 +4,7 @@
 #include <shellapi.h>
 
 #include "ui/DownloadHistoryPanel.h"
+#include "utils/DownloadUtils.h"
 #include "stb/stb_image.h"
 #include "log/Logger.h"
 
@@ -106,10 +107,10 @@ void ImageScraper::DownloadHistoryPanel::Update( )
             ImGui::TextUnformatted( entry.m_FileSize.c_str( ) );
 
             ImGui::TableSetColumnIndex( 2 );
-            ImGui::TextUnformatted( GetProviderName( entry.m_FilePath ).c_str( ) );
+            ImGui::TextUnformatted( DownloadHelpers::GetProviderName( entry.m_FilePath ).c_str( ) );
 
             ImGui::TableSetColumnIndex( 3 );
-            ImGui::TextUnformatted( GetSubfolderLabel( entry.m_FilePath ).c_str( ) );
+            ImGui::TextUnformatted( DownloadHelpers::GetSubfolderLabel( entry.m_FilePath ).c_str( ) );
 
             ImGui::TableSetColumnIndex( 4 );
             ImGui::TextUnformatted( GetFileTypeLabel( entry.m_FilePath ).c_str( ) );
@@ -199,10 +200,10 @@ void ImageScraper::DownloadHistoryPanel::Update( )
     const bool hasSelection =
         m_SelectedIndex >= 0 && m_SelectedIndex < m_History.GetSize( );
     const std::string providerName =
-        hasSelection ? GetProviderName( m_History[ m_SelectedIndex ].m_FilePath ) : "";
+        hasSelection ? DownloadHelpers::GetProviderName( m_History[ m_SelectedIndex ].m_FilePath ) : "";
     const bool hasProvider = !providerName.empty( );
     const std::string subfolderLabel =
-        hasSelection ? GetSubfolderLabel( m_History[ m_SelectedIndex ].m_FilePath ) : "";
+        hasSelection ? DownloadHelpers::GetSubfolderLabel( m_History[ m_SelectedIndex ].m_FilePath ) : "";
     const bool hasSubfolder = !subfolderLabel.empty( );
     const std::string delSubLabel =
         hasSubfolder ? ( "Delete " + subfolderLabel ) : "Delete Subfolder";
@@ -344,7 +345,7 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         if( ImGui::Button( "Delete All", ImVec2( 110, 0 ) ) )
         {
             const auto providerRoot =
-                GetProviderRoot( m_History[ m_SelectedIndex ].m_FilePath );
+                DownloadHelpers::GetProviderRoot( m_History[ m_SelectedIndex ].m_FilePath );
 
             // Clear the media preview before deleting so any open file handle is released.
             if( m_OnPreviewRequested )
@@ -527,33 +528,9 @@ bool ImageScraper::DownloadHistoryPanel::HasPrevious( ) const
     return FindExistingHistoryIndexAfter( m_SelectedIndex ) >= 0;
 }
 
-std::filesystem::path ImageScraper::DownloadHistoryPanel::GetProviderRoot( const std::string& filepath )
-{
-    std::filesystem::path result;
-    bool foundDownloads = false;
-    for( const auto& part : std::filesystem::path( filepath ) )
-    {
-        result /= part;
-        if( foundDownloads )
-        {
-            return result;    // first component after "Downloads" = provider root
-        }
-        if( part == "Downloads" )
-        {
-            foundDownloads = true;
-        }
-    }
-    return { };
-}
-
-std::string ImageScraper::DownloadHistoryPanel::GetProviderName( const std::string& filepath )
-{
-    return GetProviderRoot( filepath ).filename( ).string( );
-}
-
 std::filesystem::path ImageScraper::DownloadHistoryPanel::GetSubfolderPath( const std::string& filepath )
 {
-    const auto provRoot = GetProviderRoot( filepath );
+    const auto provRoot = DownloadHelpers::GetProviderRoot( filepath );
     if( provRoot.empty( ) )
     {
         return { };
@@ -569,44 +546,6 @@ std::filesystem::path ImageScraper::DownloadHistoryPanel::GetSubfolderPath( cons
 
     // fileDir IS the subfolder (files are stored directly inside it)
     return fileDir;
-}
-
-std::string ImageScraper::DownloadHistoryPanel::GetSubfolderLabel( const std::string& filepath )
-{
-    const auto provRoot = GetProviderRoot( filepath );
-    if( provRoot.empty( ) )
-    {
-        return { };
-    }
-
-    const auto fileDir = std::filesystem::path( filepath ).parent_path( );
-    std::error_code ec;
-    const auto rel = std::filesystem::relative( fileDir, provRoot, ec );
-    if( ec || rel.empty( ) || rel == std::filesystem::path( "." ) )
-    {
-        return { };
-    }
-
-    // Use generic_string() so path separators are always forward slashes in the label
-    const std::string subName      = rel.generic_string( );
-    const std::string providerName = provRoot.filename( ).string( );
-
-    if( providerName == "4chan" )
-    {
-        return "/" + subName + "/";
-    }
-
-    if( providerName == "Reddit" )
-    {
-        return "r/" + subName;
-    }
-
-    if( providerName == "Tumblr" )
-    {
-        return "@" + subName;
-    }
-
-    return subName;
 }
 
 void ImageScraper::DownloadHistoryPanel::OnFileDownloaded( const std::string& filepath, const std::string& sourceUrl )

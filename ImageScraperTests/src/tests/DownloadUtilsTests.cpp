@@ -81,6 +81,59 @@ TEST_CASE( "UrlToSafeString strips URL fragments", "[DownloadUtils]" )
 }
 
 // ----------------------------------------------------------------------------
+// Download source labels
+// ----------------------------------------------------------------------------
+
+TEST_CASE( "GetProviderName extracts the provider folder from a download path", "[DownloadUtils]" )
+{
+    const std::string redditPath =
+        ( std::filesystem::path( "Downloads" ) / "Reddit" / "aww" / "cat.jpg" ).string( );
+    const std::string missingDownloadsPath =
+        ( std::filesystem::path( "Archives" ) / "Reddit" / "aww" / "cat.jpg" ).string( );
+
+    REQUIRE( GetProviderName( redditPath ) == "Reddit" );
+    REQUIRE( GetProviderName( missingDownloadsPath ).empty( ) );
+}
+
+TEST_CASE( "GetSubfolderLabel formats provider-specific download labels", "[DownloadUtils]" )
+{
+    SECTION( "Reddit uses r/ prefix" )
+    {
+        const std::string filepath =
+            ( std::filesystem::path( "Downloads" ) / "Reddit" / "cats" / "kitten.png" ).string( );
+        REQUIRE( GetSubfolderLabel( filepath ) == "r/cats" );
+    }
+
+    SECTION( "Tumblr uses @ prefix" )
+    {
+        const std::string filepath =
+            ( std::filesystem::path( "Downloads" ) / "Tumblr" / "artist-name" / "post.gif" ).string( );
+        REQUIRE( GetSubfolderLabel( filepath ) == "@artist-name" );
+    }
+
+    SECTION( "4chan wraps the board in slashes" )
+    {
+        const std::string filepath =
+            ( std::filesystem::path( "Downloads" ) / "4chan" / "wg" / "thread.jpg" ).string( );
+        REQUIRE( GetSubfolderLabel( filepath ) == "/wg/" );
+    }
+
+    SECTION( "Other providers use the raw relative subfolder" )
+    {
+        const std::string filepath =
+            ( std::filesystem::path( "Downloads" ) / "Discord" / "server" / "channel" / "clip.mp4" ).string( );
+        REQUIRE( GetSubfolderLabel( filepath ) == "server/channel" );
+    }
+
+    SECTION( "Files stored directly under the provider root have no subfolder label" )
+    {
+        const std::string filepath =
+            ( std::filesystem::path( "Downloads" ) / "Reddit" / "loose-file.jpg" ).string( );
+        REQUIRE( GetSubfolderLabel( filepath ).empty( ) );
+    }
+}
+
+// ----------------------------------------------------------------------------
 // RedirectToPreferredFileTypeUrl
 // ----------------------------------------------------------------------------
 

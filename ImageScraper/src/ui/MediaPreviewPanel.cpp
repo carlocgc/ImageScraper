@@ -1,5 +1,6 @@
 #define NOMINMAX
 #include "ui/MediaPreviewPanel.h"
+#include "utils/DownloadUtils.h"
 #include "log/Logger.h"
 #include "stb/stb_image.h"
 
@@ -138,8 +139,8 @@ void ImageScraper::MediaPreviewPanel::Update( )
             const ImVec2 nameBadgeSize = DrawBadge( ImVec2( contentScreenMin.x + k_Pad, badgeY ), name.c_str( ) );
 
             std::vector<std::string> metadataBadges{ };
-            const std::string providerName = GetProviderName( m_CurrentFilePath );
-            const std::string subfolderLabel = GetSubfolderLabel( m_CurrentFilePath );
+            const std::string providerName = DownloadHelpers::GetProviderName( m_CurrentFilePath );
+            const std::string subfolderLabel = DownloadHelpers::GetSubfolderLabel( m_CurrentFilePath );
             const std::string fileSize = FormatFileSize( m_CurrentFilePath );
 
             if( !providerName.empty( ) )
@@ -668,69 +669,6 @@ bool ImageScraper::MediaPreviewPanel::IsVideo( const std::string& filepath )
     std::transform( ext.begin( ), ext.end( ), ext.begin( ),
         []( unsigned char c ) { return static_cast<char>( std::tolower( c ) ); } );
     return ext == "mp4" || ext == "webm" || ext == "mov" || ext == "mkv" || ext == "avi";
-}
-
-std::filesystem::path ImageScraper::MediaPreviewPanel::GetProviderRoot( const std::string& filepath )
-{
-    std::filesystem::path result;
-    bool foundDownloads = false;
-    for( const auto& part : std::filesystem::path( filepath ) )
-    {
-        result /= part;
-        if( foundDownloads )
-        {
-            return result;
-        }
-
-        if( part == "Downloads" )
-        {
-            foundDownloads = true;
-        }
-    }
-
-    return { };
-}
-
-std::string ImageScraper::MediaPreviewPanel::GetProviderName( const std::string& filepath )
-{
-    return GetProviderRoot( filepath ).filename( ).string( );
-}
-
-std::string ImageScraper::MediaPreviewPanel::GetSubfolderLabel( const std::string& filepath )
-{
-    const auto providerRoot = GetProviderRoot( filepath );
-    if( providerRoot.empty( ) )
-    {
-        return { };
-    }
-
-    const auto fileDir = std::filesystem::path( filepath ).parent_path( );
-    std::error_code ec;
-    const auto relativePath = std::filesystem::relative( fileDir, providerRoot, ec );
-    if( ec || relativePath.empty( ) || relativePath == std::filesystem::path( "." ) )
-    {
-        return { };
-    }
-
-    const std::string subfolderName = relativePath.generic_string( );
-    const std::string providerName = providerRoot.filename( ).string( );
-
-    if( providerName == "4chan" )
-    {
-        return "/" + subfolderName + "/";
-    }
-
-    if( providerName == "Reddit" )
-    {
-        return "r/" + subfolderName;
-    }
-
-    if( providerName == "Tumblr" )
-    {
-        return "@" + subfolderName;
-    }
-
-    return subfolderName;
 }
 
 std::string ImageScraper::MediaPreviewPanel::FormatFileSize( const std::string& filepath )

@@ -11,7 +11,6 @@
 #include <atomic>
 #include <memory>
 #include <future>
-#include <filesystem>
 
 namespace ImageScraper
 {
@@ -81,9 +80,6 @@ namespace ImageScraper
         static std::unique_ptr<DecodedMedia> DecodeVideoFile( const std::string& filepath );
         static bool IsGif( const std::string& filepath );
         static bool IsVideo( const std::string& filepath );
-        static std::filesystem::path GetProviderRoot( const std::string& filepath );
-        static std::string GetProviderName( const std::string& filepath );
-        static std::string GetSubfolderLabel( const std::string& filepath );
         static std::string FormatFileSize( const std::string& filepath );
 
         // Latest path posted by OnFileDownloaded (worker thread → Update)
