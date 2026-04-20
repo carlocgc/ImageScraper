@@ -249,12 +249,7 @@ void ImageScraper::DownloadHistoryPanel::Update( )
 
             if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) )
             {
-                m_SelectedIndex = historyIndex;
-                SaveSelectedPath( );
-                if( m_OnPreviewRequested )
-                {
-                    m_OnPreviewRequested( entry.m_FilePath );
-                }
+                SetSelection( historyIndex, false, true );
             }
 
             if( ImGui::IsItemClicked( ImGuiMouseButton_Right ) )
@@ -405,8 +400,7 @@ void ImageScraper::DownloadHistoryPanel::AdvanceSelectionAndPreview( )
     const int size = m_History.GetSize( );
     if( size == 0 )
     {
-        m_SelectedIndex = -1;
-        m_OnPreviewRequested( "" );
+        ClearSelection( true );
         return;
     }
 
@@ -415,21 +409,18 @@ void ImageScraper::DownloadHistoryPanel::AdvanceSelectionAndPreview( )
     const int olderIndex = FindExistingHistoryIndexAtOrBefore( start );
     if( olderIndex >= 0 )
     {
-        m_SelectedIndex = olderIndex;
-        m_OnPreviewRequested( m_History[ olderIndex ].m_FilePath );
+        SetSelection( olderIndex, false, true );
         return;
     }
 
     const int newerIndex = FindExistingHistoryIndexAfter( start );
     if( newerIndex >= 0 )
     {
-        m_SelectedIndex = newerIndex;
-        m_OnPreviewRequested( m_History[ newerIndex ].m_FilePath );
+        SetSelection( newerIndex, false, true );
         return;
     }
 
-    m_SelectedIndex = -1;
-    m_OnPreviewRequested( "" );
+    ClearSelection( true );
 }
 
 void ImageScraper::DownloadHistoryPanel::SelectNext( )
@@ -437,10 +428,7 @@ void ImageScraper::DownloadHistoryPanel::SelectNext( )
     const int nextIndex = FindExistingHistoryIndexAtOrBefore( m_SelectedIndex - 1 );
     if( nextIndex >= 0 )
     {
-        m_SelectedIndex    = nextIndex;
-        m_ScrollToSelected = true;
-        m_OnPreviewRequested( m_History[ nextIndex ].m_FilePath );
-        SaveSelectedPath( );
+        SetSelection( nextIndex, true, true );
     }
 }
 
@@ -449,10 +437,7 @@ void ImageScraper::DownloadHistoryPanel::SelectPrevious( )
     const int previousIndex = FindExistingHistoryIndexAfter( m_SelectedIndex );
     if( previousIndex >= 0 )
     {
-        m_SelectedIndex    = previousIndex;
-        m_ScrollToSelected = true;
-        m_OnPreviewRequested( m_History[ previousIndex ].m_FilePath );
-        SaveSelectedPath( );
+        SetSelection( previousIndex, true, true );
     }
 }
 
@@ -606,23 +591,13 @@ void ImageScraper::DownloadHistoryPanel::Load( std::shared_ptr<JsonFile> appConf
         const int selectedIndex = FindHistoryIndexByPath( selectedPath );
         if( selectedIndex >= 0 )
         {
-            m_SelectedIndex    = selectedIndex;
-            m_ScrollToSelected = true;
-            if( m_OnPreviewRequested )
-            {
-                m_OnPreviewRequested( m_History[ selectedIndex ].m_FilePath );
-            }
+            SetSelection( selectedIndex, true, true );
             return;
         }
     }
 
     // Fall back to the most recent entry
-    m_SelectedIndex    = m_History.GetSize( ) - 1;
-    m_ScrollToSelected = true;
-    if( m_OnPreviewRequested )
-    {
-        m_OnPreviewRequested( m_History[ m_SelectedIndex ].m_FilePath );
-    }
+    SetSelection( m_History.GetSize( ) - 1, true, true );
 }
 
 void ImageScraper::DownloadHistoryPanel::Save( )
@@ -669,6 +644,36 @@ void ImageScraper::DownloadHistoryPanel::SaveSelectedPath( )
     m_AppConfig->Serialise( );
 }
 
+void ImageScraper::DownloadHistoryPanel::SetSelection( int index, bool scrollToSelected, bool requestPreview )
+{
+    if( index < 0 || index >= m_History.GetSize( ) )
+    {
+        ClearSelection( requestPreview );
+        return;
+    }
+
+    m_SelectedIndex    = index;
+    m_ScrollToSelected = scrollToSelected;
+    SaveSelectedPath( );
+
+    if( requestPreview && m_OnPreviewRequested )
+    {
+        m_OnPreviewRequested( m_History[ index ].m_FilePath );
+    }
+}
+
+void ImageScraper::DownloadHistoryPanel::ClearSelection( bool requestPreview )
+{
+    m_SelectedIndex    = -1;
+    m_ScrollToSelected = false;
+    SaveSelectedPath( );
+
+    if( requestPreview && m_OnPreviewRequested )
+    {
+        m_OnPreviewRequested( "" );
+    }
+}
+
 void ImageScraper::DownloadHistoryPanel::FlushPending( )
 {
     std::vector<DownloadHistoryEntry> pending;
@@ -688,9 +693,7 @@ void ImageScraper::DownloadHistoryPanel::FlushPending( )
 
     // Select the newest entry (the last one pushed) so the history highlight
     // tracks the file that was just shown in the media preview.
-    m_SelectedIndex    = m_History.GetSize( ) - 1;
-    m_ScrollToSelected = true;
-    SaveSelectedPath( );
+    SetSelection( m_History.GetSize( ) - 1, true, false );
 
     Save( );
 }
