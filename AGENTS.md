@@ -32,6 +32,7 @@ Swap `Debug` for `Release` or `/t:ImageScraper` for `/t:ImageScraperTests` as ne
 - Start each change on its own branch from `development`.
 - Do not commit directly to `development` or `master`.
 - Keep PRs small and focused.
+- Before opening a PR, merge `development` into the feature branch and resolve any conflicts locally.
 - Open PRs against `development`.
 
 ## Testing
