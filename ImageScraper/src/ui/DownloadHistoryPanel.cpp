@@ -24,6 +24,14 @@ ImageScraper::DownloadHistoryPanel::DownloadHistoryPanel( PreviewCallback onPrev
 
 ImageScraper::DownloadHistoryPanel::~DownloadHistoryPanel( )
 {
+    for( auto& [ filepath, future ] : m_ThumbnailFutures )
+    {
+        if( future.valid( ) )
+        {
+            future.wait( );
+        }
+    }
+
     for( auto& [ path, entry ] : m_ThumbnailCache )
     {
         if( entry.m_Texture != 0 )
@@ -36,6 +44,7 @@ ImageScraper::DownloadHistoryPanel::~DownloadHistoryPanel( )
 void ImageScraper::DownloadHistoryPanel::Update( )
 {
     FlushPending( );
+    FlushDecodedThumbnails( );
 
     ImGui::SetNextWindowSize( ImVec2( 700, 300 ), ImGuiCond_FirstUseEver );
 
@@ -293,6 +302,11 @@ void ImageScraper::DownloadHistoryPanel::Update( )
                     }
 
                     ImGui::Image( static_cast<ImTextureID>( thumb.m_Texture ), ImVec2( dispW, dispH ) );
+                    ImGui::Separator( );
+                }
+                else if( thumb.m_IsLoading )
+                {
+                    ImGui::TextDisabled( "Loading preview..." );
                     ImGui::Separator( );
                 }
 
@@ -693,6 +707,25 @@ void ImageScraper::DownloadHistoryPanel::FlushPending( )
     Save( );
 }
 
+void ImageScraper::DownloadHistoryPanel::FlushDecodedThumbnails( )
+{
+    std::vector<DecodedThumbnail> decodedThumbnails;
+    {
+        std::lock_guard<std::mutex> lock( m_DecodedThumbnailMutex );
+        if( m_DecodedThumbnails.empty( ) )
+        {
+            return;
+        }
+
+        decodedThumbnails.swap( m_DecodedThumbnails );
+    }
+
+    for( DecodedThumbnail& decoded : decodedThumbnails )
+    {
+        UploadDecodedThumbnail( std::move( decoded ) );
+    }
+}
+
 int ImageScraper::DownloadHistoryPanel::FindHistoryIndexByPath( const std::string& filepath ) const
 {
     int historyIndex = 0;
@@ -796,11 +829,61 @@ ImageScraper::DownloadHistoryPanel::ThumbnailEntry ImageScraper::DownloadHistory
         return { };
     }
 
+    m_ThumbnailCache[ filepath ].m_IsLoading = true;
+    RequestThumbnailLoad( filepath );
+    return m_ThumbnailCache[ filepath ];
+}
+
+void ImageScraper::DownloadHistoryPanel::RequestThumbnailLoad( const std::string& filepath )
+{
+    if( m_InFlightThumbnails.count( filepath ) > 0 )
+    {
+        return;
+    }
+
+    m_InFlightThumbnails.insert( filepath );
+    m_ThumbnailFutures[ filepath ] = std::async( std::launch::async, [ this, filepath ]( )
+    {
+        DecodedThumbnail decoded = DecodeThumbnail( filepath );
+
+        std::lock_guard<std::mutex> lock( m_DecodedThumbnailMutex );
+        m_DecodedThumbnails.push_back( std::move( decoded ) );
+    } );
+}
+
+void ImageScraper::DownloadHistoryPanel::UploadDecodedThumbnail( DecodedThumbnail&& decoded )
+{
+    m_InFlightThumbnails.erase( decoded.m_FilePath );
+    m_ThumbnailFutures.erase( decoded.m_FilePath );
+
+    auto it = m_ThumbnailCache.find( decoded.m_FilePath );
+    if( it == m_ThumbnailCache.end( ) )
+    {
+        return;
+    }
+
+    if( decoded.m_PixelData.empty( ) )
+    {
+        it->second = ThumbnailEntry{ };
+        return;
+    }
+
+    GLuint tex = 0;
+    glGenTextures( 1, &tex );
+    glBindTexture( GL_TEXTURE_2D, tex );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, decoded.m_Width, decoded.m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, decoded.m_PixelData.data( ) );
+    glBindTexture( GL_TEXTURE_2D, 0 );
+
+    it->second = ThumbnailEntry{ tex, decoded.m_Width, decoded.m_Height, false };
+}
+
+ImageScraper::DownloadHistoryPanel::DecodedThumbnail ImageScraper::DownloadHistoryPanel::DecodeThumbnail( const std::string& filepath )
+{
     if( IsVideoExtension( filepath ) )
     {
-        ThumbnailEntry entry = LoadVideoThumbnail( filepath );
-        m_ThumbnailCache[ filepath ] = entry;
-        return entry;
+        return DecodeVideoThumbnail( filepath );
     }
 
     // GIFs: stbi_load only decodes the first frame so file size is irrelevant to memory use.
@@ -813,30 +896,27 @@ ImageScraper::DownloadHistoryPanel::ThumbnailEntry ImageScraper::DownloadHistory
         const auto bytes = std::filesystem::file_size( filepath, ec );
         if( ec || bytes > k_MaxThumbnailBytes )
         {
-            return { };
+            return DecodedThumbnail{ filepath };
         }
     }
 
-    int w = 0, h = 0, channels = 0;
+    int w = 0;
+    int h = 0;
+    int channels = 0;
     unsigned char* data = stbi_load( filepath.c_str( ), &w, &h, &channels, STBI_rgb_alpha );
     if( !data )
     {
-        return { };
+        return DecodedThumbnail{ filepath };
     }
 
-    GLuint tex = 0;
-    glGenTextures( 1, &tex );
-    glBindTexture( GL_TEXTURE_2D, tex );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
-    glBindTexture( GL_TEXTURE_2D, 0 );
+    DecodedThumbnail decoded;
+    decoded.m_FilePath = filepath;
+    decoded.m_Width    = w;
+    decoded.m_Height   = h;
+    decoded.m_PixelData.assign( data, data + static_cast<size_t>( w ) * static_cast<size_t>( h ) * 4 );
 
     stbi_image_free( data );
-
-    ThumbnailEntry entry{ tex, w, h };
-    m_ThumbnailCache[ filepath ] = entry;
-    return entry;
+    return decoded;
 }
 
 bool ImageScraper::DownloadHistoryPanel::IsSupportedMediaExtension( const std::string& filepath )
@@ -866,32 +946,34 @@ bool ImageScraper::DownloadHistoryPanel::IsVideoExtension( const std::string& fi
     return k_Video.count( ext ) > 0;
 }
 
-ImageScraper::DownloadHistoryPanel::ThumbnailEntry ImageScraper::DownloadHistoryPanel::LoadVideoThumbnail( const std::string& filepath )
+ImageScraper::DownloadHistoryPanel::DecodedThumbnail ImageScraper::DownloadHistoryPanel::DecodeVideoThumbnail( const std::string& filepath )
 {
+    DecodedThumbnail decoded;
+    decoded.m_FilePath = filepath;
+
     VideoPlayer player;
     if( !player.Open( filepath ) )
     {
-        return { };
+        return decoded;
     }
 
     std::vector<uint8_t> rgba;
     if( !player.DecodeNextFrame( rgba ) )
     {
-        return { };
+        return decoded;
     }
 
-    const int w = player.GetWidth( );
-    const int h = player.GetHeight( );
+    decoded.m_Width  = player.GetWidth( );
+    decoded.m_Height = player.GetHeight( );
 
-    GLuint tex = 0;
-    glGenTextures( 1, &tex );
-    glBindTexture( GL_TEXTURE_2D, tex );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data( ) );
-    glBindTexture( GL_TEXTURE_2D, 0 );
+    const size_t pixelBytes = static_cast<size_t>( decoded.m_Width ) * static_cast<size_t>( decoded.m_Height ) * 4;
+    if( rgba.size( ) > pixelBytes )
+    {
+        rgba.resize( pixelBytes );
+    }
 
-    return ThumbnailEntry{ tex, w, h };
+    decoded.m_PixelData = std::move( rgba );
+    return decoded;
 }
 
 std::string ImageScraper::DownloadHistoryPanel::FormatFileSize( const std::string& filepath )

@@ -12,7 +12,10 @@
 #include <mutex>
 #include <functional>
 #include <filesystem>
+#include <future>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 namespace ImageScraper
 {
@@ -37,6 +40,7 @@ namespace ImageScraper
             GLuint m_Texture{ 0 };
             int    m_Width{ 0 };
             int    m_Height{ 0 };
+            bool   m_IsLoading{ false };
         };
 
         DownloadHistoryPanel( PreviewCallback onPreviewRequested, ReleaseCallback onReleaseRequested );
@@ -65,6 +69,7 @@ namespace ImageScraper
 
     private:
         void FlushPending( );
+        void FlushDecodedThumbnails( );
         void Save( );
         void SaveSelectedPath( );
         void EvictThumbnail( const std::string& filepath );
@@ -87,7 +92,19 @@ namespace ImageScraper
         // Returns thumbnail entry for the filepath; entry.m_Texture == 0 means unavailable.
         // Loads on first call, caches the result - never retries failed loads.
         ThumbnailEntry GetOrLoadThumbnail( const std::string& filepath );
-        static ThumbnailEntry LoadVideoThumbnail( const std::string& filepath );
+        void RequestThumbnailLoad( const std::string& filepath );
+
+        struct DecodedThumbnail
+        {
+            std::string                m_FilePath{ };
+            std::vector<unsigned char> m_PixelData{ };
+            int                        m_Width{ 0 };
+            int                        m_Height{ 0 };
+        };
+
+        void UploadDecodedThumbnail( DecodedThumbnail&& decoded );
+        static DecodedThumbnail DecodeThumbnail( const std::string& filepath );
+        static DecodedThumbnail DecodeVideoThumbnail( const std::string& filepath );
         static bool IsSupportedMediaExtension( const std::string& filepath );
         static bool IsVideoExtension( const std::string& filepath );
 
@@ -104,7 +121,11 @@ namespace ImageScraper
         std::vector<DownloadHistoryEntry> m_Pending{ };
 
         // Thumbnail cache: filepath → texture + dimensions (texture == 0 means failed/skipped)
-        std::unordered_map<std::string, ThumbnailEntry> m_ThumbnailCache{ };
+        std::unordered_map<std::string, ThumbnailEntry>   m_ThumbnailCache{ };
+        std::mutex                                        m_DecodedThumbnailMutex{ };
+        std::vector<DecodedThumbnail>                     m_DecodedThumbnails{ };
+        std::unordered_map<std::string, std::future<void>> m_ThumbnailFutures{ };
+        std::unordered_set<std::string>                   m_InFlightThumbnails{ };
 
         int  m_SelectedIndex{ -1 };
         bool m_Blocked{ false };

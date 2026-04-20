@@ -334,7 +334,7 @@ Recommended refactor:
 ### Phase 4: Performance pass
 
 - [x] Stream downloads directly to disk
-- [ ] Async thumbnail loading
+- [x] Async thumbnail loading
 - [ ] Reduce preview decode blocking
 - [ ] Drain more main-thread tasks per frame
 - [ ] Reuse HTTP client instances
