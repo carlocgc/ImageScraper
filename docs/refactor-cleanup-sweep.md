@@ -336,7 +336,7 @@ Recommended refactor:
 - [x] Stream downloads directly to disk
 - [x] Async thumbnail loading
 - [x] Reduce preview decode blocking
-- [ ] Drain more main-thread tasks per frame
+- [x] Drain more main-thread tasks per frame
 - [ ] Reuse HTTP client instances
 
 ## Best First Refactor Set
