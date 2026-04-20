@@ -155,7 +155,7 @@ TEST_CASE( "ThreadPool::SubmitMain - future resolves after Update() is called", 
     REQUIRE( future.get( ) == 99 );
 }
 
-TEST_CASE( "ThreadPool::SubmitMain - multiple tasks drain one per Update() call in FIFO order", "[ThreadPool]" )
+TEST_CASE( "ThreadPool::SubmitMain - multiple tasks drain in a single Update() call in FIFO order", "[ThreadPool]" )
 {
     ThreadPool pool;
     pool.Start( 1 );
@@ -168,13 +168,23 @@ TEST_CASE( "ThreadPool::SubmitMain - multiple tasks drain one per Update() call 
     REQUIRE( order.empty( ) );
 
     pool.Update( );
-    REQUIRE( order == std::vector<int>{ 1 } );
+    REQUIRE( order == std::vector<int>{ 1, 2, 3 } );
+}
+
+TEST_CASE( "ThreadPool::SubmitMain - tasks queued by a main-thread callback also drain in the same Update() call", "[ThreadPool]" )
+{
+    ThreadPool pool;
+    pool.Start( 1 );
+
+    std::vector<int> order;
+    pool.SubmitMain( [ & ]( )
+    {
+        order.push_back( 1 );
+        pool.SubmitMain( [ & ]( ) { order.push_back( 2 ); } );
+    } );
 
     pool.Update( );
     REQUIRE( order == std::vector<int>{ 1, 2 } );
-
-    pool.Update( );
-    REQUIRE( order == std::vector<int>{ 1, 2, 3 } );
 }
 
 // ─── Update ──────────────────────────────────────────────────────────────────
@@ -190,9 +200,11 @@ TEST_CASE( "ThreadPool::Update - no-op after Stop", "[ThreadPool]" )
 {
     ThreadPool pool;
     pool.Start( 1 );
-    pool.SubmitMain( [ ]( ) { } );
+    bool ran = false;
+    pool.SubmitMain( [ & ]( ) { ran = true; } );
     pool.Stop( );
     REQUIRE_NOTHROW( pool.Update( ) );
+    REQUIRE( !ran );
 }
 
 // ─── Stop edge cases ─────────────────────────────────────────────────────────
