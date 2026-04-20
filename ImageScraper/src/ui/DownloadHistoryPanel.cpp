@@ -60,8 +60,130 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         ImGui::End( );
         return;
     }
+    constexpr const char* k_HistoryEntryContextMenuPopup = "HistoryEntryContextMenu##hist";
+    bool contextMenuOpenedThisFrame = false;
+    bool contextMenuRowVisible = false;
+    bool openContextMenuAfterTable = false;
+    bool openDeleteSubfolderConfirmAfterMenu = false;
+    bool openDeleteAllConfirmAfterMenu = false;
 
-    // --- action buttons ---
+    constexpr ImGuiTableFlags tableFlags =
+        ImGuiTableFlags_Borders |
+        ImGuiTableFlags_RowBg |
+        ImGuiTableFlags_ScrollY |
+        ImGuiTableFlags_SizingStretchProp;
+
+    if( ImGui::BeginTable( "HistoryTable", 4, tableFlags ) )
+    {
+        ImGui::TableSetupScrollFreeze( 0, 1 );
+        ImGui::TableSetupColumn( "Time",       ImGuiTableColumnFlags_WidthFixed,   90.0f );
+        ImGui::TableSetupColumn( "Size",       ImGuiTableColumnFlags_WidthFixed,   70.0f );
+        ImGui::TableSetupColumn( "Filename",   ImGuiTableColumnFlags_WidthStretch, 0.35f );
+        ImGui::TableSetupColumn( "Source URL", ImGuiTableColumnFlags_WidthStretch, 0.65f );
+        ImGui::TableHeadersRow( );
+
+        int historyIndex = m_History.GetSize( ) - 1;
+        for( auto it = m_History.rbegin( ); it != m_History.rend( ); ++it, --historyIndex )
+        {
+            const DownloadHistoryEntry& entry = *it;
+
+            // Skip entries whose file has been removed from disk since download
+            if( !std::filesystem::exists( entry.m_FilePath ) )
+            {
+                continue;
+            }
+
+            ImGui::PushID( historyIndex );
+            ImGui::TableNextRow( );
+
+            ImGui::TableSetColumnIndex( 0 );
+            ImGui::TextUnformatted( entry.m_Timestamp.c_str( ) );
+
+            ImGui::TableSetColumnIndex( 1 );
+            ImGui::TextUnformatted( entry.m_FileSize.c_str( ) );
+
+            ImGui::TableSetColumnIndex( 2 );
+            const bool isSelected = ( m_SelectedIndex == historyIndex );
+            ImGui::Selectable( entry.m_FileName.c_str( ), isSelected, ImGuiSelectableFlags_SpanAllColumns );
+            const ImVec2 rowMin = ImGui::GetItemRectMin( );
+            const ImVec2 rowMax = ImGui::GetItemRectMax( );
+
+            if( historyIndex == m_ContextMenuIndex )
+            {
+                m_ContextMenuRowMin = rowMin;
+                m_ContextMenuRowMax = rowMax;
+                contextMenuRowVisible = true;
+            }
+
+            if( isSelected && m_ScrollToSelected )
+            {
+                ImGui::SetScrollHereY( 0.5f );
+                m_ScrollToSelected = false;
+            }
+
+            if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) )
+            {
+                SetSelection( historyIndex, false, true );
+            }
+
+            if( ImGui::IsItemClicked( ImGuiMouseButton_Right ) )
+            {
+                SetSelection( historyIndex, false, false );
+                m_ContextMenuIndex = historyIndex;
+                m_ContextMenuRowMin = rowMin;
+                m_ContextMenuRowMax = rowMax;
+                contextMenuOpenedThisFrame = true;
+                contextMenuRowVisible = true;
+                openContextMenuAfterTable = true;
+            }
+
+            if( ImGui::IsItemHovered( ) && !contextMenuOpenedThisFrame && !ImGui::IsPopupOpen( k_HistoryEntryContextMenuPopup ) )
+            {
+                ImGui::BeginTooltip( );
+
+                const ThumbnailEntry thumb = GetOrLoadThumbnail( entry.m_FilePath );
+                float dispW = k_TooltipMaxSize;
+                if( thumb.m_Texture != 0 )
+                {
+                    dispW = static_cast<float>( thumb.m_Width );
+                    float dispH = static_cast<float>( thumb.m_Height );
+                    // Scale down so width never exceeds k_TooltipMaxSize, preserving aspect ratio
+                    if( dispW > k_TooltipMaxSize )
+                    {
+                        const float scale = k_TooltipMaxSize / dispW;
+                        dispW *= scale;
+                        dispH *= scale;
+                    }
+
+                    ImGui::Image( static_cast<ImTextureID>( thumb.m_Texture ), ImVec2( dispW, dispH ) );
+                    ImGui::Separator( );
+                }
+                else if( thumb.m_IsLoading )
+                {
+                    ImGui::TextDisabled( "Loading preview..." );
+                    ImGui::Separator( );
+                }
+
+                ImGui::PushTextWrapPos( ImGui::GetCursorPosX( ) + dispW );
+                ImGui::TextDisabled( "Left click: preview  |  Right click: actions" );
+                ImGui::PopTextWrapPos( );
+                ImGui::EndTooltip( );
+            }
+
+            ImGui::TableSetColumnIndex( 3 );
+            ImGui::TextUnformatted( entry.m_SourceUrl.c_str( ) );
+
+            ImGui::PopID( );
+        }
+
+        ImGui::EndTable( );
+    }
+
+    if( openContextMenuAfterTable )
+    {
+        ImGui::OpenPopup( k_HistoryEntryContextMenuPopup );
+    }
+
     const bool hasSelection =
         m_SelectedIndex >= 0 && m_SelectedIndex < m_History.GetSize( );
     const std::string providerName =
@@ -70,25 +192,76 @@ void ImageScraper::DownloadHistoryPanel::Update( )
     const std::string subfolderLabel =
         hasSelection ? GetSubfolderLabel( m_History[ m_SelectedIndex ].m_FilePath ) : "";
     const bool hasSubfolder = !subfolderLabel.empty( );
-
-    ImGui::BeginDisabled( !hasSelection || m_Blocked );
-    if( ImGui::Button( "Delete Selected", ImVec2( 0, 0 ) ) )
-    {
-        DeleteSelectedEntry( );
-    }
-    ImGui::EndDisabled( );
-
-    ImGui::SameLine( );
-
     const std::string delSubLabel =
         hasSubfolder ? ( "Delete " + subfolderLabel ) : "Delete Subfolder";
+    const std::string delAllLabel =
+        hasProvider ? ( "Delete All " + providerName ) : "Delete All";
 
-    ImGui::BeginDisabled( !hasSelection || !hasSubfolder || m_Blocked );
-    if( ImGui::Button( delSubLabel.c_str( ), ImVec2( 0, 0 ) ) )
+    if( ImGui::BeginPopup( k_HistoryEntryContextMenuPopup ) )
+    {
+        if( hasSelection )
+        {
+            if( ImGui::MenuItem( "Open in Explorer" ) )
+            {
+                OpenInExplorer( m_History[ m_SelectedIndex ].m_FilePath );
+                m_ContextMenuIndex = -1;
+                ImGui::CloseCurrentPopup( );
+            }
+
+            ImGui::Separator( );
+
+            if( ImGui::MenuItem( "Delete Selected", nullptr, false, !m_Blocked ) )
+            {
+                DeleteSelectedEntry( );
+                m_ContextMenuIndex = -1;
+                ImGui::CloseCurrentPopup( );
+            }
+
+            if( ImGui::MenuItem( delSubLabel.c_str( ), nullptr, false, hasSubfolder && !m_Blocked ) )
+            {
+                openDeleteSubfolderConfirmAfterMenu = true;
+                m_ContextMenuIndex = -1;
+                ImGui::CloseCurrentPopup( );
+            }
+
+            if( ImGui::MenuItem( delAllLabel.c_str( ), nullptr, false, hasProvider && !m_Blocked ) )
+            {
+                openDeleteAllConfirmAfterMenu = true;
+                m_ContextMenuIndex = -1;
+                ImGui::CloseCurrentPopup( );
+            }
+        }
+
+        const ImVec2 mousePos = ImGui::GetMousePos( );
+        const bool rowHovered =
+            contextMenuRowVisible &&
+            mousePos.x >= m_ContextMenuRowMin.x &&
+            mousePos.x <= m_ContextMenuRowMax.x &&
+            mousePos.y >= m_ContextMenuRowMin.y &&
+            mousePos.y <= m_ContextMenuRowMax.y;
+        const bool popupHovered = ImGui::IsWindowHovered( ImGuiHoveredFlags_AllowWhenBlockedByPopup );
+        if( !contextMenuRowVisible || ( !rowHovered && !popupHovered ) )
+        {
+            m_ContextMenuIndex = -1;
+            ImGui::CloseCurrentPopup( );
+        }
+
+        ImGui::EndPopup( );
+    }
+    else if( !ImGui::IsPopupOpen( k_HistoryEntryContextMenuPopup ) )
+    {
+        m_ContextMenuIndex = -1;
+    }
+
+    if( openDeleteSubfolderConfirmAfterMenu )
     {
         ImGui::OpenPopup( "Confirm Delete Subfolder##hist" );
     }
-    ImGui::EndDisabled( );
+
+    if( openDeleteAllConfirmAfterMenu )
+    {
+        ImGui::OpenPopup( "Confirm Delete All##hist" );
+    }
 
     ImGui::SetNextWindowSize( ImVec2( 380, 0 ), ImGuiCond_Always );
     if( ImGui::BeginPopupModal( "Confirm Delete Subfolder##hist", nullptr,
@@ -140,18 +313,6 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         ImGui::EndPopup( );
     }
 
-    ImGui::SameLine( );
-
-    const std::string delAllLabel =
-        hasProvider ? ( "Delete All " + providerName ) : "Delete All";
-
-    ImGui::BeginDisabled( !hasSelection || !hasProvider || m_Blocked );
-    if( ImGui::Button( delAllLabel.c_str( ), ImVec2( 0, 0 ) ) )
-    {
-        ImGui::OpenPopup( "Confirm Delete All##hist" );
-    }
-    ImGui::EndDisabled( );
-
     ImGui::SetNextWindowSize( ImVec2( 380, 0 ), ImGuiCond_Always );
     if( ImGui::BeginPopupModal( "Confirm Delete All##hist", nullptr,
             ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize ) )
@@ -200,103 +361,6 @@ void ImageScraper::DownloadHistoryPanel::Update( )
             ImGui::CloseCurrentPopup( );
         }
         ImGui::EndPopup( );
-    }
-
-    constexpr ImGuiTableFlags tableFlags =
-        ImGuiTableFlags_Borders |
-        ImGuiTableFlags_RowBg |
-        ImGuiTableFlags_ScrollY |
-        ImGuiTableFlags_SizingStretchProp;
-
-    if( ImGui::BeginTable( "HistoryTable", 4, tableFlags ) )
-    {
-        ImGui::TableSetupScrollFreeze( 0, 1 );
-        ImGui::TableSetupColumn( "Time",       ImGuiTableColumnFlags_WidthFixed,   90.0f );
-        ImGui::TableSetupColumn( "Size",       ImGuiTableColumnFlags_WidthFixed,   70.0f );
-        ImGui::TableSetupColumn( "Filename",   ImGuiTableColumnFlags_WidthStretch, 0.35f );
-        ImGui::TableSetupColumn( "Source URL", ImGuiTableColumnFlags_WidthStretch, 0.65f );
-        ImGui::TableHeadersRow( );
-
-        int historyIndex = m_History.GetSize( ) - 1;
-        for( auto it = m_History.rbegin( ); it != m_History.rend( ); ++it, --historyIndex )
-        {
-            const DownloadHistoryEntry& entry = *it;
-
-            // Skip entries whose file has been removed from disk since download
-            if( !std::filesystem::exists( entry.m_FilePath ) )
-            {
-                continue;
-            }
-
-            ImGui::PushID( historyIndex );
-            ImGui::TableNextRow( );
-
-            ImGui::TableSetColumnIndex( 0 );
-            ImGui::TextUnformatted( entry.m_Timestamp.c_str( ) );
-
-            ImGui::TableSetColumnIndex( 1 );
-            ImGui::TextUnformatted( entry.m_FileSize.c_str( ) );
-
-            ImGui::TableSetColumnIndex( 2 );
-            const bool isSelected = ( m_SelectedIndex == historyIndex );
-            ImGui::Selectable( entry.m_FileName.c_str( ), isSelected, ImGuiSelectableFlags_SpanAllColumns );
-
-            if( isSelected && m_ScrollToSelected )
-            {
-                ImGui::SetScrollHereY( 0.5f );
-                m_ScrollToSelected = false;
-            }
-
-            if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) )
-            {
-                SetSelection( historyIndex, false, true );
-            }
-
-            if( ImGui::IsItemClicked( ImGuiMouseButton_Right ) )
-            {
-                OpenInExplorer( entry.m_FilePath );
-            }
-
-            if( ImGui::IsItemHovered( ) )
-            {
-                ImGui::BeginTooltip( );
-
-                const ThumbnailEntry thumb = GetOrLoadThumbnail( entry.m_FilePath );
-                float dispW = k_TooltipMaxSize;
-                if( thumb.m_Texture != 0 )
-                {
-                    dispW = static_cast<float>( thumb.m_Width );
-                    float dispH = static_cast<float>( thumb.m_Height );
-                    // Scale down so width never exceeds k_TooltipMaxSize, preserving aspect ratio
-                    if( dispW > k_TooltipMaxSize )
-                    {
-                        const float scale = k_TooltipMaxSize / dispW;
-                        dispW *= scale;
-                        dispH *= scale;
-                    }
-
-                    ImGui::Image( static_cast<ImTextureID>( thumb.m_Texture ), ImVec2( dispW, dispH ) );
-                    ImGui::Separator( );
-                }
-                else if( thumb.m_IsLoading )
-                {
-                    ImGui::TextDisabled( "Loading preview..." );
-                    ImGui::Separator( );
-                }
-
-                ImGui::PushTextWrapPos( ImGui::GetCursorPosX( ) + dispW );
-                ImGui::TextDisabled( "Left click: preview  |  Right click: reveal in Explorer" );
-                ImGui::PopTextWrapPos( );
-                ImGui::EndTooltip( );
-            }
-
-            ImGui::TableSetColumnIndex( 3 );
-            ImGui::TextUnformatted( entry.m_SourceUrl.c_str( ) );
-
-            ImGui::PopID( );
-        }
-
-        ImGui::EndTable( );
     }
 
     if( m_SelectedIndex >= 0
