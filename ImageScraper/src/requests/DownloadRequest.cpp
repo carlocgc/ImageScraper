@@ -16,14 +16,28 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
 {
     LogDebug( "[%s] DownloadRequest started! URL: %s", __FUNCTION__, options.m_Url.c_str( ) );
 
-    if( options.m_BufferPtr == nullptr )
+    if( options.m_BufferPtr == nullptr && options.m_OutputFilePath.empty( ) )
     {
         m_Result.SetError( ResponseErrorCode::InternalServerError );
         LogDebug( "[%s] DownloadRequest failed! error: %s", __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ) );
         return m_Result;
     }
 
+    m_Result = RequestResult{ };
     m_BufferPtr = options.m_BufferPtr;
+    m_OutputFilePath = options.m_OutputFilePath;
+    m_BytesWritten = 0;
+
+    if( !m_OutputFilePath.empty( ) )
+    {
+        m_OutputFile.open( m_OutputFilePath, std::ios::binary | std::ios::trunc );
+        if( !m_OutputFile.is_open( ) )
+        {
+            m_Result.SetError( ResponseErrorCode::InternalServerError );
+            LogError( "[%s] DownloadRequest failed, could not open file for write: %s", __FUNCTION__, m_OutputFilePath.string( ).c_str( ) );
+            return m_Result;
+        }
+    }
 
     try
     {
@@ -54,6 +68,7 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
     }
     catch( curlpp::RuntimeError& e )
     {
+        CleanupPartialOutputFile( );
         if( m_Sink && m_Sink->IsCancelled( ) )
         {
             LogDebug( "[%s] DownloadRequest aborted by cancellation.", __FUNCTION__ );
@@ -68,10 +83,16 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
     }
     catch( curlpp::LogicError& e )
     {
+        CleanupPartialOutputFile( );
         m_Result.SetError( ResponseErrorCode::InternalServerError );
         m_Result.m_Error.m_ErrorString = e.what( );
         LogDebug( "[%s] DownloadRequest failed! error: %s", __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ) );
         return m_Result;
+    }
+
+    if( m_OutputFile.is_open( ) )
+    {
+        m_OutputFile.close( );
     }
 
     LogDebug( "[%s] DownloadRequest complete!", __FUNCTION__ );
@@ -81,15 +102,38 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
 
 size_t ImageScraper::DownloadRequest::WriteCallback( char* contents, size_t size, size_t nmemb )
 {
-    if( !m_BufferPtr )
+    const size_t realsize = size * nmemb;
+
+    if( m_BufferPtr )
     {
-        LogError( "[%s] DownloadRequest failed, buffer invalid!", __FUNCTION__ );
+        m_BufferPtr->insert( m_BufferPtr->begin( ) + static_cast<std::ptrdiff_t>( m_BytesWritten ), contents, contents + realsize );
+    }
+
+    if( !m_OutputFilePath.empty( ) )
+    {
+        if( !m_OutputFile.is_open( ) )
+        {
+            LogError( "[%s] DownloadRequest failed, output file invalid!", __FUNCTION__ );
+            m_Result.SetError( ResponseErrorCode::InternalServerError );
+            return 0;
+        }
+
+        m_OutputFile.write( contents, static_cast<std::streamsize>( realsize ) );
+        if( !m_OutputFile.good( ) )
+        {
+            LogError( "[%s] DownloadRequest failed while writing file: %s", __FUNCTION__, m_OutputFilePath.string( ).c_str( ) );
+            m_Result.SetError( ResponseErrorCode::InternalServerError );
+            return 0;
+        }
+    }
+
+    if( !m_BufferPtr && m_OutputFilePath.empty( ) )
+    {
+        LogError( "[%s] DownloadRequest failed, no valid output target!", __FUNCTION__ );
         m_Result.SetError( ResponseErrorCode::InternalServerError );
         return 0;
     }
 
-    size_t realsize = size * nmemb;
-    m_BufferPtr->insert( m_BufferPtr->begin( ) + m_BytesWritten, contents, contents + realsize );
     m_BytesWritten += realsize;
 
     LogDebug( "[%s] %i bytes written.", __FUNCTION__, static_cast< int >( m_BytesWritten ) );
@@ -120,4 +164,24 @@ int ImageScraper::DownloadRequest::ProgressCallback( double dltotal, double dlno
 bool ImageScraper::DownloadRequest::IsFloatZero( float value, float epsilon /*= 1e-6 */ )
 {
     return std::abs( value ) < epsilon;
+}
+
+void ImageScraper::DownloadRequest::CleanupPartialOutputFile( )
+{
+    if( m_OutputFile.is_open( ) )
+    {
+        m_OutputFile.close( );
+    }
+
+    if( m_OutputFilePath.empty( ) )
+    {
+        return;
+    }
+
+    std::error_code ec;
+    std::filesystem::remove( m_OutputFilePath, ec );
+    if( ec )
+    {
+        WarningLog( "[%s] Failed to remove partial download file %s: %s", __FUNCTION__, m_OutputFilePath.string( ).c_str( ), ec.message( ).c_str( ) );
+    }
 }
