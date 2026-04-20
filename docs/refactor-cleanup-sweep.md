@@ -329,7 +329,7 @@ Recommended refactor:
 
 - [x] Decide whether to keep `RingBuffer`
 - [x] Add safe iteration APIs
-- [ ] Replace manual index loops where the container now supports better traversal
+- [x] Replace manual index loops where the container now supports better traversal
 
 ### Phase 4: Performance pass
 
