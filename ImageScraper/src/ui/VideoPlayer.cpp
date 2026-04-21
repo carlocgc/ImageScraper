@@ -35,6 +35,7 @@ ImageScraper::VideoPlayer& ImageScraper::VideoPlayer::operator=( VideoPlayer&& o
     m_Frame       = other.m_Frame;
     m_Packet      = other.m_Packet;
     m_VideoStream = other.m_VideoStream;
+    m_HasAudio    = other.m_HasAudio;
     m_Width       = other.m_Width;
     m_Height      = other.m_Height;
     m_Fps         = other.m_Fps;
@@ -45,6 +46,7 @@ ImageScraper::VideoPlayer& ImageScraper::VideoPlayer::operator=( VideoPlayer&& o
     other.m_Frame       = nullptr;
     other.m_Packet      = nullptr;
     other.m_VideoStream = -1;
+    other.m_HasAudio    = false;
     other.m_Width       = 0;
     other.m_Height      = 0;
     other.m_Fps         = 30.0;
@@ -69,14 +71,18 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
         return false;
     }
 
-    // Find the first video stream
     m_VideoStream = -1;
+    m_HasAudio    = false;
     for( unsigned int i = 0; i < m_FormatCtx->nb_streams; ++i )
     {
-        if( m_FormatCtx->streams[ i ]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO )
+        const AVMediaType streamType = m_FormatCtx->streams[ i ]->codecpar->codec_type;
+        if( streamType == AVMEDIA_TYPE_VIDEO && m_VideoStream < 0 )
         {
             m_VideoStream = static_cast<int>( i );
-            break;
+        }
+        else if( streamType == AVMEDIA_TYPE_AUDIO )
+        {
+            m_HasAudio = true;
         }
     }
 
@@ -241,6 +247,7 @@ void ImageScraper::VideoPlayer::Close( )
     if( m_FormatCtx ) { avformat_close_input( &m_FormatCtx ); m_FormatCtx = nullptr; }
 
     m_VideoStream = -1;
+    m_HasAudio    = false;
     m_Width       = 0;
     m_Height      = 0;
     m_Fps         = 30.0;

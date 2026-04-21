@@ -38,6 +38,7 @@ namespace ImageScraper
         void Close( );
 
         bool   IsOpen( )      const { return m_FormatCtx != nullptr; }
+        bool   HasAudio( )    const { return m_HasAudio; }
         int    GetWidth( )    const { return m_Width; }
         int    GetHeight( )   const { return m_Height; }
         double GetFPS( )      const { return m_Fps; }
@@ -52,6 +53,7 @@ namespace ImageScraper
         AVFrame*         m_Frame      { nullptr };
         AVPacket*        m_Packet     { nullptr };
         int              m_VideoStream{ -1 };
+        bool             m_HasAudio   { false };
         int              m_Width      { 0 };
         int              m_Height     { 0 };
         double           m_Fps        { 30.0 };
