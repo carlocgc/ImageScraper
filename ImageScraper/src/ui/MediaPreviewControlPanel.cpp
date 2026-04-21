@@ -4,11 +4,30 @@
 
 #include <algorithm>
 
+namespace
+{
+    constexpr const char* kIconPrevious = u8"\uE892";
+    constexpr const char* kIconNext     = u8"\uE893";
+    constexpr const char* kIconPlay     = u8"\uE768";
+    constexpr const char* kIconPause    = u8"\uE769";
+    constexpr const char* kIconMuted    = u8"\uE74F";
+    constexpr const char* kIconVolume0  = u8"\uE992";
+
+    constexpr const char* kFallbackPrevious = "|<";
+    constexpr const char* kFallbackNext     = ">|";
+    constexpr const char* kFallbackPlay     = ">";
+    constexpr const char* kFallbackPause    = "||";
+    constexpr const char* kFallbackMuted    = "x";
+    constexpr const char* kFallbackVolume0  = "o";
+}
+
 ImageScraper::MediaPreviewControlPanel::MediaPreviewControlPanel(
     MediaPreviewPanel* previewPanel,
-    DownloadHistoryPanel* historyPanel )
+    DownloadHistoryPanel* historyPanel,
+    ImFont* iconFont )
     : m_PreviewPanel{ previewPanel }
     , m_HistoryPanel{ historyPanel }
+    , m_IconFont{ iconFont }
 {
 }
 
@@ -78,6 +97,20 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         ImU32 iconCol;
     };
 
+    auto DrawButtonIcon = [ & ]( ImVec2 center, float radius, const char* iconGlyph, const char* fallbackGlyph, ImU32 iconCol )
+    {
+        ImFont* font = m_IconFont ? m_IconFont : ImGui::GetFont( );
+        const float fontSize = m_IconFont ? radius * 1.395f : radius * 1.05f;
+        const char* glyph = m_IconFont ? iconGlyph : fallbackGlyph;
+        const ImVec2 textSize = font->CalcTextSizeA( fontSize, FLT_MAX, 0.0f, glyph );
+        const float verticalNudge = m_IconFont ? 0.5f : 0.0f;
+        const ImVec2 textPos = ImVec2(
+            center.x - textSize.x * 0.5f,
+            center.y - textSize.y * 0.5f + verticalNudge );
+
+        dl->AddText( font, fontSize, textPos, iconCol, glyph );
+    };
+
     auto CircleBtn = [ & ]( const char* id, float localX, float localY, float radius, bool disabled ) -> BtnResult
     {
         ImGui::SetCursorPos( ImVec2( cursorBaseX + startX + localX, cursorBaseY + baseY + localY ) );
@@ -108,32 +141,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
     // --- Back (|<<) - toward oldest ---
     {
         auto [ pressed, center, iconCol ] = CircleBtn( "##back", 0.f, navOffY, k_NavR, !canGoBack );
-
-        const float tw     = k_NavR * 0.36f;
-        const float th     = k_NavR * 0.40f;
-        const float ov     = k_NavR * 0.07f;
-        const float bw     = k_NavR * 0.10f;
-        const float bg     = k_NavR * 0.04f;
-        const float totalW = tw + ( tw - ov ) + bg + bw;
-        const float rx     = center.x + totalW * 0.5f;
-
-        dl->AddTriangleFilled(
-            ImVec2( rx, center.y - th ),
-            ImVec2( rx, center.y + th ),
-            ImVec2( rx - tw, center.y ),
-            iconCol );
-
-        dl->AddTriangleFilled(
-            ImVec2( rx - tw + ov, center.y - th ),
-            ImVec2( rx - tw + ov, center.y + th ),
-            ImVec2( rx - 2.f * tw + ov, center.y ),
-            iconCol );
-
-        const float barRight = rx - 2.f * tw + ov - bg;
-        dl->AddRectFilled(
-            ImVec2( barRight - bw, center.y - th ),
-            ImVec2( barRight, center.y + th ),
-            iconCol );
+        DrawButtonIcon( center, k_NavR, kIconPrevious, kFallbackPrevious, iconCol );
 
         if( pressed )
         {
@@ -149,31 +157,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
     // --- Play / pause ---
     {
         auto [ pressed, center, iconCol ] = CircleBtn( "##play", k_NavDia + k_Spacing, 0.f, k_PlayR, !canPlay );
-
-        if( playing )
-        {
-            const float bw  = k_PlayR * 0.18f;
-            const float bh  = k_PlayR * 0.45f;
-            const float gap = k_PlayR * 0.12f;
-            dl->AddRectFilled(
-                ImVec2( center.x - gap - bw, center.y - bh ),
-                ImVec2( center.x - gap, center.y + bh ),
-                iconCol );
-            dl->AddRectFilled(
-                ImVec2( center.x + gap, center.y - bh ),
-                ImVec2( center.x + gap + bw, center.y + bh ),
-                iconCol );
-        }
-        else
-        {
-            const float th = k_PlayR * 0.48f;
-            const float tw = k_PlayR * 0.52f;
-            dl->AddTriangleFilled(
-                ImVec2( center.x - tw * 0.35f, center.y - th ),
-                ImVec2( center.x - tw * 0.35f, center.y + th ),
-                ImVec2( center.x + tw * 0.65f, center.y ),
-                iconCol );
-        }
+        DrawButtonIcon( center, k_PlayR, playing ? kIconPause : kIconPlay, playing ? kFallbackPause : kFallbackPlay, iconCol );
 
         if( pressed )
         {
@@ -194,32 +178,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
             navOffY,
             k_NavR,
             !canGoForward );
-
-        const float tw     = k_NavR * 0.36f;
-        const float th     = k_NavR * 0.40f;
-        const float ov     = k_NavR * 0.07f;
-        const float bw     = k_NavR * 0.10f;
-        const float bg     = k_NavR * 0.04f;
-        const float totalW = tw + ( tw - ov ) + bg + bw;
-        const float lx     = center.x - totalW * 0.5f;
-
-        dl->AddTriangleFilled(
-            ImVec2( lx, center.y - th ),
-            ImVec2( lx, center.y + th ),
-            ImVec2( lx + tw, center.y ),
-            iconCol );
-
-        dl->AddTriangleFilled(
-            ImVec2( lx + tw - ov, center.y - th ),
-            ImVec2( lx + tw - ov, center.y + th ),
-            ImVec2( lx + 2.f * tw - ov, center.y ),
-            iconCol );
-
-        const float barLeft = lx + 2.f * tw - ov + bg;
-        dl->AddRectFilled(
-            ImVec2( barLeft, center.y - th ),
-            ImVec2( barLeft + bw, center.y + th ),
-            iconCol );
+        DrawButtonIcon( center, k_NavR, kIconNext, kFallbackNext, iconCol );
 
         if( pressed )
         {
@@ -240,40 +199,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
             navOffY,
             k_NavR,
             !canMute );
-
-        const float speakerOffsetX = muted ? -k_NavR * 0.22f : -k_NavR * 0.11f;
-        const float bodyW          = k_NavR * 0.24f;
-        const float bodyH          = k_NavR * 0.34f;
-        const float coneW          = k_NavR * 0.31f;
-        const float coneBaseX      = center.x + speakerOffsetX + coneW * 0.48f;
-        const float tipX           = center.x + speakerOffsetX - coneW * 0.52f;
-
-        dl->AddRectFilled(
-            ImVec2( coneBaseX, center.y - bodyH ),
-            ImVec2( coneBaseX + bodyW, center.y + bodyH ),
-            iconCol );
-        dl->AddTriangleFilled(
-            ImVec2( coneBaseX, center.y - bodyH * 1.08f ),
-            ImVec2( coneBaseX, center.y + bodyH * 1.08f ),
-            ImVec2( tipX, center.y ),
-            iconCol );
-
-        if( muted )
-        {
-            const float crossCenterX = center.x + k_NavR * 0.20f;
-            const float crossHalf    = k_NavR * 0.24f;
-            const float crossWidth   = std::max( 2.1f, scale * 1.9f );
-            dl->AddLine(
-                ImVec2( crossCenterX - crossHalf, center.y - crossHalf ),
-                ImVec2( crossCenterX + crossHalf, center.y + crossHalf ),
-                iconCol,
-                crossWidth );
-            dl->AddLine(
-                ImVec2( crossCenterX - crossHalf, center.y + crossHalf ),
-                ImVec2( crossCenterX + crossHalf, center.y - crossHalf ),
-                iconCol,
-                crossWidth );
-        }
+        DrawButtonIcon( center, k_NavR, muted ? kIconMuted : kIconVolume0, muted ? kFallbackMuted : kFallbackVolume0, iconCol );
 
         if( pressed )
         {
