@@ -183,10 +183,11 @@ void ImageScraper::MediaPreviewPanel::Update( )
                      && m_VideoPlayer )
             {
                 const double duration = m_VideoPlayer->GetDuration( );
-                if( duration > 0.0 )
+                const double fps = m_VideoPlayer->GetFPS( );
+                if( duration > 0.0 && fps > 0.0 )
                 {
                     const double currentTime =
-                        static_cast<double>( m_VideoFrameIndex ) / m_VideoPlayer->GetFPS( );
+                        static_cast<double>( m_VideoFrameIndex ) / fps;
                     progress = static_cast<float>( currentTime / duration );
                 }
             }
@@ -261,6 +262,7 @@ void ImageScraper::MediaPreviewPanel::RequestPreview( const std::string& filepat
         m_HasLatestPath = true;
     }
     m_ForceLoad = true;
+    m_PlayOnUpload = false;
 }
 
 void ImageScraper::MediaPreviewPanel::ClearPreview( )
@@ -289,6 +291,7 @@ void ImageScraper::MediaPreviewPanel::ClearPreview( )
     m_CurrentFilePath = "";
     m_LoadingFilePath = "";
     m_VideoFrameIndex = 0;
+    m_PlayOnUpload    = false;
 }
 
 void ImageScraper::MediaPreviewPanel::ReleaseFileIfCurrent( const std::string& filepath )
@@ -391,7 +394,9 @@ void ImageScraper::MediaPreviewPanel::KickFullGifDecode( )
 
     m_MediaState      = MediaState::LoadingFullFrames;
     m_LoadingFilePath = m_CurrentFilePath;
+    m_CancelDecode    = false;
     m_IsDecoding      = true;
+    m_PlayOnUpload    = true;
 
     const std::string filepath = m_CurrentFilePath;
 
@@ -418,7 +423,12 @@ void ImageScraper::MediaPreviewPanel::AdvanceVideoFrame( )
     }
 
     m_FrameAccumMs += ImGui::GetIO( ).DeltaTime * 1000.0f;
-    const float frameDurationMs = static_cast<float>( 1000.0 / m_VideoPlayer->GetFPS( ) );
+    const double fps = m_VideoPlayer->GetFPS( );
+    if( fps <= 0.0 )
+    {
+        return;
+    }
+    const float frameDurationMs = static_cast<float>( 1000.0 / fps );
 
     if( m_FrameAccumMs < frameDurationMs )
     {
@@ -439,9 +449,9 @@ void ImageScraper::MediaPreviewPanel::AdvanceVideoFrame( )
         m_VideoFrameIndex = 0;
     }
 
-    // Upload the new frame - dimensions are constant for a given video so glTexImage2D is fine
+    // Upload the new frame into the existing streamed-media texture.
     glBindTexture( GL_TEXTURE_2D, m_Textures[ 0 ] );
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_VideoFrameBuffer.data( ) );
+    glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, m_Width, m_Height, GL_RGBA, GL_UNSIGNED_BYTE, m_VideoFrameBuffer.data( ) );
     glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
@@ -453,6 +463,7 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
     if( decoded.m_PixelData.empty( ) )
     {
         m_MediaState = MediaState::None;
+        m_PlayOnUpload = false;
         return;
     }
 
@@ -480,7 +491,8 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
         glBindTexture( GL_TEXTURE_2D, 0 );
         m_Textures.push_back( textureId );
         m_VideoFrameIndex = 0;
-        m_MediaState      = MediaState::VideoPaused;
+        m_MediaState      = m_PlayOnUpload ? MediaState::VideoPlaying : MediaState::VideoPaused;
+        m_PlayOnUpload    = false;
         return;
     }
 
@@ -513,6 +525,8 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
     {
         m_MediaState = MediaState::None;
     }
+
+    m_PlayOnUpload = false;
 }
 
 void ImageScraper::MediaPreviewPanel::FreeTextures( )
@@ -536,6 +550,16 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
     if( IsVideo( filepath ) )
     {
         return DecodeVideoFile( filepath );
+    }
+
+    if( IsGif( filepath ) && !firstFrameOnly )
+    {
+        if( auto decoded = DecodeVideoFile( filepath ) )
+        {
+            return decoded;
+        }
+
+        LogDebug( "[%s] Falling back to stb GIF decode for: %s", __FUNCTION__, filepath.c_str( ) );
     }
 
     std::ifstream file( filepath, std::ios::binary | std::ios::ate );
