@@ -6,12 +6,30 @@
 
 #include <fstream>
 #include <algorithm>
+#include <cctype>
+#include <cmath>
+#include <cstdlib>
 #include <filesystem>
 #include <iomanip>
 #include <sstream>
 
 ImageScraper::MediaPreviewPanel::~MediaPreviewPanel( )
 {
+    m_CancelAudioPrepare = true;
+    m_CancelDecode       = true;
+
+    if( m_AudioPrepareFuture.valid( ) )
+    {
+        m_AudioPrepareFuture.wait( );
+    }
+    if( m_DecodeFuture.valid( ) )
+    {
+        m_DecodeFuture.wait( );
+    }
+
+    StopAudioPlayback( );
+    m_AudioPlayer.reset( );
+    m_VideoPlayer.reset( );
     FreeTextures( );
 }
 
@@ -30,16 +48,16 @@ void ImageScraper::MediaPreviewPanel::Update( )
         }
     }
 
+    ApplyPreparedAudio( );
+
     // Kick a fast first-frame decode when a new file arrives.
     KickDecodeIfNeeded( );
 
-    // Advance video frame if playing
     if( m_MediaState == MediaState::VideoPlaying )
     {
         AdvanceVideoFrame( );
     }
 
-    // Capture content-region screen coords before rendering (needed for foreground text)
     ImVec2 contentScreenMin{ 0.0f, 0.0f };
     ImVec2 contentScreenMax{ 0.0f, 0.0f };
     bool   windowOpen = false;
@@ -61,7 +79,6 @@ void ImageScraper::MediaPreviewPanel::Update( )
         }
         else
         {
-            // Advance GIF frame only while playing
             if( m_MediaState == MediaState::GifPlaying && m_Textures.size( ) > 1 )
             {
                 m_FrameAccumMs += ImGui::GetIO( ).DeltaTime * 1000.0f;
@@ -78,7 +95,6 @@ void ImageScraper::MediaPreviewPanel::Update( )
                 }
             }
 
-            // Scale image to fill the full content region
             const ImVec2 avail = ImGui::GetContentRegionAvail( );
             float drawW = static_cast<float>( m_Width );
             float drawH = static_cast<float>( m_Height );
@@ -94,7 +110,6 @@ void ImageScraper::MediaPreviewPanel::Update( )
                 drawH = avail.y;
             }
 
-            // Centre the image in the available region
             const float offsetX = ( avail.x - drawW ) * 0.5f;
             const float offsetY = ( avail.y - drawH ) * 0.5f;
             ImGui::SetCursorPos( ImVec2( ImGui::GetCursorPosX( ) + offsetX, ImGui::GetCursorPosY( ) + offsetY ) );
@@ -110,7 +125,6 @@ void ImageScraper::MediaPreviewPanel::Update( )
     }
     ImGui::End( );
 
-    // Foreground badge overlays
     if( windowOpen )
     {
         constexpr float k_Pad      = 6.0f;
@@ -132,7 +146,6 @@ void ImageScraper::MediaPreviewPanel::Update( )
 
         const float badgeY = contentScreenMin.y + k_Pad;
 
-        // Top-left: filename
         if( !m_CurrentFilePath.empty( ) )
         {
             const std::string name = std::filesystem::path( m_CurrentFilePath ).filename( ).string( );
@@ -168,14 +181,12 @@ void ImageScraper::MediaPreviewPanel::Update( )
             }
         }
 
-        // Bottom: playback progress bar for multi-frame GIFs and videos
         {
-            float progress = -1.0f;  // negative means "don't draw"
+            float progress = -1.0f;
 
             if( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::StaticFrame )
                 && m_Textures.size( ) > 1 )
             {
-                // GIF: position within the current loop
                 progress = static_cast<float>( m_CurrentFrame ) /
                            static_cast<float>( m_Textures.size( ) - 1 );
             }
@@ -183,11 +194,9 @@ void ImageScraper::MediaPreviewPanel::Update( )
                      && m_VideoPlayer )
             {
                 const double duration = m_VideoPlayer->GetDuration( );
-                const double fps = m_VideoPlayer->GetFPS( );
-                if( duration > 0.0 && fps > 0.0 )
+                if( duration > 0.0 )
                 {
-                    const double currentTime =
-                        static_cast<double>( m_VideoFrameIndex ) / fps;
+                    const double currentTime = std::clamp( GetPlaybackTimeSeconds( ), 0.0, duration );
                     progress = static_cast<float>( currentTime / duration );
                 }
             }
@@ -210,7 +219,6 @@ void ImageScraper::MediaPreviewPanel::Update( )
             }
         }
 
-        // Bottom: indeterminate loading bar during full GIF decode
         if( m_IsDecoding && m_MediaState == MediaState::LoadingFullFrames )
         {
             constexpr float k_BarH  = 4.0f;
@@ -221,7 +229,7 @@ void ImageScraper::MediaPreviewPanel::Update( )
             const float barY1 = contentScreenMax.y;
             const float segW  = barW * k_SegW;
 
-            const float t     = static_cast<float>( fabs( sin( ImGui::GetTime( ) * 1.5 ) ) );
+            const float t     = static_cast<float>( std::fabs( std::sin( ImGui::GetTime( ) * 1.5 ) ) );
             const float segX0 = contentScreenMin.x + ( barW - segW ) * t;
             const float segX1 = segX0 + segW;
 
@@ -252,46 +260,68 @@ void ImageScraper::MediaPreviewPanel::RequestPreview( const std::string& filepat
         return;
     }
 
-    // Signal any in-progress decode to discard its result so the new file
-    // can start loading as soon as the background thread finishes.
-    m_CancelDecode = true;
+    m_CancelDecode       = true;
+    m_CancelAudioPrepare = true;
+
+    if( m_MediaState == MediaState::VideoPlaying )
+    {
+        PauseVideoPlayback( );
+    }
+    else
+    {
+        StopAudioPlayback( );
+    }
 
     {
         std::lock_guard<std::mutex> lock( m_PathMutex );
         m_LatestPath    = filepath;
         m_HasLatestPath = true;
     }
-    m_ForceLoad = true;
+
+    m_ForceLoad    = true;
     m_PlayOnUpload = false;
 }
 
 void ImageScraper::MediaPreviewPanel::ClearPreview( )
 {
-    // Wait for any in-progress background decode to complete so its file handle is released.
+    m_CancelDecode       = true;
+    m_CancelAudioPrepare = true;
+
     if( m_DecodeFuture.valid( ) )
     {
         m_DecodeFuture.wait( );
     }
+    if( m_AudioPrepareFuture.valid( ) )
+    {
+        m_AudioPrepareFuture.wait( );
+    }
 
-    // Drain any decoded result that arrived while we were waiting so it is not
-    // re-uploaded on the next Update() call after the clear.
     {
         std::lock_guard<std::mutex> lock( m_DecodedMutex );
         m_PendingDecoded.reset( );
     }
-
+    {
+        std::lock_guard<std::mutex> lock( m_PendingAudioMutex );
+        m_PendingAudioPlayer.reset( );
+    }
     {
         std::lock_guard<std::mutex> lock( m_PathMutex );
         m_HasLatestPath = false;
     }
 
+    StopAudioPlayback( );
     FreeTextures( );
     m_VideoPlayer.reset( );
-    m_MediaState      = MediaState::None;
-    m_CurrentFilePath = "";
-    m_LoadingFilePath = "";
-    m_VideoFrameIndex = 0;
-    m_PlayOnUpload    = false;
+    m_AudioPlayer.reset( );
+    m_MediaState             = MediaState::None;
+    m_CurrentFilePath.clear( );
+    m_LoadingFilePath.clear( );
+    m_VideoFrameBuffer.clear( );
+    m_VideoFrameIndex        = 0;
+    m_HasAudio               = false;
+    m_PlayOnUpload           = false;
+    m_IsPlaybackClockRunning = false;
+    m_PlaybackTimeSeconds    = 0.0;
 }
 
 void ImageScraper::MediaPreviewPanel::ReleaseFileIfCurrent( const std::string& filepath )
@@ -324,11 +354,26 @@ void ImageScraper::MediaPreviewPanel::TogglePlayPause( )
     }
     else if( m_MediaState == MediaState::VideoPlaying )
     {
-        m_MediaState = MediaState::VideoPaused;
+        PauseVideoPlayback( );
     }
     else if( m_MediaState == MediaState::VideoPaused )
     {
-        m_MediaState = MediaState::VideoPlaying;
+        StartVideoPlayback( );
+    }
+}
+
+void ImageScraper::MediaPreviewPanel::ToggleMute( )
+{
+    if( !CanMute( ) )
+    {
+        return;
+    }
+
+    m_IsMuted = !m_IsMuted;
+
+    if( m_AudioPlayer && m_AudioPlayer->IsPlaying( ) )
+    {
+        m_AudioPlayer->SetMuted( m_IsMuted );
     }
 }
 
@@ -336,6 +381,11 @@ bool ImageScraper::MediaPreviewPanel::IsPlaying( ) const
 {
     return m_MediaState == MediaState::GifPlaying ||
            m_MediaState == MediaState::VideoPlaying;
+}
+
+bool ImageScraper::MediaPreviewPanel::IsMuted( ) const
+{
+    return m_IsMuted;
 }
 
 bool ImageScraper::MediaPreviewPanel::CanPlayPause( ) const
@@ -346,9 +396,16 @@ bool ImageScraper::MediaPreviewPanel::CanPlayPause( ) const
            m_MediaState == MediaState::VideoPaused;
 }
 
+bool ImageScraper::MediaPreviewPanel::CanMute( ) const
+{
+    return m_HasAudio &&
+           ( m_MediaState == MediaState::VideoPlaying || m_MediaState == MediaState::VideoPaused );
+}
+
 void ImageScraper::MediaPreviewPanel::KickDecodeIfNeeded( )
 {
-    if( m_IsDecoding || ( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::VideoPlaying ) && !m_ForceLoad ) )
+    if( m_IsDecoding ||
+        ( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::VideoPlaying ) && !m_ForceLoad ) )
     {
         return;
     }
@@ -369,12 +426,10 @@ void ImageScraper::MediaPreviewPanel::KickDecodeIfNeeded( )
     m_CancelDecode    = false;
     m_IsDecoding      = true;
 
-    // Always decode only the first preview frame - fast for images, GIFs, and videos.
     m_DecodeFuture = std::async( std::launch::async, [ this, filepath ]( )
     {
         auto decoded = DecodeFile( filepath, true );
 
-        // Only commit the result if the request was not superseded by a newer selection.
         if( !m_CancelDecode )
         {
             std::lock_guard<std::mutex> lock( m_DecodedMutex );
@@ -382,6 +437,31 @@ void ImageScraper::MediaPreviewPanel::KickDecodeIfNeeded( )
         }
 
         m_IsDecoding = false;
+    } );
+}
+
+void ImageScraper::MediaPreviewPanel::KickAudioPrepareIfNeeded( )
+{
+    if( !m_HasAudio || m_CurrentFilePath.empty( ) || IsGif( m_CurrentFilePath ) || m_IsPreparingAudio || m_AudioPlayer )
+    {
+        return;
+    }
+
+    m_CancelAudioPrepare = false;
+    m_IsPreparingAudio   = true;
+
+    const std::string filepath = m_CurrentFilePath;
+
+    m_AudioPrepareFuture = std::async( std::launch::async, [ this, filepath ]( )
+    {
+        auto audioPlayer = std::make_unique<MediaAudioPlayer>( );
+        if( audioPlayer->Open( filepath ) && !m_CancelAudioPrepare )
+        {
+            std::lock_guard<std::mutex> lock( m_PendingAudioMutex );
+            m_PendingAudioPlayer = std::move( audioPlayer );
+        }
+
+        m_IsPreparingAudio = false;
     } );
 }
 
@@ -404,7 +484,6 @@ void ImageScraper::MediaPreviewPanel::KickFullGifDecode( )
     {
         auto decoded = DecodeFile( filepath, false );
 
-        // Only commit the result if the request was not superseded by a newer selection.
         if( !m_CancelDecode )
         {
             std::lock_guard<std::mutex> lock( m_DecodedMutex );
@@ -415,6 +494,127 @@ void ImageScraper::MediaPreviewPanel::KickFullGifDecode( )
     } );
 }
 
+void ImageScraper::MediaPreviewPanel::ApplyPreparedAudio( )
+{
+    std::unique_ptr<MediaAudioPlayer> audioPlayer;
+    {
+        std::lock_guard<std::mutex> lock( m_PendingAudioMutex );
+        audioPlayer = std::move( m_PendingAudioPlayer );
+    }
+
+    if( !audioPlayer )
+    {
+        return;
+    }
+
+    if( audioPlayer->GetFilePath( ) != m_CurrentFilePath )
+    {
+        return;
+    }
+
+    m_AudioPlayer = std::move( audioPlayer );
+
+    if( m_MediaState == MediaState::VideoPlaying )
+    {
+        StartAudioPlaybackFromCurrentTime( );
+    }
+}
+
+void ImageScraper::MediaPreviewPanel::StartVideoPlayback( )
+{
+    if( m_MediaState != MediaState::VideoPaused )
+    {
+        return;
+    }
+
+    m_PlaybackStartedAt     = std::chrono::steady_clock::now( );
+    m_IsPlaybackClockRunning = true;
+    m_MediaState            = MediaState::VideoPlaying;
+
+    KickAudioPrepareIfNeeded( );
+    StartAudioPlaybackFromCurrentTime( );
+}
+
+void ImageScraper::MediaPreviewPanel::PauseVideoPlayback( )
+{
+    if( m_MediaState != MediaState::VideoPlaying )
+    {
+        return;
+    }
+
+    m_PlaybackTimeSeconds    = GetPlaybackTimeSeconds( );
+    m_IsPlaybackClockRunning = false;
+    m_MediaState             = MediaState::VideoPaused;
+    StopAudioPlayback( );
+}
+
+void ImageScraper::MediaPreviewPanel::RestartVideoPlayback( )
+{
+    if( !m_VideoPlayer || !m_VideoPlayer->IsOpen( ) || m_Textures.empty( ) )
+    {
+        return;
+    }
+
+    m_VideoPlayer->SeekToStart( );
+    if( !m_VideoPlayer->DecodeNextFrame( m_VideoFrameBuffer ) )
+    {
+        PauseVideoPlayback( );
+        return;
+    }
+
+    UploadCurrentVideoFrame( );
+    m_VideoFrameIndex     = 0;
+    m_PlaybackTimeSeconds = 0.0;
+
+    if( m_MediaState == MediaState::VideoPlaying )
+    {
+        m_PlaybackStartedAt = std::chrono::steady_clock::now( );
+        StartAudioPlaybackFromCurrentTime( );
+    }
+}
+
+void ImageScraper::MediaPreviewPanel::StartAudioPlaybackFromCurrentTime( )
+{
+    if( m_MediaState != MediaState::VideoPlaying || !m_AudioPlayer )
+    {
+        return;
+    }
+
+    m_AudioPlayer->StartFrom( GetPlaybackTimeSeconds( ), m_IsMuted );
+}
+
+void ImageScraper::MediaPreviewPanel::StopAudioPlayback( )
+{
+    if( m_AudioPlayer )
+    {
+        m_AudioPlayer->Stop( );
+    }
+}
+
+void ImageScraper::MediaPreviewPanel::UploadCurrentVideoFrame( ) const
+{
+    if( m_Textures.empty( ) )
+    {
+        return;
+    }
+
+    glBindTexture( GL_TEXTURE_2D, m_Textures[ 0 ] );
+    glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, m_Width, m_Height, GL_RGBA, GL_UNSIGNED_BYTE, m_VideoFrameBuffer.data( ) );
+    glBindTexture( GL_TEXTURE_2D, 0 );
+}
+
+double ImageScraper::MediaPreviewPanel::GetPlaybackTimeSeconds( ) const
+{
+    double playbackTime = m_PlaybackTimeSeconds;
+    if( m_IsPlaybackClockRunning )
+    {
+        playbackTime += std::chrono::duration<double>(
+            std::chrono::steady_clock::now( ) - m_PlaybackStartedAt ).count( );
+    }
+
+    return std::max( playbackTime, 0.0 );
+}
+
 void ImageScraper::MediaPreviewPanel::AdvanceVideoFrame( )
 {
     if( !m_VideoPlayer || !m_VideoPlayer->IsOpen( ) || m_Textures.empty( ) )
@@ -422,47 +622,46 @@ void ImageScraper::MediaPreviewPanel::AdvanceVideoFrame( )
         return;
     }
 
-    m_FrameAccumMs += ImGui::GetIO( ).DeltaTime * 1000.0f;
+    double playbackTime = GetPlaybackTimeSeconds( );
+    const double duration = m_VideoPlayer->GetDuration( );
+    if( duration > 0.0 && playbackTime >= duration )
+    {
+        RestartVideoPlayback( );
+        playbackTime = GetPlaybackTimeSeconds( );
+    }
+
     const double fps = m_VideoPlayer->GetFPS( );
     if( fps <= 0.0 )
     {
         return;
     }
-    const float frameDurationMs = static_cast<float>( 1000.0 / fps );
 
-    if( m_FrameAccumMs < frameDurationMs )
+    while( playbackTime >= static_cast<double>( m_VideoFrameIndex + 1 ) / fps )
     {
-        return;
-    }
+        if( !m_VideoPlayer->DecodeNextFrame( m_VideoFrameBuffer ) )
+        {
+            RestartVideoPlayback( );
+            return;
+        }
 
-    m_FrameAccumMs -= frameDurationMs;
-
-    if( m_VideoPlayer->DecodeNextFrame( m_VideoFrameBuffer ) )
-    {
         m_VideoFrameIndex++;
+        UploadCurrentVideoFrame( );
     }
-    else
-    {
-        // EOF - loop back to start
-        m_VideoPlayer->SeekToStart( );
-        m_VideoPlayer->DecodeNextFrame( m_VideoFrameBuffer );
-        m_VideoFrameIndex = 0;
-    }
-
-    // Upload the new frame into the existing streamed-media texture.
-    glBindTexture( GL_TEXTURE_2D, m_Textures[ 0 ] );
-    glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, m_Width, m_Height, GL_RGBA, GL_UNSIGNED_BYTE, m_VideoFrameBuffer.data( ) );
-    glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
 void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
 {
+    StopAudioPlayback( );
     FreeTextures( );
     m_VideoPlayer.reset( );
+    m_AudioPlayer.reset( );
+    m_HasAudio               = false;
+    m_IsPlaybackClockRunning = false;
+    m_PlaybackTimeSeconds    = 0.0;
 
     if( decoded.m_PixelData.empty( ) )
     {
-        m_MediaState = MediaState::None;
+        m_MediaState   = MediaState::None;
         m_PlayOnUpload = false;
         return;
     }
@@ -476,6 +675,7 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
 
     if( decoded.m_IsVideo )
     {
+        m_HasAudio         = decoded.m_HasAudio;
         m_VideoFrameBuffer = std::move( decoded.m_PixelData );
         m_VideoPlayer      = std::move( decoded.m_VideoPlayer );
 
@@ -491,8 +691,14 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
         glBindTexture( GL_TEXTURE_2D, 0 );
         m_Textures.push_back( textureId );
         m_VideoFrameIndex = 0;
-        m_MediaState      = m_PlayOnUpload ? MediaState::VideoPlaying : MediaState::VideoPaused;
-        m_PlayOnUpload    = false;
+        m_MediaState      = MediaState::VideoPaused;
+
+        KickAudioPrepareIfNeeded( );
+        if( m_PlayOnUpload )
+        {
+            m_PlayOnUpload = false;
+            StartVideoPlayback( );
+        }
         return;
     }
 
@@ -543,7 +749,6 @@ void ImageScraper::MediaPreviewPanel::FreeTextures( )
     m_FrameAccumMs = 0.0f;
 }
 
-// static
 std::unique_ptr<ImageScraper::MediaPreviewPanel::DecodedMedia>
 ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool firstFrameOnly )
 {
@@ -581,7 +786,6 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
     auto decoded        = std::make_unique<DecodedMedia>( );
     decoded->m_FilePath = filepath;
 
-    // Full GIF decode - all frames with delays
     if( !firstFrameOnly && IsGif( filepath ) )
     {
         int* delays   = nullptr;
@@ -615,12 +819,16 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
         }
 
         stbi_image_free( data );
-        if( delays ) { free( delays ); }
+        if( delays )
+        {
+            free( delays );
+        }
     }
     else
     {
-        // Single frame - covers static images and first-frame-only GIF preview
-        int width = 0, height = 0, channels = 0;
+        int width = 0;
+        int height = 0;
+        int channels = 0;
         unsigned char* data = stbi_load_from_memory(
             fileData.data( ), static_cast<int>( fileData.size( ) ),
             &width, &height, &channels, 4 );
@@ -642,7 +850,6 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
     return decoded;
 }
 
-// static
 std::unique_ptr<ImageScraper::MediaPreviewPanel::DecodedMedia>
 ImageScraper::MediaPreviewPanel::DecodeVideoFile( const std::string& filepath )
 {
@@ -656,8 +863,9 @@ ImageScraper::MediaPreviewPanel::DecodeVideoFile( const std::string& filepath )
         return nullptr;
     }
 
-    decoded->m_Width  = decoded->m_VideoPlayer->GetWidth( );
-    decoded->m_Height = decoded->m_VideoPlayer->GetHeight( );
+    decoded->m_HasAudio = decoded->m_VideoPlayer->HasAudio( );
+    decoded->m_Width    = decoded->m_VideoPlayer->GetWidth( );
+    decoded->m_Height   = decoded->m_VideoPlayer->GetHeight( );
 
     if( !decoded->m_VideoPlayer->DecodeNextFrame( decoded->m_PixelData ) )
     {
@@ -673,22 +881,28 @@ ImageScraper::MediaPreviewPanel::DecodeVideoFile( const std::string& filepath )
     return decoded;
 }
 
-// static
 bool ImageScraper::MediaPreviewPanel::IsGif( const std::string& filepath )
 {
     const auto dot = filepath.rfind( '.' );
-    if( dot == std::string::npos ) { return false; }
+    if( dot == std::string::npos )
+    {
+        return false;
+    }
+
     std::string ext = filepath.substr( dot + 1 );
     std::transform( ext.begin( ), ext.end( ), ext.begin( ),
         []( unsigned char c ) { return static_cast<char>( std::tolower( c ) ); } );
     return ext == "gif";
 }
 
-// static
 bool ImageScraper::MediaPreviewPanel::IsVideo( const std::string& filepath )
 {
     const auto dot = filepath.rfind( '.' );
-    if( dot == std::string::npos ) { return false; }
+    if( dot == std::string::npos )
+    {
+        return false;
+    }
+
     std::string ext = filepath.substr( dot + 1 );
     std::transform( ext.begin( ), ext.end( ), ext.begin( ),
         []( unsigned char c ) { return static_cast<char>( std::tolower( c ) ); } );

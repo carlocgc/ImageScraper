@@ -4,6 +4,51 @@
 
 #include "imgui/imgui_internal.h"
 
+namespace
+{
+    ImFont* LoadMediaControlsIconFont( ImGuiIO& io )
+    {
+        constexpr float k_IconFontSize = 36.0f;
+        static const ImWchar k_IconRanges[] = {
+            0xE74F, 0xE74F, // Mute
+            0xE767, 0xE769, // Volume, Play, Pause
+            0xE892, 0xE893, // Previous, Next
+            0xE992, 0xE992, // Volume0
+            0,
+        };
+
+        const std::filesystem::path fontPath{ "C:\\Windows\\Fonts\\segmdl2.ttf" };
+        if( !std::filesystem::exists( fontPath ) )
+        {
+            ImageScraper::Logger::Log( ImageScraper::LogLevel::Warning,
+                                       "[%s] Media control icon font not found: %s",
+                                       __FUNCTION__,
+                                       fontPath.string( ).c_str( ) );
+            return nullptr;
+        }
+
+        ImFontConfig fontConfig{ };
+        fontConfig.PixelSnapH = true;
+        fontConfig.GlyphOffset = ImVec2( 0.0f, 1.0f );
+
+        ImFont* iconFont = io.Fonts->AddFontFromFileTTF(
+            fontPath.string( ).c_str( ),
+            k_IconFontSize,
+            &fontConfig,
+            k_IconRanges );
+
+        if( iconFont == nullptr )
+        {
+            ImageScraper::Logger::Log( ImageScraper::LogLevel::Warning,
+                                       "[%s] Failed to load media control icon font from: %s",
+                                       __FUNCTION__,
+                                       fontPath.string( ).c_str( ) );
+        }
+
+        return iconFont;
+    }
+}
+
 ImageScraper::FrontEnd::FrontEnd( int maxLogLines )
     : m_MaxLogLines{ maxLogLines }
 {
@@ -29,8 +74,6 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
         [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->RequestPreview( filepath ); },
         [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->ReleaseFileIfCurrent( filepath ); } );
     m_CredentialsPanel      = std::make_unique<CredentialsPanel>( userConfig );
-    m_MediaPreviewControlPanel = std::make_unique<MediaPreviewControlPanel>(
-        m_MediaPreviewPanel.get( ), m_DownloadHistoryPanel.get( ) );
     m_DownloadHistoryPanel->Load( appConfig );
     m_DownloadOptionsPanel->LoadPanelState( appConfig );
     m_LogPanel->LoadPanelState( appConfig );
@@ -61,6 +104,9 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
+    io.Fonts->AddFontDefault( );
+    ImFont* mediaControlsIconFont = LoadMediaControlsIconFont( io );
+
     char exePath[ MAX_PATH ];
     GetModuleFileNameA( nullptr, exePath, MAX_PATH );
     m_IniPath = ( std::filesystem::path( exePath ).parent_path( ) / "imgui.ini" ).string( );
@@ -77,6 +123,11 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
 
     ImGui_ImplGlfw_InitForOpenGL( m_WindowPtr, true );
     ImGui_ImplOpenGL3_Init( glsl_version );
+
+    m_MediaPreviewControlPanel = std::make_unique<MediaPreviewControlPanel>(
+        m_MediaPreviewPanel.get( ),
+        m_DownloadHistoryPanel.get( ),
+        mediaControlsIconFont );
 
     return true;
 }
