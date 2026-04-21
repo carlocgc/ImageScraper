@@ -118,10 +118,10 @@ TEST_CASE( "GetSubfolderLabel formats provider-specific download labels", "[Down
         REQUIRE( GetSubfolderLabel( filepath ) == "/wg/" );
     }
 
-    SECTION( "Other providers use the raw relative subfolder" )
+    SECTION( "Other provider roots use the raw relative subfolder" )
     {
         const std::string filepath =
-            ( std::filesystem::path( "Downloads" ) / "Discord" / "server" / "channel" / "clip.mp4" ).string( );
+            ( std::filesystem::path( "Downloads" ) / "ExampleSource" / "server" / "channel" / "clip.mp4" ).string( );
         REQUIRE( GetSubfolderLabel( filepath ) == "server/channel" );
     }
 

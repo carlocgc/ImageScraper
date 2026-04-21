@@ -125,7 +125,7 @@
   - Call after successful sign-in (`FetchAccessToken` on complete) and after a successful token refresh (`TryPerformAuthTokenRefresh`); store username in `RedditService::m_Username`
   - Add `virtual std::string GetSignedInUser() const { return {}; }` to `Service` base class
   - `DownloadOptionsPanel::UpdateSignInButton()` — when signed in, render a small styled badge showing `u/<username>` alongside the Sign Out button; clear `m_Username` on sign-out
-- [x] Extract OAuth2 into a reusable `OAuthClient` component — both Reddit and Tumblr follow the same Authorization Code flow; extract the shared steps (state generation, browser launch, listen-server handshake, token exchange, token refresh, token persistence) into a standalone component that services configure via a struct of platform-specific parameters (auth URL, token URL, scopes, client id/secret keys, redirect URI policy); services become thin wrappers around `OAuthClient` rather than owning the full flow; makes adding OAuth2 to future providers (Discord, Twitter/X, Bluesky) a configuration exercise rather than a re-implementation
+- [x] Extract OAuth2 into a reusable `OAuthClient` component — both Reddit and Tumblr follow the same Authorization Code flow; extract the shared steps (state generation, browser launch, listen-server handshake, token exchange, token refresh, token persistence) into a standalone component that services configure via a struct of platform-specific parameters (auth URL, token URL, scopes, client id/secret keys, redirect URI policy); services become thin wrappers around `OAuthClient` rather than owning the full flow; makes adding OAuth2 to future providers a configuration exercise rather than a re-implementation
 - [ ] Reddit deauthorise all sessions — explicit server-side token revocation as a separate destructive action distinct from sign-out
   - Calls `RevokeAccessTokenRequest` (already implemented) to hit `POST /api/v1/revoke_token`; invalidates the refresh token and all associated access tokens on Reddit's servers
   - Exposed as a separate button (e.g. "Deauthorise App") rather than part of the normal Sign Out flow, since it carries the multi-minute re-auth delay; user should be warned before proceeding
@@ -181,7 +181,7 @@
 
 - [x] `CredentialsPanel` — new dockable ImGui panel for reading and writing service credentials
   - Reads all known credential keys from `m_UserConfig` (`JsonFile`) on init; if `config.json` does not exist, creates it via `JsonFile::CreateFile()` so first-run works without manual setup
-  - One collapsible section per provider (Reddit, Tumblr, Discord); 4chan has no credentials so is omitted
+  - One collapsible section per credential-backed provider (Reddit, Tumblr); 4chan has no credentials so is omitted
   - Sensitive fields (client secret, API keys) use `ImGuiInputTextFlags_Password` to mask by default with a show/hide toggle
   - Writes back to `m_UserConfig` and calls `Serialise()` immediately on field change — no explicit save button needed
   - Pass `shared_ptr<JsonFile> m_UserConfig` into `CredentialsPanel` via constructor (already available in `App` and `FrontEnd`)
@@ -203,7 +203,6 @@
 > Goal: Expand supported platforms leveraging the improved request and threading layers.
 > **Depends on: Phase 3, Phase 4**
 
-- [ ] Discord — implement stub (`DiscordService` already exists, throws `logic_error`)
 - [ ] X (Twitter) — new service + request classes
 - [ ] Bluesky — new service + request classes
 - [ ] Mastodon — new service + request classes (federated, needs instance URL input)
@@ -279,7 +278,7 @@
 
 - [ ] Consolidate and migrate roadmap to GitHub issues
   - Close stale / already-done issues: #14 (UI modularisation — done), #9 (preview panel — done)
-  - Update issues that are still valid but need detail added from PLAN.md: #3 (sign-out), #10 (immediate cancel), #13 (Tumblr OAuth), #4 (Discord), #7 (Twitter/X), #12 (Mastodon)
+  - Update issues that are still valid but need detail added from PLAN.md: #3 (sign-out), #10 (immediate cancel), #13 (Tumblr OAuth), #7 (Twitter/X), #12 (Mastodon)
   - Decide whether to track #8 (PCH) and #6 (file logger) — add to PLAN.md if wanted, otherwise close as won't-fix
   - Decide whether to add Steam (#11) to Phase 5 new platforms or close
   - Create new issues for items in PLAN.md with no corresponding issue: Credentials panel, username badge, download history tabs, DownloadProgressPanel, persistent history, GitHub CI, CRT bundling, containerisation, etc.
