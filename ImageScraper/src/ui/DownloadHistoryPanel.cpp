@@ -9,8 +9,6 @@
 #include "log/Logger.h"
 
 #include <filesystem>
-#include <chrono>
-#include <ctime>
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
@@ -28,7 +26,7 @@ namespace
         Created = 3
     };
 
-    constexpr const char* kDownloadHistoryKey       = "download_history";
+    constexpr const char* kLegacyDownloadHistoryKey = "download_history";
     constexpr const char* kDownloadsSelectedPathKey = "downloads_selected_path";
     constexpr const char* kLegacySelectedPathKey    = "history_selected_path";
     constexpr const char* kDeleteConfirmPopupId     = "Confirm Delete##downloads";
@@ -147,7 +145,8 @@ void ImageScraper::DownloadHistoryPanel::Update( )
     bool openDeleteConfirm = false;
     if( !m_SelectedPath.empty( ) && !std::filesystem::exists( std::filesystem::path{ m_SelectedPath } ) )
     {
-        RemoveEntriesInPath( m_DownloadsRoot, true );
+        EvictThumbnail( m_SelectedPath );
+        m_SelectedPath.clear( );
         AdvanceSelectionAndPreview( );
     }
 
@@ -281,27 +280,36 @@ void ImageScraper::DownloadHistoryPanel::Update( )
 
 void ImageScraper::DownloadHistoryPanel::FlushPending( )
 {
-    std::vector<DownloadHistoryEntry> pending;
+    std::vector<std::string> pendingPaths;
     {
         std::lock_guard<std::mutex> lock( m_PendingMutex );
-        if( m_Pending.empty( ) )
+        if( m_PendingPaths.empty( ) )
         {
             return;
         }
 
-        pending.swap( m_Pending );
+        pendingPaths.swap( m_PendingPaths );
     }
 
-    for( auto& entry : pending )
+    std::string newestPath{ };
+    for( const std::string& pendingPath : pendingPaths )
     {
-        entry.m_FilePath = MakePreferredPathString( entry.m_FilePath );
-        m_History.Push( std::move( entry ) );
+        const std::string preferredPath = MakePreferredPathString( pendingPath );
+        if( preferredPath.empty( ) || !std::filesystem::exists( preferredPath ) )
+        {
+            continue;
+        }
+
+        newestPath = preferredPath;
+    }
+
+    if( newestPath.empty( ) )
+    {
+        return;
     }
 
     // Follow the newest downloaded item so the tree highlight matches the preview.
-    SetSelectionFromHistoryIndex( m_History.GetSize( ) - 1, true, false );
-
-    Save( );
+    SetSelection( newestPath, true, false );
 }
 
 void ImageScraper::DownloadHistoryPanel::FlushDecodedThumbnails( )
@@ -323,37 +331,6 @@ void ImageScraper::DownloadHistoryPanel::FlushDecodedThumbnails( )
     }
 }
 
-void ImageScraper::DownloadHistoryPanel::Save( )
-{
-    if( !m_AppConfig )
-    {
-        return;
-    }
-
-    Json entries = Json::array( );
-    for( const DownloadHistoryEntry& entry : m_History )
-    {
-        if( !std::filesystem::exists( entry.m_FilePath ) )
-        {
-            continue;
-        }
-
-        entries.push_back( {
-            { "file_path",  entry.m_FilePath  },
-            { "file_name",  entry.m_FileName  },
-            { "file_size",  entry.m_FileSize  },
-            { "source_url", entry.m_SourceUrl },
-            { "timestamp",  entry.m_Timestamp }
-        } );
-    }
-
-    m_AppConfig->SetValue<Json>( kDownloadHistoryKey, entries );
-    if( !m_AppConfig->Serialise( ) )
-    {
-        WarningLog( "[%s] Failed to save download history", __FUNCTION__ );
-    }
-}
-
 void ImageScraper::DownloadHistoryPanel::SaveSelectedPath( )
 {
     if( !m_AppConfig )
@@ -362,7 +339,7 @@ void ImageScraper::DownloadHistoryPanel::SaveSelectedPath( )
     }
 
     m_AppConfig->SetValue<std::string>( kDownloadsSelectedPathKey, m_SelectedPath );
-    m_AppConfig->SetValue<std::string>( kLegacySelectedPathKey, m_SelectedPath );
+    m_AppConfig->RemoveValue( kLegacySelectedPathKey );
     m_AppConfig->Serialise( );
 }
 
@@ -383,7 +360,6 @@ void ImageScraper::DownloadHistoryPanel::SetSelection( const std::string& path, 
 
     m_SelectedPath = preferredPath;
     m_ScrollToSelected = scrollToSelected;
-    SyncHistorySelectionFromPath( );
     SaveSelectedPath( );
 
     if( !requestPreview || !m_OnPreviewRequested )
@@ -401,21 +377,9 @@ void ImageScraper::DownloadHistoryPanel::SetSelection( const std::string& path, 
     m_OnPreviewRequested( "" );
 }
 
-void ImageScraper::DownloadHistoryPanel::SetSelectionFromHistoryIndex( int index, bool scrollToSelected, bool requestPreview )
-{
-    if( index < 0 || index >= m_History.GetSize( ) )
-    {
-        ClearSelection( requestPreview );
-        return;
-    }
-
-    SetSelection( m_History[ index ].m_FilePath, scrollToSelected, requestPreview );
-}
-
 void ImageScraper::DownloadHistoryPanel::ClearSelection( bool requestPreview )
 {
     m_SelectedPath.clear( );
-    m_SelectedHistoryIndex = -1;
     m_ScrollToSelected = false;
     SaveSelectedPath( );
 
@@ -423,11 +387,6 @@ void ImageScraper::DownloadHistoryPanel::ClearSelection( bool requestPreview )
     {
         m_OnPreviewRequested( "" );
     }
-}
-
-void ImageScraper::DownloadHistoryPanel::SyncHistorySelectionFromPath( )
-{
-    m_SelectedHistoryIndex = FindHistoryIndexByPath( m_SelectedPath );
 }
 
 void ImageScraper::DownloadHistoryPanel::DeletePath( const std::filesystem::path& path )
@@ -441,18 +400,19 @@ void ImageScraper::DownloadHistoryPanel::DeletePath( const std::filesystem::path
     const bool isDirectory = std::filesystem::is_directory( path, typeEc );
     const std::string pathString = MakePreferredPathString( path );
     const bool selectionImpacted = IsSelectedPath( path ) || HasSelectedDescendant( path );
-    const int selectedHistoryIndex = selectionImpacted
-        ? m_SelectedHistoryIndex
-        : FindHistoryIndexByPath( pathString );
+    const std::vector<std::filesystem::path> navigableFiles = GetNavigableFiles( );
+    const int preferredIndex = selectionImpacted
+        ? FindNavigableIndexByPath( navigableFiles, m_SelectedPath )
+        : -1;
 
     if( isDirectory )
     {
-        if( m_OnPreviewRequested )
+        if( selectionImpacted && m_OnPreviewRequested )
         {
             m_OnPreviewRequested( "" );
         }
     }
-    else if( m_OnReleaseRequested )
+    else if( selectionImpacted && m_OnReleaseRequested )
     {
         m_OnReleaseRequested( pathString );
     }
@@ -476,54 +436,42 @@ void ImageScraper::DownloadHistoryPanel::DeletePath( const std::filesystem::path
         return;
     }
 
-    if( !isDirectory )
-    {
-        EvictThumbnail( pathString );
-    }
-
-    m_SelectedHistoryIndex = selectedHistoryIndex;
-    RemoveEntriesInPath( path, isDirectory );
+    EvictThumbnailsInPath( path, isDirectory );
     if( selectionImpacted )
     {
         m_SelectedPath.clear( );
-        m_SelectedHistoryIndex = selectedHistoryIndex;
+        AdvanceSelectionAndPreview( preferredIndex );
     }
-
-    AdvanceSelectionAndPreview( );
 }
 
-void ImageScraper::DownloadHistoryPanel::AdvanceSelectionAndPreview( )
+void ImageScraper::DownloadHistoryPanel::AdvanceSelectionAndPreview( int preferredIndex )
 {
-    const int size = m_History.GetSize( );
-    if( size == 0 )
+    const std::vector<std::filesystem::path> navigableFiles = GetNavigableFiles( );
+    if( navigableFiles.empty( ) )
     {
         ClearSelection( true );
         return;
     }
 
-    const int start =
-        ( m_SelectedHistoryIndex >= 0 )
-        ? std::min( m_SelectedHistoryIndex, size - 1 )
-        : size - 1;
-
-    const int olderIndex = FindExistingHistoryIndexAtOrBefore( start );
-    if( olderIndex >= 0 )
+    int targetIndex = -1;
+    if( preferredIndex >= 0 && preferredIndex < static_cast<int>( navigableFiles.size( ) ) )
     {
-        SetSelectionFromHistoryIndex( olderIndex, false, true );
-        return;
+        targetIndex = preferredIndex;
+    }
+    else if( preferredIndex > 0 && preferredIndex - 1 < static_cast<int>( navigableFiles.size( ) ) )
+    {
+        targetIndex = preferredIndex - 1;
     }
 
-    const int newerIndex = FindExistingHistoryIndexAfter( start );
-    if( newerIndex >= 0 )
+    if( targetIndex < 0 )
     {
-        SetSelectionFromHistoryIndex( newerIndex, false, true );
-        return;
+        targetIndex = 0;
     }
 
-    ClearSelection( true );
+    SetSelection( MakePreferredPathString( navigableFiles[ targetIndex ] ), false, true );
 }
 
-void ImageScraper::DownloadHistoryPanel::RemoveEntriesInPath( const std::filesystem::path& targetPath, bool treatAsDirectory )
+void ImageScraper::DownloadHistoryPanel::EvictThumbnailsInPath( const std::filesystem::path& targetPath, bool treatAsDirectory )
 {
     if( targetPath.empty( ) )
     {
@@ -531,42 +479,27 @@ void ImageScraper::DownloadHistoryPanel::RemoveEntriesInPath( const std::filesys
     }
 
     const std::filesystem::path normalisedTarget = NormalisePath( targetPath );
-    bool changed = false;
-    std::vector<int> indicesToRemove{ };
-
-    int historyIndex = m_History.GetSize( ) - 1;
-    for( auto it = m_History.rbegin( ); it != m_History.rend( ); ++it, --historyIndex )
+    std::vector<std::string> pathsToRemove{ };
+    for( const auto& [ filepath, entry ] : m_ThumbnailCache )
     {
-        const std::filesystem::path entryPath = it->m_FilePath;
+        const std::filesystem::path entryPath = filepath;
         const std::filesystem::path normalisedEntry = NormalisePath( entryPath );
         const bool matchesTarget =
             treatAsDirectory
             ? IsPathWithinRoot( normalisedEntry, normalisedTarget )
             : ( normalisedEntry == normalisedTarget );
 
-        if( !matchesTarget || std::filesystem::exists( entryPath ) )
+        if( !matchesTarget )
         {
             continue;
         }
 
-        EvictThumbnail( it->m_FilePath );
-        indicesToRemove.push_back( historyIndex );
-        changed = true;
+        pathsToRemove.push_back( filepath );
     }
 
-    for( const int index : indicesToRemove )
+    for( const std::string& filepath : pathsToRemove )
     {
-        m_History.RemoveAt( index );
-    }
-
-    if( m_SelectedHistoryIndex >= m_History.GetSize( ) )
-    {
-        m_SelectedHistoryIndex = -1;
-    }
-
-    if( changed )
-    {
-        Save( );
+        EvictThumbnail( filepath );
     }
 }
 
@@ -823,24 +756,12 @@ void ImageScraper::DownloadHistoryPanel::ShowPathTooltip( const std::filesystem:
 
     ImGui::TextUnformatted( ExtractFileName( pathString ).c_str( ) );
     ImGui::TextDisabled( "%s", GetFileTypeLabel( pathString ).c_str( ) );
-
-    const DownloadHistoryEntry* entry = FindHistoryEntryByPath( pathString );
-    if( entry != nullptr )
-    {
-        ImGui::TextDisabled( "Downloaded: %s", entry->m_Timestamp.c_str( ) );
-        ImGui::TextDisabled( "Size: %s", entry->m_FileSize.c_str( ) );
-        if( !entry->m_SourceUrl.empty( ) )
-        {
-            ImGui::Separator( );
-            ImGui::PushTextWrapPos( ImGui::GetCursorPosX( ) + std::max( displayWidth, 260.0f ) );
-            ImGui::TextUnformatted( entry->m_SourceUrl.c_str( ) );
-            ImGui::PopTextWrapPos( );
-        }
-    }
-    else
-    {
-        ImGui::TextDisabled( "Size: %s", FormatFileSize( pathString ).c_str( ) );
-    }
+    ImGui::TextDisabled( "Size: %s", FormatFileSize( pathString ).c_str( ) );
+    ImGui::TextDisabled( "Created: %s", GetCreationTimeColumnLabel( path ).c_str( ) );
+    ImGui::Separator( );
+    ImGui::PushTextWrapPos( ImGui::GetCursorPosX( ) + std::max( displayWidth, 260.0f ) );
+    ImGui::TextUnformatted( pathString.c_str( ) );
+    ImGui::PopTextWrapPos( );
 
     ImGui::EndTooltip( );
 }
@@ -881,17 +802,76 @@ bool ImageScraper::DownloadHistoryPanel::IsRootPath( const std::filesystem::path
     return !m_DownloadsRoot.empty( ) && NormalisePath( path ) == NormalisePath( m_DownloadsRoot );
 }
 
-const ImageScraper::DownloadHistoryEntry* ImageScraper::DownloadHistoryPanel::FindHistoryEntryByPath( const std::string& filepath ) const
+std::vector<std::filesystem::path> ImageScraper::DownloadHistoryPanel::GetNavigableFiles( ) const
 {
-    for( const DownloadHistoryEntry& entry : m_History )
+    std::vector<std::filesystem::path> files{ };
+    if( m_DownloadsRoot.empty( ) )
     {
-        if( entry.m_FilePath == filepath )
+        return files;
+    }
+
+    std::error_code ec;
+    if( !std::filesystem::exists( m_DownloadsRoot, ec ) || ec )
+    {
+        return files;
+    }
+
+    for( std::filesystem::recursive_directory_iterator it{
+             m_DownloadsRoot,
+             std::filesystem::directory_options::skip_permission_denied,
+             ec
+         }, end;
+         !ec && it != end;
+         it.increment( ec ) )
+    {
+        if( std::filesystem::is_regular_file( it->path( ), ec ) && !ec )
         {
-            return &entry;
+            files.push_back( it->path( ) );
         }
     }
 
-    return nullptr;
+    std::sort( files.begin( ), files.end( ), []( const auto& lhs, const auto& rhs )
+    {
+        const unsigned long long lhsCreated = GetPathCreationTimeTicks( lhs );
+        const unsigned long long rhsCreated = GetPathCreationTimeTicks( rhs );
+        if( lhsCreated != rhsCreated )
+        {
+            return lhsCreated > rhsCreated;
+        }
+
+        const int nameComparison = CompareStringsCaseInsensitive(
+            GetPathDisplayName( lhs ),
+            GetPathDisplayName( rhs ) );
+        if( nameComparison != 0 )
+        {
+            return nameComparison < 0;
+        }
+
+        return NormalisePath( lhs ).string( ) < NormalisePath( rhs ).string( );
+    } );
+
+    return files;
+}
+
+int ImageScraper::DownloadHistoryPanel::FindNavigableIndexByPath(
+    const std::vector<std::filesystem::path>& files,
+    const std::string& filepath ) const
+{
+    const std::string preferredPath = MakePreferredPathString( filepath );
+    if( preferredPath.empty( ) )
+    {
+        return -1;
+    }
+
+    for( int index = 0; index < static_cast<int>( files.size( ) ); ++index )
+    {
+        if( MakePreferredPathString( files[ index ] ) == preferredPath )
+        {
+            return index;
+        }
+    }
+
+    return -1;
 }
 
 void ImageScraper::DownloadHistoryPanel::EvictThumbnail( const std::string& filepath )
@@ -909,88 +889,58 @@ void ImageScraper::DownloadHistoryPanel::EvictThumbnail( const std::string& file
 
 void ImageScraper::DownloadHistoryPanel::SelectNext( )
 {
-    if( m_SelectedHistoryIndex < 0 )
+    const std::vector<std::filesystem::path> navigableFiles = GetNavigableFiles( );
+    const int currentIndex = FindNavigableIndexByPath( navigableFiles, m_SelectedPath );
+    if( currentIndex < 0 || currentIndex + 1 >= static_cast<int>( navigableFiles.size( ) ) )
     {
         return;
     }
 
-    const int nextIndex = FindExistingHistoryIndexAtOrBefore( m_SelectedHistoryIndex - 1 );
-    if( nextIndex >= 0 )
-    {
-        SetSelectionFromHistoryIndex( nextIndex, true, true );
-    }
+    SetSelection( MakePreferredPathString( navigableFiles[ currentIndex + 1 ] ), true, true );
 }
 
 void ImageScraper::DownloadHistoryPanel::SelectPrevious( )
 {
-    if( m_SelectedHistoryIndex < 0 )
+    const std::vector<std::filesystem::path> navigableFiles = GetNavigableFiles( );
+    const int currentIndex = FindNavigableIndexByPath( navigableFiles, m_SelectedPath );
+    if( currentIndex <= 0 )
     {
         return;
     }
 
-    const int previousIndex = FindExistingHistoryIndexAfter( m_SelectedHistoryIndex );
-    if( previousIndex >= 0 )
-    {
-        SetSelectionFromHistoryIndex( previousIndex, true, true );
-    }
+    SetSelection( MakePreferredPathString( navigableFiles[ currentIndex - 1 ] ), true, true );
 }
 
 bool ImageScraper::DownloadHistoryPanel::HasNext( ) const
 {
-    return m_SelectedHistoryIndex >= 0
-        && FindExistingHistoryIndexAtOrBefore( m_SelectedHistoryIndex - 1 ) >= 0;
+    const std::vector<std::filesystem::path> navigableFiles = GetNavigableFiles( );
+    const int currentIndex = FindNavigableIndexByPath( navigableFiles, m_SelectedPath );
+    return currentIndex >= 0 && currentIndex + 1 < static_cast<int>( navigableFiles.size( ) );
 }
 
 bool ImageScraper::DownloadHistoryPanel::HasPrevious( ) const
 {
-    return m_SelectedHistoryIndex >= 0
-        && FindExistingHistoryIndexAfter( m_SelectedHistoryIndex ) >= 0;
+    const std::vector<std::filesystem::path> navigableFiles = GetNavigableFiles( );
+    const int currentIndex = FindNavigableIndexByPath( navigableFiles, m_SelectedPath );
+    return currentIndex > 0;
 }
 
 void ImageScraper::DownloadHistoryPanel::OnFileDownloaded( const std::string& filepath, const std::string& sourceUrl )
 {
-    DownloadHistoryEntry entry;
-    entry.m_FilePath  = filepath;
-    entry.m_FileName  = ExtractFileName( filepath );
-    entry.m_FileSize  = FormatFileSize( filepath );
-    entry.m_SourceUrl = sourceUrl;
-    entry.m_Timestamp = FormatTimestamp( );
+    (void)sourceUrl;
 
     std::lock_guard<std::mutex> lock( m_PendingMutex );
-    m_Pending.push_back( std::move( entry ) );
+    m_PendingPaths.push_back( filepath );
 }
 
 void ImageScraper::DownloadHistoryPanel::Load( std::shared_ptr<JsonFile> appConfig, const std::filesystem::path& downloadsRoot )
 {
     m_AppConfig = std::move( appConfig );
-    m_DownloadsRoot = downloadsRoot;
+    m_DownloadsRoot = downloadsRoot.empty( ) ? downloadsRoot : NormalisePath( downloadsRoot );
     if( !m_AppConfig )
     {
         return;
     }
-
-    Json entries;
-    if( !m_AppConfig->GetValue<Json>( kDownloadHistoryKey, entries ) || !entries.is_array( ) )
-    {
-        entries = Json::array( );
-    }
-
-    for( const auto& obj : entries )
-    {
-        DownloadHistoryEntry entry;
-        entry.m_FilePath  = MakePreferredPathString( obj.value( "file_path", "" ) );
-        entry.m_FileName  = obj.value( "file_name",  "" );
-        entry.m_FileSize  = obj.value( "file_size",  "" );
-        entry.m_SourceUrl = obj.value( "source_url", "" );
-        entry.m_Timestamp = obj.value( "timestamp",  "" );
-
-        if( !entry.m_FilePath.empty( ) && std::filesystem::exists( entry.m_FilePath ) )
-        {
-            m_History.Push( std::move( entry ) );
-        }
-    }
-
-    LogDebug( "[%s] Loaded %d history entries", __FUNCTION__, m_History.GetSize( ) );
 
     std::string selectedPath;
     if( !m_AppConfig->GetValue<std::string>( kDownloadsSelectedPathKey, selectedPath ) || selectedPath.empty( ) )
@@ -998,81 +948,29 @@ void ImageScraper::DownloadHistoryPanel::Load( std::shared_ptr<JsonFile> appConf
         m_AppConfig->GetValue<std::string>( kLegacySelectedPathKey, selectedPath );
     }
 
+    bool removedLegacyState = m_AppConfig->RemoveValue( kLegacyDownloadHistoryKey );
+    removedLegacyState = m_AppConfig->RemoveValue( kLegacySelectedPathKey ) || removedLegacyState;
+    if( removedLegacyState && !m_AppConfig->Serialise( ) )
+    {
+        WarningLog( "[%s] Failed to remove legacy downloads state", __FUNCTION__ );
+    }
+
     selectedPath = MakePreferredPathString( selectedPath );
-    if( !selectedPath.empty( ) && std::filesystem::exists( selectedPath ) )
+    if( !selectedPath.empty( )
+        && std::filesystem::exists( selectedPath )
+        && ( m_DownloadsRoot.empty( ) || IsPathWithinRoot( selectedPath, m_DownloadsRoot ) ) )
     {
         SetSelection( selectedPath, true, true );
         return;
     }
 
-    if( m_History.IsEmpty( ) )
+    const std::vector<std::filesystem::path> navigableFiles = GetNavigableFiles( );
+    if( navigableFiles.empty( ) )
     {
         return;
     }
 
-    SetSelectionFromHistoryIndex( m_History.GetSize( ) - 1, true, true );
-}
-
-int ImageScraper::DownloadHistoryPanel::FindHistoryIndexByPath( const std::string& filepath ) const
-{
-    int historyIndex = 0;
-    for( const DownloadHistoryEntry& entry : m_History )
-    {
-        if( entry.m_FilePath == filepath )
-        {
-            return historyIndex;
-        }
-
-        ++historyIndex;
-    }
-
-    return -1;
-}
-
-int ImageScraper::DownloadHistoryPanel::FindExistingHistoryIndexAtOrBefore( int startIndex ) const
-{
-    if( startIndex < 0 )
-    {
-        return -1;
-    }
-
-    int historyIndex = m_History.GetSize( ) - 1;
-    for( auto it = m_History.crbegin( ); it != m_History.crend( ); ++it, --historyIndex )
-    {
-        if( historyIndex > startIndex )
-        {
-            continue;
-        }
-
-        if( std::filesystem::exists( it->m_FilePath ) )
-        {
-            return historyIndex;
-        }
-    }
-
-    return -1;
-}
-
-int ImageScraper::DownloadHistoryPanel::FindExistingHistoryIndexAfter( int startIndex ) const
-{
-    int historyIndex = 0;
-    for( const DownloadHistoryEntry& entry : m_History )
-    {
-        if( historyIndex <= startIndex )
-        {
-            ++historyIndex;
-            continue;
-        }
-
-        if( std::filesystem::exists( entry.m_FilePath ) )
-        {
-            return historyIndex;
-        }
-
-        ++historyIndex;
-    }
-
-    return -1;
+    SetSelection( MakePreferredPathString( navigableFiles.front( ) ), true, true );
 }
 
 void ImageScraper::DownloadHistoryPanel::OpenInExplorer( const std::filesystem::path& path )
@@ -1089,18 +987,6 @@ void ImageScraper::DownloadHistoryPanel::OpenInExplorer( const std::filesystem::
 
     const std::wstring args = L"/select,\"" + nativePath.wstring( ) + L"\"";
     ShellExecuteW( nullptr, L"open", L"explorer.exe", args.c_str( ), nullptr, SW_SHOW );
-}
-
-std::string ImageScraper::DownloadHistoryPanel::FormatTimestamp( )
-{
-    const auto now = std::chrono::system_clock::now( );
-    const std::time_t t = std::chrono::system_clock::to_time_t( now );
-    std::tm tm{ };
-    localtime_s( &tm, &t );
-
-    std::ostringstream ss;
-    ss << std::put_time( &tm, "%H:%M:%S" );
-    return ss.str( );
 }
 
 std::string ImageScraper::DownloadHistoryPanel::ExtractFileName( const std::string& filepath )
