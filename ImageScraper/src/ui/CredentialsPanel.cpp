@@ -11,8 +11,6 @@ static const std::string s_Key_RedditClientId     = "reddit_client_id";
 static const std::string s_Key_RedditClientSecret = "reddit_client_secret";
 static const std::string s_Key_TumblrConsumerKey    = "tumblr_consumer_key";
 static const std::string s_Key_TumblrConsumerSecret = "tumblr_consumer_secret";
-static const std::string s_Key_DiscordClientId     = "discord_client_id";
-static const std::string s_Key_DiscordClientSecret = "discord_client_secret";
 
 ImageScraper::CredentialsPanel::CredentialsPanel( std::shared_ptr<JsonFile> userConfig )
     : m_UserConfig{ userConfig }
@@ -37,8 +35,6 @@ ImageScraper::CredentialsPanel::CredentialsPanel( std::shared_ptr<JsonFile> user
     load( s_Key_RedditClientSecret,  m_RedditClientSecret );
     load( s_Key_TumblrConsumerKey,    m_TumblrConsumerKey );
     load( s_Key_TumblrConsumerSecret, m_TumblrConsumerSecret );
-    load( s_Key_DiscordClientId,     m_DiscordClientId );
-    load( s_Key_DiscordClientSecret, m_DiscordClientSecret );
 }
 
 void ImageScraper::CredentialsPanel::Update( )
@@ -133,15 +129,6 @@ void ImageScraper::CredentialsPanel::Update( )
     InputField( "Consumer Secret", "##tumblr_secret", m_TumblrConsumerSecret, m_ShowTumblrSecret, true,  s_Key_TumblrConsumerSecret, false, "OAuth Consumer Secret - only needed for Sign In." );
 
     ImGui::Spacing( );
-
-    // --- Discord (work in progress) ---
-    ImGui::SeparatorText( "Discord" );
-    ImGui::TextDisabled( "Work in progress - not yet functional." );
-    ImGui::BeginDisabled( );
-    InputField( "Client ID",     "##discord_id",     m_DiscordClientId,     m_ShowDiscordSecret, false, s_Key_DiscordClientId,     false );
-    InputField( "Client Secret", "##discord_secret", m_DiscordClientSecret, m_ShowDiscordSecret, true,  s_Key_DiscordClientSecret, false );
-    ImGui::EndDisabled( );
-
 #ifdef _DEBUG
     ImGui::Spacing( );
     ImGui::Separator( );

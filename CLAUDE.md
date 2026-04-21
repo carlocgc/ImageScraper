@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A C++ desktop application that scrapes and downloads images from Reddit, 4chan, Tumblr, and Discord. Built with libcurl, Dear ImGui, GLFW, and OpenGL3.
+A C++ desktop application that scrapes and downloads images from Reddit, 4chan, and Tumblr. Built with libcurl, Dear ImGui, GLFW, and OpenGL3.
 
 ---
 

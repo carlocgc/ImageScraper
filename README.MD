@@ -36,8 +36,6 @@ It is also a strong portfolio project for systems and application engineering wo
 | Tumblr | OAuth2 sign-in, API key mode | Images, videos | Supported |
 | 4chan | None required | Images, GIFs | Supported |
 
-Discord scaffolding exists in the repository, but it is not part of the current shipped UI or provider flow and should be treated as future work rather than a supported feature.
-
 ## Technical Highlights
 
 - **Native desktop stack**: C++17, Dear ImGui, GLFW, OpenGL, and FFmpeg
@@ -142,7 +140,6 @@ CI runs the same test binary explicitly after the build step, rather than launch
 - Windows only
 - Native desktop UI only, no web version
 - Reddit and Tumblr require user-supplied credentials for authenticated access
-- Discord integration is not yet shipped
 
 ## Third-Party Software
 

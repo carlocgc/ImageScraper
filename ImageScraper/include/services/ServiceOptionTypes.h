@@ -4,7 +4,7 @@
 namespace ImageScraper
 {
     // ── Limits & capacities ───────────────────────────────────────────────────
-    constexpr int CONTENT_PROVIDERS_COUNT       = 4;
+    constexpr int CONTENT_PROVIDERS_COUNT       = 3;
     constexpr int INPUT_STRING_MAX              = 64;
     constexpr int REDDIT_LIMIT_MIN              = 1;
     constexpr int REDDIT_LIMIT_DEFAULT          = 5;
@@ -25,7 +25,6 @@ namespace ImageScraper
         Reddit = 0,
         Tumblr = 1,
         FourChan = 2,
-        Discord = 3,
         Count = CONTENT_PROVIDERS_COUNT
     };
 
@@ -33,8 +32,7 @@ namespace ImageScraper
     {
         "Reddit",
         "Tumblr",
-        "4chan",
-        "Discord"
+        "4chan"
     };
 
     enum class RedditScope : uint16_t
