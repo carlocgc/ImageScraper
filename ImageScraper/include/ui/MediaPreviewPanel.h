@@ -1,10 +1,12 @@
 #pragma once
 
 #include "ui/IUiPanel.h"
+#include "ui/MediaAudioPlayer.h"
 #include "ui/VideoPlayer.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl3_loader.h"
 
+#include <chrono>
 #include <string>
 #include <vector>
 #include <mutex>
@@ -36,12 +38,15 @@ namespace ImageScraper
 
         // Main-thread only - toggle between playing and paused; no-op when no media or loading
         void TogglePlayPause( );
+        void ToggleMute( );
 
         // True when media is actively animating (GifPlaying or VideoPlaying)
         bool IsPlaying( ) const;
+        bool IsMuted( ) const;
 
         // True when TogglePlayPause would have any effect
         bool CanPlayPause( ) const;
+        bool CanMute( ) const;
 
     private:
         enum class MediaState
@@ -65,16 +70,26 @@ namespace ImageScraper
             int         m_Width{ 0 };
             int         m_Height{ 0 };
             int         m_Frames{ 1 };
+            bool        m_HasAudio{ false };
             std::string m_FilePath;
             bool        m_IsVideo{ false };
         };
 
         void KickDecodeIfNeeded( );
+        void KickAudioPrepareIfNeeded( );
         void KickFullGifDecode( );
         void UploadDecoded( DecodedMedia&& decoded );
         void FreeTextures( );
+        void ApplyPreparedAudio( );
 
         void AdvanceVideoFrame( );
+        void StartVideoPlayback( );
+        void PauseVideoPlayback( );
+        void RestartVideoPlayback( );
+        void StartAudioPlaybackFromCurrentTime( );
+        void StopAudioPlayback( );
+        void UploadCurrentVideoFrame( ) const;
+        double GetPlaybackTimeSeconds( ) const;
 
         static std::unique_ptr<DecodedMedia> DecodeFile( const std::string& filepath, bool firstFrameOnly );
         static std::unique_ptr<DecodedMedia> DecodeVideoFile( const std::string& filepath );
@@ -94,6 +109,11 @@ namespace ImageScraper
         std::atomic_bool    m_IsDecoding{ false };
         std::atomic_bool    m_CancelDecode{ false };  // set by RequestPreview to discard in-flight result
         std::future<void>   m_DecodeFuture{ };
+        std::mutex                       m_PendingAudioMutex{ };
+        std::unique_ptr<MediaAudioPlayer> m_PendingAudioPlayer{ };
+        std::atomic_bool                 m_IsPreparingAudio{ false };
+        std::atomic_bool                 m_CancelAudioPrepare{ false };
+        std::future<void>                m_AudioPrepareFuture{ };
         std::string         m_LoadingFilePath{ };  // full path of file currently being decoded
         bool                m_ForceLoad{ false };
         bool                m_PlayOnUpload{ false };
@@ -107,10 +127,16 @@ namespace ImageScraper
         float       m_FrameAccumMs{ 0.0f };
         std::string m_CurrentFilePath{ };
         MediaState  m_MediaState{ MediaState::None };
+        bool        m_HasAudio{ false };
+        bool        m_IsMuted{ true };
 
         // Video playback - single reused texture, decoded frame-by-frame
         std::unique_ptr<VideoPlayer> m_VideoPlayer{ };
+        std::unique_ptr<MediaAudioPlayer> m_AudioPlayer{ };
         int m_VideoFrameIndex{ 0 };  // frames decoded since last open/seek, for progress bar
         std::vector<uint8_t>         m_VideoFrameBuffer{ };  // reused RGBA scratch buffer
+        double                       m_PlaybackTimeSeconds{ 0.0 };
+        std::chrono::steady_clock::time_point m_PlaybackStartedAt{ };
+        bool                         m_IsPlaybackClockRunning{ false };
     };
 }
