@@ -242,6 +242,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\requests\tumblr\TumblrFetchAccessTokenRequest.cpp" />
     <ClCompile Include="src\requests\tumblr\TumblrRefreshAccessTokenRequest.cpp" />
     <ClCompile Include="src\requests\tumblr\TumblrGetCurrentUserRequest.cpp" />
+    <ClCompile Include="src\services\BlueskyService.cpp" />
     <ClCompile Include="src\services\FourChanService.cpp" />
     <ClCompile Include="src\services\OAuthServiceHelpers.cpp" />
     <ClCompile Include="src\services\Service.cpp" />
@@ -251,6 +252,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\ui\LogPanel.cpp" />
     <ClCompile Include="src\ui\MediaAudioPlayer.cpp" />
     <ClCompile Include="src\ui\DownloadOptionsPanel.cpp" />
+    <ClCompile Include="src\ui\BlueskyPanel.cpp" />
     <ClCompile Include="src\ui\RedditPanel.cpp" />
     <ClCompile Include="src\ui\TumblrPanel.cpp" />
     <ClCompile Include="src\ui\FourChanPanel.cpp" />
@@ -356,6 +358,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\requests\tumblr\TumblrRefreshAccessTokenRequest.h" />
     <ClInclude Include="include\requests\tumblr\TumblrGetCurrentUserRequest.h" />
     <ClInclude Include="include\services\IServiceSink.h" />
+    <ClInclude Include="include\services\BlueskyService.h" />
     <ClInclude Include="include\services\FourChanService.h" />
     <ClInclude Include="include\services\TumblrService.h" />
     <ClInclude Include="include\services\ServiceOptionTypes.h" />
@@ -372,6 +375,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\ui\LogPanel.h" />
     <ClInclude Include="include\ui\DownloadOptionsPanel.h" />
     <ClInclude Include="include\ui\ProviderSearchInput.h" />
+    <ClInclude Include="include\ui\BlueskyPanel.h" />
     <ClInclude Include="include\ui\RedditPanel.h" />
     <ClInclude Include="include\ui\TumblrPanel.h" />
     <ClInclude Include="include\ui\FourChanPanel.h" />

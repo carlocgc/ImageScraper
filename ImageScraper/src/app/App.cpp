@@ -7,6 +7,7 @@
 #include "services/RedditService.h"
 #include "services/TumblrService.h"
 #include "services/FourChanService.h"
+#include "services/BlueskyService.h"
 #include "async/TaskManager.h"
 #include "config/Config.h"
 #include "ui/FrontEnd.h"
@@ -63,6 +64,7 @@ ImageScraper::App::App( )
     m_Services.push_back( std::make_shared<RedditService>(   m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
     m_Services.push_back( std::make_shared<TumblrService>(   m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
     m_Services.push_back( std::make_shared<FourChanService>( m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
+    m_Services.push_back( std::make_shared<BlueskyService>(  m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
 
     m_ListenServer = std::make_shared<ListenServer>( );
 }
