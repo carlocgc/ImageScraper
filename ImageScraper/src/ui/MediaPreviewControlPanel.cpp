@@ -241,45 +241,55 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
             k_NavR,
             !canMute );
 
-        const float bodyW  = k_NavR * 0.22f;
-        const float bodyH  = k_NavR * 0.34f;
-        const float coneW  = k_NavR * 0.30f;
-        const float waveR1 = k_NavR * 0.42f;
-        const float waveR2 = k_NavR * 0.62f;
+        const float speakerOffsetX = k_NavR * 0.06f;
+        const float bodyW          = k_NavR * 0.24f;
+        const float bodyH          = k_NavR * 0.34f;
+        const float coneW          = k_NavR * 0.31f;
+        const float waveR1         = k_NavR * 0.42f;
+        const float waveR2         = k_NavR * 0.62f;
+        const float coneBaseX      = center.x + speakerOffsetX + coneW * 0.48f;
+        const float tipX           = center.x + speakerOffsetX - coneW * 0.52f;
 
         dl->AddRectFilled(
-            ImVec2( center.x + coneW * 0.55f, center.y - bodyH ),
-            ImVec2( center.x + bodyW + coneW * 0.55f, center.y + bodyH ),
+            ImVec2( coneBaseX, center.y - bodyH ),
+            ImVec2( coneBaseX + bodyW, center.y + bodyH ),
             iconCol );
         dl->AddTriangleFilled(
-            ImVec2( center.x + coneW * 0.55f, center.y - bodyH * 1.1f ),
-            ImVec2( center.x + coneW * 0.55f, center.y + bodyH * 1.1f ),
-            ImVec2( center.x - coneW * 0.45f, center.y ),
+            ImVec2( coneBaseX, center.y - bodyH * 1.08f ),
+            ImVec2( coneBaseX, center.y + bodyH * 1.08f ),
+            ImVec2( tipX, center.y ),
             iconCol );
 
         if( muted )
         {
-            const float slash = k_NavR * 0.62f;
+            const float crossCenterX = center.x - k_NavR * 0.01f;
+            const float crossHalf    = k_NavR * 0.28f;
+            const float crossWidth   = std::max( 2.1f, scale * 1.9f );
             dl->AddLine(
-                ImVec2( center.x + slash * 0.35f, center.y + slash * 0.35f ),
-                ImVec2( center.x - slash * 0.55f, center.y - slash * 0.55f ),
+                ImVec2( crossCenterX - crossHalf, center.y - crossHalf ),
+                ImVec2( crossCenterX + crossHalf, center.y + crossHalf ),
                 iconCol,
-                std::max( 1.5f, scale ) );
+                crossWidth );
+            dl->AddLine(
+                ImVec2( crossCenterX - crossHalf, center.y + crossHalf ),
+                ImVec2( crossCenterX + crossHalf, center.y - crossHalf ),
+                iconCol,
+                crossWidth );
         }
         else
         {
             dl->AddBezierCubic(
-                ImVec2( center.x - coneW * 0.35f, center.y - waveR1 * 0.45f ),
-                ImVec2( center.x - waveR1 * 0.75f, center.y - waveR1 * 0.40f ),
-                ImVec2( center.x - waveR1 * 0.75f, center.y + waveR1 * 0.40f ),
-                ImVec2( center.x - coneW * 0.35f, center.y + waveR1 * 0.45f ),
+                ImVec2( tipX - k_NavR * 0.06f, center.y - waveR1 * 0.45f ),
+                ImVec2( tipX - waveR1 * 0.80f, center.y - waveR1 * 0.40f ),
+                ImVec2( tipX - waveR1 * 0.80f, center.y + waveR1 * 0.40f ),
+                ImVec2( tipX - k_NavR * 0.06f, center.y + waveR1 * 0.45f ),
                 iconCol,
                 std::max( 1.5f, scale ) );
             dl->AddBezierCubic(
-                ImVec2( center.x - coneW * 0.55f, center.y - waveR2 * 0.55f ),
-                ImVec2( center.x - waveR2 * 0.95f, center.y - waveR2 * 0.45f ),
-                ImVec2( center.x - waveR2 * 0.95f, center.y + waveR2 * 0.45f ),
-                ImVec2( center.x - coneW * 0.55f, center.y + waveR2 * 0.55f ),
+                ImVec2( tipX - k_NavR * 0.18f, center.y - waveR2 * 0.55f ),
+                ImVec2( tipX - waveR2 * 0.95f, center.y - waveR2 * 0.45f ),
+                ImVec2( tipX - waveR2 * 0.95f, center.y + waveR2 * 0.45f ),
+                ImVec2( tipX - k_NavR * 0.18f, center.y + waveR2 * 0.55f ),
                 iconCol,
                 std::max( 1.5f, scale ) );
         }
