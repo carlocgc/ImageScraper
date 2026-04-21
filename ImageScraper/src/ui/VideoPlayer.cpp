@@ -121,8 +121,25 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
     m_Width  = m_CodecCtx->width;
     m_Height = m_CodecCtx->height;
 
-    const AVRational tb = m_FormatCtx->streams[ m_VideoStream ]->avg_frame_rate;
-    m_Fps = ( tb.den > 0 ) ? static_cast<double>( tb.num ) / tb.den : 30.0;
+    AVRational frameRate = av_guess_frame_rate( m_FormatCtx, m_FormatCtx->streams[ m_VideoStream ], nullptr );
+    if( frameRate.num <= 0 || frameRate.den <= 0 )
+    {
+        frameRate = m_FormatCtx->streams[ m_VideoStream ]->avg_frame_rate;
+    }
+    if( frameRate.num <= 0 || frameRate.den <= 0 )
+    {
+        frameRate = m_FormatCtx->streams[ m_VideoStream ]->r_frame_rate;
+    }
+
+    m_Fps = 30.0;
+    if( frameRate.num > 0 && frameRate.den > 0 )
+    {
+        const double fps = static_cast<double>( frameRate.num ) / static_cast<double>( frameRate.den );
+        if( fps > 0.0 )
+        {
+            m_Fps = fps;
+        }
+    }
 
     m_SwsCtx = sws_getContext(
         m_Width, m_Height, m_CodecCtx->pix_fmt,

@@ -96,6 +96,7 @@ namespace ImageScraper
         std::future<void>   m_DecodeFuture{ };
         std::string         m_LoadingFilePath{ };  // full path of file currently being decoded
         bool                m_ForceLoad{ false };
+        bool                m_PlayOnUpload{ false };
 
         // Current display state - only touched on the main thread
         std::vector<GLuint> m_Textures{ };
