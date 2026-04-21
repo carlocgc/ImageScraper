@@ -67,6 +67,10 @@ ImageScraper::FrontEnd::~FrontEnd( )
 
 bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& services, std::shared_ptr<JsonFile> userConfig, std::shared_ptr<JsonFile> appConfig )
 {
+    char exePath[ MAX_PATH ];
+    GetModuleFileNameA( nullptr, exePath, MAX_PATH );
+    const std::filesystem::path exeDir = std::filesystem::path( exePath ).parent_path( );
+
     m_DownloadOptionsPanel  = std::make_unique<DownloadOptionsPanel>( services );
     m_DownloadProgressPanel = std::make_unique<DownloadProgressPanel>( );
     m_MediaPreviewPanel     = std::make_unique<MediaPreviewPanel>( );
@@ -74,7 +78,7 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
         [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->RequestPreview( filepath ); },
         [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->ReleaseFileIfCurrent( filepath ); } );
     m_CredentialsPanel      = std::make_unique<CredentialsPanel>( userConfig );
-    m_DownloadHistoryPanel->Load( appConfig );
+    m_DownloadHistoryPanel->Load( appConfig, exeDir / "Downloads" );
     m_DownloadOptionsPanel->LoadPanelState( appConfig );
     m_LogPanel->LoadPanelState( appConfig );
 
@@ -107,9 +111,7 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     io.Fonts->AddFontDefault( );
     ImFont* mediaControlsIconFont = LoadMediaControlsIconFont( io );
 
-    char exePath[ MAX_PATH ];
-    GetModuleFileNameA( nullptr, exePath, MAX_PATH );
-    m_IniPath = ( std::filesystem::path( exePath ).parent_path( ) / "imgui.ini" ).string( );
+    m_IniPath = ( exeDir / "imgui.ini" ).string( );
     io.IniFilename = m_IniPath.c_str( );
 
     ImGui::StyleColorsDark( );
@@ -160,7 +162,7 @@ void ImageScraper::FrontEnd::Update( )
     // receives focus.  Keep this ordering intentional:
     //   Top-left node    - Download Options (first) focused, Credentials secondary
     //   Right node       - Media Preview (first) focused, Dear ImGui Demo secondary
-    //   Bottom-left node - Download History (first) focused, Output secondary
+    //   Bottom-left node - Downloads (first) focused, Output secondary
     //   Bottom node      - Download Progress (last, sole occupant)
     const bool wasRunning = m_DownloadOptionsPanel->IsRunning( );
     m_DownloadOptionsPanel->Update( );
@@ -254,7 +256,7 @@ void ImageScraper::FrontEnd::SetupDefaultLayout( ImGuiID dockspaceId )
     ImGui::DockBuilderDockWindow( "Download Options",  dockTopLeft );
     ImGui::DockBuilderDockWindow( "Credentials",       dockTopLeft );
     ImGui::DockBuilderDockWindow( "Output",            dockBottomLeft );
-    ImGui::DockBuilderDockWindow( "Download History",  dockBottomLeft );
+    ImGui::DockBuilderDockWindow( "Downloads",         dockBottomLeft );
     ImGui::DockBuilderDockWindow( "Media Preview",     dockRightMain );
     ImGui::DockBuilderDockWindow( "Media Controls",    dockRightControls );
     ImGui::DockBuilderDockWindow( "Download Progress", dockBottom );
