@@ -300,6 +300,9 @@ void ImageScraper::DownloadHistoryPanel::FlushPending( )
             continue;
         }
 
+        // Re-downloads can reuse the same deterministic filepath, so drop any cached
+        // thumbnail and force the next hover to decode the fresh file contents.
+        EvictThumbnail( preferredPath );
         newestPath = preferredPath;
     }
 
@@ -308,8 +311,9 @@ void ImageScraper::DownloadHistoryPanel::FlushPending( )
         return;
     }
 
-    // Follow the newest downloaded item so the tree highlight matches the preview.
-    SetSelection( newestPath, true, false );
+    // Follow the newest downloaded item and request preview from the main thread
+    // so auto-preview stays in sync with the Downloads selection.
+    SetSelection( newestPath, true, true );
 }
 
 void ImageScraper::DownloadHistoryPanel::FlushDecodedThumbnails( )
@@ -1141,6 +1145,14 @@ ImageScraper::DownloadHistoryPanel::DecodedThumbnail ImageScraper::DownloadHisto
     unsigned char* data = stbi_load( filepath.c_str( ), &w, &h, &channels, STBI_rgb_alpha );
     if( !data )
     {
+        // FFmpeg can decode single-frame formats like WebP even when the file
+        // is mislabeled with a .jpg or .png extension.
+        DecodedThumbnail fallbackDecoded = DecodeVideoThumbnail( filepath );
+        if( !fallbackDecoded.m_PixelData.empty( ) )
+        {
+            return fallbackDecoded;
+        }
+
         return DecodedThumbnail{ filepath };
     }
 

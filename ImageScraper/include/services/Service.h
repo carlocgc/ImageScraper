@@ -39,6 +39,13 @@ namespace ImageScraper
         ContentProvider GetContentProvider( ) const { return m_ContentProvider; }
 
     protected:
+        struct MediaDownload
+        {
+            std::string m_SourceUrl{ };
+            std::string m_FileName{ };
+        };
+
+        std::optional<int> DownloadMedia( const std::vector<MediaDownload>& downloads, const std::filesystem::path& dir );
         std::optional<int> DownloadMediaUrls( std::vector<std::string>& mediaUrls, const std::filesystem::path& dir );
         virtual bool IsCancelled( ) = 0;
 

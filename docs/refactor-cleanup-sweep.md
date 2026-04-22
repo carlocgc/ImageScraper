@@ -311,6 +311,76 @@ Recommended refactor:
 - Drain the main queue until empty, or up to a time/task budget per frame.
 - Preserve responsiveness by using a small cap if needed, but avoid the fixed one-task bottleneck.
 
+### 10. Finish the still-image decoder migration and retire `stb` if it becomes unused
+
+Impact: Medium
+Effort: Medium
+
+Why this matters:
+
+- We now have two decode paths for still media: `stb` is still the primary path for most image preview and thumbnail work, while FFmpeg is used for video decode and as a fallback for mislabeled or unsupported still files.
+- That split helped unblock Bluesky preview bugs, but it leaves duplicate responsibilities in place and makes it harder to reason about decoder behavior.
+- If FFmpeg can cover still images and GIF behavior well enough, we may be able to remove the remaining first-party `stb` dependency cleanly.
+
+Evidence:
+
+- `ImageScraper/src/ui/MediaPreviewPanel.cpp:797-854`
+  - `stbi_load_gif_from_memory(...)` and `stbi_load_from_memory(...)` are still the primary GIF/still decode paths for preview.
+- `ImageScraper/src/ui/MediaPreviewPanel.cpp:840-874`
+  - `DecodeStillImageFile(...)` now uses FFmpeg as a fallback when `stb` fails.
+- `ImageScraper/src/ui/DownloadHistoryPanel.cpp:1145-1156`
+  - thumbnail decoding still tries `stbi_load(...)` first, then falls back to FFmpeg.
+- `ImageScraper/ImageScraper.vcxproj:269`
+  - the app still compiles `src/stb/stb_image.cpp`.
+
+Recommended refactor:
+
+- Decide whether FFmpeg should become the single decode path for:
+  - still-image preview
+  - thumbnail generation
+  - GIF playback and first-frame thumbnail extraction
+- If we keep FFmpeg as the long-term path, extract a small shared decode helper so preview and history do not evolve separate implementations again.
+- Verify animated GIF behavior carefully before removing `stb`, since that is the one place where `stb` is still doing more than "plain still image" decoding today.
+- Treat the disabled `stb_image_write` block in vendored `imgui_draw.cpp` as non-blocking unless we ever enable that debug code.
+
+Good first slice:
+
+- Move thumbnail decode and non-GIF still-image preview fully onto the FFmpeg-backed path first.
+- Keep `stb` only for GIFs until parity is proven, then decide whether full removal is worth the churn.
+
+### 11. Migrate repo-authored text files to LF-first line endings in a dedicated cleanup PR
+
+Impact: Medium
+Effort: Low to Medium
+
+Why this matters:
+
+- The repo currently enforces `CRLF` broadly, and we have already hit recurring mixed-line-ending churn while touching otherwise small changes.
+- Most modern cross-platform tools and Git workflows behave more predictably with `LF` as the default text-file format.
+- This is a good cleanup candidate, but it should stay separate from feature work so review stays readable.
+
+Evidence:
+
+- `.gitattributes:3-26`
+  - repo-authored text files are currently forced to `eol=crlf`.
+- `.editorconfig:5,11,20,26`
+  - editor defaults also enforce `end_of_line = crlf`.
+- `AGENTS.md:27`
+  - agent guidance currently tells contributors to preserve `CRLF`.
+
+Recommended refactor:
+
+- Wait until the current Bluesky PR stack is merged, then do the line-ending migration as its own branch and PR.
+- Update `.gitattributes` and `.editorconfig` to use `LF` by default for source, headers, docs, JSON, YAML, and project-authored metadata.
+- Keep `CRLF` only where we intentionally want Windows-native script behavior, such as `*.bat` and `*.cmd`, and decide explicitly whether `*.ps1` stays `CRLF`.
+- Renormalize the repo in one pass so future diffs stop carrying mixed-line-ending noise.
+- Update `AGENTS.md` and any other contributor docs to match the new policy.
+
+Good first slice:
+
+- Open a dedicated post-Bluesky cleanup branch for the config-file update plus renormalization only.
+- Keep the PR description explicit that the change is whitespace-only except for the policy docs.
+
 ## Sweep Checklist
 
 ### Phase 1: Stability and ownership
@@ -338,6 +408,11 @@ Recommended refactor:
 - [x] Reduce preview decode blocking
 - [x] Drain more main-thread tasks per frame
 - [x] Reuse HTTP client instances
+
+### Phase 5: Post-Bluesky cleanup
+
+- [ ] Finish the FFmpeg still-image migration and remove `stb` if it becomes unused
+- [ ] Migrate repo-authored text files to LF-first line endings in a dedicated PR
 
 ## Best First Refactor Set
 

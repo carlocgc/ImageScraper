@@ -312,6 +312,5 @@ void ImageScraper::FrontEnd::OnSignInComplete( ContentProvider provider )
 
 void ImageScraper::FrontEnd::OnFileDownloaded( const std::string& filepath, const std::string& sourceUrl )
 {
-    m_MediaPreviewPanel->OnFileDownloaded( filepath );
     m_DownloadHistoryPanel->OnFileDownloaded( filepath, sourceUrl );
 }

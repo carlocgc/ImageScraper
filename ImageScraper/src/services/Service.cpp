@@ -20,16 +20,16 @@ ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFi
 {
 }
 
-std::optional<int> ImageScraper::Service::DownloadMediaUrls( std::vector<std::string>& mediaUrls, const std::filesystem::path& dir )
+std::optional<int> ImageScraper::Service::DownloadMedia( const std::vector<MediaDownload>& downloads, const std::filesystem::path& dir )
 {
     const std::string providerName = GetProviderDisplayName( );
 
-    InfoLog( "[%s] Started downloading %s content, urls: %i", __FUNCTION__, providerName.c_str( ), static_cast<int>( mediaUrls.size( ) ) );
+    InfoLog( "[%s] Started downloading %s content, urls: %i", __FUNCTION__, providerName.c_str( ), static_cast<int>( downloads.size( ) ) );
 
     int filesDownloaded = 0;
-    const int totalDownloads = static_cast<int>( mediaUrls.size( ) );
+    const int totalDownloads = static_cast<int>( downloads.size( ) );
 
-    for( std::string& url : mediaUrls )
+    for( const MediaDownload& download : downloads )
     {
         if( IsCancelled( ) )
         {
@@ -39,19 +39,12 @@ std::optional<int> ImageScraper::Service::DownloadMediaUrls( std::vector<std::st
 
         std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
 
-        const std::string newUrl = DownloadHelpers::RedirectToPreferredFileTypeUrl( url );
-        if( !newUrl.empty( ) )
-        {
-            url = newUrl;
-        }
-
-        const std::string filename = DownloadHelpers::ExtractFileNameAndExtFromUrl( url );
-        const std::filesystem::path filepath = dir / filename;
+        const std::filesystem::path filepath = dir / download.m_FileName;
         const std::string filepathStr = filepath.generic_string( );
 
         DownloadOptions downloadOptions{ };
         downloadOptions.m_CaBundle = m_CaBundle;
-        downloadOptions.m_Url = url;
+        downloadOptions.m_Url = download.m_SourceUrl;
         downloadOptions.m_UserAgent = m_UserAgent;
         downloadOptions.m_OutputFilePath = filepath;
 
@@ -61,12 +54,12 @@ std::optional<int> ImageScraper::Service::DownloadMediaUrls( std::vector<std::st
         {
             if( !IsCancelled( ) )
             {
-                LogError( "[%s] Download failed, error: %s, url: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ), url.c_str( ) );
+                LogError( "[%s] Download failed, error: %s, url: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ), download.m_SourceUrl.c_str( ) );
             }
             continue;
         }
 
-        m_Sink->OnFileDownloaded( filepathStr, url );
+        m_Sink->OnFileDownloaded( filepathStr, download.m_SourceUrl );
 
         ++filesDownloaded;
 
@@ -76,4 +69,23 @@ std::optional<int> ImageScraper::Service::DownloadMediaUrls( std::vector<std::st
     }
 
     return filesDownloaded;
+}
+
+std::optional<int> ImageScraper::Service::DownloadMediaUrls( std::vector<std::string>& mediaUrls, const std::filesystem::path& dir )
+{
+    std::vector<MediaDownload> downloads{ };
+    downloads.reserve( mediaUrls.size( ) );
+
+    for( std::string& url : mediaUrls )
+    {
+        const std::string newUrl = DownloadHelpers::RedirectToPreferredFileTypeUrl( url );
+        if( !newUrl.empty( ) )
+        {
+            url = newUrl;
+        }
+
+        downloads.push_back( { url, DownloadHelpers::ExtractFileNameAndExtFromUrl( url ) } );
+    }
+
+    return DownloadMedia( downloads, dir );
 }

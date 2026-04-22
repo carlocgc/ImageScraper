@@ -111,6 +111,13 @@ TEST_CASE( "GetSubfolderLabel formats provider-specific download labels", "[Down
         REQUIRE( GetSubfolderLabel( filepath ) == "@artist-name" );
     }
 
+    SECTION( "Bluesky uses @ prefix" )
+    {
+        const std::string filepath =
+            ( std::filesystem::path( "Downloads" ) / "Bluesky" / "alice.bsky.social" / "post.jpg" ).string( );
+        REQUIRE( GetSubfolderLabel( filepath ) == "@alice.bsky.social" );
+    }
+
     SECTION( "4chan wraps the board in slashes" )
     {
         const std::string filepath =
