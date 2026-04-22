@@ -316,37 +316,38 @@ Recommended refactor:
 Impact: Medium
 Effort: Medium
 
-Why this matters:
+Why this mattered:
 
-- We now have two decode paths for still media: `stb` is still the primary path for most image preview and thumbnail work, while FFmpeg is used for video decode and as a fallback for mislabeled or unsupported still files.
-- That split helped unblock Bluesky preview bugs, but it leaves duplicate responsibilities in place and makes it harder to reason about decoder behavior.
-- If FFmpeg can cover still images and GIF behavior well enough, we may be able to remove the remaining first-party `stb` dependency cleanly.
+- We previously had two decode paths for still media: `stb` handled most image preview and thumbnail work, while FFmpeg handled video decode and a few still-image fallbacks.
+- That split helped unblock Bluesky preview bugs, but it left duplicate responsibilities in place and made decoder behavior harder to reason about.
+- Once FFmpeg covered still images and GIF playback well enough, we could retire the remaining first-party `stb` dependency from the app cleanly.
 
 Evidence:
 
-- `ImageScraper/src/ui/MediaPreviewPanel.cpp:797-854`
-  - `stbi_load_gif_from_memory(...)` and `stbi_load_from_memory(...)` are still the primary GIF/still decode paths for preview.
-- `ImageScraper/src/ui/MediaPreviewPanel.cpp:840-874`
-  - `DecodeStillImageFile(...)` now uses FFmpeg as a fallback when `stb` fails.
-- `ImageScraper/src/ui/DownloadHistoryPanel.cpp:1145-1156`
-  - thumbnail decoding still tries `stbi_load(...)` first, then falls back to FFmpeg.
-- `ImageScraper/ImageScraper.vcxproj:269`
-  - the app still compiles `src/stb/stb_image.cpp`.
+- `ImageScraper/src/ui/MediaPreviewPanel.cpp`
+  - preview decode now routes still images and GIF playback through the FFmpeg-backed `VideoPlayer` helpers instead of `stb`.
+- `ImageScraper/src/ui/DownloadHistoryPanel.cpp`
+  - thumbnail decoding now reuses the same FFmpeg first-frame path as preview decode.
+- `ImageScraper/include/ui/VideoPlayer.h`
+  - `DecodeFirstFrameFile(...)` provides the shared FFmpeg decode entry point for still-image preview and thumbnails.
+- `ImageScraper/ImageScraper.vcxproj`
+  - the app no longer compiles `src/stb/stb_image.cpp`.
+
+Status:
+
+- Completed in `codex/retire-stb`.
+- The vendored `stb_image_write` block in `imgui_draw.cpp` remains disabled and is still treated as non-blocking.
 
 Recommended refactor:
 
-- Decide whether FFmpeg should become the single decode path for:
-  - still-image preview
-  - thumbnail generation
-  - GIF playback and first-frame thumbnail extraction
-- If we keep FFmpeg as the long-term path, extract a small shared decode helper so preview and history do not evolve separate implementations again.
-- Verify animated GIF behavior carefully before removing `stb`, since that is the one place where `stb` is still doing more than "plain still image" decoding today.
+- Keep the shared FFmpeg first-frame helper as the single decode path for still-image preview and thumbnail generation.
+- If future media types need custom handling, add them around the shared FFmpeg helper rather than reintroducing a parallel still-image decoder.
 - Treat the disabled `stb_image_write` block in vendored `imgui_draw.cpp` as non-blocking unless we ever enable that debug code.
 
 Good first slice:
 
-- Move thumbnail decode and non-GIF still-image preview fully onto the FFmpeg-backed path first.
-- Keep `stb` only for GIFs until parity is proven, then decide whether full removal is worth the churn.
+- Completed: thumbnail decode and still-image preview now use the FFmpeg-backed path.
+- Completed: the remaining app-side `stb` usage has been removed from preview decode and the project build.
 
 ### 11. Migrate repo-authored text files to LF-first line endings in a dedicated cleanup PR
 
@@ -416,7 +417,7 @@ Good first slice:
 
 ### Phase 5: Post-Bluesky cleanup
 
-- [ ] Finish the FFmpeg still-image migration and remove `stb` if it becomes unused
+- [x] Finish the FFmpeg still-image migration and remove `stb` if it becomes unused
 - [x] Migrate repo-authored text files to LF-first line endings in a dedicated PR
 
 ## Best First Refactor Set
