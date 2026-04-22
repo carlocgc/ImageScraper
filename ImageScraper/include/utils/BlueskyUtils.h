@@ -48,6 +48,14 @@ namespace ImageScraper::BlueskyUtils
         std::string m_ActorDirectory{ };
     };
 
+    struct PreparedDownload
+    {
+        MediaKind m_Kind{ MediaKind::Image };
+        std::string m_SourceUrl{ };
+        std::string m_FileName{ };
+        std::string m_ActorDirectory{ };
+    };
+
     inline bool IsDid( const std::string& actor )
     {
         return actor.rfind( "did:", 0 ) == 0;
@@ -275,11 +283,86 @@ namespace ImageScraper::BlueskyUtils
         return postId + "_" + index + "." + extension;
     }
 
-    inline std::vector<ImageDownload> PrepareImageDownloads( const std::vector<MediaItem>& mediaItems,
-                                                             int maxItems,
-                                                             const std::string& fallbackActor )
+    inline std::string CanonicalizeVideoExtension( std::string extension )
     {
-        std::vector<ImageDownload> downloads{ };
+        std::transform( extension.begin( ), extension.end( ), extension.begin( ), []( unsigned char c )
+            {
+                return static_cast<char>( std::tolower( c ) );
+            } );
+
+        if( extension == "quicktime" )
+        {
+            return "mov";
+        }
+
+        if( extension == "x-matroska" )
+        {
+            return "mkv";
+        }
+
+        if( extension == "x-msvideo" )
+        {
+            return "avi";
+        }
+
+        if( extension == "mpeg" )
+        {
+            return "mpg";
+        }
+
+        if( extension.rfind( "x-", 0 ) == 0 && extension.size( ) > 2 )
+        {
+            return extension.substr( 2 );
+        }
+
+        return extension;
+    }
+
+    inline std::string GetVideoExtensionFromMimeType( const std::string& mimeType )
+    {
+        if( mimeType.rfind( "video/", 0 ) != 0 )
+        {
+            return { };
+        }
+
+        return CanonicalizeVideoExtension( mimeType.substr( 6 ) );
+    }
+
+    inline std::string GetVideoExtension( const MediaItem& item )
+    {
+        const std::string mimeExtension = GetVideoExtensionFromMimeType( item.m_MimeType );
+        if( !mimeExtension.empty( ) && mimeExtension != "mpegurl" && mimeExtension != "vnd.apple.mpegurl" )
+        {
+            return mimeExtension;
+        }
+
+        return "mp4";
+    }
+
+    inline std::string BuildVideoFileName( const MediaItem& item, int mediaIndex )
+    {
+        const std::string postId = GetPostIdFromUri( item.m_PostUri );
+        const std::string extension = GetVideoExtension( item );
+        const std::string index = mediaIndex < 10 ? "0" + std::to_string( mediaIndex ) : std::to_string( mediaIndex );
+
+        return postId + "_" + index + "." + extension;
+    }
+
+    inline std::string BuildMediaFileName( const MediaItem& item, int mediaIndex )
+    {
+        if( item.m_Kind == MediaKind::Video )
+        {
+            return BuildVideoFileName( item, mediaIndex );
+        }
+
+        return BuildImageFileName( item, mediaIndex );
+    }
+
+    inline std::vector<PreparedDownload> PrepareMediaDownloads( const std::vector<MediaItem>& mediaItems,
+                                                               int maxItems,
+                                                               const std::string& fallbackActor )
+    {
+        std::vector<PreparedDownload> downloads{ };
         if( maxItems <= 0 )
         {
             return downloads;
@@ -295,7 +378,7 @@ namespace ImageScraper::BlueskyUtils
                 break;
             }
 
-            if( item.m_Kind != MediaKind::Image || item.m_DownloadUrl.empty( ) )
+            if( item.m_DownloadUrl.empty( ) )
             {
                 continue;
             }
@@ -311,11 +394,33 @@ namespace ImageScraper::BlueskyUtils
                 : item.m_PostUri;
             const int mediaIndex = ++mediaIndexByPost[ postKey ];
 
-            ImageDownload download{ };
+            PreparedDownload download{ };
+            download.m_Kind = item.m_Kind;
             download.m_SourceUrl = item.m_DownloadUrl;
             download.m_ActorDirectory = SanitizePathComponent( GetActorIdentifier( item, fallbackActor ), "actor" );
-            download.m_FileName = BuildImageFileName( item, mediaIndex );
+            download.m_FileName = BuildMediaFileName( item, mediaIndex );
             downloads.push_back( std::move( download ) );
+        }
+
+        return downloads;
+    }
+
+    inline std::vector<ImageDownload> PrepareImageDownloads( const std::vector<MediaItem>& mediaItems,
+                                                             int maxItems,
+                                                             const std::string& fallbackActor )
+    {
+        std::vector<ImageDownload> downloads{ };
+        const std::vector<PreparedDownload> preparedDownloads = PrepareMediaDownloads( mediaItems, maxItems, fallbackActor );
+        downloads.reserve( preparedDownloads.size( ) );
+
+        for( const PreparedDownload& preparedDownload : preparedDownloads )
+        {
+            if( preparedDownload.m_Kind != MediaKind::Image )
+            {
+                continue;
+            }
+
+            downloads.push_back( { preparedDownload.m_SourceUrl, preparedDownload.m_FileName, preparedDownload.m_ActorDirectory } );
         }
 
         return downloads;

@@ -1,5 +1,6 @@
 #include "services/Service.h"
 #include "requests/DownloadRequest.h"
+#include "requests/VideoDownloadRequest.h"
 #include "requests/DownloadRequestTypes.h"
 #include "network/CurlHttpClient.h"
 #include "network/RetryHttpClient.h"
@@ -48,8 +49,18 @@ std::optional<int> ImageScraper::Service::DownloadMedia( const std::vector<Media
         downloadOptions.m_UserAgent = m_UserAgent;
         downloadOptions.m_OutputFilePath = filepath;
 
-        DownloadRequest request{ m_Sink };
-        RequestResult result = request.Perform( downloadOptions );
+        RequestResult result{ };
+        if( download.m_Method == DownloadMethod::HlsVideo )
+        {
+            VideoDownloadRequest request{ m_Sink };
+            result = request.Perform( downloadOptions );
+        }
+        else
+        {
+            DownloadRequest request{ m_Sink };
+            result = request.Perform( downloadOptions );
+        }
+
         if( !result.m_Success )
         {
             if( !IsCancelled( ) )
@@ -84,7 +95,7 @@ std::optional<int> ImageScraper::Service::DownloadMediaUrls( std::vector<std::st
             url = newUrl;
         }
 
-        downloads.push_back( { url, DownloadHelpers::ExtractFileNameAndExtFromUrl( url ) } );
+        downloads.push_back( { url, DownloadHelpers::ExtractFileNameAndExtFromUrl( url ), DownloadMethod::DirectFile } );
     }
 
     return DownloadMedia( downloads, dir );

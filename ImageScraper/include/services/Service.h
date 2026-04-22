@@ -8,6 +8,7 @@
 #include <string>
 #include <memory>
 #include <functional>
+#include <cstdint>
 #include <vector>
 
 namespace ImageScraper
@@ -39,10 +40,17 @@ namespace ImageScraper
         ContentProvider GetContentProvider( ) const { return m_ContentProvider; }
 
     protected:
+        enum class DownloadMethod : uint8_t
+        {
+            DirectFile = 0,
+            HlsVideo = 1
+        };
+
         struct MediaDownload
         {
             std::string m_SourceUrl{ };
             std::string m_FileName{ };
+            DownloadMethod m_Method{ DownloadMethod::DirectFile };
         };
 
         std::optional<int> DownloadMedia( const std::vector<MediaDownload>& downloads, const std::filesystem::path& dir );

@@ -370,6 +370,76 @@ TEST_CASE( "PrepareImageDownloads dedupes repeated image URLs and skips videos",
     REQUIRE( downloads[ 1 ].m_FileName == "post-3_01.png" );
 }
 
+TEST_CASE( "PrepareMediaDownloads includes Bluesky videos with deterministic mp4 filenames", "[BlueskyUtils]" )
+{
+    const std::vector<MediaItem> mediaItems = {
+        {
+            MediaKind::Image,
+            "at://did:plc:alice/app.bsky.feed.post/post-1",
+            "https://cdn.bsky.app/one@jpeg",
+            "",
+            "",
+            "",
+            "image/jpeg",
+            "did:plc:alice",
+            "alice.bsky.social"
+        },
+        {
+            MediaKind::Video,
+            "at://did:plc:alice/app.bsky.feed.post/post-2",
+            "https://video.bsky.app/watch/did%3Aplc%3Aalice/bafy-video/playlist.m3u8?session_id=abc",
+            "https://video.bsky.app/watch/did%3Aplc%3Aalice/bafy-video/thumbnail.jpg",
+            "video alt",
+            "bafy-video",
+            "video/mp4",
+            "did:plc:alice",
+            "alice.bsky.social"
+        }
+    };
+
+    const std::vector<PreparedDownload> downloads = PrepareMediaDownloads( mediaItems, 10, "fallback" );
+    REQUIRE( downloads.size( ) == 2 );
+    REQUIRE( downloads[ 0 ].m_Kind == MediaKind::Image );
+    REQUIRE( downloads[ 0 ].m_FileName == "post-1_01.jpg" );
+    REQUIRE( downloads[ 1 ].m_Kind == MediaKind::Video );
+    REQUIRE( downloads[ 1 ].m_ActorDirectory == "alice.bsky.social" );
+    REQUIRE( downloads[ 1 ].m_SourceUrl == "https://video.bsky.app/watch/did%3Aplc%3Aalice/bafy-video/playlist.m3u8?session_id=abc" );
+    REQUIRE( downloads[ 1 ].m_FileName == "post-2_01.mp4" );
+}
+
+TEST_CASE( "PrepareMediaDownloads dedupes repeated Bluesky video playlists", "[BlueskyUtils]" )
+{
+    const std::vector<MediaItem> mediaItems = {
+        {
+            MediaKind::Video,
+            "at://did:plc:alice/app.bsky.feed.post/post-2",
+            "https://video.bsky.app/watch/did%3Aplc%3Aalice/bafy-video/playlist.m3u8?session_id=abc",
+            "",
+            "",
+            "bafy-video",
+            "video/mp4",
+            "did:plc:alice",
+            "alice.bsky.social"
+        },
+        {
+            MediaKind::Video,
+            "at://did:plc:alice/app.bsky.feed.post/post-3",
+            "https://video.bsky.app/watch/did%3Aplc%3Aalice/bafy-video/playlist.m3u8?session_id=xyz",
+            "",
+            "",
+            "bafy-video",
+            "video/mp4",
+            "did:plc:alice",
+            "alice.bsky.social"
+        }
+    };
+
+    const std::vector<PreparedDownload> downloads = PrepareMediaDownloads( mediaItems, 10, "fallback" );
+    REQUIRE( downloads.size( ) == 1 );
+    REQUIRE( downloads[ 0 ].m_Kind == MediaKind::Video );
+    REQUIRE( downloads[ 0 ].m_FileName == "post-2_01.mp4" );
+}
+
 TEST_CASE( "PrepareImageDownloads falls back to sanitized actor and url suffix extension", "[BlueskyUtils]" )
 {
     const std::vector<MediaItem> mediaItems = {
