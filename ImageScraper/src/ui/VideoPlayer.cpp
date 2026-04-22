@@ -172,6 +172,40 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
     return true;
 }
 
+bool ImageScraper::VideoPlayer::DecodeFirstFrameFile(
+    const std::string& filepath,
+    std::vector<uint8_t>& rgbaOut,
+    int& width,
+    int& height,
+    bool* hasAudio )
+{
+    VideoPlayer player;
+    if( !player.Open( filepath ) )
+    {
+        return false;
+    }
+
+    if( !player.DecodeNextFrame( rgbaOut ) )
+    {
+        return false;
+    }
+
+    width  = player.GetWidth( );
+    height = player.GetHeight( );
+    if( hasAudio )
+    {
+        *hasAudio = player.HasAudio( );
+    }
+
+    const size_t pixelBytes = static_cast<size_t>( width ) * static_cast<size_t>( height ) * 4;
+    if( rgbaOut.size( ) > pixelBytes )
+    {
+        rgbaOut.resize( pixelBytes );
+    }
+
+    return true;
+}
+
 bool ImageScraper::VideoPlayer::DecodeNextFrame( std::vector<uint8_t>& rgbaOut )
 {
     if( !m_FormatCtx )
