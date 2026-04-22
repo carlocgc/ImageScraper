@@ -1,29 +1,76 @@
 * text=auto
 
-.editorconfig text eol=crlf
-.gitattributes text eol=crlf
-.gitignore text eol=crlf
+.editorconfig text eol=lf
+.gitattributes text eol=lf
+.gitignore text eol=lf
 
 *.bat text eol=crlf
 *.cmd text eol=crlf
-*.cpp text eol=crlf
-*.c text eol=crlf
-*.filters text eol=crlf
-*.h text eol=crlf
-*.hpp text eol=crlf
-*.html text eol=crlf
-*.inl text eol=crlf
-*.json text eol=crlf
-*.md text eol=crlf
-*.props text eol=crlf
 *.ps1 text eol=crlf
-*.runsettings text eol=crlf
-*.sln text eol=crlf
-*.targets text eol=crlf
-*.txt text eol=crlf
-*.vcxproj text eol=crlf
-*.yaml text eol=crlf
-*.yml text eol=crlf
+
+.github/** text eol=lf
+AGENTS.md text eol=lf
+CLAUDE.md text eol=lf
+LICENSE.txt text eol=lf
+PLAN.md text eol=lf
+README.MD text eol=lf
+THIRD_PARTY_LICENSES.md text eol=lf
+docs/** text eol=lf
+ImageScraper.runsettings text eol=lf
+ImageScraper.sln text eol=lf
+
+ImageScraper/*.vcxproj text eol=lf
+ImageScraper/*.filters text eol=lf
+ImageScraper/data/** text eol=lf
+ImageScraper/include/app/** text eol=lf
+ImageScraper/include/async/** text eol=lf
+ImageScraper/include/auth/** text eol=lf
+ImageScraper/include/collections/** text eol=lf
+ImageScraper/include/config/** text eol=lf
+ImageScraper/include/io/** text eol=lf
+ImageScraper/include/log/** text eol=lf
+ImageScraper/include/network/** text eol=lf
+ImageScraper/include/requests/** text eol=lf
+ImageScraper/include/services/** text eol=lf
+ImageScraper/include/traits/** text eol=lf
+ImageScraper/include/ui/** text eol=lf
+ImageScraper/include/utils/** text eol=lf
+ImageScraper/include/version/** text eol=lf
+ImageScraper/src/app/** text eol=lf
+ImageScraper/src/async/** text eol=lf
+ImageScraper/src/auth/** text eol=lf
+ImageScraper/src/config/** text eol=lf
+ImageScraper/src/io/** text eol=lf
+ImageScraper/src/log/** text eol=lf
+ImageScraper/src/network/** text eol=lf
+ImageScraper/src/requests/** text eol=lf
+ImageScraper/src/services/** text eol=lf
+ImageScraper/src/ui/** text eol=lf
+ImageScraper/src/main.cpp text eol=lf
+ImageScraperTests/*.vcxproj text eol=lf
+ImageScraperTests/include/mocks/** text eol=lf
+ImageScraperTests/src/tests/** text eol=lf
+
+ImageScraper/include/GLFW/** text eol=crlf
+ImageScraper/include/cppcodec/** text eol=crlf
+ImageScraper/include/curl/** text eol=crlf
+ImageScraper/include/curlpp/** text eol=crlf
+ImageScraper/include/imgui/** text eol=crlf
+ImageScraper/include/libavcodec/** text eol=crlf
+ImageScraper/include/libavdevice/** text eol=crlf
+ImageScraper/include/libavfilter/** text eol=crlf
+ImageScraper/include/libavformat/** text eol=crlf
+ImageScraper/include/libavutil/** text eol=crlf
+ImageScraper/include/libswresample/** text eol=crlf
+ImageScraper/include/libswscale/** text eol=crlf
+ImageScraper/include/nlohmann/** text eol=crlf
+ImageScraper/include/stb/** text eol=crlf
+ImageScraper/include/utilspp/** text eol=crlf
+ImageScraper/src/imgui/** text eol=crlf
+ImageScraper/src/stb/** text eol=crlf
+ImageScraper/lib/**/curl-ca-bundle.crt text eol=crlf
+ImageScraperTests/include/catch2/** text eol=crlf
+ImageScraperTests/src/catch2/** text eol=crlf
 
 *.dll binary
 *.exe binary

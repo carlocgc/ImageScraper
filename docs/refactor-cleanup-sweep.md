@@ -355,18 +355,23 @@ Effort: Low to Medium
 
 Why this matters:
 
-- The repo currently enforces `CRLF` broadly, and we have already hit recurring mixed-line-ending churn while touching otherwise small changes.
+- The repo previously enforced `CRLF` broadly, and we had already hit recurring mixed-line-ending churn while touching otherwise small changes.
 - Most modern cross-platform tools and Git workflows behave more predictably with `LF` as the default text-file format.
 - This is a good cleanup candidate, but it should stay separate from feature work so review stays readable.
 
 Evidence:
 
-- `.gitattributes:3-26`
-  - repo-authored text files are currently forced to `eol=crlf`.
-- `.editorconfig:5,11,20,26`
-  - editor defaults also enforce `end_of_line = crlf`.
-- `AGENTS.md:27`
-  - agent guidance currently tells contributors to preserve `CRLF`.
+- `.gitattributes`
+  - repo-authored text files now default to `LF`, while Windows-native scripts stay on `CRLF` and vendored folders keep their existing line endings.
+- `.editorconfig`
+  - editor defaults now match the `LF`-first policy.
+- `AGENTS.md`
+  - contributor guidance now tells agents to preserve `LF` in repo-authored text files and avoid mixed endings.
+
+Status:
+
+- Completed in `codex/uniform-line-endings`.
+- Remaining follow-up is just to keep future edits aligned with the new policy.
 
 Recommended refactor:
 
@@ -412,7 +417,7 @@ Good first slice:
 ### Phase 5: Post-Bluesky cleanup
 
 - [ ] Finish the FFmpeg still-image migration and remove `stb` if it becomes unused
-- [ ] Migrate repo-authored text files to LF-first line endings in a dedicated PR
+- [x] Migrate repo-authored text files to LF-first line endings in a dedicated PR
 
 ## Best First Refactor Set
 
