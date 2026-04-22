@@ -7,7 +7,49 @@ extern "C"
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
 #include <libavutil/imgutils.h>
+#include <libavutil/pixfmt.h>
 #include <libswscale/swscale.h>
+}
+
+namespace
+{
+    AVPixelFormat NormaliseSwscalePixelFormat( AVPixelFormat pixelFormat )
+    {
+        switch( pixelFormat )
+        {
+            case AV_PIX_FMT_YUVJ420P: return AV_PIX_FMT_YUV420P;
+            case AV_PIX_FMT_YUVJ422P: return AV_PIX_FMT_YUV422P;
+            case AV_PIX_FMT_YUVJ444P: return AV_PIX_FMT_YUV444P;
+            case AV_PIX_FMT_YUVJ440P: return AV_PIX_FMT_YUV440P;
+            case AV_PIX_FMT_YUVJ411P: return AV_PIX_FMT_YUV411P;
+            default:                 return pixelFormat;
+        }
+    }
+
+    int GetSwscaleRangeFlag( AVPixelFormat pixelFormat, AVColorRange colorRange )
+    {
+        if( colorRange == AVCOL_RANGE_JPEG )
+        {
+            return 1;
+        }
+
+        if( colorRange == AVCOL_RANGE_MPEG )
+        {
+            return 0;
+        }
+
+        switch( pixelFormat )
+        {
+            case AV_PIX_FMT_YUVJ420P:
+            case AV_PIX_FMT_YUVJ422P:
+            case AV_PIX_FMT_YUVJ444P:
+            case AV_PIX_FMT_YUVJ440P:
+            case AV_PIX_FMT_YUVJ411P:
+                return 1;
+            default:
+                return 0;
+        }
+    }
 }
 
 ImageScraper::VideoPlayer::~VideoPlayer( )
@@ -147,8 +189,9 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
         }
     }
 
+    const AVPixelFormat swscalePixelFormat = NormaliseSwscalePixelFormat( m_CodecCtx->pix_fmt );
     m_SwsCtx = sws_getContext(
-        m_Width, m_Height, m_CodecCtx->pix_fmt,
+        m_Width, m_Height, swscalePixelFormat,
         m_Width, m_Height, AV_PIX_FMT_RGBA,
         SWS_BILINEAR, nullptr, nullptr, nullptr );
 
@@ -157,6 +200,17 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
         LogError( "[%s] sws_getContext failed for: %s", __FUNCTION__, filepath.c_str( ) );
         Close( );
         return false;
+    }
+
+    const int* swscaleCoefficients = sws_getCoefficients( SWS_CS_DEFAULT );
+    const int sourceRange = GetSwscaleRangeFlag( m_CodecCtx->pix_fmt, m_CodecCtx->color_range );
+    if( sws_setColorspaceDetails(
+            m_SwsCtx,
+            swscaleCoefficients, sourceRange,
+            swscaleCoefficients, 1,
+            0, 1 << 16, 1 << 16 ) < 0 )
+    {
+        WarningLog( "[%s] sws_setColorspaceDetails failed for: %s", __FUNCTION__, filepath.c_str( ) );
     }
 
     m_Frame  = av_frame_alloc( );

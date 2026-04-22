@@ -2,13 +2,10 @@
 #include "ui/MediaPreviewPanel.h"
 #include "utils/DownloadUtils.h"
 #include "log/Logger.h"
-#include "stb/stb_image.h"
 
-#include <fstream>
 #include <algorithm>
 #include <cctype>
 #include <cmath>
-#include <cstdlib>
 #include <filesystem>
 #include <iomanip>
 #include <sstream>
@@ -757,120 +754,12 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
         return DecodeVideoFile( filepath );
     }
 
-    const bool isGif = IsGif( filepath );
-    auto readFileData = [ &filepath ]( ) -> std::vector<unsigned char>
+    if( IsGif( filepath ) && !firstFrameOnly )
     {
-        std::ifstream file( filepath, std::ios::binary | std::ios::ate );
-        if( !file.is_open( ) )
-        {
-            LogError( "[%s] Could not open file for preview: %s", __FUNCTION__, filepath.c_str( ) );
-            return { };
-        }
-
-        const std::streamsize size = file.tellg( );
-        file.seekg( 0, std::ios::beg );
-        std::vector<unsigned char> fileData( static_cast<size_t>( size ) );
-        if( !file.read( reinterpret_cast<char*>( fileData.data( ) ), size ) )
-        {
-            LogError( "[%s] Could not read file for preview: %s", __FUNCTION__, filepath.c_str( ) );
-            return { };
-        }
-
-        return fileData;
-    };
-
-    if( isGif && !firstFrameOnly )
-    {
-        if( auto decoded = DecodeVideoFile( filepath ) )
-        {
-            return decoded;
-        }
-
-        LogDebug( "[%s] Falling back to stb GIF decode for: %s", __FUNCTION__, filepath.c_str( ) );
-        std::vector<unsigned char> fileData = readFileData( );
-        if( fileData.empty( ) )
-        {
-            return nullptr;
-        }
-
-        auto decoded        = std::make_unique<DecodedMedia>( );
-        decoded->m_FilePath = filepath;
-        int* delays   = nullptr;
-        int  width    = 0;
-        int  height   = 0;
-        int  frames   = 0;
-        int  channels = 0;
-
-        unsigned char* data = stbi_load_gif_from_memory(
-            fileData.data( ), static_cast<int>( fileData.size( ) ),
-            &delays, &width, &height, &frames, &channels, 4 );
-
-        if( !data )
-        {
-            LogError( "[%s] stbi_load_gif_from_memory failed for: %s", __FUNCTION__, filepath.c_str( ) );
-            return nullptr;
-        }
-
-        decoded->m_Width  = width;
-        decoded->m_Height = height;
-        decoded->m_Frames = frames;
-
-        const int frameBytes = width * height * 4;
-        decoded->m_PixelData.assign( data, data + static_cast<size_t>( frames ) * frameBytes );
-
-        decoded->m_FrameDelaysMs.reserve( static_cast<size_t>( frames ) );
-        for( int i = 0; i < frames; ++i )
-        {
-            const int delayMs = delays ? delays[ i ] : 100;
-            decoded->m_FrameDelaysMs.push_back( std::max( delayMs, 20 ) );
-        }
-
-        stbi_image_free( data );
-        if( delays )
-        {
-            free( delays );
-        }
-
-        return decoded;
+        return DecodeVideoFile( filepath );
     }
 
-    if( auto decoded = DecodeStillImageFile( filepath ) )
-    {
-        return decoded;
-    }
-
-    if( !isGif )
-    {
-        return nullptr;
-    }
-
-    LogDebug( "[%s] Falling back to stb first-frame GIF decode for: %s", __FUNCTION__, filepath.c_str( ) );
-    std::vector<unsigned char> fileData = readFileData( );
-    if( fileData.empty( ) )
-    {
-        return nullptr;
-    }
-
-    int width = 0;
-    int height = 0;
-    int channels = 0;
-    unsigned char* data = stbi_load_from_memory(
-        fileData.data( ), static_cast<int>( fileData.size( ) ),
-        &width, &height, &channels, 4 );
-    if( !data )
-    {
-        LogError( "[%s] stbi_load_from_memory failed for GIF preview: %s", __FUNCTION__, filepath.c_str( ) );
-        return nullptr;
-    }
-
-    auto decoded        = std::make_unique<DecodedMedia>( );
-    decoded->m_FilePath = filepath;
-    decoded->m_Width    = width;
-    decoded->m_Height   = height;
-    decoded->m_Frames   = 1;
-    decoded->m_PixelData.assign( data, data + static_cast<size_t>( width ) * static_cast<size_t>( height ) * 4 );
-    stbi_image_free( data );
-    return decoded;
+    return DecodeStillImageFile( filepath );
 }
 
 std::unique_ptr<ImageScraper::MediaPreviewPanel::DecodedMedia>
