@@ -1,6 +1,10 @@
 #pragma once
 
 #include "services/Service.h"
+#include "utils/BlueskyUtils.h"
+
+#include <optional>
+#include <vector>
 
 namespace ImageScraper
 {
@@ -22,6 +26,8 @@ namespace ImageScraper
         bool IsCancelled( ) override;
 
     private:
+        std::optional<std::string> ResolveActorToDid( const std::string& actor );
+        std::vector<BlueskyUtils::MediaItem> FetchAuthorFeedMedia( const std::string& actorDid, int maxItems );
         void DownloadContent( const UserInputOptions& inputOptions );
     };
 }
