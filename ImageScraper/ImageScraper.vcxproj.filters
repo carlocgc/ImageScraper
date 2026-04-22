@@ -30,6 +30,12 @@
     <ClCompile Include="src\requests\DownloadRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\requests\bluesky\GetAuthorFeedRequest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\requests\bluesky\ResolveHandleRequest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\services\RedditService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -278,7 +284,16 @@
     <ClInclude Include="include\requests\DownloadRequest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\requests\bluesky\GetAuthorFeedRequest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\requests\bluesky\ResolveHandleRequest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\utils\DownloadUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\BlueskyUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\requests\RequestTypes.h">

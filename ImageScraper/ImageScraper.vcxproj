@@ -230,6 +230,8 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\config\Config.cpp" />
     <ClCompile Include="src\log\Logger.cpp" />
+    <ClCompile Include="src\requests\bluesky\GetAuthorFeedRequest.cpp" />
+    <ClCompile Include="src\requests\bluesky\ResolveHandleRequest.cpp" />
     <ClCompile Include="src\requests\fourchan\GetThreadsRequest.cpp" />
     <ClCompile Include="src\requests\fourchan\GetBoardsRequest.cpp" />
     <ClCompile Include="src\requests\reddit\AppOnlyAuthRequest.cpp" />
@@ -349,6 +351,8 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\network\IHttpClient.h" />
     <ClInclude Include="include\network\CurlHttpClient.h" />
     <ClInclude Include="include\network\RetryHttpClient.h" />
+    <ClInclude Include="include\requests\bluesky\GetAuthorFeedRequest.h" />
+    <ClInclude Include="include\requests\bluesky\ResolveHandleRequest.h" />
     <ClInclude Include="include\requests\fourchan\GetThreadsRequest.h" />
     <ClInclude Include="include\requests\fourchan\GetBoardsRequest.h" />
     <ClInclude Include="include\requests\reddit\FetchAccessTokenRequest.h" />
@@ -388,6 +392,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\ui\MediaPreviewControlPanel.h" />
     <ClInclude Include="include\stb\stb_image.h" />
     <ClInclude Include="include\utils\DownloadUtils.h" />
+    <ClInclude Include="include\utils\BlueskyUtils.h" />
     <ClInclude Include="include\utils\RedditUtils.h" />
     <ClInclude Include="include\utils\TumblrUtils.h" />
     <ClInclude Include="include\utils\FourChanUtils.h" />

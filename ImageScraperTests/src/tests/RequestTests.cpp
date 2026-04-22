@@ -1,6 +1,8 @@
 #include "catch2/catch_amalgamated.hpp"
 #include "mocks/MockHttpClient.h"
 
+#include "requests/bluesky/GetAuthorFeedRequest.h"
+#include "requests/bluesky/ResolveHandleRequest.h"
 #include "requests/fourchan/GetBoardsRequest.h"
 #include "requests/fourchan/GetThreadsRequest.h"
 #include "requests/reddit/AppOnlyAuthRequest.h"
@@ -133,6 +135,105 @@ TEST_CASE( "GetThreadsRequest - HTTP failure sets error", "[Requests][FourChan]"
 
     FourChan::GetThreadsRequest req{ mock };
     const auto result = req.Perform( MakeOptions( ) );
+
+    REQUIRE_FALSE( result.m_Success );
+}
+
+// ---------------------------------------------------------------------------
+// Bluesky::ResolveHandleRequest
+// ---------------------------------------------------------------------------
+TEST_CASE( "ResolveHandleRequest - success maps response body", "[Requests][Bluesky]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"({"did":"did:plc:alice"})" );
+
+    Bluesky::ResolveHandleRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_QueryParams = { { "handle", "alice.bsky.social" } };
+    const auto result = req.Perform( opts );
+
+    REQUIRE( result.m_Success );
+    REQUIRE( result.m_Response == R"({"did":"did:plc:alice"})" );
+}
+
+TEST_CASE( "ResolveHandleRequest - sends correct URL", "[Requests][Bluesky]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"({"did":"did:plc:alice"})" );
+
+    Bluesky::ResolveHandleRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_QueryParams = { { "handle", "alice.bsky.social" } };
+    req.Perform( opts );
+
+    REQUIRE( mock->m_LastRequest.m_Url == "https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?handle=alice.bsky.social" );
+}
+
+TEST_CASE( "ResolveHandleRequest - HTTP failure sets error", "[Requests][Bluesky]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeFailure( 400 );
+
+    Bluesky::ResolveHandleRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_QueryParams = { { "handle", "alice.bsky.social" } };
+    const auto result = req.Perform( opts );
+
+    REQUIRE_FALSE( result.m_Success );
+}
+
+// ---------------------------------------------------------------------------
+// Bluesky::GetAuthorFeedRequest
+// ---------------------------------------------------------------------------
+TEST_CASE( "GetAuthorFeedRequest - success maps response body", "[Requests][Bluesky]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"({"feed":[]})" );
+
+    Bluesky::GetAuthorFeedRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_QueryParams = {
+        { "actor", "did:plc:alice" },
+        { "filter", "posts_with_media" },
+        { "limit", "100" }
+    };
+    const auto result = req.Perform( opts );
+
+    REQUIRE( result.m_Success );
+    REQUIRE( result.m_Response == R"({"feed":[]})" );
+}
+
+TEST_CASE( "GetAuthorFeedRequest - URL is base plus query params", "[Requests][Bluesky]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"({"feed":[]})" );
+
+    Bluesky::GetAuthorFeedRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_QueryParams = {
+        { "actor", "did:plc:alice" },
+        { "filter", "posts_with_media" },
+        { "limit", "100" },
+        { "cursor", "cursor-123" }
+    };
+    req.Perform( opts );
+
+    REQUIRE( mock->m_LastRequest.m_Url == "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=did:plc:alice&filter=posts_with_media&limit=100&cursor=cursor-123" );
+}
+
+TEST_CASE( "GetAuthorFeedRequest - HTTP failure sets error", "[Requests][Bluesky]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeFailure( 500 );
+
+    Bluesky::GetAuthorFeedRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_QueryParams = {
+        { "actor", "did:plc:alice" },
+        { "filter", "posts_with_media" },
+        { "limit", "100" }
+    };
+    const auto result = req.Perform( opts );
 
     REQUIRE_FALSE( result.m_Success );
 }
