@@ -381,38 +381,6 @@ Good first slice:
 - Open a dedicated post-Bluesky cleanup branch for the config-file update plus renormalization only.
 - Keep the PR description explicit that the change is whitespace-only except for the policy docs.
 
-### 12. Extract FFmpeg-backed media transfer behind a reusable injected interface
-
-Impact: Medium
-Effort: Medium
-
-Why this matters:
-
-- `VideoDownloadRequest` currently owns the full FFmpeg HLS/remux workflow for Bluesky video downloads.
-- That kept the Bluesky video PR small, but it mixes request mapping with transport implementation details and makes reuse harder if later providers also need playlist or remux-style downloads.
-- The request layer elsewhere in the repo is already trending toward thin wrappers around injected dependencies such as `IHttpClient`.
-
-Evidence:
-
-- `ImageScraper/src/requests/VideoDownloadRequest.cpp:27-160`
-  - request orchestration, FFmpeg input/output setup, packet loop, progress reporting, and cleanup all live in one class.
-- `ImageScraper/src/services/Service.cpp:52-61`
-  - the shared download loop now branches between `DownloadRequest` and `VideoDownloadRequest`.
-- `ImageScraper/src/requests/bluesky/GetAuthorFeedRequest.cpp:10-20`
-  - the existing network request pattern already supports injecting reusable client implementations.
-
-Recommended refactor:
-
-- Introduce a small media-transfer abstraction such as `IMediaTransferClient` or `IHlsDownloadClient`.
-- Move the FFmpeg-specific HLS/remux logic into a default implementation such as `FFmpegMediaTransferClient`.
-- Keep `VideoDownloadRequest` as the adapter from `DownloadOptions` to `RequestResult`, similar to how other request types stay focused on request/response shaping.
-- Keep FFmpeg state per transfer rather than sharing live `AVFormatContext` or packet state across requests.
-
-Good first slice:
-
-- Extract the current `VideoDownloadRequest` internals into an injected helper without changing behavior.
-- Once that seam exists, consider whether direct-file video URLs should bypass the FFmpeg transfer path and use the normal downloader instead.
-
 ## Sweep Checklist
 
 ### Phase 1: Stability and ownership
@@ -445,7 +413,6 @@ Good first slice:
 
 - [ ] Finish the FFmpeg still-image migration and remove `stb` if it becomes unused
 - [ ] Migrate repo-authored text files to LF-first line endings in a dedicated PR
-- [ ] Extract Bluesky video transfer into a reusable media-transfer interface
 
 ## Best First Refactor Set
 
