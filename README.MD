@@ -16,9 +16,7 @@ Native Windows desktop application for downloading and previewing media from Red
 
 ## Overview
 
-ImageScraper is a native C++17 desktop application built with Dear ImGui, GLFW, and OpenGL. The project focuses on a responsive local-first experience, clear service boundaries, and a testable architecture rather than a web wrapper or embedded browser stack.
-
-It is also a strong portfolio project for systems and application engineering work: asynchronous download pipelines, shared OAuth flows, modular provider integrations, media decoding, and unit-tested utility layers all live in a single desktop codebase.
+ImageScraper is a native C++17 desktop application built with Dear ImGui, GLFW, and OpenGL. The project focuses on a responsive local-first experience, clear service boundaries, and a testable architecture.
 
 ## Highlights
 
