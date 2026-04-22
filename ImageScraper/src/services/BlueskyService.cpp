@@ -104,7 +104,7 @@ std::vector<ImageScraper::BlueskyUtils::MediaItem> ImageScraper::BlueskyService:
     std::string cursor{ };
     int pageNum = 1;
 
-    while( !IsCancelled( ) && static_cast<int>( BlueskyUtils::PrepareImageDownloads( mediaItems, maxItems, actorDid ).size( ) ) < maxItems )
+    while( !IsCancelled( ) && static_cast<int>( BlueskyUtils::PrepareMediaDownloads( mediaItems, maxItems, actorDid ).size( ) ) < maxItems )
     {
         RequestOptions options{ };
         options.m_CaBundle = m_CaBundle;
@@ -133,8 +133,8 @@ std::vector<ImageScraper::BlueskyUtils::MediaItem> ImageScraper::BlueskyService:
             mediaItems.insert( mediaItems.end( ), page.m_Items.begin( ), page.m_Items.end( ) );
             cursor = page.m_Cursor;
 
-            const int queuedImageDownloads = static_cast<int>( BlueskyUtils::PrepareImageDownloads( mediaItems, maxItems, actorDid ).size( ) );
-            InfoLog( "[%s] Bluesky author feed page %i parsed, %i media items found, %i unique image downloads queued.", __FUNCTION__, pageNum, static_cast<int>( page.m_Items.size( ) ), queuedImageDownloads );
+            const int queuedDownloads = static_cast<int>( BlueskyUtils::PrepareMediaDownloads( mediaItems, maxItems, actorDid ).size( ) );
+            InfoLog( "[%s] Bluesky author feed page %i parsed, %i media items found, %i unique media downloads queued.", __FUNCTION__, pageNum, static_cast<int>( page.m_Items.size( ) ), queuedDownloads );
         }
         catch( const Json::exception& ex )
         {
@@ -209,25 +209,23 @@ void ImageScraper::BlueskyService::DownloadContent( const UserInputOptions& inpu
                 } ) );
             const int videoCount = static_cast<int>( mediaItems.size( ) ) - imageCount;
 
-            const std::vector<BlueskyUtils::ImageDownload> imageDownloads = BlueskyUtils::PrepareImageDownloads( mediaItems, maxItems, actor );
-            if( imageDownloads.empty( ) )
+            const std::vector<BlueskyUtils::PreparedDownload> preparedDownloads = BlueskyUtils::PrepareMediaDownloads( mediaItems, maxItems, actor );
+            if( preparedDownloads.empty( ) )
             {
-                if( videoCount > 0 )
-                {
-                    WarningLog( "[%s] Bluesky feed contained %i videos but no downloadable images. Video downloads are not supported yet.", __FUNCTION__, videoCount );
-                }
-                else
-                {
-                    WarningLog( "[%s] No downloadable Bluesky images were found for actor: %s", __FUNCTION__, actor.c_str( ) );
-                }
-
+                WarningLog( "[%s] No downloadable Bluesky media items were found for actor: %s", __FUNCTION__, actor.c_str( ) );
                 TaskManager::Instance( ).SubmitMain( onComplete, 0 );
                 return;
             }
 
-            InfoLog( "[%s] Prepared %i unique Bluesky image downloads for %s from %i fetched media items (%i images, %i videos).", __FUNCTION__, static_cast<int>( imageDownloads.size( ) ), actor.c_str( ), static_cast<int>( mediaItems.size( ) ), imageCount, videoCount );
+            const int preparedImageCount = static_cast<int>( std::count_if( preparedDownloads.begin( ), preparedDownloads.end( ), []( const BlueskyUtils::PreparedDownload& download )
+                {
+                    return download.m_Kind == BlueskyUtils::MediaKind::Image;
+                } ) );
+            const int preparedVideoCount = static_cast<int>( preparedDownloads.size( ) ) - preparedImageCount;
 
-            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Downloads" / "Bluesky" / imageDownloads.front( ).m_ActorDirectory;
+            InfoLog( "[%s] Prepared %i unique Bluesky downloads for %s from %i fetched media items (%i images, %i videos -> %i image downloads, %i video downloads).", __FUNCTION__, static_cast<int>( preparedDownloads.size( ) ), actor.c_str( ), static_cast<int>( mediaItems.size( ) ), imageCount, videoCount, preparedImageCount, preparedVideoCount );
+
+            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Downloads" / "Bluesky" / preparedDownloads.front( ).m_ActorDirectory;
             const std::string dirStr = dir.generic_string( );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
@@ -237,10 +235,14 @@ void ImageScraper::BlueskyService::DownloadContent( const UserInputOptions& inpu
             }
 
             std::vector<MediaDownload> downloads{ };
-            downloads.reserve( imageDownloads.size( ) );
-            for( const BlueskyUtils::ImageDownload& imageDownload : imageDownloads )
+            downloads.reserve( preparedDownloads.size( ) );
+            for( const BlueskyUtils::PreparedDownload& preparedDownload : preparedDownloads )
             {
-                downloads.push_back( { imageDownload.m_SourceUrl, imageDownload.m_FileName } );
+                downloads.push_back( {
+                    preparedDownload.m_SourceUrl,
+                    preparedDownload.m_FileName,
+                    preparedDownload.m_Kind == BlueskyUtils::MediaKind::Video ? DownloadMethod::HlsVideo : DownloadMethod::DirectFile
+                    } );
             }
 
             const std::optional<int> filesDownloaded = DownloadMedia( downloads, dir );

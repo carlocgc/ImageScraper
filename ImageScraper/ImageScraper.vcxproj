@@ -227,6 +227,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\network\CurlHttpClient.cpp" />
     <ClCompile Include="src\network\RetryHttpClient.cpp" />
     <ClCompile Include="src\requests\DownloadRequest.cpp" />
+    <ClCompile Include="src\requests\VideoDownloadRequest.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\config\Config.cpp" />
     <ClCompile Include="src\log\Logger.cpp" />
@@ -368,6 +369,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\services\ServiceOptionTypes.h" />
     <ClInclude Include="include\requests\DownloadRequest.h" />
     <ClInclude Include="include\requests\DownloadRequestTypes.h" />
+    <ClInclude Include="include\requests\VideoDownloadRequest.h" />
     <ClInclude Include="include\requests\reddit\AppOnlyAuthRequest.h" />
     <ClInclude Include="include\requests\reddit\GetCurrentUserRequest.h" />
     <ClInclude Include="include\requests\reddit\RevokeAccessTokenRequest.h" />
