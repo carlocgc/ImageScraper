@@ -13,7 +13,7 @@ struct SwsContext;
 
 namespace ImageScraper
 {
-    // Wraps FFmpeg video decode for a single local file.
+    // Wraps FFmpeg decode for a single local file.
     // Open() finds the first video stream and prepares the decoder.
     // DecodeNextFrame() steps one frame at a time; returns false on EOF.
     // SeekToStart() rewinds for looping.
@@ -29,6 +29,15 @@ namespace ImageScraper
         VideoPlayer& operator=( VideoPlayer&& other ) noexcept;
 
         bool Open( const std::string& filepath );
+
+        // Opens a local file, decodes the first frame into RGBA, and closes the decoder.
+        // Works for both videos and single-frame image formats supported by FFmpeg.
+        static bool DecodeFirstFrameFile(
+            const std::string& filepath,
+            std::vector<uint8_t>& rgbaOut,
+            int& width,
+            int& height,
+            bool* hasAudio = nullptr );
 
         // Decodes the next video frame into rgbaOut (width * height * 4 bytes, RGBA).
         // Returns true if a frame was produced, false on EOF or unrecoverable error.

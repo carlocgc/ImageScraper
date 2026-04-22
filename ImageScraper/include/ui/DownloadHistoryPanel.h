@@ -99,7 +99,7 @@ namespace ImageScraper
         void RequestThumbnailLoad( const std::string& filepath );
         void UploadDecodedThumbnail( DecodedThumbnail&& decoded );
         static DecodedThumbnail DecodeThumbnail( const std::string& filepath );
-        static DecodedThumbnail DecodeVideoThumbnail( const std::string& filepath );
+        static DecodedThumbnail DecodeFrameThumbnail( const std::string& filepath );
         static bool IsSupportedMediaExtension( const std::string& filepath );
         static bool IsVideoExtension( const std::string& filepath );
 

@@ -5,7 +5,6 @@
 
 #include "ui/DownloadHistoryPanel.h"
 #include "utils/DownloadUtils.h"
-#include "stb/stb_image.h"
 #include "log/Logger.h"
 
 #include <filesystem>
@@ -1122,11 +1121,11 @@ ImageScraper::DownloadHistoryPanel::DecodedThumbnail ImageScraper::DownloadHisto
 {
     if( IsVideoExtension( filepath ) )
     {
-        return DecodeVideoThumbnail( filepath );
+        return DecodeFrameThumbnail( filepath );
     }
 
-    // GIFs: stbi_load only decodes the first frame so file size is irrelevant to memory use.
-    // For all other formats the decoded bitmap scales with file size, so cap it.
+    // GIFs are decoded as first-frame previews, so file size is less important to memory use.
+    // For other still-image formats the decoded bitmap can scale sharply with source size, so cap it.
     const std::string ext = std::filesystem::path( filepath ).extension( ).string( );
     const bool isGif = ( ext == ".gif" || ext == ".GIF" );
     if( !isGif )
@@ -1139,30 +1138,12 @@ ImageScraper::DownloadHistoryPanel::DecodedThumbnail ImageScraper::DownloadHisto
         }
     }
 
-    int w = 0;
-    int h = 0;
-    int channels = 0;
-    unsigned char* data = stbi_load( filepath.c_str( ), &w, &h, &channels, STBI_rgb_alpha );
-    if( !data )
+    DecodedThumbnail decoded = DecodeFrameThumbnail( filepath );
+    if( decoded.m_PixelData.empty( ) )
     {
-        // FFmpeg can decode single-frame formats like WebP even when the file
-        // is mislabeled with a .jpg or .png extension.
-        DecodedThumbnail fallbackDecoded = DecodeVideoThumbnail( filepath );
-        if( !fallbackDecoded.m_PixelData.empty( ) )
-        {
-            return fallbackDecoded;
-        }
-
         return DecodedThumbnail{ filepath };
     }
 
-    DecodedThumbnail decoded;
-    decoded.m_FilePath = filepath;
-    decoded.m_Width    = w;
-    decoded.m_Height   = h;
-    decoded.m_PixelData.assign( data, data + static_cast<size_t>( w ) * static_cast<size_t>( h ) * 4 );
-
-    stbi_image_free( data );
     return decoded;
 }
 
@@ -1199,33 +1180,16 @@ bool ImageScraper::DownloadHistoryPanel::IsVideoExtension( const std::string& fi
     return k_Video.count( ext ) > 0;
 }
 
-ImageScraper::DownloadHistoryPanel::DecodedThumbnail ImageScraper::DownloadHistoryPanel::DecodeVideoThumbnail( const std::string& filepath )
+ImageScraper::DownloadHistoryPanel::DecodedThumbnail ImageScraper::DownloadHistoryPanel::DecodeFrameThumbnail( const std::string& filepath )
 {
     DecodedThumbnail decoded;
     decoded.m_FilePath = filepath;
 
-    VideoPlayer player;
-    if( !player.Open( filepath ) )
+    if( !VideoPlayer::DecodeFirstFrameFile( filepath, decoded.m_PixelData, decoded.m_Width, decoded.m_Height ) )
     {
         return decoded;
     }
 
-    std::vector<uint8_t> rgba;
-    if( !player.DecodeNextFrame( rgba ) )
-    {
-        return decoded;
-    }
-
-    decoded.m_Width  = player.GetWidth( );
-    decoded.m_Height = player.GetHeight( );
-
-    const size_t pixelBytes = static_cast<size_t>( decoded.m_Width ) * static_cast<size_t>( decoded.m_Height ) * 4;
-    if( rgba.size( ) > pixelBytes )
-    {
-        rgba.resize( pixelBytes );
-    }
-
-    decoded.m_PixelData = std::move( rgba );
     return decoded;
 }
 

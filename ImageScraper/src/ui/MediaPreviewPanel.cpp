@@ -757,7 +757,29 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
         return DecodeVideoFile( filepath );
     }
 
-    if( IsGif( filepath ) && !firstFrameOnly )
+    const bool isGif = IsGif( filepath );
+    auto readFileData = [ &filepath ]( ) -> std::vector<unsigned char>
+    {
+        std::ifstream file( filepath, std::ios::binary | std::ios::ate );
+        if( !file.is_open( ) )
+        {
+            LogError( "[%s] Could not open file for preview: %s", __FUNCTION__, filepath.c_str( ) );
+            return { };
+        }
+
+        const std::streamsize size = file.tellg( );
+        file.seekg( 0, std::ios::beg );
+        std::vector<unsigned char> fileData( static_cast<size_t>( size ) );
+        if( !file.read( reinterpret_cast<char*>( fileData.data( ) ), size ) )
+        {
+            LogError( "[%s] Could not read file for preview: %s", __FUNCTION__, filepath.c_str( ) );
+            return { };
+        }
+
+        return fileData;
+    };
+
+    if( isGif && !firstFrameOnly )
     {
         if( auto decoded = DecodeVideoFile( filepath ) )
         {
@@ -765,29 +787,14 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
         }
 
         LogDebug( "[%s] Falling back to stb GIF decode for: %s", __FUNCTION__, filepath.c_str( ) );
-    }
+        std::vector<unsigned char> fileData = readFileData( );
+        if( fileData.empty( ) )
+        {
+            return nullptr;
+        }
 
-    std::ifstream file( filepath, std::ios::binary | std::ios::ate );
-    if( !file.is_open( ) )
-    {
-        LogError( "[%s] Could not open file for preview: %s", __FUNCTION__, filepath.c_str( ) );
-        return nullptr;
-    }
-
-    const std::streamsize size = file.tellg( );
-    file.seekg( 0, std::ios::beg );
-    std::vector<unsigned char> fileData( static_cast<size_t>( size ) );
-    if( !file.read( reinterpret_cast<char*>( fileData.data( ) ), size ) )
-    {
-        LogError( "[%s] Could not read file for preview: %s", __FUNCTION__, filepath.c_str( ) );
-        return nullptr;
-    }
-
-    auto decoded        = std::make_unique<DecodedMedia>( );
-    decoded->m_FilePath = filepath;
-
-    if( !firstFrameOnly && IsGif( filepath ) )
-    {
+        auto decoded        = std::make_unique<DecodedMedia>( );
+        decoded->m_FilePath = filepath;
         int* delays   = nullptr;
         int  width    = 0;
         int  height   = 0;
@@ -823,54 +830,61 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
         {
             free( delays );
         }
+
+        return decoded;
     }
-    else
+
+    if( auto decoded = DecodeStillImageFile( filepath ) )
     {
-        int width = 0;
-        int height = 0;
-        int channels = 0;
-        unsigned char* data = stbi_load_from_memory(
-            fileData.data( ), static_cast<int>( fileData.size( ) ),
-            &width, &height, &channels, 4 );
-
-        if( !data )
-        {
-            LogDebug( "[%s] stbi_load_from_memory failed (unsupported format?) for: %s", __FUNCTION__, filepath.c_str( ) );
-
-            if( auto ffmpegDecoded = DecodeStillImageFile( filepath ) )
-            {
-                LogDebug( "[%s] FFmpeg fallback decoded still image for: %s", __FUNCTION__, filepath.c_str( ) );
-                return ffmpegDecoded;
-            }
-
-            return nullptr;
-        }
-
-        decoded->m_Width  = width;
-        decoded->m_Height = height;
-        decoded->m_Frames = 1;
-        decoded->m_PixelData.assign( data, data + static_cast<size_t>( width ) * height * 4 );
-
-        stbi_image_free( data );
+        return decoded;
     }
 
+    if( !isGif )
+    {
+        return nullptr;
+    }
+
+    LogDebug( "[%s] Falling back to stb first-frame GIF decode for: %s", __FUNCTION__, filepath.c_str( ) );
+    std::vector<unsigned char> fileData = readFileData( );
+    if( fileData.empty( ) )
+    {
+        return nullptr;
+    }
+
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+    unsigned char* data = stbi_load_from_memory(
+        fileData.data( ), static_cast<int>( fileData.size( ) ),
+        &width, &height, &channels, 4 );
+    if( !data )
+    {
+        LogError( "[%s] stbi_load_from_memory failed for GIF preview: %s", __FUNCTION__, filepath.c_str( ) );
+        return nullptr;
+    }
+
+    auto decoded        = std::make_unique<DecodedMedia>( );
+    decoded->m_FilePath = filepath;
+    decoded->m_Width    = width;
+    decoded->m_Height   = height;
+    decoded->m_Frames   = 1;
+    decoded->m_PixelData.assign( data, data + static_cast<size_t>( width ) * static_cast<size_t>( height ) * 4 );
+    stbi_image_free( data );
     return decoded;
 }
 
 std::unique_ptr<ImageScraper::MediaPreviewPanel::DecodedMedia>
 ImageScraper::MediaPreviewPanel::DecodeStillImageFile( const std::string& filepath )
 {
-    auto decoded = DecodeVideoFile( filepath );
-    if( !decoded )
+    auto decoded        = std::make_unique<DecodedMedia>( );
+    decoded->m_FilePath = filepath;
+    decoded->m_Frames   = 1;
+
+    if( !VideoPlayer::DecodeFirstFrameFile( filepath, decoded->m_PixelData, decoded->m_Width, decoded->m_Height ) )
     {
         return nullptr;
     }
 
-    decoded->m_IsVideo = false;
-    decoded->m_HasAudio = false;
-    decoded->m_Frames = 1;
-    decoded->m_FrameDelaysMs.clear( );
-    decoded->m_VideoPlayer.reset( );
     return decoded;
 }
 
