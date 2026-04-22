@@ -172,6 +172,11 @@ namespace ImageScraper::DownloadHelpers
             return "@" + subfolderName;
         }
 
+        if( providerName == "Bluesky" )
+        {
+            return "@" + subfolderName;
+        }
+
         return subfolderName;
     }
 

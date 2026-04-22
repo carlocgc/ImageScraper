@@ -279,3 +279,180 @@ TEST_CASE( "GetMediaItemsFromAuthorFeedResponse respects maxItems", "[BlueskyUti
     REQUIRE( page.m_Items[ 0 ].m_DownloadUrl == "https://cdn.bsky.app/one.jpg" );
     REQUIRE( page.m_Items[ 1 ].m_DownloadUrl == "https://cdn.bsky.app/two.jpg" );
 }
+
+TEST_CASE( "PrepareImageDownloads builds deterministic filenames per post", "[BlueskyUtils]" )
+{
+    const std::vector<MediaItem> mediaItems = {
+        {
+            MediaKind::Image,
+            "at://did:plc:alice/app.bsky.feed.post/post-123",
+            "https://cdn.bsky.app/img1",
+            "",
+            "",
+            "cid-1",
+            "image/jpeg",
+            "did:plc:alice",
+            "alice.bsky.social"
+        },
+        {
+            MediaKind::Image,
+            "at://did:plc:alice/app.bsky.feed.post/post-123",
+            "https://cdn.bsky.app/img2",
+            "",
+            "",
+            "cid-2",
+            "image/png",
+            "did:plc:alice",
+            "alice.bsky.social"
+        }
+    };
+
+    const std::vector<ImageDownload> downloads = PrepareImageDownloads( mediaItems, 10, "fallback" );
+    REQUIRE( downloads.size( ) == 2 );
+    REQUIRE( downloads[ 0 ].m_ActorDirectory == "alice.bsky.social" );
+    REQUIRE( downloads[ 0 ].m_FileName == "post-123_01.jpg" );
+    REQUIRE( downloads[ 1 ].m_FileName == "post-123_02.png" );
+}
+
+TEST_CASE( "PrepareImageDownloads dedupes repeated image URLs and skips videos", "[BlueskyUtils]" )
+{
+    const std::vector<MediaItem> mediaItems = {
+        {
+            MediaKind::Image,
+            "at://did:plc:alice/app.bsky.feed.post/post-1",
+            "https://cdn.bsky.app/shared-image@jpeg",
+            "",
+            "",
+            "",
+            "image/jpeg",
+            "did:plc:alice",
+            "alice.bsky.social"
+        },
+        {
+            MediaKind::Video,
+            "at://did:plc:alice/app.bsky.feed.post/post-2",
+            "https://video.bsky.app/playlist.m3u8",
+            "",
+            "",
+            "",
+            "video/mp4",
+            "did:plc:alice",
+            "alice.bsky.social"
+        },
+        {
+            MediaKind::Image,
+            "at://did:plc:alice/app.bsky.feed.post/post-3",
+            "https://cdn.bsky.app/shared-image@jpeg",
+            "",
+            "",
+            "",
+            "image/jpeg",
+            "did:plc:alice",
+            "alice.bsky.social"
+        },
+        {
+            MediaKind::Image,
+            "at://did:plc:alice/app.bsky.feed.post/post-3",
+            "https://cdn.bsky.app/unique-image@png",
+            "",
+            "",
+            "",
+            "image/png",
+            "did:plc:alice",
+            "alice.bsky.social"
+        }
+    };
+
+    const std::vector<ImageDownload> downloads = PrepareImageDownloads( mediaItems, 10, "fallback" );
+    REQUIRE( downloads.size( ) == 2 );
+    REQUIRE( downloads[ 0 ].m_SourceUrl == "https://cdn.bsky.app/shared-image@jpeg" );
+    REQUIRE( downloads[ 1 ].m_SourceUrl == "https://cdn.bsky.app/unique-image@png" );
+    REQUIRE( downloads[ 1 ].m_FileName == "post-3_01.png" );
+}
+
+TEST_CASE( "PrepareImageDownloads falls back to sanitized actor and url suffix extension", "[BlueskyUtils]" )
+{
+    const std::vector<MediaItem> mediaItems = {
+        {
+            MediaKind::Image,
+            "at://did:plc:example/app.bsky.feed.post/post-9",
+            "https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:example/blob@webp?quality=100",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+        }
+    };
+
+    const std::vector<ImageDownload> downloads = PrepareImageDownloads( mediaItems, 10, "did:plc:example" );
+    REQUIRE( downloads.size( ) == 1 );
+    REQUIRE( downloads[ 0 ].m_ActorDirectory == "did_plc_example" );
+    REQUIRE( downloads[ 0 ].m_FileName == "post-9_01.webp" );
+}
+
+TEST_CASE( "PrepareImageDownloads prefers url suffix over mime type for extension", "[BlueskyUtils]" )
+{
+    const std::vector<MediaItem> mediaItems = {
+        {
+            MediaKind::Image,
+            "at://did:plc:example/app.bsky.feed.post/post-10",
+            "https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:example/blob@webp?quality=100",
+            "",
+            "",
+            "",
+            "image/jpeg",
+            "did:plc:example",
+            "example.bsky.social"
+        }
+    };
+
+    const std::vector<ImageDownload> downloads = PrepareImageDownloads( mediaItems, 10, "fallback" );
+    REQUIRE( downloads.size( ) == 1 );
+    REQUIRE( downloads[ 0 ].m_FileName == "post-10_01.webp" );
+}
+
+TEST_CASE( "PrepareImageDownloads respects maxItems", "[BlueskyUtils]" )
+{
+    const std::vector<MediaItem> mediaItems = {
+        {
+            MediaKind::Image,
+            "at://did:plc:alice/app.bsky.feed.post/post-1",
+            "https://cdn.bsky.app/one@jpeg",
+            "",
+            "",
+            "",
+            "image/jpeg",
+            "did:plc:alice",
+            "alice.bsky.social"
+        },
+        {
+            MediaKind::Image,
+            "at://did:plc:alice/app.bsky.feed.post/post-2",
+            "https://cdn.bsky.app/two@jpeg",
+            "",
+            "",
+            "",
+            "image/jpeg",
+            "did:plc:alice",
+            "alice.bsky.social"
+        },
+        {
+            MediaKind::Image,
+            "at://did:plc:alice/app.bsky.feed.post/post-3",
+            "https://cdn.bsky.app/three@jpeg",
+            "",
+            "",
+            "",
+            "image/jpeg",
+            "did:plc:alice",
+            "alice.bsky.social"
+        }
+    };
+
+    const std::vector<ImageDownload> downloads = PrepareImageDownloads( mediaItems, 2, "fallback" );
+    REQUIRE( downloads.size( ) == 2 );
+    REQUIRE( downloads[ 0 ].m_FileName == "post-1_01.jpg" );
+    REQUIRE( downloads[ 1 ].m_FileName == "post-2_01.jpg" );
+}

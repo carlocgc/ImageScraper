@@ -24,6 +24,7 @@ Swap `Debug` for `Release` or `/t:ImageScraper` for `/t:ImageScraperTests` as ne
 ## Project-Specific Gotchas
 
 - Do not use em dashes in source, comments, test names, or docs. Use a normal hyphen.
+- Preserve CRLF line endings in repo-authored text files. Do not introduce mixed line endings, and normalize touched files back to CRLF if a tool writes LF.
 - Use the logging macros `InfoLog`, `WarningLog`, `LogError`, and `LogDebug`.
 - Include `imgui/imgui_internal.h` when ImGui internal APIs are needed.
 

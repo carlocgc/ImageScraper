@@ -4,9 +4,12 @@
 #include "nlohmann/json.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace ImageScraper::BlueskyUtils
@@ -36,6 +39,13 @@ namespace ImageScraper::BlueskyUtils
     {
         std::vector<MediaItem> m_Items{ };
         std::string m_Cursor{ };
+    };
+
+    struct ImageDownload
+    {
+        std::string m_SourceUrl{ };
+        std::string m_FileName{ };
+        std::string m_ActorDirectory{ };
     };
 
     inline bool IsDid( const std::string& actor )
@@ -96,6 +106,219 @@ namespace ImageScraper::BlueskyUtils
     inline std::string GetBlobMimeType( const Json& blob )
     {
         return GetStringOrEmpty( blob, "mimeType" );
+    }
+
+    inline std::string StripUrlQueryAndFragment( const std::string& url )
+    {
+        const std::size_t queryPos = url.find( '?' );
+        const std::size_t fragmentPos = url.find( '#' );
+
+        std::size_t endPos = std::string::npos;
+        if( queryPos != std::string::npos )
+        {
+            endPos = queryPos;
+        }
+
+        if( fragmentPos != std::string::npos )
+        {
+            endPos = ( endPos == std::string::npos ) ? fragmentPos : ( std::min )( endPos, fragmentPos );
+        }
+
+        return endPos == std::string::npos ? url : url.substr( 0, endPos );
+    }
+
+    inline std::string SanitizePathComponent( const std::string& value, const std::string& fallback = "item" )
+    {
+        std::string sanitized{ };
+        sanitized.reserve( value.size( ) );
+
+        bool lastWasUnderscore = false;
+        for( unsigned char c : value )
+        {
+            const bool isAllowed = std::isalnum( c ) != 0 || c == '.' || c == '-' || c == '_';
+            if( isAllowed )
+            {
+                sanitized.push_back( static_cast<char>( c ) );
+                lastWasUnderscore = false;
+                continue;
+            }
+
+            if( !lastWasUnderscore )
+            {
+                sanitized.push_back( '_' );
+                lastWasUnderscore = true;
+            }
+        }
+
+        while( !sanitized.empty( ) && ( sanitized.back( ) == '.' || sanitized.back( ) == ' ' || sanitized.back( ) == '_' ) )
+        {
+            sanitized.pop_back( );
+        }
+
+        if( sanitized.empty( ) )
+        {
+            return fallback;
+        }
+
+        return sanitized;
+    }
+
+    inline std::string GetActorIdentifier( const MediaItem& item, const std::string& fallbackActor )
+    {
+        if( !item.m_ActorHandle.empty( ) )
+        {
+            return item.m_ActorHandle;
+        }
+
+        if( !item.m_ActorDid.empty( ) )
+        {
+            return item.m_ActorDid;
+        }
+
+        if( !fallbackActor.empty( ) )
+        {
+            return fallbackActor;
+        }
+
+        return "actor";
+    }
+
+    inline std::string GetPostIdFromUri( const std::string& postUri )
+    {
+        const std::size_t slashPos = postUri.find_last_of( '/' );
+        if( slashPos == std::string::npos || slashPos + 1 >= postUri.size( ) )
+        {
+            return "post";
+        }
+
+        return SanitizePathComponent( postUri.substr( slashPos + 1 ), "post" );
+    }
+
+    inline std::string CanonicalizeImageExtension( std::string extension )
+    {
+        std::transform( extension.begin( ), extension.end( ), extension.begin( ), []( unsigned char c )
+            {
+                return static_cast<char>( std::tolower( c ) );
+            } );
+
+        if( extension == "jpeg" || extension == "jpe" || extension == "jfif" )
+        {
+            return "jpg";
+        }
+
+        if( extension == "tif" )
+        {
+            return "tiff";
+        }
+
+        return extension;
+    }
+
+    inline std::string GetImageExtensionFromMimeType( const std::string& mimeType )
+    {
+        if( mimeType.rfind( "image/", 0 ) != 0 )
+        {
+            return { };
+        }
+
+        return CanonicalizeImageExtension( mimeType.substr( 6 ) );
+    }
+
+    inline std::string GetImageExtensionFromUrl( const std::string& url )
+    {
+        const std::string normalizedUrl = StripUrlQueryAndFragment( url );
+        const std::size_t slashPos = normalizedUrl.find_last_of( '/' );
+        const std::string filename = slashPos == std::string::npos ? normalizedUrl : normalizedUrl.substr( slashPos + 1 );
+        if( filename.empty( ) )
+        {
+            return { };
+        }
+
+        const std::size_t atPos = filename.find_last_of( '@' );
+        if( atPos != std::string::npos && atPos + 1 < filename.size( ) )
+        {
+            return CanonicalizeImageExtension( filename.substr( atPos + 1 ) );
+        }
+
+        const std::size_t dotPos = filename.find_last_of( '.' );
+        if( dotPos == std::string::npos || dotPos + 1 >= filename.size( ) )
+        {
+            return { };
+        }
+
+        return CanonicalizeImageExtension( filename.substr( dotPos + 1 ) );
+    }
+
+    inline std::string GetImageExtension( const MediaItem& item )
+    {
+        const std::string urlExtension = GetImageExtensionFromUrl( item.m_DownloadUrl );
+        if( !urlExtension.empty( ) )
+        {
+            return urlExtension;
+        }
+
+        const std::string mimeExtension = GetImageExtensionFromMimeType( item.m_MimeType );
+        if( !mimeExtension.empty( ) )
+        {
+            return mimeExtension;
+        }
+
+        return "jpg";
+    }
+
+    inline std::string BuildImageFileName( const MediaItem& item, int mediaIndex )
+    {
+        const std::string postId = GetPostIdFromUri( item.m_PostUri );
+        const std::string extension = GetImageExtension( item );
+        const std::string index = mediaIndex < 10 ? "0" + std::to_string( mediaIndex ) : std::to_string( mediaIndex );
+
+        return postId + "_" + index + "." + extension;
+    }
+
+    inline std::vector<ImageDownload> PrepareImageDownloads( const std::vector<MediaItem>& mediaItems,
+                                                             int maxItems,
+                                                             const std::string& fallbackActor )
+    {
+        std::vector<ImageDownload> downloads{ };
+        if( maxItems <= 0 )
+        {
+            return downloads;
+        }
+
+        std::unordered_set<std::string> seenUrls{ };
+        std::unordered_map<std::string, int> mediaIndexByPost{ };
+
+        for( const MediaItem& item : mediaItems )
+        {
+            if( static_cast<int>( downloads.size( ) ) >= maxItems )
+            {
+                break;
+            }
+
+            if( item.m_Kind != MediaKind::Image || item.m_DownloadUrl.empty( ) )
+            {
+                continue;
+            }
+
+            const std::string normalizedUrl = StripUrlQueryAndFragment( item.m_DownloadUrl );
+            if( normalizedUrl.empty( ) || !seenUrls.insert( normalizedUrl ).second )
+            {
+                continue;
+            }
+
+            const std::string postKey = item.m_PostUri.empty( )
+                ? SanitizePathComponent( GetActorIdentifier( item, fallbackActor ), "actor" ) + "|" + GetPostIdFromUri( item.m_PostUri )
+                : item.m_PostUri;
+            const int mediaIndex = ++mediaIndexByPost[ postKey ];
+
+            ImageDownload download{ };
+            download.m_SourceUrl = item.m_DownloadUrl;
+            download.m_ActorDirectory = SanitizePathComponent( GetActorIdentifier( item, fallbackActor ), "actor" );
+            download.m_FileName = BuildImageFileName( item, mediaIndex );
+            downloads.push_back( std::move( download ) );
+        }
+
+        return downloads;
     }
 
     inline void PopulateAuthorFields( const Json& author, MediaItem& item )

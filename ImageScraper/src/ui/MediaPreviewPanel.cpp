@@ -836,6 +836,13 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
         if( !data )
         {
             LogDebug( "[%s] stbi_load_from_memory failed (unsupported format?) for: %s", __FUNCTION__, filepath.c_str( ) );
+
+            if( auto ffmpegDecoded = DecodeStillImageFile( filepath ) )
+            {
+                LogDebug( "[%s] FFmpeg fallback decoded still image for: %s", __FUNCTION__, filepath.c_str( ) );
+                return ffmpegDecoded;
+            }
+
             return nullptr;
         }
 
@@ -847,6 +854,23 @@ ImageScraper::MediaPreviewPanel::DecodeFile( const std::string& filepath, bool f
         stbi_image_free( data );
     }
 
+    return decoded;
+}
+
+std::unique_ptr<ImageScraper::MediaPreviewPanel::DecodedMedia>
+ImageScraper::MediaPreviewPanel::DecodeStillImageFile( const std::string& filepath )
+{
+    auto decoded = DecodeVideoFile( filepath );
+    if( !decoded )
+    {
+        return nullptr;
+    }
+
+    decoded->m_IsVideo = false;
+    decoded->m_HasAudio = false;
+    decoded->m_Frames = 1;
+    decoded->m_FrameDelaysMs.clear( );
+    decoded->m_VideoPlayer.reset( );
     return decoded;
 }
 

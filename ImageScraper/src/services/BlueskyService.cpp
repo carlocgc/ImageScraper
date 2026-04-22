@@ -5,6 +5,7 @@
 #include "requests/bluesky/GetAuthorFeedRequest.h"
 #include "requests/bluesky/ResolveHandleRequest.h"
 #include "log/Logger.h"
+#include "utils/DownloadUtils.h"
 
 #include <algorithm>
 
@@ -103,7 +104,7 @@ std::vector<ImageScraper::BlueskyUtils::MediaItem> ImageScraper::BlueskyService:
     std::string cursor{ };
     int pageNum = 1;
 
-    while( !IsCancelled( ) && static_cast<int>( mediaItems.size( ) ) < maxItems )
+    while( !IsCancelled( ) && static_cast<int>( BlueskyUtils::PrepareImageDownloads( mediaItems, maxItems, actorDid ).size( ) ) < maxItems )
     {
         RequestOptions options{ };
         options.m_CaBundle = m_CaBundle;
@@ -128,12 +129,12 @@ std::vector<ImageScraper::BlueskyUtils::MediaItem> ImageScraper::BlueskyService:
         try
         {
             const Json response = Json::parse( result.m_Response );
-            const int remainingItems = maxItems - static_cast<int>( mediaItems.size( ) );
-            BlueskyUtils::MediaItemsPage page = BlueskyUtils::GetMediaItemsFromAuthorFeedResponse( response, remainingItems );
+            BlueskyUtils::MediaItemsPage page = BlueskyUtils::GetMediaItemsFromAuthorFeedResponse( response, s_BlueskyAuthorFeedPageLimit );
             mediaItems.insert( mediaItems.end( ), page.m_Items.begin( ), page.m_Items.end( ) );
             cursor = page.m_Cursor;
 
-            InfoLog( "[%s] Bluesky author feed page %i parsed, %i media items found.", __FUNCTION__, pageNum, static_cast<int>( page.m_Items.size( ) ) );
+            const int queuedImageDownloads = static_cast<int>( BlueskyUtils::PrepareImageDownloads( mediaItems, maxItems, actorDid ).size( ) );
+            InfoLog( "[%s] Bluesky author feed page %i parsed, %i media items found, %i unique image downloads queued.", __FUNCTION__, pageNum, static_cast<int>( page.m_Items.size( ) ), queuedImageDownloads );
         }
         catch( const Json::exception& ex )
         {
@@ -154,53 +155,102 @@ std::vector<ImageScraper::BlueskyUtils::MediaItem> ImageScraper::BlueskyService:
 
 void ImageScraper::BlueskyService::DownloadContent( const UserInputOptions& inputOptions )
 {
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, actor = inputOptions.m_BlueskyActor, maxItems = inputOptions.m_BlueskyMaxMediaItems ]( )
+    auto onComplete = [ this ]( int filesDownloaded )
+    {
+        InfoLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
+        m_Sink->OnRunComplete( );
+    };
+
+    auto onFail = [ this ]( )
+    {
+        LogError( "[%s] Failed to download Bluesky media!, See log for details.", __FUNCTION__ );
+        m_Sink->OnRunComplete( );
+    };
+
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, actor = inputOptions.m_BlueskyActor, maxItems = inputOptions.m_BlueskyMaxMediaItems, onComplete, onFail ]( )
         {
-            InfoLog( "[%s] Starting Bluesky author feed fetch for actor: %s", __FUNCTION__, actor.c_str( ) );
+            InfoLog( "[%s] Starting Bluesky media download for actor: %s", __FUNCTION__, actor.c_str( ) );
 
             if( IsCancelled( ) )
             {
                 InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
+                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                return;
             }
-            else
+
+            const std::optional<std::string> actorDid = ResolveActorToDid( actor );
+            if( !actorDid.has_value( ) )
             {
-                const std::optional<std::string> actorDid = ResolveActorToDid( actor );
-                if( !actorDid.has_value( ) )
+                LogError( "[%s] Could not resolve Bluesky actor to a DID.", __FUNCTION__ );
+                TaskManager::Instance( ).SubmitMain( onFail );
+                return;
+            }
+
+            InfoLog( "[%s] Bluesky actor resolved to DID: %s", __FUNCTION__, actorDid->c_str( ) );
+
+            const std::vector<BlueskyUtils::MediaItem> mediaItems = FetchAuthorFeedMedia( *actorDid, maxItems );
+            if( IsCancelled( ) )
+            {
+                InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
+                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                return;
+            }
+
+            if( mediaItems.empty( ) )
+            {
+                WarningLog( "[%s] No Bluesky media items were found for actor: %s", __FUNCTION__, actor.c_str( ) );
+                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                return;
+            }
+
+            const int imageCount = static_cast<int>( std::count_if( mediaItems.begin( ), mediaItems.end( ), []( const BlueskyUtils::MediaItem& item )
                 {
-                    LogError( "[%s] Could not resolve Bluesky actor to a DID.", __FUNCTION__ );
+                    return item.m_Kind == BlueskyUtils::MediaKind::Image;
+                } ) );
+            const int videoCount = static_cast<int>( mediaItems.size( ) ) - imageCount;
+
+            const std::vector<BlueskyUtils::ImageDownload> imageDownloads = BlueskyUtils::PrepareImageDownloads( mediaItems, maxItems, actor );
+            if( imageDownloads.empty( ) )
+            {
+                if( videoCount > 0 )
+                {
+                    WarningLog( "[%s] Bluesky feed contained %i videos but no downloadable images. Video downloads are not supported yet.", __FUNCTION__, videoCount );
                 }
                 else
                 {
-                    InfoLog( "[%s] Bluesky actor resolved to DID: %s", __FUNCTION__, actorDid->c_str( ) );
-
-                    const std::vector<BlueskyUtils::MediaItem> mediaItems = FetchAuthorFeedMedia( *actorDid, maxItems );
-                    if( IsCancelled( ) )
-                    {
-                        InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
-                    }
-                    else if( mediaItems.empty( ) )
-                    {
-                        WarningLog( "[%s] No Bluesky media items were found for actor: %s", __FUNCTION__, actor.c_str( ) );
-                    }
-                    else
-                    {
-                        const int imageCount = static_cast<int>( std::count_if( mediaItems.begin( ), mediaItems.end( ), []( const BlueskyUtils::MediaItem& item )
-                            {
-                                return item.m_Kind == BlueskyUtils::MediaKind::Image;
-                            } ) );
-
-                        const int videoCount = static_cast<int>( mediaItems.size( ) ) - imageCount;
-
-                        InfoLog( "[%s] Fetched %i Bluesky media items for %s (%i images, %i videos). Download integration lands in the next PR.", __FUNCTION__, static_cast<int>( mediaItems.size( ) ), actor.c_str( ), imageCount, videoCount );
-                    }
+                    WarningLog( "[%s] No downloadable Bluesky images were found for actor: %s", __FUNCTION__, actor.c_str( ) );
                 }
+
+                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                return;
             }
 
-            auto completeTask = TaskManager::Instance( ).SubmitMain( [ this ]( )
-                {
-                    m_Sink->OnRunComplete( );
-                } );
-            ( void )completeTask;
+            InfoLog( "[%s] Prepared %i unique Bluesky image downloads for %s from %i fetched media items (%i images, %i videos).", __FUNCTION__, static_cast<int>( imageDownloads.size( ) ), actor.c_str( ), static_cast<int>( mediaItems.size( ) ), imageCount, videoCount );
+
+            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Downloads" / "Bluesky" / imageDownloads.front( ).m_ActorDirectory;
+            const std::string dirStr = dir.generic_string( );
+            if( !DownloadHelpers::CreateDir( dirStr ) )
+            {
+                LogError( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );
+                TaskManager::Instance( ).SubmitMain( onFail );
+                return;
+            }
+
+            std::vector<MediaDownload> downloads{ };
+            downloads.reserve( imageDownloads.size( ) );
+            for( const BlueskyUtils::ImageDownload& imageDownload : imageDownloads )
+            {
+                downloads.push_back( { imageDownload.m_SourceUrl, imageDownload.m_FileName } );
+            }
+
+            const std::optional<int> filesDownloaded = DownloadMedia( downloads, dir );
+            if( !filesDownloaded.has_value( ) )
+            {
+                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                return;
+            }
+
+            TaskManager::Instance( ).SubmitMain( onComplete, *filesDownloaded );
         } );
 
     ( void )task;

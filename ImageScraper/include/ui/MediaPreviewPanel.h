@@ -92,6 +92,7 @@ namespace ImageScraper
         double GetPlaybackTimeSeconds( ) const;
 
         static std::unique_ptr<DecodedMedia> DecodeFile( const std::string& filepath, bool firstFrameOnly );
+        static std::unique_ptr<DecodedMedia> DecodeStillImageFile( const std::string& filepath );
         static std::unique_ptr<DecodedMedia> DecodeVideoFile( const std::string& filepath );
         static bool IsGif( const std::string& filepath );
         static bool IsVideo( const std::string& filepath );
