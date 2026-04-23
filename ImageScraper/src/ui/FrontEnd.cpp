@@ -172,11 +172,14 @@ void ImageScraper::FrontEnd::Update( )
         m_DownloadProgressPanel->SetRunning( true );
     }
 
+    const bool isRunning = m_DownloadOptionsPanel->IsRunning( );
+
     m_CredentialsPanel->Update( );
     m_MediaPreviewPanel->Update( );
+    m_MediaPreviewControlPanel->SetBlocked( isRunning );
     m_MediaPreviewControlPanel->Update( );
     m_DownloadHistoryPanel->SetBlocked(
-        m_DownloadOptionsPanel->IsRunning( ) ||
+        isRunning ||
         m_DownloadOptionsPanel->GetSigningInProvider( ) != INVALID_CONTENT_PROVIDER );
     m_DownloadHistoryPanel->Update( );
     m_LogPanel->Update( );

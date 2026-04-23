@@ -10,6 +10,21 @@
 #include <iomanip>
 #include <sstream>
 
+namespace
+{
+    std::string FormatDimensionsLabel( int width, int height )
+    {
+        if( width <= 0 || height <= 0 )
+        {
+            return { };
+        }
+
+        std::ostringstream stream;
+        stream << width << " x " << height;
+        return stream.str( );
+    }
+}
+
 ImageScraper::MediaPreviewPanel::~MediaPreviewPanel( )
 {
     m_CancelAudioPrepare = true;
@@ -151,6 +166,7 @@ void ImageScraper::MediaPreviewPanel::Update( )
             std::vector<std::string> metadataBadges{ };
             const std::string providerName = DownloadHelpers::GetProviderName( m_CurrentFilePath );
             const std::string subfolderLabel = DownloadHelpers::GetSubfolderLabel( m_CurrentFilePath );
+            const std::string dimensionsLabel = FormatDimensionsLabel( m_Width, m_Height );
             const std::string fileSize = FormatFileSize( m_CurrentFilePath );
 
             if( !providerName.empty( ) )
@@ -161,6 +177,11 @@ void ImageScraper::MediaPreviewPanel::Update( )
             if( !subfolderLabel.empty( ) )
             {
                 metadataBadges.push_back( subfolderLabel );
+            }
+
+            if( !dimensionsLabel.empty( ) )
+            {
+                metadataBadges.push_back( dimensionsLabel );
             }
 
             if( !fileSize.empty( ) )
