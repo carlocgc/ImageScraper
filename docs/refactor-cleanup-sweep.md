@@ -332,10 +332,12 @@ Evidence:
   - `DecodeFirstFrameFile(...)` provides the shared FFmpeg decode entry point for still-image preview and thumbnails.
 - `ImageScraper/ImageScraper.vcxproj`
   - the app no longer compiles `src/stb/stb_image.cpp`.
+- `ImageScraper/include/stb/stb_image.h` and `ImageScraper/src/stb/stb_image.cpp`
+  - removed after the FFmpeg-backed decode path fully replaced the app-side `stb_image` usage.
 
 Status:
 
-- Completed in `codex/retire-stb`.
+- Completed in `codex/retire-stb` and the follow-up vendored-file cleanup.
 - The vendored `stb_image_write` block in `imgui_draw.cpp` remains disabled and is still treated as non-blocking.
 
 Recommended refactor:

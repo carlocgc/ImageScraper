@@ -141,7 +141,7 @@ CI runs the same test binary explicitly after the build step, rather than launch
 
 ## Third-Party Software
 
-Key libraries used by the project include FFmpeg, Dear ImGui, GLFW, libcurl, curlpp, nlohmann/json, stb_image, cppcodec, and Catch2.
+Key libraries used by the project include FFmpeg, Dear ImGui, GLFW, libcurl, curlpp, nlohmann/json, cppcodec, and Catch2.
 
 Full third-party license information is available in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
