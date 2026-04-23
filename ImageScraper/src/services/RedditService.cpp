@@ -23,6 +23,41 @@
 using namespace ImageScraper::Reddit;
 using Json = nlohmann::json;
 
+namespace
+{
+    const char* GetRedditTargetTypeLabel( const ImageScraper::RedditTargetType targetType )
+    {
+        switch( targetType )
+        {
+            case ImageScraper::RedditTargetType::Subreddit:
+                return "Subreddit";
+            case ImageScraper::RedditTargetType::User:
+                return "User";
+            default:
+                return "Unknown";
+        }
+    }
+
+    std::string BuildRedditListingPath( const ImageScraper::UserInputOptions& options )
+    {
+        if( options.m_RedditTargetType == ImageScraper::RedditTargetType::User )
+        {
+            return "user/" + options.m_RedditTargetName + "/submitted.json";
+        }
+
+        return "r/" + options.m_RedditTargetName + '/' + options.m_RedditScope + ".json";
+    }
+
+    std::filesystem::path BuildRedditDownloadDirectory( const std::string& outputDir, const ImageScraper::UserInputOptions& options )
+    {
+        const char* targetTypeDirectory = options.m_RedditTargetType == ImageScraper::RedditTargetType::User
+            ? "User"
+            : "Subreddit";
+
+        return std::filesystem::path( outputDir ) / "Downloads" / "Reddit" / targetTypeDirectory / options.m_RedditTargetName;
+    }
+}
+
 const std::string ImageScraper::RedditService::s_RedirectUrl              = "http://localhost:8080";
 const std::string ImageScraper::RedditService::s_AppDataKey_DeviceId      = "reddit_device_id";
 const std::string ImageScraper::RedditService::s_AppDataKey_RefreshToken  = "reddit_refresh_token";
@@ -186,8 +221,12 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
     auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, options = inputOptions, onComplete, onFail ]( )
         {
             InfoLog( "[%s] Starting Reddit media download!", __FUNCTION__ );
-            LogDebug( "[%s] Subreddit: %s", __FUNCTION__, options.m_SubredditName.c_str( ) );
-            LogDebug( "[%s] Scope: %s", __FUNCTION__, options.m_RedditScope.c_str( ) );
+            LogDebug( "[%s] Target Type: %s", __FUNCTION__, GetRedditTargetTypeLabel( options.m_RedditTargetType ) );
+            LogDebug( "[%s] Target: %s", __FUNCTION__, options.m_RedditTargetName.c_str( ) );
+            if( options.m_RedditTargetType == RedditTargetType::Subreddit )
+            {
+                LogDebug( "[%s] Scope: %s", __FUNCTION__, options.m_RedditScope.c_str( ) );
+            }
             LogDebug( "[%s] Media Item Limit: %i", __FUNCTION__, options.m_RedditMaxMediaItems );
 
             if( IsCancelled( ) )
@@ -197,7 +236,9 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 return;
             }
 
-            if( !m_OAuthClient->IsAuthenticated( ) )
+            const bool useAuthenticatedListing = options.m_RedditTargetType == RedditTargetType::Subreddit;
+
+            if( useAuthenticatedListing && !m_OAuthClient->IsAuthenticated( ) )
             {
                 if( m_OAuthClient->IsSignedIn( ) )
                 {
@@ -211,12 +252,14 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 }
             }
 
-            if( !m_OAuthClient->IsAuthenticated( ) )
+            if( useAuthenticatedListing && !m_OAuthClient->IsAuthenticated( ) )
             {
                 LogError( "[%s] Could not authenticate with reddit api", __FUNCTION__ );
                 TaskManager::Instance( ).SubmitMain( onFail );
                 return;
             }
+
+            m_AfterParam.clear( );
 
             std::vector<std::string> mediaUrls{ };
             int pageNum = 1;
@@ -234,7 +277,8 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
                 RequestOptions fetchOptions{ };
 
-                if( !options.m_RedditScopeTimeFrame.empty( ) )
+                if( options.m_RedditTargetType == RedditTargetType::Subreddit
+                    && !options.m_RedditScopeTimeFrame.empty( ) )
                 {
                     fetchOptions.m_QueryParams.push_back( { "t", options.m_RedditScopeTimeFrame } );
                 }
@@ -245,17 +289,20 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 }
 
                 fetchOptions.m_QueryParams.push_back( { "limit", "100" } );
-                fetchOptions.m_UrlExt   = options.m_SubredditName + '/' + options.m_RedditScope + ".json";
+                fetchOptions.m_UrlExt = BuildRedditListingPath( options );
                 fetchOptions.m_CaBundle = m_CaBundle;
                 fetchOptions.m_UserAgent = m_UserAgent;
-                fetchOptions.m_AccessToken = m_OAuthClient->GetAccessToken( );
+                if( options.m_RedditTargetType == RedditTargetType::Subreddit )
+                {
+                    fetchOptions.m_AccessToken = m_OAuthClient->GetAccessToken( );
+                }
 
                 FetchSubredditPostsRequest fetchRequest{ m_HttpClient };
                 RequestResult fetchResult = fetchRequest.Perform( fetchOptions );
 
                 if( !fetchResult.m_Success )
                 {
-                    LogError( "[%s] Failed to fetch subreddit (page %i), error: %s", __FUNCTION__, pageNum, fetchResult.m_Error.m_ErrorString.c_str( ) );
+                    LogError( "[%s] Failed to fetch Reddit listing (page %i), error: %s", __FUNCTION__, pageNum, fetchResult.m_Error.m_ErrorString.c_str( ) );
                     continue;
                 }
 
@@ -270,7 +317,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                     mediaUrls.erase( mediaUrls.begin( ) + maxItems, mediaUrls.end( ) );
                 }
 
-                InfoLog( "[%s] Subreddit (page %i) fetched successfully. Media urls queued: %i/%i", __FUNCTION__, pageNum, static_cast< int >( mediaUrls.size( ) ), options.m_RedditMaxMediaItems );
+                InfoLog( "[%s] Reddit listing (page %i) fetched successfully. Media urls queued: %i/%i", __FUNCTION__, pageNum, static_cast< int >( mediaUrls.size( ) ), options.m_RedditMaxMediaItems );
                 LogDebug( "[%s] Response: %s", __FUNCTION__, fetchResult.m_Response.c_str( ) );
 
                 ++pageNum;
@@ -284,10 +331,10 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 return;
             }
 
-            InfoLog( "[%s] All Subreddit data fetched successfully.", __FUNCTION__ );
+            InfoLog( "[%s] All Reddit listing data fetched successfully.", __FUNCTION__ );
 
             // Create download directory
-            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Downloads" / "Reddit" / options.m_SubredditName;
+            const std::filesystem::path dir = BuildRedditDownloadDirectory( m_OutputDir, options );
             const std::string dirStr = dir.generic_string( );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
