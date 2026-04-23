@@ -33,6 +33,8 @@ ImageScraper::MediaPreviewControlPanel::MediaPreviewControlPanel(
 
 void ImageScraper::MediaPreviewControlPanel::Update( )
 {
+    constexpr const char* kBlockedTooltip = "Controls unavailable while a download is running";
+
     // Base (minimum) button dimensions
     constexpr float k_PlayR_min   = 18.f;
     constexpr float k_NavR_min    = 13.f;
@@ -87,6 +89,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
     const bool canMute      = m_PreviewPanel && m_PreviewPanel->CanMute( );
     const bool playing      = m_PreviewPanel && m_PreviewPanel->IsPlaying( );
     const bool muted        = !m_PreviewPanel || m_PreviewPanel->IsMuted( );
+    const bool blocked      = m_Blocked;
 
     ImDrawList* dl = ImGui::GetWindowDrawList( );
 
@@ -140,7 +143,8 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
 
     // --- Back (|<<) - toward oldest ---
     {
-        auto [ pressed, center, iconCol ] = CircleBtn( "##back", 0.f, navOffY, k_NavR, !canGoBack );
+        const bool disabled = blocked || !canGoBack;
+        auto [ pressed, center, iconCol ] = CircleBtn( "##back", 0.f, navOffY, k_NavR, disabled );
         DrawButtonIcon( center, k_NavR, kIconPrevious, kFallbackPrevious, iconCol );
 
         if( pressed )
@@ -148,7 +152,11 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
             m_HistoryPanel->SelectNext( );
         }
 
-        if( ImGui::IsItemHovered( ) )
+        if( blocked && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) )
+        {
+            ImGui::SetTooltip( kBlockedTooltip );
+        }
+        else if( ImGui::IsItemHovered( ) )
         {
             ImGui::SetTooltip( "Previous item" );
         }
@@ -156,7 +164,8 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
 
     // --- Play / pause ---
     {
-        auto [ pressed, center, iconCol ] = CircleBtn( "##play", k_NavDia + k_Spacing, 0.f, k_PlayR, !canPlay );
+        const bool disabled = blocked || !canPlay;
+        auto [ pressed, center, iconCol ] = CircleBtn( "##play", k_NavDia + k_Spacing, 0.f, k_PlayR, disabled );
         DrawButtonIcon( center, k_PlayR, playing ? kIconPause : kIconPlay, playing ? kFallbackPause : kFallbackPlay, iconCol );
 
         if( pressed )
@@ -164,7 +173,11 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
             m_PreviewPanel->TogglePlayPause( );
         }
 
-        if( ImGui::IsItemHovered( ) )
+        if( blocked && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) )
+        {
+            ImGui::SetTooltip( kBlockedTooltip );
+        }
+        else if( ImGui::IsItemHovered( ) )
         {
             ImGui::SetTooltip( playing ? "Pause preview" : "Play preview" );
         }
@@ -172,12 +185,13 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
 
     // --- Forward (>>|) - toward latest ---
     {
+        const bool disabled = blocked || !canGoForward;
         auto [ pressed, center, iconCol ] = CircleBtn(
             "##forward",
             k_NavDia + k_Spacing + k_PlayDia + k_Spacing,
             navOffY,
             k_NavR,
-            !canGoForward );
+            disabled );
         DrawButtonIcon( center, k_NavR, kIconNext, kFallbackNext, iconCol );
 
         if( pressed )
@@ -185,7 +199,11 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
             m_HistoryPanel->SelectPrevious( );
         }
 
-        if( ImGui::IsItemHovered( ) )
+        if( blocked && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) )
+        {
+            ImGui::SetTooltip( kBlockedTooltip );
+        }
+        else if( ImGui::IsItemHovered( ) )
         {
             ImGui::SetTooltip( "Next item" );
         }
@@ -193,12 +211,13 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
 
     // --- Mute / unmute ---
     {
+        const bool disabled = blocked || !canMute;
         auto [ pressed, center, iconCol ] = CircleBtn(
             "##mute",
             k_NavDia + k_Spacing + k_PlayDia + k_Spacing + k_NavDia + k_Spacing,
             navOffY,
             k_NavR,
-            !canMute );
+            disabled );
         DrawButtonIcon( center, k_NavR, muted ? kIconMuted : kIconVolume0, muted ? kFallbackMuted : kFallbackVolume0, iconCol );
 
         if( pressed )
@@ -206,7 +225,11 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
             m_PreviewPanel->ToggleMute( );
         }
 
-        if( ImGui::IsItemHovered( ) )
+        if( blocked && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) )
+        {
+            ImGui::SetTooltip( kBlockedTooltip );
+        }
+        else if( ImGui::IsItemHovered( ) )
         {
             ImGui::SetTooltip( muted ? "Unmute preview" : "Mute preview" );
         }

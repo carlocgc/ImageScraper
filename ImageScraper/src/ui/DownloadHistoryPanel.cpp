@@ -4,6 +4,7 @@
 #include <shellapi.h>
 
 #include "ui/DownloadHistoryPanel.h"
+#include "imgui/imgui_internal.h"
 #include "utils/DownloadUtils.h"
 #include "log/Logger.h"
 
@@ -100,6 +101,18 @@ namespace
         fileTime.LowPart  = attributeData.ftCreationTime.dwLowDateTime;
         fileTime.HighPart = attributeData.ftCreationTime.dwHighDateTime;
         return fileTime.QuadPart;
+    }
+
+    std::string FormatDimensionsLabel( int width, int height )
+    {
+        if( width <= 0 || height <= 0 )
+        {
+            return { };
+        }
+
+        std::ostringstream stream;
+        stream << width << " x " << height;
+        return stream.str( );
     }
 }
 
@@ -562,12 +575,16 @@ void ImageScraper::DownloadHistoryPanel::RenderTreeNode( const std::filesystem::
 
     ImGui::PushID( pathString.c_str( ) );
     const bool isOpen = ImGui::TreeNodeEx( label.c_str( ), flags );
+    const ImGuiID itemId = ImGui::GetItemID( );
+    const bool navMovedToItem =
+        GImGui->NavJustMovedToId == itemId &&
+        GImGui->NavJustMovedToFocusScopeId == GImGui->CurrentFocusScopeId;
 
     if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) )
     {
         SetSelection( pathString, false, true );
     }
-    else if( ImGui::IsItemFocused( ) && !IsSelectedPath( path ) )
+    else if( navMovedToItem && ImGui::IsItemFocused( ) && !IsSelectedPath( path ) )
     {
         SetSelection( pathString, false, true );
     }
@@ -763,6 +780,11 @@ void ImageScraper::DownloadHistoryPanel::ShowPathTooltip( const std::filesystem:
 
     ImGui::TextUnformatted( ExtractFileName( pathString ).c_str( ) );
     ImGui::TextDisabled( "%s", GetFileTypeLabel( pathString ).c_str( ) );
+    const std::string dimensionsLabel = FormatDimensionsLabel( thumb.m_Width, thumb.m_Height );
+    if( !dimensionsLabel.empty( ) )
+    {
+        ImGui::TextDisabled( "Dimensions: %s", dimensionsLabel.c_str( ) );
+    }
     ImGui::TextDisabled( "Size: %s", FormatFileSize( pathString ).c_str( ) );
     ImGui::TextDisabled( "Created: %s", GetCreationTimeColumnLabel( path ).c_str( ) );
     ImGui::Separator( );
