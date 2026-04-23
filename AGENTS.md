@@ -10,6 +10,13 @@ Use PowerShell for MSBuild.
 
 Swap `Debug` for `Release` or `/t:ImageScraper` for `/t:ImageScraperTests` as needed. PRs target `development`; releases merge `development` into `master`.
 
+## Release
+
+- Bump repo-root `VERSION` for the new release.
+- Merge `development` into `master`.
+- Tag `master` with the release version in `vX.X.X` format.
+- Push the `master` update and the tag. The `Release` GitHub Actions workflow runs on the version tag and regenerates `ImageScraper/include/version/Version.h` from `VERSION`.
+
 ## Repo-Specific Rules
 
 - Do not edit vendored code under `ImageScraper/include/imgui/`, `ImageScraper/include/nlohmann/`, `ImageScraper/include/curl/`, `ImageScraper/include/GLFW/`, `ImageScraper/src/imgui/`, `ImageScraperTests/include/catch2/`, or `ImageScraperTests/src/catch2/`.
