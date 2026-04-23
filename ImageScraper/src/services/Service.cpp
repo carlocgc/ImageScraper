@@ -10,6 +10,52 @@
 #include <chrono>
 #include <thread>
 
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+namespace
+{
+    void RefreshDownloadFileTimestamp( const std::filesystem::path& filepath )
+    {
+        if( filepath.empty( ) )
+        {
+            return;
+        }
+
+        HANDLE fileHandle = CreateFileW(
+            filepath.wstring( ).c_str( ),
+            FILE_WRITE_ATTRIBUTES,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            nullptr,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            nullptr );
+        if( fileHandle == INVALID_HANDLE_VALUE )
+        {
+            ImageScraper::Logger::Log( ImageScraper::LogLevel::Warning,
+                                       "[%s] Failed to open %s for timestamp refresh (error %lu)",
+                                       __FUNCTION__,
+                                       filepath.string( ).c_str( ),
+                                       GetLastError( ) );
+            return;
+        }
+
+        FILETIME now{ };
+        GetSystemTimeAsFileTime( &now );
+        if( !SetFileTime( fileHandle, &now, nullptr, &now ) )
+        {
+            ImageScraper::Logger::Log( ImageScraper::LogLevel::Warning,
+                                       "[%s] Failed to refresh timestamps for %s (error %lu)",
+                                       __FUNCTION__,
+                                       filepath.string( ).c_str( ),
+                                       GetLastError( ) );
+        }
+
+        CloseHandle( fileHandle );
+    }
+}
+
 ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
     : m_ContentProvider{ provider }
     , m_AppConfig{ appConfig }
@@ -70,6 +116,7 @@ std::optional<int> ImageScraper::Service::DownloadMedia( const std::vector<Media
             continue;
         }
 
+        RefreshDownloadFileTimestamp( filepath );
         m_Sink->OnFileDownloaded( filepathStr, download.m_SourceUrl );
 
         ++filesDownloaded;
