@@ -449,7 +449,7 @@ TEST_CASE( "FetchSubredditPostsRequest - no token uses public URL", "[Requests][
 
     Reddit::FetchSubredditPostsRequest req{ mock };
     auto opts = MakeOptions( );
-    opts.m_UrlExt      = "pics/hot.json";
+    opts.m_UrlExt      = "r/pics/hot.json";
     opts.m_AccessToken = "";
     req.Perform( opts );
 
@@ -464,12 +464,26 @@ TEST_CASE( "FetchSubredditPostsRequest - with token uses OAuth URL and Bearer he
 
     Reddit::FetchSubredditPostsRequest req{ mock };
     auto opts = MakeOptions( );
-    opts.m_UrlExt      = "pics/hot.json";
+    opts.m_UrlExt      = "r/pics/hot.json";
     opts.m_AccessToken = "mytoken";
     req.Perform( opts );
 
     REQUIRE( mock->m_LastRequest.m_Url.find( "oauth.reddit.com" ) != std::string::npos );
     REQUIRE( HasHeaderPrefix( mock->m_LastRequest.m_Headers, "Authorization: Bearer " ) );
+}
+
+TEST_CASE( "FetchSubredditPostsRequest - user listing path uses public user URL", "[Requests][Reddit]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"({"data":{}})" );
+
+    Reddit::FetchSubredditPostsRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_UrlExt = "user/spez/submitted.json";
+    req.Perform( opts );
+
+    REQUIRE( mock->m_LastRequest.m_Url.find( "www.reddit.com/user/spez/submitted.json" ) != std::string::npos );
+    REQUIRE( mock->m_LastRequest.m_Url.find( "oauth.reddit.com" ) == std::string::npos );
 }
 
 TEST_CASE( "FetchSubredditPostsRequest - HTTP failure sets error", "[Requests][Reddit]" )
@@ -479,7 +493,7 @@ TEST_CASE( "FetchSubredditPostsRequest - HTTP failure sets error", "[Requests][R
 
     Reddit::FetchSubredditPostsRequest req{ mock };
     auto opts = MakeOptions( );
-    opts.m_UrlExt = "pics/hot.json";
+    opts.m_UrlExt = "r/pics/hot.json";
     const auto result = req.Perform( opts );
 
     REQUIRE_FALSE( result.m_Success );
@@ -492,7 +506,7 @@ TEST_CASE( "FetchSubredditPostsRequest - service error JSON sets failure", "[Req
 
     Reddit::FetchSubredditPostsRequest req{ mock };
     auto opts = MakeOptions( );
-    opts.m_UrlExt = "pics/hot.json";
+    opts.m_UrlExt = "r/pics/hot.json";
     const auto result = req.Perform( opts );
 
     REQUIRE_FALSE( result.m_Success );
