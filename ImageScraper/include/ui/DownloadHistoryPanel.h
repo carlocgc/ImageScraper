@@ -45,16 +45,16 @@ namespace ImageScraper
         // Called by FrontEnd each frame before Update() to propagate blocked state.
         void SetBlocked( bool blocked ) { m_Blocked = blocked; }
 
-        // Navigate to the next older file in the downloads view; fires preview callback.
+        // Navigate to the next displayed item in the Downloads tree; fires preview callback.
         void SelectNext( );
 
-        // Navigate to the next newer file in the downloads view; fires preview callback.
+        // Navigate to the previous displayed item in the Downloads tree; fires preview callback.
         void SelectPrevious( );
 
-        // True if there is a valid older file to navigate to.
+        // True if there is a valid next displayed item to navigate to.
         bool HasNext( ) const;
 
-        // True if there is a valid newer file to navigate to.
+        // True if there is a valid previous displayed item to navigate to.
         bool HasPrevious( ) const;
 
     private:
@@ -83,11 +83,15 @@ namespace ImageScraper
         void FlushPending( );
         void FlushDecodedThumbnails( );
         void InvalidateTreeCaches( );
+        void EnsureTreeSnapshotCached( ) const;
         void RefreshTreeSnapshot( const ImGuiTableSortSpecs* sortSpecs );
         std::optional<TreeNodeSnapshot> BuildTreeNodeSnapshot(
             const std::filesystem::path& path,
             ImGuiID sortColumnUserId,
             ImGuiSortDirection sortDirection ) const;
+        void CollectNavigableFiles(
+            const TreeNodeSnapshot& node,
+            std::vector<std::filesystem::path>& files ) const;
         void SaveSelectedPath( );
         void SetSelection( const std::string& path, bool scrollToSelected, bool requestPreview );
         void ClearSelection( bool requestPreview );
@@ -143,13 +147,14 @@ namespace ImageScraper
         std::vector<DecodedThumbnail>                      m_DecodedThumbnails{ };
         std::unordered_map<std::string, std::future<void>> m_ThumbnailFutures{ };
         std::unordered_set<std::string>                    m_InFlightThumbnails{ };
-        std::optional<TreeNodeSnapshot>                    m_TreeSnapshot{ };
-        ImGuiID                                            m_TreeSortColumnUserId{ 0 };
-        ImGuiSortDirection                                 m_TreeSortDirection{ ImGuiSortDirection_Ascending };
-        bool                                               m_TreeDirty{ true };
+        mutable std::optional<TreeNodeSnapshot>            m_TreeSnapshot{ };
+        mutable ImGuiID                                    m_TreeSortColumnUserId{ 0 };
+        mutable ImGuiSortDirection                         m_TreeSortDirection{ ImGuiSortDirection_Ascending };
+        mutable bool                                       m_TreeDirty{ true };
         mutable std::vector<std::filesystem::path>         m_NavigableFilesCache{ };
         mutable std::unordered_map<std::string, int>       m_NavigableFileIndexByPath{ };
         mutable bool                                       m_NavigableFilesDirty{ true };
+        std::unordered_set<std::string>                    m_OpenDirectoryPaths{ };
 
         std::string m_SelectedPath{ };
         std::string m_DeleteConfirmPath{ };

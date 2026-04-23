@@ -440,14 +440,45 @@ void ImageScraper::DownloadHistoryPanel::RefreshTreeSnapshot( const ImGuiTableSo
         return;
     }
 
+    const bool sortChanged =
+        m_TreeSortColumnUserId != sortColumnUserId ||
+        m_TreeSortDirection != sortDirection;
+
     m_TreeSortColumnUserId = sortColumnUserId;
     m_TreeSortDirection = sortDirection;
+    if( sortChanged )
+    {
+        m_TreeDirty = true;
+        m_NavigableFilesDirty = true;
+    }
 
+    EnsureTreeSnapshotCached( );
+}
+
+void ImageScraper::DownloadHistoryPanel::EnsureTreeSnapshotCached( ) const
+{
     if( m_DownloadsRoot.empty( ) )
     {
         m_TreeSnapshot.reset( );
         m_TreeDirty = false;
         return;
+    }
+
+    if( !m_TreeDirty && m_TreeSnapshot.has_value( ) )
+    {
+        return;
+    }
+
+    ImGuiID sortColumnUserId = m_TreeSortColumnUserId;
+    if( sortColumnUserId == 0 )
+    {
+        sortColumnUserId = static_cast<ImGuiID>( SortColumn::Name );
+    }
+
+    ImGuiSortDirection sortDirection = m_TreeSortDirection;
+    if( sortDirection == ImGuiSortDirection_None )
+    {
+        sortDirection = ImGuiSortDirection_Ascending;
     }
 
     m_TreeSnapshot = BuildTreeNodeSnapshot( m_DownloadsRoot, sortColumnUserId, sortDirection );
@@ -749,9 +780,11 @@ void ImageScraper::DownloadHistoryPanel::RenderTreeNode( const TreeNodeSnapshot&
     ImGui::TableNextRow( );
     ImGui::TableNextColumn( );
 
-    if( isDirectory && HasSelectedDescendant( pathString ) && m_ScrollToSelected )
+    if( isDirectory )
     {
-        ImGui::SetNextItemOpen( true, ImGuiCond_Always );
+        const bool isOpenByState = m_OpenDirectoryPaths.find( pathString ) != m_OpenDirectoryPaths.end( );
+        const bool shouldOpen = isOpenByState || ( HasSelectedDescendant( pathString ) && m_ScrollToSelected );
+        ImGui::SetNextItemOpen( shouldOpen, ImGuiCond_Always );
     }
 
     ImGuiTreeNodeFlags flags =
@@ -781,6 +814,24 @@ void ImageScraper::DownloadHistoryPanel::RenderTreeNode( const TreeNodeSnapshot&
 
     ImGui::PushID( pathString.c_str( ) );
     const bool isOpen = ImGui::TreeNodeEx( node.m_Label.c_str( ), flags );
+    if( isDirectory )
+    {
+        const bool isOpenByState = m_OpenDirectoryPaths.find( pathString ) != m_OpenDirectoryPaths.end( );
+        if( isOpen != isOpenByState )
+        {
+            if( isOpen )
+            {
+                m_OpenDirectoryPaths.insert( pathString );
+            }
+            else
+            {
+                m_OpenDirectoryPaths.erase( pathString );
+            }
+
+            m_NavigableFilesDirty = true;
+        }
+    }
+
     const ImGuiID itemId = ImGui::GetItemID( );
     const bool navMovedToItem =
         GImGui->NavJustMovedToId == itemId &&
@@ -980,75 +1031,77 @@ const std::vector<std::filesystem::path>& ImageScraper::DownloadHistoryPanel::Ge
         return m_NavigableFilesCache;
     }
 
-    struct NavigableFileEntry
+    EnsureTreeSnapshotCached( );
+    if( !m_TreeSnapshot.has_value( ) )
     {
-        std::filesystem::path m_Path{ };
-        unsigned long long    m_CreationTicks{ 0 };
-        std::string           m_DisplayName{ };
-        std::string           m_PathString{ };
-    };
-
-    std::vector<NavigableFileEntry> files{ };
-    for( std::filesystem::recursive_directory_iterator it{
-             m_DownloadsRoot,
-             std::filesystem::directory_options::skip_permission_denied,
-             ec
-         }, end;
-         !ec && it != end;
-         it.increment( ec ) )
-    {
-        if( !std::filesystem::is_regular_file( it->path( ), ec ) || ec )
-        {
-            continue;
-        }
-
-        NavigableFileEntry entry{ };
-        entry.m_Path = it->path( );
-        entry.m_CreationTicks = GetPathCreationTimeTicks( entry.m_Path );
-        entry.m_DisplayName = GetPathDisplayName( entry.m_Path );
-        entry.m_PathString = MakePreferredPathString( entry.m_Path );
-        files.push_back( std::move( entry ) );
+        m_NavigableFilesDirty = false;
+        return m_NavigableFilesCache;
     }
 
-    std::sort( files.begin( ), files.end( ), []( const NavigableFileEntry& lhs, const NavigableFileEntry& rhs )
+    CollectNavigableFiles( *m_TreeSnapshot, m_NavigableFilesCache );
+    m_NavigableFileIndexByPath.reserve( m_NavigableFilesCache.size( ) );
+    for( int index = 0; index < static_cast<int>( m_NavigableFilesCache.size( ) ); ++index )
     {
-        if( lhs.m_CreationTicks != rhs.m_CreationTicks )
+        const std::string pathString = MakePreferredPathString( m_NavigableFilesCache[ index ] );
+        if( !pathString.empty( ) )
         {
-            return lhs.m_CreationTicks > rhs.m_CreationTicks;
+            m_NavigableFileIndexByPath[ pathString ] = index;
         }
-
-        const int nameComparison = CompareStringsCaseInsensitive( lhs.m_DisplayName, rhs.m_DisplayName );
-        if( nameComparison != 0 )
-        {
-            return nameComparison < 0;
-        }
-
-        return lhs.m_PathString < rhs.m_PathString;
-    } );
-
-    m_NavigableFilesCache.reserve( files.size( ) );
-    m_NavigableFileIndexByPath.reserve( files.size( ) );
-    for( int index = 0; index < static_cast<int>( files.size( ) ); ++index )
-    {
-        const NavigableFileEntry& entry = files[ index ];
-        m_NavigableFilesCache.push_back( entry.m_Path );
-        m_NavigableFileIndexByPath[ entry.m_PathString ] = index;
     }
 
     m_NavigableFilesDirty = false;
     return m_NavigableFilesCache;
 }
 
-int ImageScraper::DownloadHistoryPanel::FindNavigableIndexByPath( const std::string& filepath ) const
+void ImageScraper::DownloadHistoryPanel::CollectNavigableFiles(
+    const TreeNodeSnapshot& node,
+    std::vector<std::filesystem::path>& files ) const
 {
-    const std::string preferredPath = MakePreferredPathString( filepath );
-    if( preferredPath.empty( ) )
+    files.push_back( node.m_Path );
+
+    if( !node.m_IsDirectory )
     {
-        return -1;
+        return;
     }
 
-    const auto it = m_NavigableFileIndexByPath.find( preferredPath );
-    return it == m_NavigableFileIndexByPath.end( ) ? -1 : it->second;
+    if( m_OpenDirectoryPaths.find( node.m_PathString ) == m_OpenDirectoryPaths.end( ) )
+    {
+        return;
+    }
+
+    for( const TreeNodeSnapshot& child : node.m_Children )
+    {
+        CollectNavigableFiles( child, files );
+    }
+}
+
+int ImageScraper::DownloadHistoryPanel::FindNavigableIndexByPath( const std::string& filepath ) const
+{
+    std::filesystem::path currentPath = filepath;
+    while( !currentPath.empty( ) )
+    {
+        const std::string preferredPath = MakePreferredPathString( currentPath );
+        if( preferredPath.empty( ) )
+        {
+            break;
+        }
+
+        const auto it = m_NavigableFileIndexByPath.find( preferredPath );
+        if( it != m_NavigableFileIndexByPath.end( ) )
+        {
+            return it->second;
+        }
+
+        const std::filesystem::path parentPath = currentPath.parent_path( );
+        if( parentPath == currentPath )
+        {
+            break;
+        }
+
+        currentPath = parentPath;
+    }
+
+    return -1;
 }
 
 void ImageScraper::DownloadHistoryPanel::EvictThumbnail( const std::string& filepath )
@@ -1115,6 +1168,11 @@ void ImageScraper::DownloadHistoryPanel::Load( std::shared_ptr<JsonFile> appConf
     m_AppConfig = std::move( appConfig );
     m_DownloadsRoot = downloadsRoot.empty( ) ? downloadsRoot : NormalisePath( downloadsRoot );
     m_DownloadsRootString = MakePreferredPathString( m_DownloadsRoot );
+    m_OpenDirectoryPaths.clear( );
+    if( !m_DownloadsRootString.empty( ) )
+    {
+        m_OpenDirectoryPaths.insert( m_DownloadsRootString );
+    }
     InvalidateTreeCaches( );
     if( !m_AppConfig )
     {
