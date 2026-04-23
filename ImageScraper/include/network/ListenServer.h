@@ -1,5 +1,6 @@
 #pragma once
 #include "services/Service.h"
+#include "services/IServiceSink.h"
 #include "traits/TypeTraits.h"
 
 #include <vector>
@@ -11,7 +12,7 @@ namespace ImageScraper
     class ListenServer : public NonCopyMovable
     {
     public:
-        void Init( std::vector<std::shared_ptr<Service>> services, int port );
+        void Init( std::vector<std::shared_ptr<Service>> services, int port, const std::string& authHtmlPath, std::shared_ptr<IServiceSink> sink );
         void Start( );
         void Stop( );
         void Reset( );
@@ -23,7 +24,8 @@ namespace ImageScraper
         const int m_MaxRetries{ 20 };
         std::vector<std::shared_ptr<Service>> m_Services;
         std::atomic_bool m_Running{ false };
-        std::string m_AuthHtml{ };
+        std::string m_AuthHtmlTemplate{ };
+        std::weak_ptr<IServiceSink> m_Sink{ };
     };
 
 }

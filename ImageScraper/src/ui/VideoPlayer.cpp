@@ -7,12 +7,93 @@ extern "C"
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
 #include <libavutil/imgutils.h>
+#include <libavutil/pixfmt.h>
 #include <libswscale/swscale.h>
+}
+
+namespace
+{
+    AVPixelFormat NormaliseSwscalePixelFormat( AVPixelFormat pixelFormat )
+    {
+        switch( pixelFormat )
+        {
+            case AV_PIX_FMT_YUVJ420P: return AV_PIX_FMT_YUV420P;
+            case AV_PIX_FMT_YUVJ422P: return AV_PIX_FMT_YUV422P;
+            case AV_PIX_FMT_YUVJ444P: return AV_PIX_FMT_YUV444P;
+            case AV_PIX_FMT_YUVJ440P: return AV_PIX_FMT_YUV440P;
+            case AV_PIX_FMT_YUVJ411P: return AV_PIX_FMT_YUV411P;
+            default:                 return pixelFormat;
+        }
+    }
+
+    int GetSwscaleRangeFlag( AVPixelFormat pixelFormat, AVColorRange colorRange )
+    {
+        if( colorRange == AVCOL_RANGE_JPEG )
+        {
+            return 1;
+        }
+
+        if( colorRange == AVCOL_RANGE_MPEG )
+        {
+            return 0;
+        }
+
+        switch( pixelFormat )
+        {
+            case AV_PIX_FMT_YUVJ420P:
+            case AV_PIX_FMT_YUVJ422P:
+            case AV_PIX_FMT_YUVJ444P:
+            case AV_PIX_FMT_YUVJ440P:
+            case AV_PIX_FMT_YUVJ411P:
+                return 1;
+            default:
+                return 0;
+        }
+    }
 }
 
 ImageScraper::VideoPlayer::~VideoPlayer( )
 {
     Close( );
+}
+
+ImageScraper::VideoPlayer::VideoPlayer( VideoPlayer&& other ) noexcept
+{
+    *this = std::move( other );
+}
+
+ImageScraper::VideoPlayer& ImageScraper::VideoPlayer::operator=( VideoPlayer&& other ) noexcept
+{
+    if( this == &other )
+    {
+        return *this;
+    }
+
+    Close( );
+
+    m_FormatCtx   = other.m_FormatCtx;
+    m_CodecCtx    = other.m_CodecCtx;
+    m_SwsCtx      = other.m_SwsCtx;
+    m_Frame       = other.m_Frame;
+    m_Packet      = other.m_Packet;
+    m_VideoStream = other.m_VideoStream;
+    m_HasAudio    = other.m_HasAudio;
+    m_Width       = other.m_Width;
+    m_Height      = other.m_Height;
+    m_Fps         = other.m_Fps;
+
+    other.m_FormatCtx   = nullptr;
+    other.m_CodecCtx    = nullptr;
+    other.m_SwsCtx      = nullptr;
+    other.m_Frame       = nullptr;
+    other.m_Packet      = nullptr;
+    other.m_VideoStream = -1;
+    other.m_HasAudio    = false;
+    other.m_Width       = 0;
+    other.m_Height      = 0;
+    other.m_Fps         = 30.0;
+
+    return *this;
 }
 
 bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
@@ -21,31 +102,35 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
 
     if( avformat_open_input( &m_FormatCtx, filepath.c_str( ), nullptr, nullptr ) < 0 )
     {
-        ErrorLog( "[%s] avformat_open_input failed for: %s", __FUNCTION__, filepath.c_str( ) );
+        LogError( "[%s] avformat_open_input failed for: %s", __FUNCTION__, filepath.c_str( ) );
         return false;
     }
 
     if( avformat_find_stream_info( m_FormatCtx, nullptr ) < 0 )
     {
-        ErrorLog( "[%s] avformat_find_stream_info failed for: %s", __FUNCTION__, filepath.c_str( ) );
+        LogError( "[%s] avformat_find_stream_info failed for: %s", __FUNCTION__, filepath.c_str( ) );
         Close( );
         return false;
     }
 
-    // Find the first video stream
     m_VideoStream = -1;
+    m_HasAudio    = false;
     for( unsigned int i = 0; i < m_FormatCtx->nb_streams; ++i )
     {
-        if( m_FormatCtx->streams[ i ]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO )
+        const AVMediaType streamType = m_FormatCtx->streams[ i ]->codecpar->codec_type;
+        if( streamType == AVMEDIA_TYPE_VIDEO && m_VideoStream < 0 )
         {
             m_VideoStream = static_cast<int>( i );
-            break;
+        }
+        else if( streamType == AVMEDIA_TYPE_AUDIO )
+        {
+            m_HasAudio = true;
         }
     }
 
     if( m_VideoStream < 0 )
     {
-        ErrorLog( "[%s] No video stream found in: %s", __FUNCTION__, filepath.c_str( ) );
+        LogError( "[%s] No video stream found in: %s", __FUNCTION__, filepath.c_str( ) );
         Close( );
         return false;
     }
@@ -54,7 +139,7 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
     const AVCodec* codec = avcodec_find_decoder( codecPar->codec_id );
     if( !codec )
     {
-        ErrorLog( "[%s] Unsupported codec in: %s", __FUNCTION__, filepath.c_str( ) );
+        LogError( "[%s] Unsupported codec in: %s", __FUNCTION__, filepath.c_str( ) );
         Close( );
         return false;
     }
@@ -62,21 +147,21 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
     m_CodecCtx = avcodec_alloc_context3( codec );
     if( !m_CodecCtx )
     {
-        ErrorLog( "[%s] avcodec_alloc_context3 failed", __FUNCTION__ );
+        LogError( "[%s] avcodec_alloc_context3 failed", __FUNCTION__ );
         Close( );
         return false;
     }
 
     if( avcodec_parameters_to_context( m_CodecCtx, codecPar ) < 0 )
     {
-        ErrorLog( "[%s] avcodec_parameters_to_context failed", __FUNCTION__ );
+        LogError( "[%s] avcodec_parameters_to_context failed", __FUNCTION__ );
         Close( );
         return false;
     }
 
     if( avcodec_open2( m_CodecCtx, codec, nullptr ) < 0 )
     {
-        ErrorLog( "[%s] avcodec_open2 failed for: %s", __FUNCTION__, filepath.c_str( ) );
+        LogError( "[%s] avcodec_open2 failed for: %s", __FUNCTION__, filepath.c_str( ) );
         Close( );
         return false;
     }
@@ -84,19 +169,48 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
     m_Width  = m_CodecCtx->width;
     m_Height = m_CodecCtx->height;
 
-    const AVRational tb = m_FormatCtx->streams[ m_VideoStream ]->avg_frame_rate;
-    m_Fps = ( tb.den > 0 ) ? static_cast<double>( tb.num ) / tb.den : 30.0;
+    AVRational frameRate = av_guess_frame_rate( m_FormatCtx, m_FormatCtx->streams[ m_VideoStream ], nullptr );
+    if( frameRate.num <= 0 || frameRate.den <= 0 )
+    {
+        frameRate = m_FormatCtx->streams[ m_VideoStream ]->avg_frame_rate;
+    }
+    if( frameRate.num <= 0 || frameRate.den <= 0 )
+    {
+        frameRate = m_FormatCtx->streams[ m_VideoStream ]->r_frame_rate;
+    }
 
+    m_Fps = 30.0;
+    if( frameRate.num > 0 && frameRate.den > 0 )
+    {
+        const double fps = static_cast<double>( frameRate.num ) / static_cast<double>( frameRate.den );
+        if( fps > 0.0 )
+        {
+            m_Fps = fps;
+        }
+    }
+
+    const AVPixelFormat swscalePixelFormat = NormaliseSwscalePixelFormat( m_CodecCtx->pix_fmt );
     m_SwsCtx = sws_getContext(
-        m_Width, m_Height, m_CodecCtx->pix_fmt,
+        m_Width, m_Height, swscalePixelFormat,
         m_Width, m_Height, AV_PIX_FMT_RGBA,
         SWS_BILINEAR, nullptr, nullptr, nullptr );
 
     if( !m_SwsCtx )
     {
-        ErrorLog( "[%s] sws_getContext failed for: %s", __FUNCTION__, filepath.c_str( ) );
+        LogError( "[%s] sws_getContext failed for: %s", __FUNCTION__, filepath.c_str( ) );
         Close( );
         return false;
+    }
+
+    const int* swscaleCoefficients = sws_getCoefficients( SWS_CS_DEFAULT );
+    const int sourceRange = GetSwscaleRangeFlag( m_CodecCtx->pix_fmt, m_CodecCtx->color_range );
+    if( sws_setColorspaceDetails(
+            m_SwsCtx,
+            swscaleCoefficients, sourceRange,
+            swscaleCoefficients, 1,
+            0, 1 << 16, 1 << 16 ) < 0 )
+    {
+        WarningLog( "[%s] sws_setColorspaceDetails failed for: %s", __FUNCTION__, filepath.c_str( ) );
     }
 
     m_Frame  = av_frame_alloc( );
@@ -104,9 +218,43 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
 
     if( !m_Frame || !m_Packet )
     {
-        ErrorLog( "[%s] Frame/packet alloc failed", __FUNCTION__ );
+        LogError( "[%s] Frame/packet alloc failed", __FUNCTION__ );
         Close( );
         return false;
+    }
+
+    return true;
+}
+
+bool ImageScraper::VideoPlayer::DecodeFirstFrameFile(
+    const std::string& filepath,
+    std::vector<uint8_t>& rgbaOut,
+    int& width,
+    int& height,
+    bool* hasAudio )
+{
+    VideoPlayer player;
+    if( !player.Open( filepath ) )
+    {
+        return false;
+    }
+
+    if( !player.DecodeNextFrame( rgbaOut ) )
+    {
+        return false;
+    }
+
+    width  = player.GetWidth( );
+    height = player.GetHeight( );
+    if( hasAudio )
+    {
+        *hasAudio = player.HasAudio( );
+    }
+
+    const size_t pixelBytes = static_cast<size_t>( width ) * static_cast<size_t>( height ) * 4;
+    if( rgbaOut.size( ) > pixelBytes )
+    {
+        rgbaOut.resize( pixelBytes );
     }
 
     return true;
@@ -130,11 +278,11 @@ bool ImageScraper::VideoPlayer::DecodeNextFrame( std::vector<uint8_t>& rgbaOut )
 
         if( recvRet != AVERROR( EAGAIN ) )
         {
-            // EOF or error — no more frames
+            // EOF or error - no more frames
             return false;
         }
 
-        // Need more packets — read and send to decoder
+        // Need more packets - read and send to decoder
         bool sentPacket = false;
         while( !sentPacket )
         {
@@ -158,6 +306,15 @@ bool ImageScraper::VideoPlayer::DecodeNextFrame( std::vector<uint8_t>& rgbaOut )
     }
 }
 
+double ImageScraper::VideoPlayer::GetDuration( ) const
+{
+    if( !m_FormatCtx || m_FormatCtx->duration == AV_NOPTS_VALUE )
+    {
+        return 0.0;
+    }
+    return static_cast<double>( m_FormatCtx->duration ) / static_cast<double>( AV_TIME_BASE );
+}
+
 void ImageScraper::VideoPlayer::SeekToStart( )
 {
     if( !m_FormatCtx )
@@ -178,6 +335,7 @@ void ImageScraper::VideoPlayer::Close( )
     if( m_FormatCtx ) { avformat_close_input( &m_FormatCtx ); m_FormatCtx = nullptr; }
 
     m_VideoStream = -1;
+    m_HasAudio    = false;
     m_Width       = 0;
     m_Height      = 0;
     m_Fps         = 30.0;

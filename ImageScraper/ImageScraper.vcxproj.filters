@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -28,6 +28,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\requests\DownloadRequest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\requests\VideoDownloadRequest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\requests\bluesky\GetAuthorFeedRequest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\requests\bluesky\ResolveHandleRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\services\RedditService.cpp">
@@ -78,7 +87,16 @@
     <ClCompile Include="src\requests\tumblr\RetrievePublishedPostsRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\services\BlueskyService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\services\FourChanService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\services\OAuthServiceHelpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\services\Service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\requests\fourchan\GetBoardsRequest.cpp">
@@ -96,9 +114,6 @@
     <ClCompile Include="src\requests\reddit\RefreshAccessTokenRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\services\DiscordService.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\network\CurlHttpClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -109,6 +124,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ui\DownloadOptionsPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\BlueskyPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ui\RedditPanel.cpp">
@@ -123,10 +141,10 @@
     <ClCompile Include="src\ui\MediaPreviewPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ui\DownloadHistoryPanel.cpp">
+    <ClCompile Include="src\ui\ProviderSearchInput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\stb\stb_image.cpp">
+    <ClCompile Include="src\ui\DownloadHistoryPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -266,7 +284,19 @@
     <ClInclude Include="include\requests\DownloadRequest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\requests\VideoDownloadRequest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\requests\bluesky\GetAuthorFeedRequest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\requests\bluesky\ResolveHandleRequest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\utils\DownloadUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\BlueskyUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\requests\RequestTypes.h">
@@ -431,6 +461,9 @@
     <ClInclude Include="include\services\ServiceOptionTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\services\BlueskyService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\services\TumblrService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -453,9 +486,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\requests\reddit\RefreshAccessTokenRequest.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\services\DiscordService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\network\HttpClientTypes.h">
@@ -494,7 +524,13 @@
     <ClInclude Include="include\ui\DownloadOptionsPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\ui\BlueskyPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\ui\RedditPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ui\ProviderSearchInput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ui\TumblrPanel.h">
@@ -507,9 +543,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ui\DownloadHistoryPanel.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\stb\stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

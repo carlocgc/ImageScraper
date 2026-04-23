@@ -1,5 +1,6 @@
 #pragma once
 
+#include "services/ServiceOptionTypes.h"
 #include "traits/TypeTraits.h"
 
 #include <memory>
@@ -23,15 +24,19 @@ namespace ImageScraper
         static const std::string s_AppConfigFile;
         static const std::string s_UserConfigFile;
         static const std::string s_CaBundleFile;
+        static const std::string s_AuthHtmlFile;
 
     private:
         void AuthenticateServices( );
+        void OnServiceAuthenticationComplete( ContentProvider provider, bool success );
 
         std::shared_ptr<JsonFile> m_AppConfig{ nullptr };
         std::shared_ptr<JsonFile> m_UserConfig{ nullptr };
         std::shared_ptr<FrontEnd> m_FrontEnd{ nullptr };
         std::shared_ptr<ListenServer> m_ListenServer{ nullptr };
 
+        std::string m_AuthHtmlPath{ };
+        std::string m_OutputDirPath{ };
         std::vector<std::shared_ptr<Service>> m_Services{ };
 
         int m_AuthenticatingCount{ 0 };

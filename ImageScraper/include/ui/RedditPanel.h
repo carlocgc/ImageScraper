@@ -1,9 +1,11 @@
 #pragma once
 
 #include "ui/IProviderPanel.h"
+#include "ui/SearchHistory.h"
 #include "imgui/imgui.h"
 
 #include <string>
+#include <memory>
 
 namespace ImageScraper
 {
@@ -13,13 +15,20 @@ namespace ImageScraper
         void             Update( ) override;
         ContentProvider  GetContentProvider( ) const override { return ContentProvider::Reddit; }
         bool             CanSignIn( ) const override { return true; }
-        bool             IsReadyToRun( ) const override { return !m_SubredditName.empty( ); }
+        bool             IsReadyToRun( ) const override;
         UserInputOptions BuildInputOptions( ) const override;
+        void             LoadPanelState( std::shared_ptr<JsonFile> appConfig ) override;
+        void             OnSearchCommitted( ) override;
 
     private:
-        std::string          m_SubredditName{ };
-        RedditScope          m_RedditScope{ RedditScope::Hot };
-        RedditScopeTimeFrame m_RedditScopeTimeFrame{ RedditScopeTimeFrame::All };
-        int                  m_RedditMaxMediaItems{ REDDIT_LIMIT_DEFAULT };
+        SearchHistory             m_SubredditHistory{ };
+        SearchHistory             m_UserHistory{ };
+        RedditTargetType          m_RedditTargetType{ RedditTargetType::Subreddit };
+        std::string               m_SubredditName{ };
+        std::string               m_UserName{ };
+        RedditScope               m_RedditScope{ RedditScope::Hot };
+        RedditScopeTimeFrame      m_RedditScopeTimeFrame{ RedditScopeTimeFrame::All };
+        int                       m_RedditMaxMediaItems{ REDDIT_LIMIT_DEFAULT };
+        std::shared_ptr<JsonFile> m_AppConfig{ };
     };
 }

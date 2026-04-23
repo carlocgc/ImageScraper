@@ -18,7 +18,7 @@ ImageScraper::FourChan::GetBoardsRequest::GetBoardsRequest( std::shared_ptr<IHtt
 
 ImageScraper::RequestResult ImageScraper::FourChan::GetBoardsRequest::Perform( const RequestOptions& options )
 {
-    DebugLog( "[%s] FourChan::GetBoardsRequest started!", __FUNCTION__ );
+    LogDebug( "[%s] FourChan::GetBoardsRequest started!", __FUNCTION__ );
 
     RequestResult result{ };
 
@@ -33,7 +33,7 @@ ImageScraper::RequestResult ImageScraper::FourChan::GetBoardsRequest::Perform( c
     {
         result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );
         result.m_Error.m_ErrorString = response.m_Error;
-        DebugLog( "[%s] FourChan::GetBoardsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] FourChan::GetBoardsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
@@ -41,11 +41,11 @@ ImageScraper::RequestResult ImageScraper::FourChan::GetBoardsRequest::Perform( c
 
     if( DownloadHelpers::IsFourChanResponseError( result ) )
     {
-        DebugLog( "[%s] FourChan::GetBoardsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] FourChan::GetBoardsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
-    DebugLog( "[%s] FourChan::GetBoardsRequest complete!", __FUNCTION__ );
+    LogDebug( "[%s] FourChan::GetBoardsRequest complete!", __FUNCTION__ );
     result.m_Success = true;
     return result;
 }

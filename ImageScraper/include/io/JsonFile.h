@@ -34,6 +34,11 @@ namespace ImageScraper
             m_Json[ key ] = value;
         }
 
+        bool RemoveValue( const std::string& key )
+        {
+            return m_Json.erase( key ) > 0;
+        }
+
         const Json& GetJson( ) const { return m_Json; };
         const std::string& GetFilePath( ) const { return m_FilePath; }
         void CreateFile( );

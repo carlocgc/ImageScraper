@@ -13,7 +13,7 @@ struct SwsContext;
 
 namespace ImageScraper
 {
-    // Wraps FFmpeg video decode for a single local file.
+    // Wraps FFmpeg decode for a single local file.
     // Open() finds the first video stream and prepares the decoder.
     // DecodeNextFrame() steps one frame at a time; returns false on EOF.
     // SeekToStart() rewinds for looping.
@@ -21,9 +21,23 @@ namespace ImageScraper
     class VideoPlayer
     {
     public:
+        VideoPlayer( ) = default;
         ~VideoPlayer( );
+        VideoPlayer( const VideoPlayer& ) = delete;
+        VideoPlayer& operator=( const VideoPlayer& ) = delete;
+        VideoPlayer( VideoPlayer&& other ) noexcept;
+        VideoPlayer& operator=( VideoPlayer&& other ) noexcept;
 
         bool Open( const std::string& filepath );
+
+        // Opens a local file, decodes the first frame into RGBA, and closes the decoder.
+        // Works for both videos and single-frame image formats supported by FFmpeg.
+        static bool DecodeFirstFrameFile(
+            const std::string& filepath,
+            std::vector<uint8_t>& rgbaOut,
+            int& width,
+            int& height,
+            bool* hasAudio = nullptr );
 
         // Decodes the next video frame into rgbaOut (width * height * 4 bytes, RGBA).
         // Returns true if a frame was produced, false on EOF or unrecoverable error.
@@ -32,10 +46,12 @@ namespace ImageScraper
         void SeekToStart( );
         void Close( );
 
-        bool   IsOpen( )   const { return m_FormatCtx != nullptr; }
-        int    GetWidth( )  const { return m_Width; }
-        int    GetHeight( ) const { return m_Height; }
-        double GetFPS( )    const { return m_Fps; }
+        bool   IsOpen( )      const { return m_FormatCtx != nullptr; }
+        bool   HasAudio( )    const { return m_HasAudio; }
+        int    GetWidth( )    const { return m_Width; }
+        int    GetHeight( )   const { return m_Height; }
+        double GetFPS( )      const { return m_Fps; }
+        double GetDuration( ) const; // total duration in seconds; 0 if unknown
 
     private:
         bool ConvertFrame( std::vector<uint8_t>& rgbaOut );
@@ -46,6 +62,7 @@ namespace ImageScraper
         AVFrame*         m_Frame      { nullptr };
         AVPacket*        m_Packet     { nullptr };
         int              m_VideoStream{ -1 };
+        bool             m_HasAudio   { false };
         int              m_Width      { 0 };
         int              m_Height     { 0 };
         double           m_Fps        { 30.0 };

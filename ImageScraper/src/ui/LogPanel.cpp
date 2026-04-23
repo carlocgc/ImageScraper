@@ -5,6 +5,12 @@ ImageScraper::LogPanel::LogPanel( int maxLogLines )
 {
 }
 
+void ImageScraper::LogPanel::LoadPanelState( std::shared_ptr<JsonFile> appConfig )
+{
+    m_AppConfig = std::move( appConfig );
+    m_WordWrap = LoadWordWrapEnabledFromConfig( m_AppConfig );
+}
+
 void ImageScraper::LogPanel::Update( )
 {
     ImGui::SetNextWindowSize( ImVec2( 1280, 360 ), ImGuiCond_FirstUseEver );
@@ -18,6 +24,13 @@ void ImageScraper::LogPanel::Update( )
     {
         ImGui::Checkbox( "Auto-scroll", &m_AutoScroll );
         ImGui::Checkbox( "Debug Logs", &m_DebugLogging );
+
+        bool wordWrapEnabled = m_WordWrap;
+        if( ImGui::Checkbox( "Word Wrap", &wordWrapEnabled ) )
+        {
+            SetWordWrapEnabled( wordWrapEnabled );
+        }
+
         ImGui::EndPopup( );
     }
 
@@ -36,7 +49,10 @@ void ImageScraper::LogPanel::Update( )
 
     ImGui::Separator( );
 
-    if( ImGui::BeginChild( "ScrollingRegion", ImVec2( 0, 0 ), false, ImGuiWindowFlags_HorizontalScrollbar ) )
+    const ImGuiWindowFlags scrollingRegionFlags = m_WordWrap ? ImGuiWindowFlags_None
+                                                             : ImGuiWindowFlags_HorizontalScrollbar;
+
+    if( ImGui::BeginChild( "ScrollingRegion", ImVec2( 0, 0 ), false, scrollingRegionFlags ) )
     {
         if( ImGui::BeginPopupContextWindow( ) )
         {
@@ -54,15 +70,19 @@ void ImageScraper::LogPanel::Update( )
             ImGui::LogToClipboard( );
         }
 
-        const int size = m_LogContent.GetSize( );
-        for( int i = 0; i < size; i++ )
+        if( m_WordWrap )
         {
-            if( m_LogContent[ i ].m_Level > m_LogLevel )
+            ImGui::PushTextWrapPos( 0.0f );
+        }
+
+        for( const LogLine& line : m_LogContent )
+        {
+            if( line.m_Level > m_LogLevel )
             {
                 continue;
             }
 
-            const char* item = m_LogContent[ i ].m_String.c_str( );
+            const char* item = line.m_String.c_str( );
             if( !m_Filter.PassFilter( item ) )
             {
                 continue;
@@ -70,12 +90,12 @@ void ImageScraper::LogPanel::Update( )
 
             ImVec4 color;
             bool has_color = false;
-            if( m_LogContent[ i ].m_Level == LogLevel::Error )
+            if( line.m_Level == LogLevel::Error )
             {
                 color = ImVec4( 1.0f, 0.4f, 0.4f, 1.0f );
                 has_color = true;
             }
-            else if( m_LogContent[ i ].m_Level == LogLevel::Warning )
+            else if( line.m_Level == LogLevel::Warning )
             {
                 color = ImVec4( 1.0f, 0.8f, 0.0f, 1.0f );
                 has_color = true;
@@ -97,6 +117,11 @@ void ImageScraper::LogPanel::Update( )
             {
                 ImGui::PopStyleColor( );
             }
+        }
+
+        if( m_WordWrap )
+        {
+            ImGui::PopTextWrapPos( );
         }
 
         if( copy_to_clipboard )
@@ -127,4 +152,28 @@ void ImageScraper::LogPanel::Log( const LogLine& line )
 void ImageScraper::LogPanel::SetRunning( bool running )
 {
     m_Running = running;
+}
+
+void ImageScraper::LogPanel::SetWordWrapEnabled( bool enabled )
+{
+    if( m_WordWrap == enabled )
+    {
+        return;
+    }
+
+    m_WordWrap = enabled;
+    PersistWordWrapState( );
+}
+
+void ImageScraper::LogPanel::PersistWordWrapState( )
+{
+    if( !m_AppConfig )
+    {
+        return;
+    }
+
+    if( !SaveWordWrapEnabledToConfig( m_AppConfig, m_WordWrap ) )
+    {
+        LogError( "[%s] Failed to save log panel word wrap state.", __FUNCTION__ );
+    }
 }

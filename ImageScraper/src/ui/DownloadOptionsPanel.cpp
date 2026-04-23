@@ -2,6 +2,7 @@
 #include "ui/RedditPanel.h"
 #include "ui/TumblrPanel.h"
 #include "ui/FourChanPanel.h"
+#include "ui/BlueskyPanel.h"
 #include "log/Logger.h"
 
 ImageScraper::DownloadOptionsPanel::DownloadOptionsPanel( const std::vector<std::shared_ptr<Service>>& services )
@@ -10,6 +11,23 @@ ImageScraper::DownloadOptionsPanel::DownloadOptionsPanel( const std::vector<std:
     m_ProviderPanels.push_back( std::make_unique<RedditPanel>( ) );
     m_ProviderPanels.push_back( std::make_unique<TumblrPanel>( ) );
     m_ProviderPanels.push_back( std::make_unique<FourChanPanel>( ) );
+    m_ProviderPanels.push_back( std::make_unique<BlueskyPanel>( ) );
+}
+
+void ImageScraper::DownloadOptionsPanel::LoadPanelState( std::shared_ptr<JsonFile> appConfig )
+{
+    for( auto& panel : m_ProviderPanels )
+    {
+        panel->LoadPanelState( appConfig );
+    }
+
+    m_AppConfig = appConfig;
+
+    int savedProvider = 0;
+    if( appConfig->GetValue<int>( "active_provider", savedProvider ) )
+    {
+        m_ContentProvider = savedProvider;
+    }
 }
 
 void ImageScraper::DownloadOptionsPanel::Update( )
@@ -33,6 +51,7 @@ void ImageScraper::DownloadOptionsPanel::Update( )
         UpdateProviderWidgets( );
         UpdateRunCancelButton( );
         UpdateSignInButton( );
+        UpdateWarningPopup( );
     }
 
     ImGui::End( );
@@ -62,10 +81,7 @@ void ImageScraper::DownloadOptionsPanel::Update( )
             IM_COL32( 100, 180, 255, 220 ) );
     }
 
-    if( HandleUserInput( ) )
-    {
-        SetInputState( InputState::Blocked );
-    }
+    HandleUserInput( );
 }
 
 void ImageScraper::DownloadOptionsPanel::SetInputState( InputState state )
@@ -75,23 +91,53 @@ void ImageScraper::DownloadOptionsPanel::SetInputState( InputState state )
 
 void ImageScraper::DownloadOptionsPanel::OnRunComplete( )
 {
+    FinishRun( );
     SetInputState( InputState::Free );
-    Reset( );
 }
 
 void ImageScraper::DownloadOptionsPanel::OnSignInComplete( ContentProvider provider )
 {
-    const int signingInProvider = m_SigningInProvider.load( );
+    CompleteSignIn( provider );
+}
 
-    if( signingInProvider != static_cast<int>( provider ) )
+void ImageScraper::DownloadOptionsPanel::BeginRun( )
+{
+    m_Running = true;
+    m_DownloadCancelled.store( false );
+}
+
+void ImageScraper::DownloadOptionsPanel::FinishRun( )
+{
+    m_Running = false;
+    m_StartProcess = false;
+    m_DownloadCancelled.store( false );
+}
+
+void ImageScraper::DownloadOptionsPanel::RequestCancel( )
+{
+    if( m_Running )
     {
-        ErrorLog( "[%s] Tried to complete sign in for an invalid provider!", __FUNCTION__ );
+        m_DownloadCancelled.store( true );
+    }
+}
+
+void ImageScraper::DownloadOptionsPanel::BeginSignIn( ContentProvider provider )
+{
+    m_SigningInProvider.store( static_cast<int>( provider ) );
+}
+
+void ImageScraper::DownloadOptionsPanel::CompleteSignIn( ContentProvider provider )
+{
+    const int signingInProvider = m_SigningInProvider.load( );
+    if( signingInProvider == INVALID_CONTENT_PROVIDER )
+    {
+        LogDebug( "[%s] Sign in completion ignored, no sign in is active.", __FUNCTION__ );
         return;
     }
 
-    if( signingInProvider == INVALID_CONTENT_PROVIDER )
+    if( signingInProvider != static_cast<int>( provider ) )
     {
-        ErrorLog( "[%s] Tried to complete sign in when no sign in was started!", __FUNCTION__ );
+        LogDebug( "[%s] Sign in completion ignored for inactive provider.", __FUNCTION__ );
         return;
     }
 
@@ -100,11 +146,17 @@ void ImageScraper::DownloadOptionsPanel::OnSignInComplete( ContentProvider provi
 
 void ImageScraper::DownloadOptionsPanel::UpdateProviderWidgets( )
 {
-    ImGui::BeginDisabled( m_InputState >= InputState::Blocked );
+    ImGui::BeginDisabled( IsInputBlocked( ) );
 
     if( ImGui::BeginChild( "ContentProvider", ImVec2( 500, 25 ), false ) )
     {
+        const int prevProvider = m_ContentProvider;
         ImGui::Combo( "Content Provider", &m_ContentProvider, s_ContentProviderStrings, IM_ARRAYSIZE( s_ContentProviderStrings ) );
+        if( m_ContentProvider != prevProvider && m_AppConfig )
+        {
+            m_AppConfig->SetValue<int>( "active_provider", m_ContentProvider );
+            m_AppConfig->Serialise( );
+        }
     }
 
     ImGui::EndChild( );
@@ -156,20 +208,28 @@ void ImageScraper::DownloadOptionsPanel::UpdateSignInButton( )
     {
         if( ImGui::Button( "Cancel Sign In", ImVec2( 120, 40 ) ) )
         {
-            m_SigningInProvider.store( INVALID_CONTENT_PROVIDER );
+            CancelSignIn( );
         }
     }
     else
     {
+        const bool canSignIn = service && service->HasSignInCredentials( );
+        ImGui::BeginDisabled( !canSignIn );
+
         if( ImGui::Button( "Sign In", ImVec2( 100, 40 ) ) )
         {
-            if( service )
+            if( service && service->OpenExternalAuth( ) )
             {
-                bool success = service->OpenExternalAuth( );
-                ( void )success;
-                m_SigningInProvider.store( static_cast<int>( m_ContentProvider ) );
+                BeginSignIn( static_cast<ContentProvider>( m_ContentProvider ) );
             }
         }
+
+        if( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) && !canSignIn )
+        {
+            ImGui::SetTooltip( "A Consumer Secret is required to sign in.\nAdd it in the Credentials panel." );
+        }
+
+        ImGui::EndDisabled( );
     }
 
     ImGui::EndDisabled( );
@@ -187,7 +247,7 @@ void ImageScraper::DownloadOptionsPanel::UpdateRunCancelButton( )
 
         if( ImGui::Button( "Cancel", ImVec2( 100, 40 ) ) )
         {
-            m_DownloadCancelled.store( true );
+            RequestCancel( );
         }
 
         ImGui::EndDisabled( );
@@ -196,7 +256,7 @@ void ImageScraper::DownloadOptionsPanel::UpdateRunCancelButton( )
 
 bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
 {
-    if( m_InputState >= InputState::Blocked )
+    if( IsInputBlocked( ) )
     {
         return false;
     }
@@ -206,15 +266,14 @@ bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
         return false;
     }
 
-    DebugLog( "[%s] Started processing user input...", __FUNCTION__ );
+    LogDebug( "[%s] Started processing user input...", __FUNCTION__ );
 
     m_StartProcess = false;
-    m_Running      = true;
 
     IProviderPanel* panel = GetActivePanel( );
     if( !panel )
     {
-        DebugLog( "[%s] Invalid ContentProvider, check ContentProvider constant", __FUNCTION__ );
+        LogDebug( "[%s] Invalid ContentProvider, check ContentProvider constant", __FUNCTION__ );
         return false;
     }
 
@@ -223,25 +282,30 @@ bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
         return false;
     }
 
+    const std::shared_ptr<Service> service = GetCurrentService( );
+    if( service && !service->HasRequiredCredentials( ) )
+    {
+        WarningLog( "[%s] Missing required credentials for this provider, please fill in the Credentials panel.", __FUNCTION__ );
+        OpenWarning( "Missing credentials for this provider.\nPlease fill in the required fields in the Credentials panel." );
+        return false;
+    }
+
     const UserInputOptions inputOptions = panel->BuildInputOptions( );
 
-    for( auto service : m_Services )
+    for( const auto& svc : m_Services )
     {
-        if( service->HandleUserInput( inputOptions ) )
+        if( svc->HandleUserInput( inputOptions ) )
         {
-            DebugLog( "[%s] User input handled!", __FUNCTION__ );
+            LogDebug( "[%s] User input handled!", __FUNCTION__ );
+            panel->OnSearchCommitted( );
+            BeginRun( );
+            SetInputState( InputState::Blocked );
             return true;
         }
     }
 
-    DebugLog( "[%s] User input not handled, check for missing services!", __FUNCTION__ );
+    LogDebug( "[%s] User input not handled, check for missing services!", __FUNCTION__ );
     return false;
-}
-
-void ImageScraper::DownloadOptionsPanel::Reset( )
-{
-    m_Running = false;
-    m_DownloadCancelled.store( false );
 }
 
 void ImageScraper::DownloadOptionsPanel::CancelSignIn( )
@@ -260,6 +324,38 @@ ImageScraper::IProviderPanel* ImageScraper::DownloadOptionsPanel::GetActivePanel
         }
     }
     return nullptr;
+}
+
+void ImageScraper::DownloadOptionsPanel::UpdateWarningPopup( )
+{
+    if( m_OpenWarningPopup )
+    {
+        ImGui::OpenPopup( "Warning##popup" );
+        m_OpenWarningPopup = false;
+    }
+
+    ImGui::SetNextWindowSize( ImVec2( 340, 0 ), ImGuiCond_Always );
+    if( ImGui::BeginPopupModal( "Warning##popup", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize ) )
+    {
+        ImGui::Spacing( );
+        ImGui::TextWrapped( "%s", m_WarningMessage.c_str( ) );
+        ImGui::Spacing( );
+
+        const float buttonW = 80.0f;
+        ImGui::SetCursorPosX( ( ImGui::GetContentRegionAvail( ).x - buttonW ) * 0.5f );
+        if( ImGui::Button( "OK", ImVec2( buttonW, 0 ) ) )
+        {
+            ImGui::CloseCurrentPopup( );
+        }
+
+        ImGui::EndPopup( );
+    }
+}
+
+void ImageScraper::DownloadOptionsPanel::OpenWarning( const std::string& message )
+{
+    m_WarningMessage    = message;
+    m_OpenWarningPopup  = true;
 }
 
 std::shared_ptr<ImageScraper::Service> ImageScraper::DownloadOptionsPanel::GetCurrentService( ) const

@@ -18,7 +18,7 @@ ImageScraper::Tumblr::RetrievePublishedPostsRequest::RetrievePublishedPostsReque
 
 ImageScraper::RequestResult ImageScraper::Tumblr::RetrievePublishedPostsRequest::Perform( const RequestOptions& options )
 {
-    DebugLog( "[%s] Tumblr::RetrievePublishedPostsRequest started!", __FUNCTION__ );
+    LogDebug( "[%s] Tumblr::RetrievePublishedPostsRequest started!", __FUNCTION__ );
 
     RequestResult result{ };
 
@@ -29,7 +29,12 @@ ImageScraper::RequestResult ImageScraper::Tumblr::RetrievePublishedPostsRequest:
     request.m_UserAgent = options.m_UserAgent;
     request.m_CaBundle = options.m_CaBundle;
 
-    DebugLog( "[%s] Tumblr::RetrievePublishedPostsRequest, URL: %s", __FUNCTION__, url.c_str( ) );
+    if( !options.m_AccessToken.empty( ) )
+    {
+        request.m_Headers = { "Authorization: Bearer " + options.m_AccessToken };
+    }
+
+    LogDebug( "[%s] Tumblr::RetrievePublishedPostsRequest, URL: %s", __FUNCTION__, url.c_str( ) );
 
     const HttpResponse response = m_HttpClient->Get( request );
 
@@ -37,7 +42,7 @@ ImageScraper::RequestResult ImageScraper::Tumblr::RetrievePublishedPostsRequest:
     {
         result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );
         result.m_Error.m_ErrorString = response.m_Error;
-        DebugLog( "[%s] Tumblr::RetrievePublishedPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] Tumblr::RetrievePublishedPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
@@ -45,11 +50,11 @@ ImageScraper::RequestResult ImageScraper::Tumblr::RetrievePublishedPostsRequest:
 
     if( DownloadHelpers::IsTumblrResponseError( result ) )
     {
-        DebugLog( "[%s] Tumblr::RetrievePublishedPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] Tumblr::RetrievePublishedPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
-    DebugLog( "[%s] Tumblr::RetrievePublishedPostsRequest complete!", __FUNCTION__ );
+    LogDebug( "[%s] Tumblr::RetrievePublishedPostsRequest complete!", __FUNCTION__ );
     result.m_Success = true;
     return result;
 }

@@ -11,23 +11,24 @@
 #include <winsock2.h>
 #include <WS2tcpip.h>
 
-void ImageScraper::ListenServer::Init( std::vector<std::shared_ptr<Service>> services, int port )
+void ImageScraper::ListenServer::Init( std::vector<std::shared_ptr<Service>> services, int port, const std::string& authHtmlPath, std::shared_ptr<IServiceSink> sink )
 {
     m_Services = services;
     m_Port = port;
+    m_Sink = sink;
     m_Initialised = true;
 
     std::stringstream htmlContent{ };
-    std::ifstream htmlFile( "auth.html" );
+    std::ifstream htmlFile( authHtmlPath );
     if( htmlFile.is_open( ) )
     {
         htmlContent << htmlFile.rdbuf( );
-        m_AuthHtml = htmlContent.str( );
+        m_AuthHtmlTemplate = htmlContent.str( );
         htmlFile.close( );
     }
     else
     {
-        m_AuthHtml = "<html><body><h1>Authorization complete!</h1></body></html>";
+        m_AuthHtmlTemplate = "<html><body><h1>Authorization complete!</h1></body></html>";
     }
 }
 
@@ -35,37 +36,37 @@ void ImageScraper::ListenServer::Start( )
 {
     if( !m_Initialised )
     {
-        ErrorLog( "[%s] ListenServer not initialised, call Init() before calling Start()!", __FUNCTION__ );
+        LogError( "[%s] ListenServer not initialised, call Init() before calling Start()!", __FUNCTION__ );
         return;
     }
 
     auto OnMessageReceived = [ this ]( const std::string message )
         {
-            DebugLog( "[%s] ListenServer message received, message: %s", __FUNCTION__, message.c_str( ) );
+            LogDebug( "[%s] ListenServer message received, message: %s", __FUNCTION__, message.c_str( ) );
 
             for( const auto& service : m_Services )
             {
                 if( service->HandleExternalAuth( message ) )
                 {
-                    DebugLog( "[%s] ListenServer auth response handled!", __FUNCTION__ );
+                    LogDebug( "[%s] ListenServer auth response handled!", __FUNCTION__ );
                     return;
                 }
             }
 
-            DebugLog( "[%s] ListenServer auth response not handled!", __FUNCTION__ );
+            LogDebug( "[%s] ListenServer auth response not handled!", __FUNCTION__ );
         };
 
     auto OnError = [ this ]( const std::string error )
         {
-            DebugLog( "[%s] ListenServer failed, error: %s", __FUNCTION__, error.c_str( ) );
+            LogDebug( "[%s] ListenServer failed, error: %s", __FUNCTION__, error.c_str( ) );
 
             if( m_CurrentRetries >= m_MaxRetries )
             {
-                DebugLog( "[%s] ListenServer max retries reached!", __FUNCTION__ );
+                LogDebug( "[%s] ListenServer max retries reached!", __FUNCTION__ );
                 return;
             }
 
-            DebugLog( "[%s] ListenServer retrying startup: %i/%i !", __FUNCTION__, m_CurrentRetries, m_MaxRetries );
+            LogDebug( "[%s] ListenServer retrying startup: %i/%i !", __FUNCTION__, m_CurrentRetries, m_MaxRetries );
             ++m_CurrentRetries;
             Start( );
         };
@@ -185,23 +186,59 @@ void ImageScraper::ListenServer::Start( )
                     return;
                 }
 
-                DebugLog( "[%s] ListenServer connection established!", __FUNCTION__ );
+                LogDebug( "[%s] ListenServer connection established!", __FUNCTION__ );
 
                 // Now receive and process the HTTP response from the browser
                 char buffer[ 4096 ];
                 int bytesReceived = recv( clientSocket, buffer, sizeof( buffer ), 0 );
                 std::string response( buffer, bytesReceived );
 
-                DebugLog( "[%s] ListenServer bytes received!, bytes: %i, data: %s, ", __FUNCTION__, bytesReceived, response.c_str( ) );
+                LogDebug( "[%s] ListenServer bytes received!, bytes: %i, data: %s, ", __FUNCTION__, bytesReceived, response.c_str( ) );
 
-                const int contentLength = static_cast< int >( m_AuthHtml.length( ) );
+                // Build the dynamic auth page - substitute brand colour and service name
+                // based on whichever provider is currently signing in.
+                std::string brandColor = "#888888";
+                std::string serviceName = "Service";
+
+                if( auto sink = m_Sink.lock( ) )
+                {
+                    const int signingInProvider = sink->GetSigningInProvider( );
+                    if( signingInProvider != INVALID_CONTENT_PROVIDER )
+                    {
+                        for( const auto& svc : m_Services )
+                        {
+                            if( static_cast<int>( svc->GetContentProvider( ) ) == signingInProvider )
+                            {
+                                brandColor  = svc->GetBrandColor( );
+                                serviceName = svc->GetProviderDisplayName( );
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                auto ReplaceAll = []( std::string& str, const std::string& from, const std::string& to )
+                    {
+                        std::size_t pos = 0;
+                        while( ( pos = str.find( from, pos ) ) != std::string::npos )
+                        {
+                            str.replace( pos, from.length( ), to );
+                            pos += to.length( );
+                        }
+                    };
+
+                std::string authHtml = m_AuthHtmlTemplate;
+                ReplaceAll( authHtml, "{{BRAND_COLOR}}",  brandColor );
+                ReplaceAll( authHtml, "{{SERVICE_NAME}}", serviceName );
+
+                const int contentLength = static_cast< int >( authHtml.length( ) );
 
                 std::string httpResponse = "HTTP/1.1 200 OK\r\n"
                     "Content-Type: text/html\r\n"
                     "Content-Length: " + std::to_string( contentLength ) + "\r\n"
                     "\r\n";
 
-                httpResponse += m_AuthHtml;
+                httpResponse += authHtml;
 
                 int bytesSent = send( clientSocket, httpResponse.c_str( ), static_cast< int >( httpResponse.length( ) ), 0 );
                 if( bytesSent == SOCKET_ERROR )
@@ -210,10 +247,10 @@ void ImageScraper::ListenServer::Start( )
                 }
                 else
                 {
-                    DebugLog( "[%s] ListenServer sent http response successfully!", __FUNCTION__ );
+                    LogDebug( "[%s] ListenServer sent http response successfully!", __FUNCTION__ );
                 }                
 
-                DebugLog( "[%s] ListenServer Response: ", __FUNCTION__, response.c_str( ) );
+                LogDebug( "[%s] ListenServer Response: ", __FUNCTION__, response.c_str( ) );
 
                 auto messageTask = TaskManager::Instance( ).SubmitMain( OnMessageReceived, response );
                 ( void )messageTask;

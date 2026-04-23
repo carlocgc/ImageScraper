@@ -20,21 +20,21 @@ ImageScraper::Reddit::AppOnlyAuthRequest::AppOnlyAuthRequest( std::shared_ptr<IH
 
 ImageScraper::RequestResult ImageScraper::Reddit::AppOnlyAuthRequest::Perform( const RequestOptions& options )
 {
-    DebugLog( "[%s] AppOnlyAuthRequest started!", __FUNCTION__ );
+    LogDebug( "[%s] AppOnlyAuthRequest started!", __FUNCTION__ );
 
     RequestResult result{ };
 
     if( options.m_ClientId == "" )
     {
         result.SetError( ResponseErrorCode::InternalServerError );
-        DebugLog( "[%s] AppOnlyAuthRequest failed, Client ID not provided.", __FUNCTION__ );
+        LogDebug( "[%s] AppOnlyAuthRequest failed, Client ID not provided.", __FUNCTION__ );
         return result;
     }
 
     if( options.m_ClientSecret == "" )
     {
         result.SetError( ResponseErrorCode::InternalServerError );
-        DebugLog( "[%s] AppOnlyAuthRequest failed, Client Secret not provided.", __FUNCTION__ );
+        LogDebug( "[%s] AppOnlyAuthRequest failed, Client Secret not provided.", __FUNCTION__ );
         return result;
     }
 
@@ -57,7 +57,7 @@ ImageScraper::RequestResult ImageScraper::Reddit::AppOnlyAuthRequest::Perform( c
     {
         result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );
         result.m_Error.m_ErrorString = response.m_Error;
-        DebugLog( "[%s] AppOnlyAuthRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] AppOnlyAuthRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
@@ -65,11 +65,11 @@ ImageScraper::RequestResult ImageScraper::Reddit::AppOnlyAuthRequest::Perform( c
 
     if( DownloadHelpers::IsRedditResponseError( result ) )
     {
-        DebugLog( "[%s] AppOnlyAuthRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] AppOnlyAuthRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
-    DebugLog( "[%s] AppOnlyAuthRequest complete!", __FUNCTION__ );
+    LogDebug( "[%s] AppOnlyAuthRequest complete!", __FUNCTION__ );
     result.m_Success = true;
     return result;
 }

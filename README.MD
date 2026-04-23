@@ -1,168 +1,151 @@
+<div align="center">
+
 # ImageScraper
 
+[![CI](https://github.com/carlocgc/ImageScraper/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/carlocgc/ImageScraper/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/carlocgc/ImageScraper?include_prereleases)](https://github.com/carlocgc/ImageScraper/releases)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Language](https://img.shields.io/badge/language-C%2B%2B17-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-A Windows desktop application for downloading media from social platforms. Built with C++17, Dear ImGui, and OpenGL — no Electron, no web stack.
+Native Windows desktop application for downloading and previewing media from Reddit, Tumblr, 4chan, and Bluesky.
 
-![Screenshot](ImageScraper/data/screenshot.png)
+![ImageScraper screenshot](ImageScraper/data/screenshot.png)
 
----
+</div>
 
-## Features
+## Overview
 
-### Media & Playback
-- Downloads images, GIFs, videos, and animated content from Reddit, Tumblr, and 4chan
-- In-app media preview with animated GIF frame stepping
-- Video playback (MP4, WebM) via FFmpeg — decoded and rendered directly to an OpenGL texture
-- Thumbnail previews on hover in download history
+ImageScraper is a native C++17 desktop application built with Dear ImGui, GLFW, and OpenGL. The project focuses on a responsive local-first experience, clear service boundaries, and a testable architecture.
 
-### Networking
-- OAuth2 authentication flow for Reddit (full PKCE redirect flow via embedded HTTP listener)
-- Retry decorator with exponential backoff and 429 rate-limit handling
-- Configurable download limits, sort scopes, and timeframes per provider
-- TLS via libcurl with bundled CA certificate
+## Highlights
 
-### UI
-- Dockable panel layout built with Dear ImGui
-- Live download progress bars (per-file and total)
-- Searchable, scrollable download history with timestamps and source URLs
-- Sign-in/sign-out with authenticated username badge
+- Download images, GIFs, galleries, and videos from supported providers
+- Preview media inside the app, including animated GIF playback and FFmpeg-backed video playback
+- Track download progress and keep a searchable local download history with hover thumbnails
+- Sign in to Reddit and Tumblr through a shared OAuth2 flow, while still supporting anonymous modes where available
+- Keep the UI responsive by routing network, thumbnail, and preview work through background tasks and main-thread dispatch
 
-### Architecture
-- Abstract `IHttpClient` interface with a `CurlHttpClient` implementation and a `RetryHttpClient` decorator — HTTP logic is centralised and mockable
-- `ThreadPool` with per-context FIFO queues and a main-thread dispatch queue for UI callbacks
-- `IUiPanel` / `IProviderPanel` interface hierarchy — adding a new platform means adding a panel class, not editing core files
-- `IServiceSink` decouples service callbacks from the UI layer
-- Unit test suite (Catch2) covering request parsing, URL utilities, thread pool lifecycle, and HTTP response handling
+## Supported Providers
 
----
+| Provider | Authentication | Media Types | Status |
+| --- | --- | --- | --- |
+| Reddit | OAuth2 sign-in, app-only auth | Images, GIFs, videos, galleries from subreddits and user submissions | Supported |
+| Tumblr | OAuth2 sign-in, API key mode | Images, videos | Supported |
+| 4chan | None required | Images, GIFs | Supported |
+| Bluesky | None required | Images, videos | Supported |
 
-## Supported Platforms
+## Technical Highlights
 
-| Platform | Auth | Media Types |
-|---|---|---|
-| Reddit | OAuth2 | Images, GIFs, Videos, Galleries |
-| Tumblr | API Key | Images, Videos |
-| 4chan | None required | Images, GIFs |
-| Discord | OAuth2 (in progress) | — |
+- **Native desktop stack**: C++17, Dear ImGui, GLFW, OpenGL, and FFmpeg
+- **Shared HTTP layer**: `IHttpClient`, `CurlHttpClient`, and `RetryHttpClient` keep request code testable and reusable
+- **Reusable OAuth implementation**: `OAuthClient` centralizes browser launch, redirect handling, token exchange, refresh, and persistence for OAuth-backed providers
+- **Threaded work orchestration**: `TaskManager` and the thread pool move downloads, thumbnail decoding, and preview preparation off the UI thread
+- **Modular UI and service boundaries**: provider panels, services, and sink interfaces keep platform-specific logic isolated
+- **Automated validation**: Catch2 unit tests and GitHub Actions CI cover core request, parsing, utility, and threading behavior
 
----
-
-## Getting Started
+## Build
 
 ### Prerequisites
 
-- **Visual Studio 2022** with the **Desktop development with C++** workload
-- **Windows 10 SDK** (10.0)
+- Windows 10 or Windows 11
+- Visual Studio 2022 with the **Desktop development with C++** workload
+- Windows 10 SDK
 
-All dependencies (libcurl, GLFW, curlpp, FFmpeg, Dear ImGui, nlohmann/json, stb_image, cppcodec) are vendored in `ImageScraper/include/` and `ImageScraper/lib/` — no separate installs required.
+Third-party libraries are vendored under `ImageScraper/include/` and `ImageScraper/lib/`, so there is no separate package-manager setup step.
 
-### Building
+### Visual Studio
 
-1. Clone the repository
-2. Open `ImageScraper.sln` in Visual Studio 2022
-3. Set the solution platform to **x64**
-4. Build → **Build Solution** (`Ctrl+Shift+B`)
+1. Open `ImageScraper.sln` in Visual Studio 2022.
+2. Select `Debug|x64` or `Release|x64`.
+3. Set `ImageScraper` as the startup project.
+4. Build the solution.
 
-The build output lands in `bin/ImageScraper/x64/Debug/` or `.../Release/`. Required DLLs and data files are copied there automatically by a post-build event.
+Build outputs land in `bin/ImageScraper/x64/<Configuration>/`. Required DLLs and runtime data files are copied there automatically.
 
----
+### PowerShell
+
+```powershell
+& 'C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' `
+  'ImageScraper.sln' `
+  /p:Configuration=Debug `
+  /p:Platform=x64 `
+  /t:ImageScraper `
+  /m /nologo
+```
+
+Swap `Debug` for `Release` or `/t:ImageScraper` for `/t:ImageScraperTests` as needed.
 
 ## Configuration
 
-API credentials are stored in `ImageScraper/data/config.json`, which is gitignored. Create it by copying the template:
+Credentials are entered through the in-app **Credentials** panel. User credentials are stored in `config.json` next to the executable, so normal use does not require manual JSON editing.
 
-```
-copy ImageScraper\data\config.template.json ImageScraper\data\config.json
-```
+### Provider setup
 
-Then fill in credentials for each platform you want to use:
+**Reddit**
 
-### ![Reddit](https://img.shields.io/badge/Reddit-%23FF4500.svg?style=flat&logo=Reddit&logoColor=white)
+Reddit access currently requires valid existing API credentials. If you have access:
 
-1. Create a web app at https://www.reddit.com/prefs/apps
-2. Set the redirect URI to `http://localhost:8080`
-3. Copy the **client ID** and **client secret** into `config.json`
+1. Create or reuse a Reddit web app.
+2. Set the redirect URI to `http://localhost:8080`.
+3. Enter the client ID and client secret in the **Credentials** panel.
 
-### ![Tumblr](https://img.shields.io/badge/Tumblr-%2336465D.svg?style=flat&logo=Tumblr&logoColor=white)
+**Tumblr**
 
-1. Register an app at https://www.tumblr.com/oauth/apps
-2. Copy the **OAuth Consumer Key** into `config.json`
+1. Register an app at [tumblr.com/oauth/apps](https://www.tumblr.com/oauth/apps).
+2. Enter credentials in the **Credentials** panel.
 
-### 4chan
+- Consumer key only enables API key mode for anonymous access.
+- Consumer key and consumer secret enable OAuth sign-in.
 
-No setup required — the API is fully public and anonymous.
+**4chan**
 
----
+No setup is required.
 
-## Development
+### Local developer convenience
 
-### Debug Working Directory
+For local development, `ImageScraper/data/config.json` is gitignored and can be copied into the output directory during debug builds. The **Save credentials to source data/** checkbox in the Credentials panel keeps that backup file up to date on your machine without committing secrets to the repository.
 
-Set the debugger working directory to `$(TargetDir)` for all configurations and platforms. This ensures the app can locate its data files (`config.json`, `auth.html`, `imgui.ini`) at runtime.
+## Testing
 
-In Visual Studio: right-click the `ImageScraper` project → **Properties** → **Debugging** → **Working Directory** → `$(TargetDir)`.
+The recommended local workflow is Visual Studio Test Explorer with the **Test Adapter for Catch2** extension by JohnnyHendriks. `ImageScraper.runsettings` is already included for that setup.
 
-### Running Tests
+If the **Class** column is empty in Test Explorer, that is expected: Catch2 tests in this project are free functions. Group by traits or tags instead.
 
-The `ImageScraperTests` project runs automatically as a post-build event when building the main project. To run tests in isolation, set `ImageScraperTests` as the startup project and build it directly.
+### Command-line test run
 
-### Updating the CA Certificate
+```powershell
+& 'C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' `
+  'ImageScraper.sln' `
+  /p:Configuration=Debug `
+  /p:Platform=x64 `
+  /t:ImageScraperTests `
+  /m /nologo
 
-libcurl's TLS verification uses a bundled CA certificate. To update it:
-
-```
-curl -o ImageScraper/lib/Debug/curl-ca-bundle.crt https://curl.se/ca/cacert.pem
-curl -o ImageScraper/lib/Release/curl-ca-bundle.crt https://curl.se/ca/cacert.pem
-```
-
-### Branch Workflow
-
-```
-main          ← stable releases only
-  └── development  ← integration branch, always buildable
-        └── feature/...  ← one branch per feature or fix
+.\bin\ImageScraperTests\x64\Debug\ImageScraperTests.exe
 ```
 
-All work happens on a `feature/` or `fix/` branch off `development`. Open a PR against `development` when ready; merge to `main` for releases.
+CI runs the same test binary explicitly after the build step, rather than launching tests as a post-build side effect.
 
----
+## Project Layout
 
-## AI-Assisted Development
+- `ImageScraper/` - application source, UI panels, provider services, networking, and media preview code
+- `ImageScraperTests/` - Catch2 unit tests for request handling, utilities, threading, JSON IO, and shared helpers
+- `docs/` - refactor notes and longer-form engineering documentation
+- `.github/workflows/ci.yml` - Windows CI build and test workflow
 
-This project was developed with [Claude Code](https://claude.ai/code) (Anthropic) as an AI pair programmer throughout. Claude was used for:
+## Current Scope
 
-- **Architecture design** — designing the `IHttpClient` abstraction, `RetryHttpClient` decorator pattern, `IUiPanel`/`IServiceSink` interface hierarchy, and `ThreadPool` improvements
-- **Refactoring** — breaking the monolithic `FrontEnd` class into composable panel classes, extracting testable utility headers from service code
-- **Test-driven development** — writing the Catch2 unit test suite covering request parsing, URL utilities, threading, and HTTP response handling
-- **Feature implementation** — FFmpeg video playback integration, OAuth2 sign-in/sign-out flow, animated GIF rendering, download history panel
-- **Bug diagnosis** — identifying and fixing an `sws_scale` heap corruption caused by unpadded output buffer allocation
-- **Planning** — maintaining `PLAN.md` as a living roadmap across phases of development
+- Windows only
+- Native desktop UI only, no web version
+- Reddit and Tumblr require user-supplied credentials for authenticated access
 
-All code was reviewed and approved by the author before merging. Claude operated on isolated git worktrees, with changes integrated via pull request.
+## Third-Party Software
 
----
+Key libraries used by the project include FFmpeg, Dear ImGui, GLFW, libcurl, curlpp, nlohmann/json, cppcodec, and Catch2.
 
-## Third-Party Libraries
-
-| Library | Version | License |
-|---|---|---|
-| [FFmpeg](https://ffmpeg.org) | 6.x | LGPL 2.1+ |
-| [Dear ImGui](https://github.com/ocornut/imgui) | 1.89.5 | MIT |
-| [GLFW](https://github.com/glfw/glfw) | 3.3 | zlib/libpng |
-| [libcurl](https://curl.se/libcurl/) | 8.0.1 | curl (MIT-style) |
-| [curlpp](https://github.com/jpbarrette/curlpp) | 0.8.1 | MIT |
-| [nlohmann/json](https://github.com/nlohmann/json) | 3.11.2 | MIT |
-| [stb_image](https://github.com/nothings/stb) | 2.30 | MIT / Public Domain |
-| [cppcodec](https://github.com/tplgy/cppcodec) | — | MIT |
-| [Catch2](https://github.com/catchorg/Catch2) | 3.14.0 | BSL-1.0 |
-
-Full license texts: [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)
-
----
+Full third-party license information is available in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 ## License
 
-This project is licensed under the MIT License — see [LICENSE.txt](LICENSE.txt) for details.
+This project is licensed under the MIT License. See [LICENSE.txt](LICENSE.txt) for details.

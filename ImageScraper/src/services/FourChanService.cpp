@@ -11,8 +11,8 @@
 
 #include <string>
 
-ImageScraper::FourChanService::FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<IServiceSink> sink )
-    : Service( ContentProvider::FourChan, appConfig, userConfig, caBundle, sink )
+ImageScraper::FourChanService::FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
+    : Service( ContentProvider::FourChan, appConfig, userConfig, caBundle, outputDir, sink )
 {
 }
 
@@ -29,7 +29,7 @@ bool ImageScraper::FourChanService::HandleUserInput( const UserInputOptions& opt
 
 bool ImageScraper::FourChanService::OpenExternalAuth( )
 {
-    ErrorLog( "[%s] Sign in not implemented for this provider!", __FUNCTION__ );
+    LogError( "[%s] Sign in not implemented for this provider!", __FUNCTION__ );
     return false;
 }
 
@@ -56,7 +56,7 @@ bool ImageScraper::FourChanService::IsCancelled( )
 void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inputOptions )
 {
     InfoLog( "[%s] Starting 4chan media download!", __FUNCTION__ );
-    DebugLog( "[%s] Board: %s", __FUNCTION__, inputOptions.m_FourChanBoard.c_str( ) );
+    LogDebug( "[%s] Board: %s", __FUNCTION__, inputOptions.m_FourChanBoard.c_str( ) );
 
     auto onComplete = [ this ]( int filesDownloaded )
     {
@@ -66,7 +66,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
     auto onFail = [ this ]( )
     {
-        ErrorLog( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
+        LogError( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
         m_Sink->OnRunComplete( );
     };
 
@@ -85,18 +85,18 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
             getBoardOptions.m_CaBundle = m_CaBundle;
             getBoardOptions.m_UserAgent = m_UserAgent;
 
-            FourChan::GetBoardsRequest getBoardRequest{ };
+            FourChan::GetBoardsRequest getBoardRequest{ m_HttpClient };
             RequestResult getBoardResult = getBoardRequest.Perform( getBoardOptions );
 
             if( !getBoardResult.m_Success )
             {
-                ErrorLog( "[%s] Failed to get 4chan board data, error: %s", __FUNCTION__, getBoardResult.m_Error.m_ErrorString.c_str( ) );
+                LogError( "[%s] Failed to get 4chan board data, error: %s", __FUNCTION__, getBoardResult.m_Error.m_ErrorString.c_str( ) );
                 TaskManager::Instance( ).SubmitMain( onFail );
                 return;
             }
 
             InfoLog( "[%s] 4chan boards retrieved successfully.", __FUNCTION__ );
-            DebugLog( "[%s] Response: %s", __FUNCTION__, getBoardResult.m_Response.c_str( ) );
+            LogDebug( "[%s] Response: %s", __FUNCTION__, getBoardResult.m_Response.c_str( ) );
 
             // Get page count for board
 
@@ -105,7 +105,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
             if( pages <= 0 )
             {
-                DebugLog( "[%s] Board %s contained no pages, nothing to download...", __FUNCTION__, options.m_FourChanBoard.c_str( ) );
+                LogDebug( "[%s] Board %s contained no pages, nothing to download...", __FUNCTION__, options.m_FourChanBoard.c_str( ) );
                 TaskManager::Instance( ).SubmitMain( onFail );
                 return;
             }
@@ -128,7 +128,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 getThreadOptions.m_UserAgent = m_UserAgent;
                 getThreadOptions.m_UrlExt = options.m_FourChanBoard + '/' + std::to_string( i ) + ".json";
 
-                FourChan::GetThreadsRequest getThreadRequest{ };
+                FourChan::GetThreadsRequest getThreadRequest{ m_HttpClient };
                 RequestResult getThreadResult = getThreadRequest.Perform( getThreadOptions );
 
                 if( !getThreadResult.m_Success )
@@ -138,7 +138,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 }
 
                 InfoLog( "[%s] Threads on page %i retrieved successfully.", __FUNCTION__, i );
-                DebugLog( "[%s] Response: %s", __FUNCTION__, getThreadResult.m_Response.c_str( ) );
+                LogDebug( "[%s] Response: %s", __FUNCTION__, getThreadResult.m_Response.c_str( ) );
 
                 json getThreadResponse = json::parse( getThreadResult.m_Response );
                 std::vector<std::string> filenames{ };
@@ -174,74 +174,23 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
             // Create download directory
 
-            const std::filesystem::path dir = std::filesystem::current_path( ) / "Downloads" / "4chan" / options.m_FourChanBoard;
+            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Downloads" / "4chan" / options.m_FourChanBoard;
             const std::string dirStr = dir.generic_string( );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
-                ErrorLog( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );
+                LogError( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );
                 TaskManager::Instance( ).SubmitMain( onFail );
                 return;
             }
 
-            InfoLog( "[%s] Started downloading content, urls: %i", __FUNCTION__, mediaUrls.size( ) );
-
-            int filesDownloaded = 0;
-
-            const int totalDownloads = static_cast< int >( mediaUrls.size( ) );
-
-            std::vector<char> buffer{ };
-
-            // Download everything
-            for( std::string& url : mediaUrls )
+            const std::optional<int> filesDownloaded = DownloadMediaUrls( mediaUrls, dir );
+            if( !filesDownloaded.has_value( ) )
             {
-                if( IsCancelled( ) )
-                {
-                    InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
-                    TaskManager::Instance( ).SubmitMain( onComplete, 0 );
-                    return;
-                }
-
-                std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
-
-                DownloadOptions downloadOptions{ };
-                downloadOptions.m_CaBundle = m_CaBundle;
-                downloadOptions.m_Url = url;
-                downloadOptions.m_UserAgent = m_UserAgent;
-                downloadOptions.m_BufferPtr = &buffer;
-
-                DownloadRequest request{ m_Sink };
-                RequestResult result = request.Perform( downloadOptions );
-                if( !result.m_Success )
-                {
-                    ErrorLog( "[%s] Download failed, error: %s, url: %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ), url.c_str( ) );
-                    continue;
-                }
-
-                const std::string filename = DownloadHelpers::ExtractFileNameAndExtFromUrl( downloadOptions.m_Url );
-                const std::string filepath = dirStr + "/" + filename;
-
-                std::ofstream outfile{ filepath, std::ios::binary };
-                if( !outfile.is_open( ) )
-                {
-                    ErrorLog( "[%s] Download failed, could not open file for write: %s", __FUNCTION__, filepath.c_str( ) );
-                    continue;
-                }
-
-                outfile.write( buffer.data( ), buffer.size( ) );
-                outfile.close( );
-
-                m_Sink->OnFileDownloaded( filepath, url );
-
-                buffer.clear( );
-
-                ++filesDownloaded;
-
-                m_Sink->OnTotalDownloadProgress( filesDownloaded, totalDownloads );
-
-                InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, totalDownloads, filepath.c_str( ) );
+                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                return;
             }
 
-            TaskManager::Instance( ).SubmitMain( onComplete, filesDownloaded );
+            TaskManager::Instance( ).SubmitMain( onComplete, *filesDownloaded );
         } );
 
     ( void )task;

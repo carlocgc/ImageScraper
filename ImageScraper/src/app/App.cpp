@@ -7,6 +7,7 @@
 #include "services/RedditService.h"
 #include "services/TumblrService.h"
 #include "services/FourChanService.h"
+#include "services/BlueskyService.h"
 #include "async/TaskManager.h"
 #include "config/Config.h"
 #include "ui/FrontEnd.h"
@@ -15,6 +16,7 @@
 
 #include <string>
 #include <chrono>
+#include <windows.h>
 
 #define UI_MAX_LOG_LINES 10000
 #define LISTEN_SERVER_PORT 8080
@@ -24,17 +26,24 @@
 const std::string ImageScraper::App::s_UserConfigFile = "config.json";
 const std::string ImageScraper::App::s_AppConfigFile = "ImageScraper/config.json";
 const std::string ImageScraper::App::s_CaBundleFile = "curl-ca-bundle.crt";
+const std::string ImageScraper::App::s_AuthHtmlFile = "auth.html";
 
 ImageScraper::App::App( )
 {
     Logger::AddLogger( std::make_shared<DevLogger>( ) );
     Logger::AddLogger( std::make_shared<ConsoleLogger>( ) );
 
+    char exePath[ MAX_PATH ];
+    GetModuleFileNameA( nullptr, exePath, MAX_PATH );
+    const std::filesystem::path exeDir = std::filesystem::path( exePath ).parent_path( );
+
     const std::string appConfigPath = ( std::filesystem::temp_directory_path( ) / s_AppConfigFile ).generic_string( );
     m_AppConfig = std::make_shared<JsonFile>( appConfigPath );
 
-    const std::string userConfigPath = ( std::filesystem::current_path( ) / s_UserConfigFile ).generic_string( );
+    const std::string userConfigPath = ( exeDir / s_UserConfigFile ).generic_string( );
     m_UserConfig = std::make_shared<JsonFile>( userConfigPath );
+
+    m_AuthHtmlPath = ( exeDir / s_AuthHtmlFile ).generic_string( );
 
     m_FrontEnd = std::make_shared<FrontEnd>( UI_MAX_LOG_LINES );
 
@@ -50,31 +59,33 @@ ImageScraper::App::App( )
         InfoLog( "[%s] User Config Loaded!", __FUNCTION__ );
     }
 
-    const std::string caBundlePath = ( std::filesystem::current_path( ) / s_CaBundleFile ).generic_string( );
-    m_Services.push_back( std::make_shared<RedditService>( m_AppConfig, m_UserConfig, caBundlePath, m_FrontEnd ) );
-    m_Services.push_back( std::make_shared<TumblrService>( m_AppConfig, m_UserConfig, caBundlePath, m_FrontEnd ) );
-    m_Services.push_back( std::make_shared<FourChanService>( m_AppConfig, m_UserConfig, caBundlePath, m_FrontEnd ) );
+    const std::string caBundlePath = ( exeDir / s_CaBundleFile ).generic_string( );
+    m_OutputDirPath = exeDir.generic_string( );
+    m_Services.push_back( std::make_shared<RedditService>(   m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
+    m_Services.push_back( std::make_shared<TumblrService>(   m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
+    m_Services.push_back( std::make_shared<FourChanService>( m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
+    m_Services.push_back( std::make_shared<BlueskyService>(  m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
 
     m_ListenServer = std::make_shared<ListenServer>( );
 }
 
 int ImageScraper::App::Run( )
 {
-    if( !m_FrontEnd || !m_FrontEnd->Init( m_Services ) )
+    if( !m_FrontEnd || !m_FrontEnd->Init( m_Services, m_UserConfig, m_AppConfig ) )
     {
-        ErrorLog( "[%s] Could not start FrontEnd!", __FUNCTION__ );
+        LogError( "[%s] Could not start FrontEnd!", __FUNCTION__ );
         return EXIT_FAILURE;
     }
 
     if( !m_ListenServer )
     {
-        ErrorLog( "[%s] Invalid ListenServer!", __FUNCTION__ );
+        LogError( "[%s] Invalid ListenServer!", __FUNCTION__ );
         return EXIT_FAILURE;
     }
 
     TaskManager::Instance( ).Start( THREAD_POOL_MAX_THREADS );
 
-    m_ListenServer->Init( m_Services, LISTEN_SERVER_PORT );
+    m_ListenServer->Init( m_Services, LISTEN_SERVER_PORT, m_AuthHtmlPath, m_FrontEnd );
     m_ListenServer->Start( );
 
     AuthenticateServices( );
@@ -105,25 +116,44 @@ int ImageScraper::App::Run( )
 
 void ImageScraper::App::AuthenticateServices( )
 {
+    m_AuthenticatingCount = static_cast<int>( m_Services.size( ) );
+    if( m_AuthenticatingCount <= 0 )
+    {
+        m_FrontEnd->SetInputState( InputState::Free );
+        return;
+    }
+
     m_FrontEnd->SetInputState( InputState::Blocked );
 
-    auto callback = [ & ]( ContentProvider provider, bool success )
+    auto callback = [ this ]( ContentProvider provider, bool success )
     {
-        if( !success )
-        {
-            DebugLog( "[%s] %s failed to authenticate!", __FUNCTION__, s_ContentProviderStrings[ static_cast<uint8_t>( provider ) ] );
-        }
-
-        m_AuthenticatingCount--;
-        if( m_AuthenticatingCount <= 0 )
-        {
-            m_FrontEnd->SetInputState( InputState::Free );
-        }
+        auto task = TaskManager::Instance( ).SubmitMain( [ this, provider, success ]( )
+            {
+                OnServiceAuthenticationComplete( provider, success );
+            } );
+        ( void )task;
     };
 
-    for( auto service : m_Services )
+    for( const auto& service : m_Services )
     {
-        ++m_AuthenticatingCount;
         service->Authenticate( callback );
+    }
+}
+
+void ImageScraper::App::OnServiceAuthenticationComplete( ContentProvider provider, bool success )
+{
+    if( !success )
+    {
+        LogDebug( "[%s] %s failed to authenticate!", __FUNCTION__, s_ContentProviderStrings[ static_cast<uint8_t>( provider ) ] );
+    }
+
+    if( m_AuthenticatingCount > 0 )
+    {
+        --m_AuthenticatingCount;
+    }
+
+    if( m_AuthenticatingCount <= 0 )
+    {
+        m_FrontEnd->SetInputState( InputState::Free );
     }
 }

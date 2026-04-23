@@ -1,26 +1,54 @@
 #include "ui/FourChanPanel.h"
+#include "ui/ProviderSearchInput.h"
+#include "log/Logger.h"
 
 #include <algorithm>
 
-void ImageScraper::FourChanPanel::Update( )
+void ImageScraper::FourChanPanel::LoadPanelState( std::shared_ptr<JsonFile> appConfig )
 {
-    if( ImGui::BeginChild( "FourChanBoard", ImVec2( 500, 25 ), false ) )
+    m_AppConfig = appConfig;
+    m_SearchHistory.Load( std::move( appConfig ), "fourchan_board_history" );
+    m_FourChanBoard = m_SearchHistory.GetMostRecent( );
+
+    if( m_AppConfig )
     {
-        char buffer[ INPUT_STRING_MAX ] = "";
-        strcpy_s( buffer, INPUT_STRING_MAX, m_FourChanBoard.c_str( ) );
-        ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsNoBlank;
-        if( ImGui::InputText( "Board (e.g. v, sci )", buffer, INPUT_STRING_MAX, flags ) )
+        int saved = FOURCHAN_MEDIA_DEFAULT;
+        if( m_AppConfig->GetValue<int>( "fourchan_max_downloads", saved ) )
         {
-            m_FourChanBoard = buffer;
+            m_FourChanMaxMediaItems = std::clamp( saved, FOURCHAN_MEDIA_MIN, FOURCHAN_MEDIA_MAX );
         }
     }
+}
 
-    ImGui::EndChild( );
+void ImageScraper::FourChanPanel::OnSearchCommitted( )
+{
+    m_SearchHistory.Push( m_FourChanBoard );
+}
+
+void ImageScraper::FourChanPanel::Update( )
+{
+    ProviderSearchInput::Draw(
+        {
+            "FourChanBoard",
+            "##fourchan_board",
+            "##fourchan_hist_btn",
+            "##fourchan_hist",
+            "Board (e.g. v, sci )",
+            ImGuiInputTextFlags_CharsNoBlank
+        },
+        m_FourChanBoard,
+        m_SearchHistory );
 
     if( ImGui::BeginChild( "FourChanMaxMediaItems", ImVec2( 500, 25 ), false ) )
     {
+        const int prev = m_FourChanMaxMediaItems;
         ImGui::InputInt( "Max Downloads", &m_FourChanMaxMediaItems );
         m_FourChanMaxMediaItems = std::clamp( m_FourChanMaxMediaItems, FOURCHAN_MEDIA_MIN, FOURCHAN_MEDIA_MAX );
+        if( m_FourChanMaxMediaItems != prev && m_AppConfig )
+        {
+            m_AppConfig->SetValue<int>( "fourchan_max_downloads", m_FourChanMaxMediaItems );
+            m_AppConfig->Serialise( );
+        }
     }
 
     ImGui::EndChild( );
@@ -29,9 +57,9 @@ void ImageScraper::FourChanPanel::Update( )
 ImageScraper::UserInputOptions ImageScraper::FourChanPanel::BuildInputOptions( ) const
 {
     UserInputOptions options{ };
-    options.m_Provider            = ContentProvider::FourChan;
-    options.m_FourChanBoard       = m_FourChanBoard;
-    options.m_FourChanMaxThreads  = m_FourChanMaxThreads;
+    options.m_Provider              = ContentProvider::FourChan;
+    options.m_FourChanBoard         = m_FourChanBoard;
+    options.m_FourChanMaxThreads    = m_FourChanMaxThreads;
     options.m_FourChanMaxMediaItems = m_FourChanMaxMediaItems;
     return options;
 }

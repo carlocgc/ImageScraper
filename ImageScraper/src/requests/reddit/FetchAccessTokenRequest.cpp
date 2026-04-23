@@ -20,21 +20,21 @@ ImageScraper::Reddit::FetchAccessTokenRequest::FetchAccessTokenRequest( std::sha
 
 ImageScraper::RequestResult ImageScraper::Reddit::FetchAccessTokenRequest::Perform( const RequestOptions& options )
 {
-    DebugLog( "[%s] FetchAccessTokenRequest started!", __FUNCTION__ );
+    LogDebug( "[%s] FetchAccessTokenRequest started!", __FUNCTION__ );
 
     RequestResult result{ };
 
     if( options.m_ClientId == "" )
     {
         result.SetError( ResponseErrorCode::InternalServerError );
-        DebugLog( "[%s] FetchAccessTokenRequest failed, Client ID not provided.", __FUNCTION__ );
+        LogDebug( "[%s] FetchAccessTokenRequest failed, Client ID not provided.", __FUNCTION__ );
         return result;
     }
 
     if( options.m_ClientSecret == "" )
     {
         result.SetError( ResponseErrorCode::InternalServerError );
-        DebugLog( "[%s] FetchAccessTokenRequest failed, Client Secret not provided.", __FUNCTION__ );
+        LogDebug( "[%s] FetchAccessTokenRequest failed, Client Secret not provided.", __FUNCTION__ );
         return result;
     }
 
@@ -63,7 +63,7 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchAccessTokenRequest::Perfo
     {
         result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );
         result.m_Error.m_ErrorString = response.m_Error;
-        DebugLog( "[%s] FetchAccessTokenRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] FetchAccessTokenRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
@@ -71,11 +71,11 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchAccessTokenRequest::Perfo
 
     if( DownloadHelpers::IsRedditResponseError( result ) )
     {
-        DebugLog( "[%s] FetchAccessTokenRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+        LogDebug( "[%s] FetchAccessTokenRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
 
-    DebugLog( "[%s] FetchAccessTokenRequest complete!", __FUNCTION__ );
+    LogDebug( "[%s] FetchAccessTokenRequest complete!", __FUNCTION__ );
     result.m_Success = true;
     return result;
 }

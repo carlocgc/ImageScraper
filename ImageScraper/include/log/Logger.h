@@ -55,8 +55,8 @@ namespace ImageScraper
 
 #define InfoLog( message, ... ) ImageScraper::Logger::Log( LogLevel::Info, message, __VA_ARGS__ );
 #define WarningLog( message, ... ) ImageScraper::Logger::Log( LogLevel::Warning, message, __VA_ARGS__ );
-#define ErrorLog( message, ... ) ImageScraper::Logger::Log( LogLevel::Error, message, __VA_ARGS__ );
-#define DebugLog( message, ... ) ImageScraper::Logger::Log( LogLevel::Debug, message, __VA_ARGS__ );
+#define LogError( message, ... ) ImageScraper::Logger::Log( LogLevel::Error, message, __VA_ARGS__ );
+#define LogDebug( message, ... ) ImageScraper::Logger::Log( LogLevel::Debug, message, __VA_ARGS__ );
 
 // TODO Add condition to assert
 #define Assert( message, ... ) ImageScraper::Logger::Assert( message, __VA_ARGS__ );

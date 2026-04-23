@@ -80,10 +80,6 @@
       <Message>Copy runtime dependencies to test output directory</Message>
       <Command>xcopy "$(SolutionDir)ImageScraper\lib\Debug\libcurl-d.dll" "$(TargetDir)" /Y</Command>
     </PreBuildEvent>
-    <PostBuildEvent>
-      <Message>Running unit tests</Message>
-      <Command>"$(TargetPath)"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -108,10 +104,6 @@
       <Message>Copy runtime dependencies to test output directory</Message>
       <Command>xcopy "$(SolutionDir)ImageScraper\lib\Release\libcurl.dll" "$(TargetDir)" /Y</Command>
     </PreBuildEvent>
-    <PostBuildEvent>
-      <Message>Running unit tests</Message>
-      <Command>"$(TargetPath)"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\catch2\catch_amalgamated.cpp" />
@@ -119,6 +111,8 @@
     <ClCompile Include="..\ImageScraper\src\log\Logger.cpp" />
     <ClCompile Include="..\ImageScraper\src\network\CurlHttpClient.cpp" />
     <ClCompile Include="..\ImageScraper\src\network\RetryHttpClient.cpp" />
+    <ClCompile Include="..\ImageScraper\src\requests\bluesky\GetAuthorFeedRequest.cpp" />
+    <ClCompile Include="..\ImageScraper\src\requests\bluesky\ResolveHandleRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\fourchan\GetBoardsRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\fourchan\GetThreadsRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\reddit\AppOnlyAuthRequest.cpp" />
@@ -126,14 +120,22 @@
     <ClCompile Include="..\ImageScraper\src\requests\reddit\RefreshAccessTokenRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\reddit\FetchSubredditPostsRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\tumblr\RetrievePublishedPostsRequest.cpp" />
+    <ClCompile Include="..\ImageScraper\src\auth\OAuthClient.cpp" />
+    <ClCompile Include="src\tests\OAuthClientTests.cpp" />
     <ClCompile Include="src\tests\SanityTests.cpp" />
     <ClCompile Include="src\tests\RequestTypesTests.cpp" />
+    <ClCompile Include="src\tests\BlueskyUtilsTests.cpp" />
     <ClCompile Include="src\tests\DownloadUtilsTests.cpp" />
     <ClCompile Include="src\tests\RedditUtilsTests.cpp" />
     <ClCompile Include="src\tests\TumblrUtilsTests.cpp" />
     <ClCompile Include="src\tests\FourChanUtilsTests.cpp" />
     <ClCompile Include="src\tests\RequestTests.cpp" />
     <ClCompile Include="src\tests\ThreadPoolTests.cpp" />
+    <ClCompile Include="src\tests\JsonFileTests.cpp" />
+    <ClCompile Include="src\tests\LogPanelTests.cpp" />
+    <ClCompile Include="src\tests\RingBufferTests.cpp" />
+    <ClCompile Include="src\tests\StringUtilsTests.cpp" />
+    <ClCompile Include="..\ImageScraper\src\io\JsonFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\catch2\catch_amalgamated.hpp" />

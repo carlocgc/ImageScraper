@@ -16,6 +16,9 @@
 #include "ui/DownloadProgressPanel.h"
 #include "ui/MediaPreviewPanel.h"
 #include "ui/DownloadHistoryPanel.h"
+#include "ui/CredentialsPanel.h"
+#include "ui/MediaPreviewControlPanel.h"
+#include "io/JsonFile.h"
 
 #include <stdio.h>
 #include <string>
@@ -27,7 +30,7 @@ namespace ImageScraper
 {
     static void GLFW_ErrorCallback( int error, const char* description )
     {
-        ErrorLog( "[%s] GLFW Error %d: %s", error, description );
+        LogError( "[%s] GLFW Error %d: %s", error, description );
     }
 
     class FrontEnd : public IServiceSink
@@ -36,7 +39,7 @@ namespace ImageScraper
         FrontEnd( int maxLogLines );
         ~FrontEnd( );
 
-        bool Init( const std::vector<std::shared_ptr<Service>>& services );
+        bool Init( const std::vector<std::shared_ptr<Service>>& services, std::shared_ptr<JsonFile> userConfig, std::shared_ptr<JsonFile> appConfig );
         void Update( );
         void SetInputState( InputState state );
         void Render( );
@@ -56,15 +59,19 @@ namespace ImageScraper
 
     private:
         void ShowDemoWindow( );
+        void SetupDefaultLayout( ImGuiID dockspaceId );
 
         GLFWwindow* m_WindowPtr{ nullptr };
         int         m_MaxLogLines{ 0 };
         std::string m_IniPath{ };
+        bool        m_LayoutInitialised{ false };
 
         std::unique_ptr<LogPanel>              m_LogPanel{ };
         std::unique_ptr<DownloadOptionsPanel>  m_DownloadOptionsPanel{ };
         std::unique_ptr<DownloadProgressPanel> m_DownloadProgressPanel{ };
-        std::unique_ptr<MediaPreviewPanel>     m_MediaPreviewPanel{ };
-        std::unique_ptr<DownloadHistoryPanel>  m_DownloadHistoryPanel{ };
+        std::unique_ptr<MediaPreviewPanel>          m_MediaPreviewPanel{ };
+        std::unique_ptr<DownloadHistoryPanel>       m_DownloadHistoryPanel{ };
+        std::unique_ptr<CredentialsPanel>           m_CredentialsPanel{ };
+        std::unique_ptr<MediaPreviewControlPanel>   m_MediaPreviewControlPanel{ };
     };
 }

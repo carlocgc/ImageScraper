@@ -18,28 +18,28 @@ ImageScraper::Reddit::RevokeAccessTokenRequest::RevokeAccessTokenRequest( std::s
 
 ImageScraper::RequestResult ImageScraper::Reddit::RevokeAccessTokenRequest::Perform( const RequestOptions& options )
 {
-    DebugLog( "[%s] RevokeAccessTokenRequest started!", __FUNCTION__ );
+    LogDebug( "[%s] RevokeAccessTokenRequest started!", __FUNCTION__ );
 
     RequestResult result{ };
 
     if( options.m_ClientId.empty( ) )
     {
         result.SetError( ResponseErrorCode::InternalServerError );
-        DebugLog( "[%s] RevokeAccessTokenRequest failed, Client ID not provided.", __FUNCTION__ );
+        LogDebug( "[%s] RevokeAccessTokenRequest failed, Client ID not provided.", __FUNCTION__ );
         return result;
     }
 
     if( options.m_ClientSecret.empty( ) )
     {
         result.SetError( ResponseErrorCode::InternalServerError );
-        DebugLog( "[%s] RevokeAccessTokenRequest failed, Client Secret not provided.", __FUNCTION__ );
+        LogDebug( "[%s] RevokeAccessTokenRequest failed, Client Secret not provided.", __FUNCTION__ );
         return result;
     }
 
     if( options.m_AccessToken.empty( ) )
     {
         result.SetError( ResponseErrorCode::InternalServerError );
-        DebugLog( "[%s] RevokeAccessTokenRequest failed, token not provided.", __FUNCTION__ );
+        LogDebug( "[%s] RevokeAccessTokenRequest failed, token not provided.", __FUNCTION__ );
         return result;
     }
 
@@ -58,16 +58,16 @@ ImageScraper::RequestResult ImageScraper::Reddit::RevokeAccessTokenRequest::Perf
 
     const HttpResponse response = m_HttpClient->Post( request );
 
-    // Reddit returns 204 No Content on success — no body to parse
+    // Reddit returns 204 No Content on success - no body to parse
     if( response.m_StatusCode == 204 || response.m_Success )
     {
-        DebugLog( "[%s] RevokeAccessTokenRequest complete!", __FUNCTION__ );
+        LogDebug( "[%s] RevokeAccessTokenRequest complete!", __FUNCTION__ );
         result.m_Success = true;
         return result;
     }
 
     result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );
     result.m_Error.m_ErrorString = response.m_Error;
-    DebugLog( "[%s] RevokeAccessTokenRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
+    LogDebug( "[%s] RevokeAccessTokenRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
     return result;
 }

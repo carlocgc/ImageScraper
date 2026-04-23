@@ -15,7 +15,7 @@ namespace ImageScraper
     class FourChanService : public Service
     {
     public:
-        FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, std::shared_ptr<IServiceSink> sink );
+        FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink );
         bool HandleUserInput( const UserInputOptions& options ) override;
         bool OpenExternalAuth( ) override;
         bool HandleExternalAuth( const std::string& response ) override;

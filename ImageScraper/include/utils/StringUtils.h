@@ -52,6 +52,76 @@ namespace ImageScraper
             return utf8_string;
         }
 
+        // Extracts the value of a named parameter from an HTTP request line or query string.
+        // Searches for "key=" and returns the substring up to the next '&' or ' '.
+        // Returns an empty string if the key is not found.
+        static std::string ExtractQueryParam( const std::string& str, const std::string& key )
+        {
+            const std::string search = key + "=";
+            std::size_t start = str.find( search );
+            if( start == std::string::npos )
+            {
+                return { };
+            }
+            start += search.length( );
+            const std::size_t ampPos   = str.find( "&", start );
+            const std::size_t spacePos = str.find( " ", start );
+            const std::size_t end      = ( ampPos < spacePos ) ? ampPos : spacePos;
+            if( end == std::string::npos )
+            {
+                return { };
+            }
+            return str.substr( start, end - start );
+        }
+
+        // Percent-encodes a string for use as a URI query parameter value (RFC 3986).
+        // Unreserved characters (alpha, digit, '-', '_', '.', '~') are left as-is;
+        // everything else is encoded as %XX.
+        static std::string UrlEncode( const std::string& str )
+        {
+            std::string result;
+            result.reserve( str.size( ) * 3 );
+            for( unsigned char c : str )
+            {
+                if( std::isalnum( c ) || c == '-' || c == '_' || c == '.' || c == '~' )
+                {
+                    result += static_cast<char>( c );
+                }
+                else
+                {
+                    char hex[ 4 ];
+                    snprintf( hex, sizeof( hex ), "%%%02X", c );
+                    result += hex;
+                }
+            }
+            return result;
+        }
+
+        // Decodes a percent-encoded URL string. '+' is treated as a space.
+        static std::string UrlDecode( const std::string& str )
+        {
+            std::string result;
+            result.reserve( str.size( ) );
+            for( std::size_t i = 0; i < str.size( ); ++i )
+            {
+                if( str[ i ] == '+' )
+                {
+                    result += ' ';
+                }
+                else if( str[ i ] == '%' && i + 2 < str.size( ) )
+                {
+                    const char hexStr[ 3 ] = { str[ i + 1 ], str[ i + 2 ], '\0' };
+                    result += static_cast<char>( std::strtol( hexStr, nullptr, 16 ) );
+                    i += 2;
+                }
+                else
+                {
+                    result += str[ i ];
+                }
+            }
+            return result;
+        }
+
     private:
         StringUtils( ) = default;
     };

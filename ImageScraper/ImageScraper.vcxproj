@@ -96,7 +96,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);CURLPP_STATICLIB;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include\imgui</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -104,16 +104,14 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;curlpp.lib;Asyncgc.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;curlpp.lib;Asyncgc.lib;xaudio2.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Message>Copy dependencies to target directory</Message>
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl-d.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\config.template.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -124,7 +122,7 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CURLPP_STATICLIB;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include\imgui</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -134,16 +132,14 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\Release</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;curlpp.lib;Asyncgc.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;curlpp.lib;Asyncgc.lib;xaudio2.lib</AdditionalDependencies>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\config.template.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -153,7 +149,7 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);CURL_STATICLIB;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -161,15 +157,13 @@ xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y</Command>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl-d_imp.lib;Crypt32.lib;ws2_32.lib;avformat.lib;avcodec.lib;avutil.lib;swscale.lib;swresample.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl-d_imp.lib;Crypt32.lib;ws2_32.lib;avformat.lib;avcodec.lib;avutil.lib;swscale.lib;swresample.lib;xaudio2.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl-d.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\config.template.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avformat-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avcodec-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avutil-60.dll" "$(TargetDir)" /Y
@@ -188,7 +182,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CURL_STATICLIB;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -198,16 +192,14 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\Release</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl_imp.lib;Crypt32.lib;ws2_32.lib;avformat.lib;avcodec.lib;avutil.lib;swscale.lib;swresample.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libcurlpp.lib;glfw3.lib;libcurl_imp.lib;Crypt32.lib;ws2_32.lib;avformat.lib;avcodec.lib;avutil.lib;swscale.lib;swresample.lib;xaudio2.lib</AdditionalDependencies>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\config.template.json" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\imgui.ini" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avformat-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avcodec-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avutil-60.dll" "$(TargetDir)" /Y
@@ -219,6 +211,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\auth\OAuthClient.cpp" />
     <ClCompile Include="src\app\App.cpp" />
     <ClCompile Include="src\async\ThreadPool.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp" />
@@ -234,9 +227,12 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\network\CurlHttpClient.cpp" />
     <ClCompile Include="src\network\RetryHttpClient.cpp" />
     <ClCompile Include="src\requests\DownloadRequest.cpp" />
+    <ClCompile Include="src\requests\VideoDownloadRequest.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\config\Config.cpp" />
     <ClCompile Include="src\log\Logger.cpp" />
+    <ClCompile Include="src\requests\bluesky\GetAuthorFeedRequest.cpp" />
+    <ClCompile Include="src\requests\bluesky\ResolveHandleRequest.cpp" />
     <ClCompile Include="src\requests\fourchan\GetThreadsRequest.cpp" />
     <ClCompile Include="src\requests\fourchan\GetBoardsRequest.cpp" />
     <ClCompile Include="src\requests\reddit\AppOnlyAuthRequest.cpp" />
@@ -246,23 +242,34 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\requests\reddit\FetchSubredditPostsRequest.cpp" />
     <ClCompile Include="src\requests\reddit\RefreshAccessTokenRequest.cpp" />
     <ClCompile Include="src\requests\tumblr\RetrievePublishedPostsRequest.cpp" />
-    <ClCompile Include="src\services\DiscordService.cpp" />
+    <ClCompile Include="src\requests\tumblr\TumblrFetchAccessTokenRequest.cpp" />
+    <ClCompile Include="src\requests\tumblr\TumblrRefreshAccessTokenRequest.cpp" />
+    <ClCompile Include="src\requests\tumblr\TumblrGetCurrentUserRequest.cpp" />
+    <ClCompile Include="src\services\BlueskyService.cpp" />
     <ClCompile Include="src\services\FourChanService.cpp" />
+    <ClCompile Include="src\services\OAuthServiceHelpers.cpp" />
+    <ClCompile Include="src\services\Service.cpp" />
     <ClCompile Include="src\services\TumblrService.cpp" />
     <ClCompile Include="src\services\RedditService.cpp" />
     <ClCompile Include="src\ui\FrontEnd.cpp" />
     <ClCompile Include="src\ui\LogPanel.cpp" />
+    <ClCompile Include="src\ui\MediaAudioPlayer.cpp" />
     <ClCompile Include="src\ui\DownloadOptionsPanel.cpp" />
+    <ClCompile Include="src\ui\BlueskyPanel.cpp" />
     <ClCompile Include="src\ui\RedditPanel.cpp" />
     <ClCompile Include="src\ui\TumblrPanel.cpp" />
     <ClCompile Include="src\ui\FourChanPanel.cpp" />
     <ClCompile Include="src\ui\MediaPreviewPanel.cpp" />
+    <ClCompile Include="src\ui\ProviderSearchInput.cpp" />
     <ClCompile Include="src\ui\VideoPlayer.cpp" />
     <ClCompile Include="src\ui\DownloadHistoryPanel.cpp" />
+    <ClCompile Include="src\ui\SearchHistory.cpp" />
     <ClCompile Include="src\ui\DownloadProgressPanel.cpp" />
-    <ClCompile Include="src\stb\stb_image.cpp" />
+    <ClCompile Include="src\ui\CredentialsPanel.cpp" />
+    <ClCompile Include="src\ui\MediaPreviewControlPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\auth\OAuthClient.h" />
     <ClInclude Include="include\app\App.h" />
     <ClInclude Include="include\async\TaskManager.h" />
     <ClInclude Include="include\async\ThreadPool.h" />
@@ -338,23 +345,30 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\log\DevLogger.h" />
     <ClInclude Include="include\log\FrontEndLogger.h" />
     <ClInclude Include="include\log\LoggerBase.h" />
+    <ClInclude Include="include\ui\MediaAudioPlayer.h" />
     <ClInclude Include="include\network\ListenServer.h" />
     <ClInclude Include="include\network\HttpClientTypes.h" />
     <ClInclude Include="include\network\IHttpClient.h" />
     <ClInclude Include="include\network\CurlHttpClient.h" />
     <ClInclude Include="include\network\RetryHttpClient.h" />
+    <ClInclude Include="include\requests\bluesky\GetAuthorFeedRequest.h" />
+    <ClInclude Include="include\requests\bluesky\ResolveHandleRequest.h" />
     <ClInclude Include="include\requests\fourchan\GetThreadsRequest.h" />
     <ClInclude Include="include\requests\fourchan\GetBoardsRequest.h" />
     <ClInclude Include="include\requests\reddit\FetchAccessTokenRequest.h" />
     <ClInclude Include="include\requests\reddit\RefreshAccessTokenRequest.h" />
     <ClInclude Include="include\requests\tumblr\RetrievePublishedPostsRequest.h" />
+    <ClInclude Include="include\requests\tumblr\TumblrFetchAccessTokenRequest.h" />
+    <ClInclude Include="include\requests\tumblr\TumblrRefreshAccessTokenRequest.h" />
+    <ClInclude Include="include\requests\tumblr\TumblrGetCurrentUserRequest.h" />
     <ClInclude Include="include\services\IServiceSink.h" />
-    <ClInclude Include="include\services\DiscordService.h" />
+    <ClInclude Include="include\services\BlueskyService.h" />
     <ClInclude Include="include\services\FourChanService.h" />
     <ClInclude Include="include\services\TumblrService.h" />
     <ClInclude Include="include\services\ServiceOptionTypes.h" />
     <ClInclude Include="include\requests\DownloadRequest.h" />
     <ClInclude Include="include\requests\DownloadRequestTypes.h" />
+    <ClInclude Include="include\requests\VideoDownloadRequest.h" />
     <ClInclude Include="include\requests\reddit\AppOnlyAuthRequest.h" />
     <ClInclude Include="include\requests\reddit\GetCurrentUserRequest.h" />
     <ClInclude Include="include\requests\reddit\RevokeAccessTokenRequest.h" />
@@ -365,15 +379,20 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\ui\IProviderPanel.h" />
     <ClInclude Include="include\ui\LogPanel.h" />
     <ClInclude Include="include\ui\DownloadOptionsPanel.h" />
+    <ClInclude Include="include\ui\ProviderSearchInput.h" />
+    <ClInclude Include="include\ui\BlueskyPanel.h" />
     <ClInclude Include="include\ui\RedditPanel.h" />
     <ClInclude Include="include\ui\TumblrPanel.h" />
     <ClInclude Include="include\ui\FourChanPanel.h" />
     <ClInclude Include="include\ui\MediaPreviewPanel.h" />
     <ClInclude Include="include\ui\VideoPlayer.h" />
     <ClInclude Include="include\ui\DownloadHistoryPanel.h" />
+    <ClInclude Include="include\ui\SearchHistory.h" />
     <ClInclude Include="include\ui\DownloadProgressPanel.h" />
-    <ClInclude Include="include\stb\stb_image.h" />
+    <ClInclude Include="include\ui\CredentialsPanel.h" />
+    <ClInclude Include="include\ui\MediaPreviewControlPanel.h" />
     <ClInclude Include="include\utils\DownloadUtils.h" />
+    <ClInclude Include="include\utils\BlueskyUtils.h" />
     <ClInclude Include="include\utils\RedditUtils.h" />
     <ClInclude Include="include\utils\TumblrUtils.h" />
     <ClInclude Include="include\utils\FourChanUtils.h" />
@@ -398,7 +417,6 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
   </ItemGroup>
   <ItemGroup>
     <None Include="data\auth.html" />
-    <None Include="data\config.template.json" />
     <None Include="include\curlpp\Easy.inl" />
     <None Include="include\curlpp\Info.inl" />
     <None Include="include\curlpp\internal\CurlHandle.inl" />
