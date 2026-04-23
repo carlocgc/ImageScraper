@@ -1,42 +1,32 @@
 # ImageScraper Agent Notes
 
-This file is the short version of the repo guidance for coding agents.
-See [CLAUDE.md](./CLAUDE.md) for the fuller project instructions.
-
 ## Build
 
-Use PowerShell for MSBuild commands.
+Use PowerShell for MSBuild.
 
 ```powershell
-& 'C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' 'G:\Projects\ImageScraper\ImageScraper.sln' /p:Configuration=Debug /p:Platform=x64 /t:ImageScraper /m /nologo
+& 'C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' 'ImageScraper.sln' /p:Configuration=Debug /p:Platform=x64 /t:ImageScraper /m /nologo
 ```
 
-Swap `Debug` for `Release` or `/t:ImageScraper` for `/t:ImageScraperTests` as needed.
+Swap `Debug` for `Release` or `/t:ImageScraper` for `/t:ImageScraperTests` as needed. PRs target `development`; releases merge `development` into `master`.
 
-## Repo Rules
+## Repo-Specific Rules
 
-- Do not add new third-party dependencies without explicit approval.
-- Do not modify vendored dependency code under `ImageScraper/include/` third-party folders, `ImageScraper/src/imgui/`, or Catch2 sources.
-- Never commit real credentials, API keys, or OAuth tokens.
+- Do not edit vendored code under `ImageScraper/include/imgui/`, `ImageScraper/include/nlohmann/`, `ImageScraper/include/curl/`, `ImageScraper/include/GLFW/`, `ImageScraper/src/imgui/`, `ImageScraperTests/include/catch2/`, or `ImageScraperTests/src/catch2/`.
 - New `.h` and `.cpp` files must be added to the relevant `.vcxproj`.
 - Keep project-authored source files inside named subfolders, not directly under bare `src/` or `include/`.
+- `ImageScraper/data/config.json` is gitignored local credential data. If you add a new config key, add its default handling to `JsonFile::Deserialise()`.
+- Vendored ImGui is `v1.92.7-docking`. Do not swap it for a non-docking build.
 
-## Project-Specific Gotchas
+## Gotchas
 
-- Do not use em dashes in source, comments, test names, or docs. Use a normal hyphen.
-- Preserve LF line endings in repo-authored text files. Keep Windows-native scripts such as `.bat`, `.cmd`, and `.ps1` on CRLF. Do not introduce mixed line endings.
-- Use the logging macros `InfoLog`, `WarningLog`, `LogError`, and `LogDebug`.
-- Include `imgui/imgui_internal.h` when ImGui internal APIs are needed.
-
-## Workflow
-
-- Start each change on its own branch from `development`.
-- Do not commit directly to `development` or `master`.
-- Keep PRs small and focused.
-- Before opening a PR, merge `development` into the feature branch and resolve any conflicts locally.
-- Open PRs against `development`.
+- Never use em dashes. Use `-`.
+- Repo-authored text files use LF. Keep `.bat`, `.cmd`, and `.ps1` on CRLF.
+- Use `InfoLog`, `WarningLog`, `LogError`, and `LogDebug`.
+- When using ImGui internals, include `imgui/imgui_internal.h`.
 
 ## Testing
 
-- Add Catch2 tests for new logic when it can be tested without live network calls or a render context.
-- Run the relevant build or test target before opening a PR.
+- New Catch2 test files belong in `ImageScraperTests/src/tests/` and must be added to `ImageScraperTests.vcxproj`.
+- Every test needs at least one tag, and tags use PascalCase.
+- Test names may use `::`, but never em dashes.
