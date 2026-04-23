@@ -5,8 +5,8 @@
 #include "requests/RequestTypes.h"
 #include "log/Logger.h"
 
-const std::string ImageScraper::Reddit::FetchSubredditPostsRequest::s_BaseUrl = "https://www.reddit.com/r/";
-const std::string ImageScraper::Reddit::FetchSubredditPostsRequest::s_AuthBaseUrl = "https://oauth.reddit.com/r/";
+const std::string ImageScraper::Reddit::FetchSubredditPostsRequest::s_BaseUrl = "https://www.reddit.com/";
+const std::string ImageScraper::Reddit::FetchSubredditPostsRequest::s_AuthBaseUrl = "https://oauth.reddit.com/";
 
 ImageScraper::Reddit::FetchSubredditPostsRequest::FetchSubredditPostsRequest( )
     : m_HttpClient( std::make_shared<RetryHttpClient>( std::make_shared<CurlHttpClient>( ) ) )

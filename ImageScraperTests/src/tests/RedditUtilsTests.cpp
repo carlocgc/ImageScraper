@@ -62,6 +62,52 @@ TEST_CASE( "ParseRefreshToken returns nullopt for empty response", "[RedditUtils
 // GetMediaUrls
 // ----------------------------------------------------------------------------
 
+TEST_CASE( "NormalizeUserName accepts bare usernames", "[RedditUtils]" )
+{
+    REQUIRE( NormalizeUserName( "spez" ) == "spez" );
+}
+
+TEST_CASE( "NormalizeUserName strips user prefixes", "[RedditUtils]" )
+{
+    REQUIRE( NormalizeUserName( "u/spez" ) == "spez" );
+    REQUIRE( NormalizeUserName( "/user/spez" ) == "spez" );
+}
+
+TEST_CASE( "NormalizeUserName extracts usernames from Reddit URLs", "[RedditUtils]" )
+{
+    REQUIRE( NormalizeUserName( "https://www.reddit.com/user/spez/submitted/" ) == "spez" );
+    REQUIRE( NormalizeUserName( "https://reddit.com/u/spez/?sort=new" ) == "spez" );
+}
+
+TEST_CASE( "NormalizeUserName rejects empty shells", "[RedditUtils]" )
+{
+    REQUIRE( NormalizeUserName( "/user/" ).empty( ) );
+    REQUIRE( NormalizeUserName( "u/" ).empty( ) );
+}
+
+TEST_CASE( "NormalizeSubredditName accepts bare subreddit names", "[RedditUtils]" )
+{
+    REQUIRE( NormalizeSubredditName( "pics" ) == "pics" );
+}
+
+TEST_CASE( "NormalizeSubredditName strips r slash prefixes", "[RedditUtils]" )
+{
+    REQUIRE( NormalizeSubredditName( "r/pics" ) == "pics" );
+    REQUIRE( NormalizeSubredditName( "/r/pics" ) == "pics" );
+}
+
+TEST_CASE( "NormalizeSubredditName extracts subreddit names from Reddit URLs", "[RedditUtils]" )
+{
+    REQUIRE( NormalizeSubredditName( "https://www.reddit.com/r/pics/top/" ) == "pics" );
+    REQUIRE( NormalizeSubredditName( "https://reddit.com/r/gifs/?sort=hot" ) == "gifs" );
+}
+
+TEST_CASE( "NormalizeSubredditName rejects empty shells", "[RedditUtils]" )
+{
+    REQUIRE( NormalizeSubredditName( "/r/" ).empty( ) );
+    REQUIRE( NormalizeSubredditName( "r/" ).empty( ) );
+}
+
 TEST_CASE( "GetMediaUrls returns empty for response with no data field", "[RedditUtils]" )
 {
     Json response = { { "other", "value" } };
