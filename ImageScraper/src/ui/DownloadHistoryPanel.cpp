@@ -567,6 +567,10 @@ void ImageScraper::DownloadHistoryPanel::RenderTreeNode( const std::filesystem::
     {
         SetSelection( pathString, false, true );
     }
+    else if( ImGui::IsItemFocused( ) && !IsSelectedPath( path ) )
+    {
+        SetSelection( pathString, false, true );
+    }
 
     if( IsSelectedPath( path ) && m_ScrollToSelected )
     {
