@@ -12,6 +12,7 @@
 #include <functional>
 #include <filesystem>
 #include <future>
+#include <optional>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -65,22 +66,42 @@ namespace ImageScraper
             int                        m_Height{ 0 };
         };
 
+        struct TreeNodeSnapshot
+        {
+            std::filesystem::path       m_Path{ };
+            std::string                 m_PathString{ };
+            std::string                 m_Label{ };
+            bool                        m_IsDirectory{ false };
+            uintmax_t                   m_SizeBytes{ 0 };
+            std::string                 m_SizeLabel{ };
+            std::string                 m_TypeLabel{ };
+            unsigned long long          m_CreationTicks{ 0 };
+            std::string                 m_CreationLabel{ };
+            std::vector<TreeNodeSnapshot> m_Children{ };
+        };
+
         void FlushPending( );
         void FlushDecodedThumbnails( );
+        void InvalidateTreeCaches( );
+        void RefreshTreeSnapshot( const ImGuiTableSortSpecs* sortSpecs );
+        std::optional<TreeNodeSnapshot> BuildTreeNodeSnapshot(
+            const std::filesystem::path& path,
+            ImGuiID sortColumnUserId,
+            ImGuiSortDirection sortDirection ) const;
         void SaveSelectedPath( );
         void SetSelection( const std::string& path, bool scrollToSelected, bool requestPreview );
         void ClearSelection( bool requestPreview );
         void DeletePath( const std::filesystem::path& path );
         void AdvanceSelectionAndPreview( int preferredIndex = -1 );
-        void RenderTreeNode( const std::filesystem::path& path, bool* openDeleteConfirm );
-        void ShowPathContextMenu( const std::filesystem::path& path, bool* openDeleteConfirm );
-        void ShowPathTooltip( const std::filesystem::path& path );
+        void RenderTreeNode( const TreeNodeSnapshot& node, bool* openDeleteConfirm );
+        void ShowPathContextMenu( const TreeNodeSnapshot& node, bool* openDeleteConfirm );
+        void ShowPathTooltip( const TreeNodeSnapshot& node );
         bool IsSelectedPath( const std::filesystem::path& path ) const;
-        bool HasSelectedDescendant( const std::filesystem::path& path ) const;
+        bool HasSelectedDescendant( const std::string& pathString ) const;
         bool CanDeletePath( const std::filesystem::path& path ) const;
-        bool IsRootPath( const std::filesystem::path& path ) const;
-        std::vector<std::filesystem::path> GetNavigableFiles( ) const;
-        int  FindNavigableIndexByPath( const std::vector<std::filesystem::path>& files, const std::string& filepath ) const;
+        bool IsRootPath( const std::string& pathString ) const;
+        const std::vector<std::filesystem::path>& GetNavigableFiles( ) const;
+        int  FindNavigableIndexByPath( const std::string& filepath ) const;
         void EvictThumbnailsInPath( const std::filesystem::path& targetPath, bool treatAsDirectory );
         void EvictThumbnail( const std::string& filepath );
         static void OpenInExplorer( const std::filesystem::path& path );
@@ -91,6 +112,7 @@ namespace ImageScraper
         static std::string GetTypeColumnLabel( const std::filesystem::path& path );
         static std::string GetCreationTimeColumnLabel( const std::filesystem::path& path );
         static std::string MakePreferredPathString( const std::filesystem::path& path );
+        static bool IsPathStringWithinRoot( const std::string& path, const std::string& root );
         static bool IsPathWithinRoot( const std::filesystem::path& path, const std::filesystem::path& root );
 
         // Returns thumbnail entry for the filepath; entry.m_Texture == 0 means unavailable.
@@ -110,6 +132,7 @@ namespace ImageScraper
         ReleaseCallback           m_OnReleaseRequested{ };
         std::shared_ptr<JsonFile> m_AppConfig{ };
         std::filesystem::path     m_DownloadsRoot{ };
+        std::string               m_DownloadsRootString{ };
 
         std::mutex               m_PendingMutex{ };
         std::vector<std::string> m_PendingPaths{ };
@@ -120,6 +143,13 @@ namespace ImageScraper
         std::vector<DecodedThumbnail>                      m_DecodedThumbnails{ };
         std::unordered_map<std::string, std::future<void>> m_ThumbnailFutures{ };
         std::unordered_set<std::string>                    m_InFlightThumbnails{ };
+        std::optional<TreeNodeSnapshot>                    m_TreeSnapshot{ };
+        ImGuiID                                            m_TreeSortColumnUserId{ 0 };
+        ImGuiSortDirection                                 m_TreeSortDirection{ ImGuiSortDirection_Ascending };
+        bool                                               m_TreeDirty{ true };
+        mutable std::vector<std::filesystem::path>         m_NavigableFilesCache{ };
+        mutable std::unordered_map<std::string, int>       m_NavigableFileIndexByPath{ };
+        mutable bool                                       m_NavigableFilesDirty{ true };
 
         std::string m_SelectedPath{ };
         std::string m_DeleteConfirmPath{ };
