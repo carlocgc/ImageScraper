@@ -83,8 +83,8 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
     const float cursorBaseX = ImGui::GetCursorPosX( );
     const float cursorBaseY = ImGui::GetCursorPosY( );
 
-    const bool canGoBack    = m_HistoryPanel && m_HistoryPanel->HasNext( );
-    const bool canGoForward = m_HistoryPanel && m_HistoryPanel->HasPrevious( );
+    const bool canGoBack    = m_HistoryPanel && m_HistoryPanel->HasPrevious( );
+    const bool canGoForward = m_HistoryPanel && m_HistoryPanel->HasNext( );
     const bool canPlay      = m_PreviewPanel && m_PreviewPanel->CanPlayPause( );
     const bool canMute      = m_PreviewPanel && m_PreviewPanel->CanMute( );
     const bool playing      = m_PreviewPanel && m_PreviewPanel->IsPlaying( );
@@ -141,7 +141,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         return { pressed, center, iconCol };
     };
 
-    // --- Back (|<<) - toward oldest ---
+    // --- Back (|<<) ---
     {
         const bool disabled = blocked || !canGoBack;
         auto [ pressed, center, iconCol ] = CircleBtn( "##back", 0.f, navOffY, k_NavR, disabled );
@@ -149,7 +149,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
 
         if( pressed )
         {
-            m_HistoryPanel->SelectNext( );
+            m_HistoryPanel->SelectPrevious( );
         }
 
         if( blocked && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) )
@@ -183,7 +183,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         }
     }
 
-    // --- Forward (>>|) - toward latest ---
+    // --- Forward (>>|) ---
     {
         const bool disabled = blocked || !canGoForward;
         auto [ pressed, center, iconCol ] = CircleBtn(
@@ -196,7 +196,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
 
         if( pressed )
         {
-            m_HistoryPanel->SelectPrevious( );
+            m_HistoryPanel->SelectNext( );
         }
 
         if( blocked && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) )
