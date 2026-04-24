@@ -90,6 +90,9 @@
     <ClCompile Include="src\services\BlueskyService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\services\MastodonService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\services\FourChanService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -103,6 +106,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\requests\fourchan\GetThreadsRequest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\requests\mastodon\GetAccountStatusesRequest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\requests\mastodon\MastodonRequestHelpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\requests\mastodon\SearchAccountsRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\network\ListenServer.cpp">
@@ -129,6 +141,9 @@
     <ClCompile Include="src\ui\BlueskyPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ui\MastodonPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\ui\RedditPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -136,6 +151,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ui\FourChanPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\DownloadOptionControls.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ui\MediaPreviewPanel.cpp">
@@ -297,6 +315,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\utils\BlueskyUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\MastodonUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\requests\RequestTypes.h">
@@ -464,6 +485,9 @@
     <ClInclude Include="include\services\BlueskyService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\services\MastodonService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\services\TumblrService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -477,6 +501,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\requests\fourchan\GetThreadsRequest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\requests\mastodon\GetAccountStatusesRequest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\requests\mastodon\MastodonRequestHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\requests\mastodon\SearchAccountsRequest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\network\ListenServer.h">
@@ -521,10 +554,16 @@
     <ClInclude Include="include\ui\LogPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\ui\DownloadOptionControls.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\ui\DownloadOptionsPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ui\BlueskyPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ui\MastodonPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ui\RedditPanel.h">

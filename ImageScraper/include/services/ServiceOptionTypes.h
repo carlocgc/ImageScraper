@@ -4,7 +4,7 @@
 namespace ImageScraper
 {
     // ── Limits & capacities ───────────────────────────────────────────────────
-    constexpr int CONTENT_PROVIDERS_COUNT       = 4;
+    constexpr int CONTENT_PROVIDERS_COUNT       = 5;
     constexpr int INPUT_STRING_MAX              = 64;
     constexpr int REDDIT_LIMIT_MIN              = 1;
     constexpr int REDDIT_LIMIT_DEFAULT          = 5;
@@ -23,6 +23,9 @@ namespace ImageScraper
     constexpr int BLUESKY_LIMIT_MIN             = 1;
     constexpr int BLUESKY_LIMIT_DEFAULT         = 5;
     constexpr int BLUESKY_LIMIT_MAX             = 10000;
+    constexpr int MASTODON_LIMIT_MIN            = 1;
+    constexpr int MASTODON_LIMIT_DEFAULT        = 5;
+    constexpr int MASTODON_LIMIT_MAX            = 10000;
 
     enum class ContentProvider : uint16_t
     {
@@ -30,6 +33,7 @@ namespace ImageScraper
         Tumblr = 1,
         FourChan = 2,
         Bluesky = 3,
+        Mastodon = 4,
         Count = CONTENT_PROVIDERS_COUNT
     };
 
@@ -38,7 +42,8 @@ namespace ImageScraper
         "Reddit",
         "Tumblr",
         "4chan",
-        "Bluesky"
+        "Bluesky",
+        "Mastodon"
     };
 
     enum class RedditTargetType : uint16_t
@@ -121,5 +126,10 @@ namespace ImageScraper
         // Bluesky
         std::string m_BlueskyActor;
         int m_BlueskyMaxMediaItems;
+
+        // Mastodon
+        std::string m_MastodonInstance;
+        std::string m_MastodonAccount;
+        int m_MastodonMaxMediaItems;
     };
 }

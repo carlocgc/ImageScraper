@@ -115,6 +115,9 @@
     <ClCompile Include="..\ImageScraper\src\requests\bluesky\ResolveHandleRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\fourchan\GetBoardsRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\fourchan\GetThreadsRequest.cpp" />
+    <ClCompile Include="..\ImageScraper\src\requests\mastodon\GetAccountStatusesRequest.cpp" />
+    <ClCompile Include="..\ImageScraper\src\requests\mastodon\MastodonRequestHelpers.cpp" />
+    <ClCompile Include="..\ImageScraper\src\requests\mastodon\SearchAccountsRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\reddit\AppOnlyAuthRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\reddit\FetchAccessTokenRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\reddit\RefreshAccessTokenRequest.cpp" />
@@ -125,6 +128,7 @@
     <ClCompile Include="src\tests\SanityTests.cpp" />
     <ClCompile Include="src\tests\RequestTypesTests.cpp" />
     <ClCompile Include="src\tests\BlueskyUtilsTests.cpp" />
+    <ClCompile Include="src\tests\MastodonUtilsTests.cpp" />
     <ClCompile Include="src\tests\DownloadUtilsTests.cpp" />
     <ClCompile Include="src\tests\RedditUtilsTests.cpp" />
     <ClCompile Include="src\tests\TumblrUtilsTests.cpp" />

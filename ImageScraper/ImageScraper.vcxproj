@@ -235,6 +235,9 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\requests\bluesky\ResolveHandleRequest.cpp" />
     <ClCompile Include="src\requests\fourchan\GetThreadsRequest.cpp" />
     <ClCompile Include="src\requests\fourchan\GetBoardsRequest.cpp" />
+    <ClCompile Include="src\requests\mastodon\GetAccountStatusesRequest.cpp" />
+    <ClCompile Include="src\requests\mastodon\MastodonRequestHelpers.cpp" />
+    <ClCompile Include="src\requests\mastodon\SearchAccountsRequest.cpp" />
     <ClCompile Include="src\requests\reddit\AppOnlyAuthRequest.cpp" />
     <ClCompile Include="src\requests\reddit\GetCurrentUserRequest.cpp" />
     <ClCompile Include="src\requests\reddit\RevokeAccessTokenRequest.cpp" />
@@ -247,6 +250,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\requests\tumblr\TumblrGetCurrentUserRequest.cpp" />
     <ClCompile Include="src\services\BlueskyService.cpp" />
     <ClCompile Include="src\services\FourChanService.cpp" />
+    <ClCompile Include="src\services\MastodonService.cpp" />
     <ClCompile Include="src\services\OAuthServiceHelpers.cpp" />
     <ClCompile Include="src\services\Service.cpp" />
     <ClCompile Include="src\services\TumblrService.cpp" />
@@ -254,8 +258,10 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\ui\FrontEnd.cpp" />
     <ClCompile Include="src\ui\LogPanel.cpp" />
     <ClCompile Include="src\ui\MediaAudioPlayer.cpp" />
+    <ClCompile Include="src\ui\DownloadOptionControls.cpp" />
     <ClCompile Include="src\ui\DownloadOptionsPanel.cpp" />
     <ClCompile Include="src\ui\BlueskyPanel.cpp" />
+    <ClCompile Include="src\ui\MastodonPanel.cpp" />
     <ClCompile Include="src\ui\RedditPanel.cpp" />
     <ClCompile Include="src\ui\TumblrPanel.cpp" />
     <ClCompile Include="src\ui\FourChanPanel.cpp" />
@@ -355,6 +361,9 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\requests\bluesky\ResolveHandleRequest.h" />
     <ClInclude Include="include\requests\fourchan\GetThreadsRequest.h" />
     <ClInclude Include="include\requests\fourchan\GetBoardsRequest.h" />
+    <ClInclude Include="include\requests\mastodon\GetAccountStatusesRequest.h" />
+    <ClInclude Include="include\requests\mastodon\MastodonRequestHelpers.h" />
+    <ClInclude Include="include\requests\mastodon\SearchAccountsRequest.h" />
     <ClInclude Include="include\requests\reddit\FetchAccessTokenRequest.h" />
     <ClInclude Include="include\requests\reddit\RefreshAccessTokenRequest.h" />
     <ClInclude Include="include\requests\tumblr\RetrievePublishedPostsRequest.h" />
@@ -363,6 +372,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\requests\tumblr\TumblrGetCurrentUserRequest.h" />
     <ClInclude Include="include\services\IServiceSink.h" />
     <ClInclude Include="include\services\BlueskyService.h" />
+    <ClInclude Include="include\services\MastodonService.h" />
     <ClInclude Include="include\services\FourChanService.h" />
     <ClInclude Include="include\services\TumblrService.h" />
     <ClInclude Include="include\services\ServiceOptionTypes.h" />
@@ -378,9 +388,11 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\ui\IUiPanel.h" />
     <ClInclude Include="include\ui\IProviderPanel.h" />
     <ClInclude Include="include\ui\LogPanel.h" />
+    <ClInclude Include="include\ui\DownloadOptionControls.h" />
     <ClInclude Include="include\ui\DownloadOptionsPanel.h" />
     <ClInclude Include="include\ui\ProviderSearchInput.h" />
     <ClInclude Include="include\ui\BlueskyPanel.h" />
+    <ClInclude Include="include\ui\MastodonPanel.h" />
     <ClInclude Include="include\ui\RedditPanel.h" />
     <ClInclude Include="include\ui\TumblrPanel.h" />
     <ClInclude Include="include\ui\FourChanPanel.h" />
@@ -393,6 +405,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\ui\MediaPreviewControlPanel.h" />
     <ClInclude Include="include\utils\DownloadUtils.h" />
     <ClInclude Include="include\utils\BlueskyUtils.h" />
+    <ClInclude Include="include\utils\MastodonUtils.h" />
     <ClInclude Include="include\utils\RedditUtils.h" />
     <ClInclude Include="include\utils\TumblrUtils.h" />
     <ClInclude Include="include\utils\FourChanUtils.h" />

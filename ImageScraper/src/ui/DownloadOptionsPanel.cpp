@@ -3,6 +3,8 @@
 #include "ui/TumblrPanel.h"
 #include "ui/FourChanPanel.h"
 #include "ui/BlueskyPanel.h"
+#include "ui/MastodonPanel.h"
+#include "ui/DownloadOptionControls.h"
 #include "log/Logger.h"
 
 ImageScraper::DownloadOptionsPanel::DownloadOptionsPanel( const std::vector<std::shared_ptr<Service>>& services )
@@ -12,6 +14,7 @@ ImageScraper::DownloadOptionsPanel::DownloadOptionsPanel( const std::vector<std:
     m_ProviderPanels.push_back( std::make_unique<TumblrPanel>( ) );
     m_ProviderPanels.push_back( std::make_unique<FourChanPanel>( ) );
     m_ProviderPanels.push_back( std::make_unique<BlueskyPanel>( ) );
+    m_ProviderPanels.push_back( std::make_unique<MastodonPanel>( ) );
 }
 
 void ImageScraper::DownloadOptionsPanel::LoadPanelState( std::shared_ptr<JsonFile> appConfig )
@@ -148,18 +151,24 @@ void ImageScraper::DownloadOptionsPanel::UpdateProviderWidgets( )
 {
     ImGui::BeginDisabled( IsInputBlocked( ) );
 
-    if( ImGui::BeginChild( "ContentProvider", ImVec2( 500, 25 ), false ) )
+    const int prevProvider = m_ContentProvider;
+    if( DownloadOptionControls::DrawCombo(
+        {
+            "ContentProvider",
+            "##content_provider",
+            "Provider",
+            "Choose which service handles the next download run."
+        },
+        m_ContentProvider,
+        s_ContentProviderStrings,
+        IM_ARRAYSIZE( s_ContentProviderStrings ) ) )
     {
-        const int prevProvider = m_ContentProvider;
-        ImGui::Combo( "Content Provider", &m_ContentProvider, s_ContentProviderStrings, IM_ARRAYSIZE( s_ContentProviderStrings ) );
         if( m_ContentProvider != prevProvider && m_AppConfig )
         {
             m_AppConfig->SetValue<int>( "active_provider", m_ContentProvider );
             m_AppConfig->Serialise( );
         }
     }
-
-    ImGui::EndChild( );
 
     if( IProviderPanel* panel = GetActivePanel( ) )
     {
