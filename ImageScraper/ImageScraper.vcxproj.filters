@@ -90,6 +90,9 @@
     <ClCompile Include="src\services\BlueskyService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\services\MastodonService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\services\FourChanService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -127,6 +130,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ui\BlueskyPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\MastodonPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ui\RedditPanel.cpp">
@@ -464,6 +470,9 @@
     <ClInclude Include="include\services\BlueskyService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\services\MastodonService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\services\TumblrService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -525,6 +534,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ui\BlueskyPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ui\MastodonPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ui\RedditPanel.h">
