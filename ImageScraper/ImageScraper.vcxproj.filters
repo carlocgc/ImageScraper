@@ -153,6 +153,9 @@
     <ClCompile Include="src\ui\FourChanPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ui\DownloadOptionControls.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\ui\MediaPreviewPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -549,6 +552,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ui\LogPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ui\DownloadOptionControls.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ui\DownloadOptionsPanel.h">

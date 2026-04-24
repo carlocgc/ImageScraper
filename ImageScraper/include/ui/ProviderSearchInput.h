@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ui/DownloadOptionControls.h"
 #include "ui/SearchHistory.h"
 #include "imgui/imgui.h"
 

@@ -1,5 +1,5 @@
 #include "ui/RedditPanel.h"
-#include "ui/ProviderSearchInput.h"
+#include "ui/DownloadOptionControls.h"
 #include "log/Logger.h"
 #include "utils/RedditUtils.h"
 
@@ -65,11 +65,19 @@ bool ImageScraper::RedditPanel::IsReadyToRun( ) const
 
 void ImageScraper::RedditPanel::Update( )
 {
-    if( ImGui::BeginChild( "RedditTargetType", ImVec2( 500, 25 ), false ) )
+    const RedditTargetType previousTargetType = m_RedditTargetType;
+    int redditTargetType = static_cast<int>( m_RedditTargetType );
+    if( DownloadOptionControls::DrawCombo(
+        {
+            "RedditTargetType",
+            "##reddit_target_type",
+            "Target",
+            "Subreddit: search a community such as Gifs.\nUser: search a profile such as spez."
+        },
+        redditTargetType,
+        s_RedditTargetTypeStrings,
+        IM_ARRAYSIZE( s_RedditTargetTypeStrings ) ) )
     {
-        const RedditTargetType previousTargetType = m_RedditTargetType;
-        int redditTargetType = static_cast<int>( m_RedditTargetType );
-        ImGui::Combo( "Target", &redditTargetType, s_RedditTargetTypeStrings, IM_ARRAYSIZE( s_RedditTargetTypeStrings ) );
         m_RedditTargetType = static_cast<RedditTargetType>( redditTargetType );
 
         if( m_RedditTargetType != previousTargetType && m_AppConfig )
@@ -79,30 +87,41 @@ void ImageScraper::RedditPanel::Update( )
         }
     }
 
-    ImGui::EndChild( );
-
     const bool isUserMode = m_RedditTargetType == RedditTargetType::User;
     std::string& targetName = isUserMode ? m_UserName : m_SubredditName;
     const SearchHistory& targetHistory = isUserMode ? m_UserHistory : m_SubredditHistory;
 
-    ProviderSearchInput::Draw(
+    DownloadOptionControls::DrawSearchInput(
         {
             isUserMode ? "RedditUserName" : "SubredditName",
             isUserMode ? "##reddit_user" : "##subreddit",
             isUserMode ? "##reddit_user_hist_btn" : "##subreddit_hist_btn",
             isUserMode ? "##reddit_user_hist" : "##subreddit_hist",
-            isUserMode ? "User (e.g. spez)" : "Subreddit (e.g. Gifs)",
+            isUserMode ? "User" : "Subreddit",
+            isUserMode
+                ? "Examples:\nspez - Reddit user\nu/spez - normalized to spez"
+                : "Examples:\nGifs - subreddit name\nr/Gifs - normalized to Gifs",
             ImGuiInputTextFlags_CharsNoBlank
         },
         targetName,
         targetHistory );
 
-    if( !isUserMode && ImGui::BeginChild( "SubredditScope", ImVec2( 500, 25 ), false ) )
+    if( !isUserMode )
     {
         int redditScope = static_cast<int>( m_RedditScope );
-        ImGui::Combo( "Scope", &redditScope, s_RedditScopeStrings, IM_ARRAYSIZE( s_RedditScopeStrings ) );
-        m_RedditScope = static_cast<RedditScope>( redditScope );
-        ImGui::EndChild( );
+        if( DownloadOptionControls::DrawCombo(
+            {
+                "SubredditScope",
+                "##subreddit_scope",
+                "Scope",
+                "Examples:\nHot - active posts\nTop - ranked posts\nNew - newest posts"
+            },
+            redditScope,
+            s_RedditScopeStrings,
+            IM_ARRAYSIZE( s_RedditScopeStrings ) ) )
+        {
+            m_RedditScope = static_cast<RedditScope>( redditScope );
+        }
     }
 
     const RedditScope scope = m_RedditScope;
@@ -112,29 +131,40 @@ void ImageScraper::RedditPanel::Update( )
           scope == RedditScope::Controversial ||
           scope == RedditScope::Sort ) )
     {
-        if( ImGui::BeginChild( "SubredditScopeTimeFrame", ImVec2( 500, 25 ), false ) )
+        int redditScopeTimeFrame = static_cast<int>( m_RedditScopeTimeFrame );
+        if( DownloadOptionControls::DrawCombo(
+            {
+                "SubredditScopeTimeFrame",
+                "##subreddit_scope_time_frame",
+                "Time",
+                "Examples:\nDay - today\nWeek - this week\nAll - all time"
+            },
+            redditScopeTimeFrame,
+            s_RedditScopeTimeFrameStrings,
+            IM_ARRAYSIZE( s_RedditScopeTimeFrameStrings ) ) )
         {
-            int redditScopeTimeFrame = static_cast<int>( m_RedditScopeTimeFrame );
-            ImGui::Combo( "Time Frame", &redditScopeTimeFrame, s_RedditScopeTimeFrameStrings, IM_ARRAYSIZE( s_RedditScopeTimeFrameStrings ) );
             m_RedditScopeTimeFrame = static_cast<RedditScopeTimeFrame>( redditScopeTimeFrame );
         }
-
-        ImGui::EndChild( );
     }
 
-    if( ImGui::BeginChild( "RedditMaxMediaItems", ImVec2( 500, 25 ), false ) )
+    const int prev = m_RedditMaxMediaItems;
+    if( DownloadOptionControls::DrawClampedInputInt(
+        {
+            "RedditMaxMediaItems",
+            "##reddit_max_media_items",
+            "Limit",
+            DownloadOptionControls::s_MaxMediaDownloadsTooltip
+        },
+        m_RedditMaxMediaItems,
+        REDDIT_LIMIT_MIN,
+        REDDIT_LIMIT_MAX ) )
     {
-        const int prev = m_RedditMaxMediaItems;
-        ImGui::InputInt( "Max Downloads", &m_RedditMaxMediaItems );
-        m_RedditMaxMediaItems = std::clamp( m_RedditMaxMediaItems, REDDIT_LIMIT_MIN, REDDIT_LIMIT_MAX );
         if( m_RedditMaxMediaItems != prev && m_AppConfig )
         {
             m_AppConfig->SetValue<int>( s_ConfigKey_RedditMaxDownloads, m_RedditMaxMediaItems );
             m_AppConfig->Serialise( );
         }
     }
-
-    ImGui::EndChild( );
 }
 
 ImageScraper::UserInputOptions ImageScraper::RedditPanel::BuildInputOptions( ) const

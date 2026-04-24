@@ -1,5 +1,5 @@
 #include "ui/FourChanPanel.h"
-#include "ui/ProviderSearchInput.h"
+#include "ui/DownloadOptionControls.h"
 #include "log/Logger.h"
 
 #include <algorithm>
@@ -27,31 +27,37 @@ void ImageScraper::FourChanPanel::OnSearchCommitted( )
 
 void ImageScraper::FourChanPanel::Update( )
 {
-    ProviderSearchInput::Draw(
+    DownloadOptionControls::DrawSearchInput(
         {
             "FourChanBoard",
             "##fourchan_board",
             "##fourchan_hist_btn",
             "##fourchan_hist",
-            "Board (e.g. v, sci )",
+            "Board",
+            "Examples:\nv - video games\nsci - science and math\ngif - animated GIFs",
             ImGuiInputTextFlags_CharsNoBlank
         },
         m_FourChanBoard,
         m_SearchHistory );
 
-    if( ImGui::BeginChild( "FourChanMaxMediaItems", ImVec2( 500, 25 ), false ) )
+    const int prev = m_FourChanMaxMediaItems;
+    if( DownloadOptionControls::DrawClampedInputInt(
+        {
+            "FourChanMaxMediaItems",
+            "##fourchan_max_media_items",
+            "Limit",
+            DownloadOptionControls::s_MaxMediaDownloadsTooltip
+        },
+        m_FourChanMaxMediaItems,
+        FOURCHAN_MEDIA_MIN,
+        FOURCHAN_MEDIA_MAX ) )
     {
-        const int prev = m_FourChanMaxMediaItems;
-        ImGui::InputInt( "Max Downloads", &m_FourChanMaxMediaItems );
-        m_FourChanMaxMediaItems = std::clamp( m_FourChanMaxMediaItems, FOURCHAN_MEDIA_MIN, FOURCHAN_MEDIA_MAX );
         if( m_FourChanMaxMediaItems != prev && m_AppConfig )
         {
             m_AppConfig->SetValue<int>( "fourchan_max_downloads", m_FourChanMaxMediaItems );
             m_AppConfig->Serialise( );
         }
     }
-
-    ImGui::EndChild( );
 }
 
 ImageScraper::UserInputOptions ImageScraper::FourChanPanel::BuildInputOptions( ) const
