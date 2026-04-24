@@ -143,6 +143,23 @@ TEST_CASE( "GetMediaItemsFromStatusesResponse respects maxItems", "[MastodonUtil
     REQUIRE( items[ 0 ].m_DownloadUrl == "https://cdn.example.com/one.jpg" );
 }
 
+TEST_CASE( "GetLastStatusIdFromStatusesResponse returns last available status id", "[MastodonUtils]" )
+{
+    const Json response = Json::array( {
+        { { "id", "100" } },
+        { { "content", "missing id" } },
+        { { "id", "099" } }
+    } );
+
+    REQUIRE( GetLastStatusIdFromStatusesResponse( response ) == "099" );
+}
+
+TEST_CASE( "GetLastStatusIdFromStatusesResponse handles invalid responses", "[MastodonUtils]" )
+{
+    REQUIRE( GetLastStatusIdFromStatusesResponse( Json::object( ) ).empty( ) );
+    REQUIRE( GetLastStatusIdFromStatusesResponse( Json::array( ) ).empty( ) );
+}
+
 TEST_CASE( "PrepareMediaDownloads builds deterministic paths and filenames", "[MastodonUtils]" )
 {
     const std::vector<MediaItem> items = {

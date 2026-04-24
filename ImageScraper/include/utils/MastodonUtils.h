@@ -500,6 +500,25 @@ namespace ImageScraper::MastodonUtils
         return items;
     }
 
+    inline std::string GetLastStatusIdFromStatusesResponse( const Json& response )
+    {
+        if( !response.is_array( ) )
+        {
+            return { };
+        }
+
+        for( auto it = response.rbegin( ); it != response.rend( ); ++it )
+        {
+            const std::string id = GetStringOrEmpty( *it, "id" );
+            if( !id.empty( ) )
+            {
+                return id;
+            }
+        }
+
+        return { };
+    }
+
     inline std::vector<PreparedDownload> PrepareMediaDownloads( const std::vector<MediaItem>& mediaItems,
                                                                 int maxItems,
                                                                 const std::string& instanceUrl,
