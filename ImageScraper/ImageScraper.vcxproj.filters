@@ -111,6 +111,9 @@
     <ClCompile Include="src\requests\mastodon\GetAccountStatusesRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\requests\mastodon\MastodonRequestHelpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\requests\mastodon\SearchAccountsRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -498,6 +501,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\requests\mastodon\GetAccountStatusesRequest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\requests\mastodon\MastodonRequestHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\requests\mastodon\SearchAccountsRequest.h">
