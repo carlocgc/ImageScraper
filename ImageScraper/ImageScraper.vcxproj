@@ -397,6 +397,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\ui\MediaPreviewControlPanel.h" />
     <ClInclude Include="include\utils\DownloadUtils.h" />
     <ClInclude Include="include\utils\BlueskyUtils.h" />
+    <ClInclude Include="include\utils\MastodonUtils.h" />
     <ClInclude Include="include\utils\RedditUtils.h" />
     <ClInclude Include="include\utils\TumblrUtils.h" />
     <ClInclude Include="include\utils\FourChanUtils.h" />
