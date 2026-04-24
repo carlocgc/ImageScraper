@@ -10,7 +10,7 @@
 
 Native Windows desktop application for downloading and previewing media from Reddit, Tumblr, 4chan, and Bluesky.
 
-![ImageScraper screenshot](ImageScraper/data/screenshot.png)
+![ImageScraper demo](ImageScraper/data/screenshot.png)
 
 </div>
 
@@ -28,12 +28,12 @@ ImageScraper is a native C++17 desktop application built with Dear ImGui, GLFW, 
 
 ## Supported Providers
 
-| Provider | Authentication | Media Types | Status |
-| --- | --- | --- | --- |
-| Reddit | OAuth2 sign-in, app-only auth | Images, GIFs, videos, galleries from subreddits and user submissions | Supported |
-| Tumblr | OAuth2 sign-in, API key mode | Images, videos | Supported |
-| 4chan | None required | Images, GIFs | Supported |
-| Bluesky | None required | Images, videos | Supported |
+| Provider | Authentication                | Media Types                                                          | Status    |
+| -------- | ----------------------------- | -------------------------------------------------------------------- | --------- |
+| Reddit   | OAuth2 sign-in, app-only auth | Images, GIFs, videos, galleries from subreddits and user submissions | Supported |
+| Tumblr   | OAuth2 sign-in, API key mode  | Images, videos                                                       | Supported |
+| 4chan    | None required                 | Images, GIFs                                                         | Supported |
+| Bluesky  | None required                 | Images, videos                                                       | Supported |
 
 ## Technical Highlights
 
