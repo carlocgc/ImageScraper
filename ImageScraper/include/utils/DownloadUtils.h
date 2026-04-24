@@ -294,4 +294,40 @@ namespace ImageScraper::DownloadHelpers
 
         return false;
     }
+
+    static bool IsMastodonResponseError( RequestResult& result )
+    {
+        try
+        {
+            Json payload = Json::parse( result.m_Response );
+
+            if( payload.contains( "error" ) )
+            {
+                if( payload[ "error" ].is_string( ) )
+                {
+                    result.m_Error.m_ErrorString = payload[ "error" ].get<std::string>( );
+                }
+                else if( payload[ "error" ].is_number_integer( ) )
+                {
+                    const int errorCode = payload[ "error" ];
+                    result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( errorCode );
+                    result.m_Error.m_ErrorString = ResponseErrorCodeToString( result.m_Error.m_ErrorCode );
+                }
+                else
+                {
+                    result.m_Error.m_ErrorString = "Mastodon API error";
+                }
+
+                return true;
+            }
+        }
+        catch( const Json::exception& ex )
+        {
+            result.m_Error.m_ErrorCode = ResponseErrorCode::InternalServerError;
+            result.m_Error.m_ErrorString = ex.what( );
+            return true;
+        }
+
+        return false;
+    }
 }

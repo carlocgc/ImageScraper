@@ -5,6 +5,8 @@
 #include "requests/bluesky/ResolveHandleRequest.h"
 #include "requests/fourchan/GetBoardsRequest.h"
 #include "requests/fourchan/GetThreadsRequest.h"
+#include "requests/mastodon/GetAccountStatusesRequest.h"
+#include "requests/mastodon/SearchAccountsRequest.h"
 #include "requests/reddit/AppOnlyAuthRequest.h"
 #include "requests/reddit/FetchAccessTokenRequest.h"
 #include "requests/reddit/RefreshAccessTokenRequest.h"
@@ -233,6 +235,209 @@ TEST_CASE( "GetAuthorFeedRequest - HTTP failure sets error", "[Requests][Bluesky
         { "filter", "posts_with_media" },
         { "limit", "100" }
     };
+    const auto result = req.Perform( opts );
+
+    REQUIRE_FALSE( result.m_Success );
+}
+
+// ---------------------------------------------------------------------------
+// Mastodon::SearchAccountsRequest
+// ---------------------------------------------------------------------------
+TEST_CASE( "SearchAccountsRequest - success maps response body", "[Requests][Mastodon]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"({"accounts":[]})" );
+
+    Mastodon::SearchAccountsRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_UrlExt = "https://mastodon.social";
+    opts.m_QueryParams = { { "q", "alice@example.com" } };
+    const auto result = req.Perform( opts );
+
+    REQUIRE( result.m_Success );
+    REQUIRE( result.m_Response == R"({"accounts":[]})" );
+    REQUIRE( mock->m_CallCount == 1 );
+}
+
+TEST_CASE( "SearchAccountsRequest - normalizes instance and URL-encodes query params", "[Requests][Mastodon]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"({"accounts":[]})" );
+
+    Mastodon::SearchAccountsRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_UrlExt = "Mastodon.Social/@Gargron";
+    opts.m_QueryParams = {
+        { "q", "alice@example.com" },
+        { "limit", "5" }
+    };
+    req.Perform( opts );
+
+    REQUIRE( mock->m_LastRequest.m_Url == "https://mastodon.social/api/v2/search?q=alice%40example.com&limit=5&type=accounts" );
+}
+
+TEST_CASE( "SearchAccountsRequest - sends Bearer header when token is present", "[Requests][Mastodon]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"({"accounts":[]})" );
+
+    Mastodon::SearchAccountsRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_UrlExt = "https://mastodon.social";
+    opts.m_AccessToken = "token";
+    opts.m_QueryParams = { { "q", "alice" } };
+    req.Perform( opts );
+
+    REQUIRE( HasHeaderPrefix( mock->m_LastRequest.m_Headers, "Authorization: Bearer " ) );
+}
+
+TEST_CASE( "SearchAccountsRequest - missing instance fails without network call", "[Requests][Mastodon]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"({"accounts":[]})" );
+
+    Mastodon::SearchAccountsRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_QueryParams = { { "q", "alice" } };
+    const auto result = req.Perform( opts );
+
+    REQUIRE_FALSE( result.m_Success );
+    REQUIRE( mock->m_CallCount == 0 );
+}
+
+TEST_CASE( "SearchAccountsRequest - missing query fails without network call", "[Requests][Mastodon]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"({"accounts":[]})" );
+
+    Mastodon::SearchAccountsRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_UrlExt = "https://mastodon.social";
+    const auto result = req.Perform( opts );
+
+    REQUIRE_FALSE( result.m_Success );
+    REQUIRE( mock->m_CallCount == 0 );
+}
+
+TEST_CASE( "SearchAccountsRequest - HTTP failure sets error", "[Requests][Mastodon]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeFailure( 401 );
+
+    Mastodon::SearchAccountsRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_UrlExt = "https://mastodon.social";
+    opts.m_QueryParams = { { "q", "alice" } };
+    const auto result = req.Perform( opts );
+
+    REQUIRE_FALSE( result.m_Success );
+}
+
+TEST_CASE( "SearchAccountsRequest - service error JSON sets failure", "[Requests][Mastodon]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"({"error":"The access token is invalid"})" );
+
+    Mastodon::SearchAccountsRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_UrlExt = "https://mastodon.social";
+    opts.m_QueryParams = { { "q", "alice" } };
+    const auto result = req.Perform( opts );
+
+    REQUIRE_FALSE( result.m_Success );
+}
+
+// ---------------------------------------------------------------------------
+// Mastodon::GetAccountStatusesRequest
+// ---------------------------------------------------------------------------
+TEST_CASE( "GetAccountStatusesRequest - success maps response body", "[Requests][Mastodon]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"([])" );
+
+    Mastodon::GetAccountStatusesRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_UrlExt = "https://mastodon.social";
+    opts.m_ResourceId = "123";
+    const auto result = req.Perform( opts );
+
+    REQUIRE( result.m_Success );
+    REQUIRE( result.m_Response == R"([])" );
+}
+
+TEST_CASE( "GetAccountStatusesRequest - builds account statuses URL", "[Requests][Mastodon]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"([])" );
+
+    Mastodon::GetAccountStatusesRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_UrlExt = "https://Mastodon.Social/";
+    opts.m_ResourceId = "123";
+    opts.m_QueryParams = {
+        { "only_media", "true" },
+        { "limit", "40" },
+        { "exclude_replies", "true" },
+        { "exclude_reblogs", "true" },
+        { "max_id", "999" }
+    };
+    req.Perform( opts );
+
+    REQUIRE( mock->m_LastRequest.m_Url == "https://mastodon.social/api/v1/accounts/123/statuses?only_media=true&limit=40&exclude_replies=true&exclude_reblogs=true&max_id=999" );
+}
+
+TEST_CASE( "GetAccountStatusesRequest - URL-encodes account id", "[Requests][Mastodon]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"([])" );
+
+    Mastodon::GetAccountStatusesRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_UrlExt = "https://mastodon.social";
+    opts.m_ResourceId = "id/with space";
+    req.Perform( opts );
+
+    REQUIRE( mock->m_LastRequest.m_Url == "https://mastodon.social/api/v1/accounts/id%2Fwith%20space/statuses" );
+}
+
+TEST_CASE( "GetAccountStatusesRequest - sends Bearer header when token is present", "[Requests][Mastodon]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"([])" );
+
+    Mastodon::GetAccountStatusesRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_UrlExt = "https://mastodon.social";
+    opts.m_ResourceId = "123";
+    opts.m_AccessToken = "token";
+    req.Perform( opts );
+
+    REQUIRE( HasHeaderPrefix( mock->m_LastRequest.m_Headers, "Authorization: Bearer " ) );
+}
+
+TEST_CASE( "GetAccountStatusesRequest - missing account id fails without network call", "[Requests][Mastodon]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeSuccess( R"([])" );
+
+    Mastodon::GetAccountStatusesRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_UrlExt = "https://mastodon.social";
+    const auto result = req.Perform( opts );
+
+    REQUIRE_FALSE( result.m_Success );
+    REQUIRE( mock->m_CallCount == 0 );
+}
+
+TEST_CASE( "GetAccountStatusesRequest - HTTP failure sets error", "[Requests][Mastodon]" )
+{
+    auto mock = std::make_shared<MockHttpClient>( );
+    mock->m_Response = MakeFailure( 404 );
+
+    Mastodon::GetAccountStatusesRequest req{ mock };
+    auto opts = MakeOptions( );
+    opts.m_UrlExt = "https://mastodon.social";
+    opts.m_ResourceId = "123";
     const auto result = req.Perform( opts );
 
     REQUIRE_FALSE( result.m_Success );

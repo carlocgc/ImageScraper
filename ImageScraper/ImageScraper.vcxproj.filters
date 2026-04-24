@@ -108,6 +108,12 @@
     <ClCompile Include="src\requests\fourchan\GetThreadsRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\requests\mastodon\GetAccountStatusesRequest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\requests\mastodon\SearchAccountsRequest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\network\ListenServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -489,6 +495,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\requests\fourchan\GetThreadsRequest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\requests\mastodon\GetAccountStatusesRequest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\requests\mastodon\SearchAccountsRequest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\network\ListenServer.h">

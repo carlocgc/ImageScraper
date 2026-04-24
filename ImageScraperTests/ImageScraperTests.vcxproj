@@ -115,6 +115,8 @@
     <ClCompile Include="..\ImageScraper\src\requests\bluesky\ResolveHandleRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\fourchan\GetBoardsRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\fourchan\GetThreadsRequest.cpp" />
+    <ClCompile Include="..\ImageScraper\src\requests\mastodon\GetAccountStatusesRequest.cpp" />
+    <ClCompile Include="..\ImageScraper\src\requests\mastodon\SearchAccountsRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\reddit\AppOnlyAuthRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\reddit\FetchAccessTokenRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\reddit\RefreshAccessTokenRequest.cpp" />
