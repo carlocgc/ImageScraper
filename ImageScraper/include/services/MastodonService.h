@@ -1,6 +1,10 @@
 #pragma once
 
 #include "services/Service.h"
+#include "utils/MastodonUtils.h"
+
+#include <optional>
+#include <vector>
 
 namespace ImageScraper
 {
@@ -22,6 +26,8 @@ namespace ImageScraper
         bool IsCancelled( ) override;
 
     private:
+        std::optional<MastodonUtils::Account> ResolveAccount( const std::string& instanceUrl, const std::string& accountInput );
+        std::vector<MastodonUtils::MediaItem> FetchAccountStatusMedia( const std::string& instanceUrl, const std::string& accountId, const std::string& accountInput, int maxItems );
         void DownloadContent( const UserInputOptions& inputOptions );
     };
 }
