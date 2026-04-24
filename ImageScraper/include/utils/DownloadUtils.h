@@ -177,6 +177,11 @@ namespace ImageScraper::DownloadHelpers
             return "@" + subfolderName;
         }
 
+        if( providerName == "Mastodon" )
+        {
+            return "@" + subfolderName;
+        }
+
         return subfolderName;
     }
 
