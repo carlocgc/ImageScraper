@@ -305,6 +305,7 @@ namespace ImageScraper::DownloadHelpers
             {
                 if( payload[ "error" ].is_string( ) )
                 {
+                    result.m_Error.m_ErrorCode = ResponseErrorCode::BadRequest;
                     result.m_Error.m_ErrorString = payload[ "error" ].get<std::string>( );
                 }
                 else if( payload[ "error" ].is_number_integer( ) )
@@ -315,6 +316,7 @@ namespace ImageScraper::DownloadHelpers
                 }
                 else
                 {
+                    result.m_Error.m_ErrorCode = ResponseErrorCode::BadRequest;
                     result.m_Error.m_ErrorString = "Mastodon API error";
                 }
 

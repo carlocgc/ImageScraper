@@ -331,6 +331,8 @@ TEST_CASE( "SearchAccountsRequest - HTTP failure sets error", "[Requests][Mastod
     const auto result = req.Perform( opts );
 
     REQUIRE_FALSE( result.m_Success );
+    REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::Unauthorized );
+    REQUIRE( result.m_Error.m_ErrorString == "http error" );
 }
 
 TEST_CASE( "SearchAccountsRequest - service error JSON sets failure", "[Requests][Mastodon]" )
@@ -345,6 +347,8 @@ TEST_CASE( "SearchAccountsRequest - service error JSON sets failure", "[Requests
     const auto result = req.Perform( opts );
 
     REQUIRE_FALSE( result.m_Success );
+    REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::BadRequest );
+    REQUIRE( result.m_Error.m_ErrorString == "The access token is invalid" );
 }
 
 // ---------------------------------------------------------------------------
@@ -441,6 +445,8 @@ TEST_CASE( "GetAccountStatusesRequest - HTTP failure sets error", "[Requests][Ma
     const auto result = req.Perform( opts );
 
     REQUIRE_FALSE( result.m_Success );
+    REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::NotFound );
+    REQUIRE( result.m_Error.m_ErrorString == "http error" );
 }
 
 // ---------------------------------------------------------------------------
