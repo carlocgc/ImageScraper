@@ -1,6 +1,6 @@
 #include "ui/BlueskyPanel.h"
 
-#include "ui/ProviderSearchInput.h"
+#include "ui/DownloadOptionControls.h"
 
 #include <algorithm>
 
@@ -27,31 +27,37 @@ void ImageScraper::BlueskyPanel::OnSearchCommitted( )
 
 void ImageScraper::BlueskyPanel::Update( )
 {
-    ProviderSearchInput::Draw(
+    DownloadOptionControls::DrawSearchInput(
         {
             "BlueskyActor",
             "##bluesky_actor",
             "##bluesky_hist_btn",
             "##bluesky_hist",
-            "Actor (e.g. alice.bsky.social or did:plc:...)",
+            "Actor",
+            "Examples:\nalice.bsky.social - handle\ndid:plc:abc123 - decentralized identifier",
             ImGuiInputTextFlags_CharsNoBlank
         },
         m_BlueskyActor,
         m_SearchHistory );
 
-    if( ImGui::BeginChild( "BlueskyMaxMediaItems", ImVec2( 500, 25 ), false ) )
+    const int prev = m_BlueskyMaxMediaItems;
+    if( DownloadOptionControls::DrawClampedInputInt(
+        {
+            "BlueskyMaxMediaItems",
+            "##bluesky_max_media_items",
+            "Limit",
+            DownloadOptionControls::s_MaxMediaDownloadsTooltip
+        },
+        m_BlueskyMaxMediaItems,
+        BLUESKY_LIMIT_MIN,
+        BLUESKY_LIMIT_MAX ) )
     {
-        const int prev = m_BlueskyMaxMediaItems;
-        ImGui::InputInt( "Max Downloads", &m_BlueskyMaxMediaItems );
-        m_BlueskyMaxMediaItems = std::clamp( m_BlueskyMaxMediaItems, BLUESKY_LIMIT_MIN, BLUESKY_LIMIT_MAX );
         if( m_BlueskyMaxMediaItems != prev && m_AppConfig )
         {
             m_AppConfig->SetValue<int>( "bluesky_max_downloads", m_BlueskyMaxMediaItems );
             m_AppConfig->Serialise( );
         }
     }
-
-    ImGui::EndChild( );
 }
 
 ImageScraper::UserInputOptions ImageScraper::BlueskyPanel::BuildInputOptions( ) const

@@ -258,6 +258,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\ui\FrontEnd.cpp" />
     <ClCompile Include="src\ui\LogPanel.cpp" />
     <ClCompile Include="src\ui\MediaAudioPlayer.cpp" />
+    <ClCompile Include="src\ui\DownloadOptionControls.cpp" />
     <ClCompile Include="src\ui\DownloadOptionsPanel.cpp" />
     <ClCompile Include="src\ui\BlueskyPanel.cpp" />
     <ClCompile Include="src\ui\MastodonPanel.cpp" />
@@ -387,6 +388,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\ui\IUiPanel.h" />
     <ClInclude Include="include\ui\IProviderPanel.h" />
     <ClInclude Include="include\ui\LogPanel.h" />
+    <ClInclude Include="include\ui\DownloadOptionControls.h" />
     <ClInclude Include="include\ui\DownloadOptionsPanel.h" />
     <ClInclude Include="include\ui\ProviderSearchInput.h" />
     <ClInclude Include="include\ui\BlueskyPanel.h" />

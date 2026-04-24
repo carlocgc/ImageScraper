@@ -1,6 +1,6 @@
 #include "ui/MastodonPanel.h"
 
-#include "ui/ProviderSearchInput.h"
+#include "ui/DownloadOptionControls.h"
 
 #include <algorithm>
 
@@ -30,43 +30,50 @@ void ImageScraper::MastodonPanel::OnSearchCommitted( )
 
 void ImageScraper::MastodonPanel::Update( )
 {
-    ProviderSearchInput::Draw(
+    DownloadOptionControls::DrawSearchInput(
         {
             "MastodonInstance",
             "##mastodon_instance",
             "##mastodon_instance_hist_btn",
             "##mastodon_instance_hist",
-            "Instance (e.g. mastodon.social)",
+            "Instance",
+            "Examples:\nmastodon.social - instance host\nhttps://fosstodon.org - instance URL",
             ImGuiInputTextFlags_CharsNoBlank
         },
         m_MastodonInstance,
         m_InstanceHistory );
 
-    ProviderSearchInput::Draw(
+    DownloadOptionControls::DrawSearchInput(
         {
             "MastodonAccount",
             "##mastodon_account",
             "##mastodon_account_hist_btn",
             "##mastodon_account_hist",
-            "Account (e.g. Gargron or @Gargron@mastodon.social)",
+            "Account",
+            "Examples:\nGargron - local account\n@Gargron@mastodon.social - federated account\nhttps://mastodon.social/@Gargron - profile URL",
             ImGuiInputTextFlags_CharsNoBlank
         },
         m_MastodonAccount,
         m_AccountHistory );
 
-    if( ImGui::BeginChild( "MastodonMaxMediaItems", ImVec2( 500, 25 ), false ) )
+    const int prev = m_MastodonMaxMediaItems;
+    if( DownloadOptionControls::DrawClampedInputInt(
+        {
+            "MastodonMaxMediaItems",
+            "##mastodon_max_media_items",
+            "Limit",
+            DownloadOptionControls::s_MaxMediaDownloadsTooltip
+        },
+        m_MastodonMaxMediaItems,
+        MASTODON_LIMIT_MIN,
+        MASTODON_LIMIT_MAX ) )
     {
-        const int prev = m_MastodonMaxMediaItems;
-        ImGui::InputInt( "Max Downloads", &m_MastodonMaxMediaItems );
-        m_MastodonMaxMediaItems = std::clamp( m_MastodonMaxMediaItems, MASTODON_LIMIT_MIN, MASTODON_LIMIT_MAX );
         if( m_MastodonMaxMediaItems != prev && m_AppConfig )
         {
             m_AppConfig->SetValue<int>( "mastodon_max_downloads", m_MastodonMaxMediaItems );
             m_AppConfig->Serialise( );
         }
     }
-
-    ImGui::EndChild( );
 }
 
 ImageScraper::UserInputOptions ImageScraper::MastodonPanel::BuildInputOptions( ) const

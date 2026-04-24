@@ -1,5 +1,5 @@
 #include "ui/TumblrPanel.h"
-#include "ui/ProviderSearchInput.h"
+#include "ui/DownloadOptionControls.h"
 #include "log/Logger.h"
 
 #include <algorithm>
@@ -27,31 +27,37 @@ void ImageScraper::TumblrPanel::OnSearchCommitted( )
 
 void ImageScraper::TumblrPanel::Update( )
 {
-    ProviderSearchInput::Draw(
+    DownloadOptionControls::DrawSearchInput(
         {
             "TumblrUser",
             "##tumblr_user",
             "##tumblr_hist_btn",
             "##tumblr_hist",
-            "Tumblr User",
+            "Blog",
+            "Examples:\nstaff - Tumblr blog name\nstaff.tumblr.com - Tumblr blog host",
             ImGuiInputTextFlags_CharsNoBlank
         },
         m_TumblrUser,
         m_SearchHistory );
 
-    if( ImGui::BeginChild( "TumblrMaxMediaItems", ImVec2( 500, 25 ), false ) )
+    const int prev = m_TumblrMaxMediaItems;
+    if( DownloadOptionControls::DrawClampedInputInt(
+        {
+            "TumblrMaxMediaItems",
+            "##tumblr_max_media_items",
+            "Limit",
+            DownloadOptionControls::s_MaxMediaDownloadsTooltip
+        },
+        m_TumblrMaxMediaItems,
+        TUMBLR_LIMIT_MIN,
+        TUMBLR_LIMIT_MAX ) )
     {
-        const int prev = m_TumblrMaxMediaItems;
-        ImGui::InputInt( "Max Downloads", &m_TumblrMaxMediaItems );
-        m_TumblrMaxMediaItems = std::clamp( m_TumblrMaxMediaItems, TUMBLR_LIMIT_MIN, TUMBLR_LIMIT_MAX );
         if( m_TumblrMaxMediaItems != prev && m_AppConfig )
         {
             m_AppConfig->SetValue<int>( "tumblr_max_downloads", m_TumblrMaxMediaItems );
             m_AppConfig->Serialise( );
         }
     }
-
-    ImGui::EndChild( );
 }
 
 ImageScraper::UserInputOptions ImageScraper::TumblrPanel::BuildInputOptions( ) const
