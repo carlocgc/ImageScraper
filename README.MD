@@ -10,7 +10,7 @@
 
 Native Windows desktop application for downloading and previewing media from Reddit, Tumblr, 4chan, and Bluesky.
 
-![ImageScraper demo](ImageScraper/data/demo.gif)
+![ImageScraper demo](ImageScraper/data/screenshot.png)
 
 </div>
 
