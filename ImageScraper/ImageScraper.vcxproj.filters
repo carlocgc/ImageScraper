@@ -305,6 +305,9 @@
     <ClInclude Include="include\utils\BlueskyUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\utils\MastodonUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\requests\RequestTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>

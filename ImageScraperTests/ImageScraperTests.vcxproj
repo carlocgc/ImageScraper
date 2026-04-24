@@ -125,6 +125,7 @@
     <ClCompile Include="src\tests\SanityTests.cpp" />
     <ClCompile Include="src\tests\RequestTypesTests.cpp" />
     <ClCompile Include="src\tests\BlueskyUtilsTests.cpp" />
+    <ClCompile Include="src\tests\MastodonUtilsTests.cpp" />
     <ClCompile Include="src\tests\DownloadUtilsTests.cpp" />
     <ClCompile Include="src\tests\RedditUtilsTests.cpp" />
     <ClCompile Include="src\tests\TumblrUtilsTests.cpp" />
