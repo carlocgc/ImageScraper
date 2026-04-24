@@ -235,6 +235,9 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\requests\bluesky\ResolveHandleRequest.cpp" />
     <ClCompile Include="src\requests\fourchan\GetThreadsRequest.cpp" />
     <ClCompile Include="src\requests\fourchan\GetBoardsRequest.cpp" />
+    <ClCompile Include="src\requests\mastodon\GetAccountStatusesRequest.cpp" />
+    <ClCompile Include="src\requests\mastodon\MastodonRequestHelpers.cpp" />
+    <ClCompile Include="src\requests\mastodon\SearchAccountsRequest.cpp" />
     <ClCompile Include="src\requests\reddit\AppOnlyAuthRequest.cpp" />
     <ClCompile Include="src\requests\reddit\GetCurrentUserRequest.cpp" />
     <ClCompile Include="src\requests\reddit\RevokeAccessTokenRequest.cpp" />
@@ -357,6 +360,9 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\requests\bluesky\ResolveHandleRequest.h" />
     <ClInclude Include="include\requests\fourchan\GetThreadsRequest.h" />
     <ClInclude Include="include\requests\fourchan\GetBoardsRequest.h" />
+    <ClInclude Include="include\requests\mastodon\GetAccountStatusesRequest.h" />
+    <ClInclude Include="include\requests\mastodon\MastodonRequestHelpers.h" />
+    <ClInclude Include="include\requests\mastodon\SearchAccountsRequest.h" />
     <ClInclude Include="include\requests\reddit\FetchAccessTokenRequest.h" />
     <ClInclude Include="include\requests\reddit\RefreshAccessTokenRequest.h" />
     <ClInclude Include="include\requests\tumblr\RetrievePublishedPostsRequest.h" />
