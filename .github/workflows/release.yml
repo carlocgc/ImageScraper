@@ -122,7 +122,18 @@ jobs:
             Set-Content $checksumFile
           echo "CHECKSUMS=$checksumFile" >> $env:GITHUB_OUTPUT
 
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-v${{ steps.version.outputs.VERSION }}
+          path: |
+            ${{ steps.package.outputs.ZIP }}
+            ${{ steps.installer.outputs.INSTALLER }}
+            ${{ steps.checksums.outputs.CHECKSUMS }}
+          retention-days: 30
+
       - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
