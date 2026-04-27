@@ -12,6 +12,8 @@ namespace
     constexpr const char* s_ConfigKey_RedditUserHistory      = "reddit_user_history";
     constexpr const char* s_ConfigKey_RedditTargetType       = "reddit_target_type";
     constexpr const char* s_ConfigKey_RedditMaxDownloads     = "reddit_max_downloads";
+    constexpr const char* s_ConfigKey_RedditScope            = "reddit_scope";
+    constexpr const char* s_ConfigKey_RedditScopeTimeFrame   = "reddit_scope_time_frame";
 }
 
 void ImageScraper::RedditPanel::LoadPanelState( std::shared_ptr<JsonFile> appConfig )
@@ -36,6 +38,18 @@ void ImageScraper::RedditPanel::LoadPanelState( std::shared_ptr<JsonFile> appCon
         if( m_AppConfig->GetValue<int>( s_ConfigKey_RedditMaxDownloads, saved ) )
         {
             m_RedditMaxMediaItems = std::clamp( saved, REDDIT_LIMIT_MIN, REDDIT_LIMIT_MAX );
+        }
+
+        int scope = static_cast<int>( RedditScope::Hot );
+        if( m_AppConfig->GetValue<int>( s_ConfigKey_RedditScope, scope ) )
+        {
+            m_RedditScope = static_cast<RedditScope>( scope );
+        }
+
+        int scopeTimeFrame = static_cast<int>( RedditScopeTimeFrame::All );
+        if( m_AppConfig->GetValue<int>( s_ConfigKey_RedditScopeTimeFrame, scopeTimeFrame ) )
+        {
+            m_RedditScopeTimeFrame = static_cast<RedditScopeTimeFrame>( scopeTimeFrame );
         }
     }
 }
@@ -108,6 +122,7 @@ void ImageScraper::RedditPanel::Update( )
 
     if( !isUserMode )
     {
+        const RedditScope previousRedditScope = m_RedditScope;
         int redditScope = static_cast<int>( m_RedditScope );
         if( DownloadOptionControls::DrawCombo(
             {
@@ -121,6 +136,12 @@ void ImageScraper::RedditPanel::Update( )
             IM_ARRAYSIZE( s_RedditScopeStrings ) ) )
         {
             m_RedditScope = static_cast<RedditScope>( redditScope );
+
+            if( m_RedditScope != previousRedditScope && m_AppConfig )
+            {
+                m_AppConfig->SetValue<int>( s_ConfigKey_RedditScope, redditScope );
+                m_AppConfig->Serialise( );
+            }
         }
     }
 
@@ -131,6 +152,7 @@ void ImageScraper::RedditPanel::Update( )
           scope == RedditScope::Controversial ||
           scope == RedditScope::Sort ) )
     {
+        const RedditScopeTimeFrame previousRedditScopeTimeFrame = m_RedditScopeTimeFrame;
         int redditScopeTimeFrame = static_cast<int>( m_RedditScopeTimeFrame );
         if( DownloadOptionControls::DrawCombo(
             {
@@ -144,6 +166,12 @@ void ImageScraper::RedditPanel::Update( )
             IM_ARRAYSIZE( s_RedditScopeTimeFrameStrings ) ) )
         {
             m_RedditScopeTimeFrame = static_cast<RedditScopeTimeFrame>( redditScopeTimeFrame );
+
+            if( m_RedditScopeTimeFrame != previousRedditScopeTimeFrame && m_AppConfig )
+            {
+                m_AppConfig->SetValue<int>( s_ConfigKey_RedditScopeTimeFrame, redditScopeTimeFrame );
+                m_AppConfig->Serialise( );
+            }
         }
     }
 

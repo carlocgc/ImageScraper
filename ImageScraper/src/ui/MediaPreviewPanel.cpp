@@ -12,6 +12,12 @@
 
 namespace
 {
+    // Segoe MDL2 Assets glyphs for the privacy toggle
+    constexpr const char* kIconEyeOpen   = "\xEE\xA2\x90"; // U+E890 View
+    constexpr const char* kIconEyeHidden = "\xEE\xB4\x9A"; // U+ED1A Hide
+    constexpr const char* kIconEyeOpenFallback   = "o";
+    constexpr const char* kIconEyeHiddenFallback = "/";
+
     std::string FormatDimensionsLabel( int width, int height )
     {
         if( width <= 0 || height <= 0 )
@@ -85,7 +91,12 @@ void ImageScraper::MediaPreviewPanel::Update( )
         contentScreenMax = ImVec2( winPos.x + ImGui::GetWindowContentRegionMax( ).x,
                                    winPos.y + ImGui::GetWindowContentRegionMax( ).y );
 
-        if( m_Textures.empty( ) )
+        if( m_PrivacyMode )
+        {
+            ImGui::GetWindowDrawList( )->AddRectFilled(
+                contentScreenMin, contentScreenMax, IM_COL32_BLACK );
+        }
+        else if( m_Textures.empty( ) )
         {
             ImGui::TextDisabled( m_IsDecoding ? "Loading preview..." : "No media loaded yet" );
         }
@@ -134,10 +145,74 @@ void ImageScraper::MediaPreviewPanel::Update( )
                 ImGui::SetTooltip( "%s", m_CurrentFilePath.c_str( ) );
             }
         }
+
+        // Floating privacy toggle in the top-right corner. Drawn last so it sits
+        // above the image / black overlay and wins hit-testing for clicks.
+        {
+            constexpr float k_BtnR = 16.0f;
+            constexpr float k_Pad  = 6.0f;
+
+            const ImVec2 center( contentScreenMax.x - k_Pad - k_BtnR,
+                                 contentScreenMin.y + k_Pad + k_BtnR );
+            const ImVec2 btnPos( center.x - k_BtnR, center.y - k_BtnR );
+            const ImVec2 btnSize( k_BtnR * 2.0f, k_BtnR * 2.0f );
+
+            ImGui::SetCursorScreenPos( btnPos );
+            const bool pressed = ImGui::InvisibleButton( "##privacy_toggle", btnSize );
+            const bool hovered = ImGui::IsItemHovered( );
+
+            if( hovered )
+            {
+                ImGui::SetTooltip( "%s", m_PrivacyMode ? "Show preview" : "Hide preview (privacy mode)" );
+            }
+
+            if( pressed )
+            {
+                m_PrivacyMode = !m_PrivacyMode;
+                if( m_AppConfig )
+                {
+                    m_AppConfig->SetValue<bool>( "preview_privacy_mode", m_PrivacyMode );
+                    m_AppConfig->Serialise( );
+                }
+            }
+
+            ImDrawList* btnDl = ImGui::GetWindowDrawList( );
+
+            // When privacy is on the panel is pure black, so a translucent dark
+            // background would disappear. Use a lighter fill in that case.
+            const ImU32 bgCol = m_PrivacyMode
+                                    ? ( hovered ? IM_COL32( 110, 110, 110, 220 ) : IM_COL32( 80, 80, 80, 200 ) )
+                                    : ( hovered ? IM_COL32( 0, 0, 0, 200 )       : IM_COL32( 0, 0, 0, 140 ) );
+            const ImU32 iconCol = IM_COL32( 240, 240, 240, 230 );
+
+            btnDl->AddCircleFilled( center, k_BtnR, bgCol, 24 );
+
+            const char* glyph    = m_PrivacyMode ? kIconEyeHidden         : kIconEyeOpen;
+            const char* fallback = m_PrivacyMode ? kIconEyeHiddenFallback : kIconEyeOpenFallback;
+
+            const bool useIconFont = ( m_IconFont != nullptr ) && m_IconFont->IsLoaded( );
+            if( useIconFont )
+            {
+                ImGui::PushFont( m_IconFont );
+            }
+
+            const char* drawText = useIconFont ? glyph : fallback;
+            const ImVec2 sz = ImGui::CalcTextSize( drawText );
+            // Glyph from Segoe MDL2 at 36pt is taller than our 32px button; nudge
+            // it up slightly so it visually centres.
+            const ImVec2 textPos( center.x - sz.x * 0.5f,
+                                  center.y - sz.y * 0.5f - 1.0f );
+            btnDl->AddText( textPos, iconCol, drawText );
+
+            if( useIconFont )
+            {
+                ImGui::PopFont( );
+            }
+        }
     }
     ImGui::End( );
 
-    if( windowOpen )
+    if( windowOpen && !m_PrivacyMode )
     {
         constexpr float k_Pad      = 6.0f;
         constexpr float k_BadgePad = 3.0f;
@@ -881,4 +956,25 @@ std::string ImageScraper::MediaPreviewPanel::FormatFileSize( const std::string& 
     }
 
     return ss.str( );
+}
+
+void ImageScraper::MediaPreviewPanel::LoadPanelState( std::shared_ptr<JsonFile> appConfig )
+{
+    m_AppConfig = appConfig;
+
+    if( !m_AppConfig )
+    {
+        return;
+    }
+
+    bool privacy = false;
+    if( m_AppConfig->GetValue<bool>( "preview_privacy_mode", privacy ) )
+    {
+        m_PrivacyMode = privacy;
+    }
+}
+
+void ImageScraper::MediaPreviewPanel::SetIconFont( ImFont* iconFont )
+{
+    m_IconFont = iconFont;
 }

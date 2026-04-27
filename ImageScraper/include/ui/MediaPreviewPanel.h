@@ -1,5 +1,6 @@
 #pragma once
 
+#include "io/JsonFile.h"
 #include "ui/IUiPanel.h"
 #include "ui/MediaAudioPlayer.h"
 #include "ui/VideoPlayer.h"
@@ -47,6 +48,15 @@ namespace ImageScraper
         // True when TogglePlayPause would have any effect
         bool CanPlayPause( ) const;
         bool CanMute( ) const;
+
+        // True when the preview is currently hidden by the user's privacy toggle
+        bool IsPrivacyMode( ) const { return m_PrivacyMode; }
+
+        // Loads persisted preferences (currently: privacy mode toggle)
+        void LoadPanelState( std::shared_ptr<JsonFile> appConfig );
+
+        // Optional icon font used for the privacy toggle. nullptr falls back to a text glyph.
+        void SetIconFont( ImFont* iconFont );
 
     private:
         enum class MediaState
@@ -130,6 +140,10 @@ namespace ImageScraper
         MediaState  m_MediaState{ MediaState::None };
         bool        m_HasAudio{ false };
         bool        m_IsMuted{ true };
+        bool        m_PrivacyMode{ false };
+
+        std::shared_ptr<JsonFile> m_AppConfig{ };
+        ImFont*                   m_IconFont{ nullptr };
 
         // Video playback - single reused texture, decoded frame-by-frame
         std::unique_ptr<VideoPlayer> m_VideoPlayer{ };
