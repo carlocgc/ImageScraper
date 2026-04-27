@@ -7,9 +7,76 @@
 #include <sstream>
 #include <thread>
 #include <chrono>
+#include <array>
+#include <algorithm>
 
 #include <winsock2.h>
 #include <WS2tcpip.h>
+
+namespace
+{
+    constexpr int s_ReceiveTimeoutMs = 2000;
+    constexpr std::size_t s_RequestChunkSize = 4096;
+    constexpr std::size_t s_MaxAuthRequestSize = 1024 * 16;
+
+    bool WaitForReadableSocket( SOCKET socket, int timeoutMs )
+    {
+        fd_set readSet;
+        FD_ZERO( &readSet );
+        FD_SET( socket, &readSet );
+
+        timeval timeout;
+        timeout.tv_sec = timeoutMs / 1000;
+        timeout.tv_usec = ( timeoutMs % 1000 ) * 1000;
+
+        return select( 0, &readSet, nullptr, nullptr, &timeout ) > 0;
+    }
+
+    bool ReceiveHttpRequest( SOCKET clientSocket, std::string& request )
+    {
+        request.clear( );
+        std::array<char, s_RequestChunkSize> buffer{ };
+
+        while( request.size( ) < s_MaxAuthRequestSize )
+        {
+            if( !WaitForReadableSocket( clientSocket, s_ReceiveTimeoutMs ) )
+            {
+                return !request.empty( );
+            }
+
+            const int remainingBytes = static_cast<int>( s_MaxAuthRequestSize - request.size( ) );
+            const int bytesToReceive = static_cast<int>( std::min<std::size_t>( buffer.size( ), remainingBytes ) );
+            const int bytesReceived = recv( clientSocket, buffer.data( ), bytesToReceive, 0 );
+
+            if( bytesReceived == SOCKET_ERROR )
+            {
+                const int error = WSAGetLastError( );
+                if( error == WSAEWOULDBLOCK )
+                {
+                    continue;
+                }
+
+                ImageScraper::Logger::Log( ImageScraper::LogLevel::Warning, "[%s] ListenServer failed to receive http request, WSA error: %i", __FUNCTION__, error );
+                return false;
+            }
+
+            if( bytesReceived == 0 )
+            {
+                return !request.empty( );
+            }
+
+            request.append( buffer.data( ), bytesReceived );
+
+            if( request.find( "\r\n\r\n" ) != std::string::npos )
+            {
+                return true;
+            }
+        }
+
+        ImageScraper::Logger::Log( ImageScraper::LogLevel::Warning, "[%s] ListenServer auth request exceeded max size of %zu bytes.", __FUNCTION__, s_MaxAuthRequestSize );
+        return false;
+    }
+}
 
 void ImageScraper::ListenServer::Init( std::vector<std::shared_ptr<Service>> services, int port, const std::string& authHtmlPath, std::shared_ptr<IServiceSink> sink )
 {
@@ -42,7 +109,7 @@ void ImageScraper::ListenServer::Start( )
 
     auto OnMessageReceived = [ this ]( const std::string message )
         {
-            LogDebug( "[%s] ListenServer message received, message: %s", __FUNCTION__, message.c_str( ) );
+            LogDebug( "[%s] ListenServer message received, bytes: %zu", __FUNCTION__, message.size( ) );
 
             for( const auto& service : m_Services )
             {
@@ -188,12 +255,16 @@ void ImageScraper::ListenServer::Start( )
 
                 LogDebug( "[%s] ListenServer connection established!", __FUNCTION__ );
 
-                // Now receive and process the HTTP response from the browser
-                char buffer[ 4096 ];
-                int bytesReceived = recv( clientSocket, buffer, sizeof( buffer ), 0 );
-                std::string response( buffer, bytesReceived );
+                // Now receive and process the HTTP request from the browser.
+                std::string response;
+                if( !ReceiveHttpRequest( clientSocket, response ) )
+                {
+                    WarningLog( "[%s] ListenServer received an invalid or empty auth request.", __FUNCTION__ );
+                    closesocket( clientSocket );
+                    continue;
+                }
 
-                LogDebug( "[%s] ListenServer bytes received!, bytes: %i, data: %s, ", __FUNCTION__, bytesReceived, response.c_str( ) );
+                LogDebug( "[%s] ListenServer bytes received!, bytes: %zu", __FUNCTION__, response.size( ) );
 
                 // Build the dynamic auth page - substitute brand colour and service name
                 // based on whichever provider is currently signing in.
@@ -249,8 +320,6 @@ void ImageScraper::ListenServer::Start( )
                 {
                     LogDebug( "[%s] ListenServer sent http response successfully!", __FUNCTION__ );
                 }                
-
-                LogDebug( "[%s] ListenServer Response: ", __FUNCTION__, response.c_str( ) );
 
                 auto messageTask = TaskManager::Instance( ).SubmitMain( OnMessageReceived, response );
                 ( void )messageTask;
