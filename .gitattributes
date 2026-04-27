@@ -16,6 +16,7 @@ PLAN.md text eol=lf
 README.MD text eol=lf
 THIRD_PARTY_LICENSES.md text eol=lf
 docs/** text eol=lf
+installer/** text eol=lf
 ImageScraper.runsettings text eol=lf
 ImageScraper.sln text eol=lf
 
