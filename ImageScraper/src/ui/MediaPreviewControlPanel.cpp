@@ -34,6 +34,7 @@ ImageScraper::MediaPreviewControlPanel::MediaPreviewControlPanel(
 void ImageScraper::MediaPreviewControlPanel::Update( )
 {
     constexpr const char* kBlockedTooltip = "Controls unavailable while a download is running";
+    constexpr const char* kPrivacyTooltip = "Controls unavailable while privacy mode is on";
 
     // Base (minimum) button dimensions
     constexpr float k_PlayR_min   = 18.f;
@@ -90,6 +91,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
     const bool playing      = m_PreviewPanel && m_PreviewPanel->IsPlaying( );
     const bool muted        = !m_PreviewPanel || m_PreviewPanel->IsMuted( );
     const bool blocked      = m_Blocked;
+    const bool privacy      = m_PreviewPanel && m_PreviewPanel->IsPrivacyMode( );
 
     ImDrawList* dl = ImGui::GetWindowDrawList( );
 
@@ -143,7 +145,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
 
     // --- Back (|<<) ---
     {
-        const bool disabled = blocked || !canGoBack;
+        const bool disabled = blocked || privacy || !canGoBack;
         auto [ pressed, center, iconCol ] = CircleBtn( "##back", 0.f, navOffY, k_NavR, disabled );
         DrawButtonIcon( center, k_NavR, kIconPrevious, kFallbackPrevious, iconCol );
 
@@ -156,6 +158,10 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         {
             ImGui::SetTooltip( kBlockedTooltip );
         }
+        else if( privacy && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) )
+        {
+            ImGui::SetTooltip( kPrivacyTooltip );
+        }
         else if( ImGui::IsItemHovered( ) )
         {
             ImGui::SetTooltip( "Previous item" );
@@ -164,7 +170,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
 
     // --- Play / pause ---
     {
-        const bool disabled = blocked || !canPlay;
+        const bool disabled = blocked || privacy || !canPlay;
         auto [ pressed, center, iconCol ] = CircleBtn( "##play", k_NavDia + k_Spacing, 0.f, k_PlayR, disabled );
         DrawButtonIcon( center, k_PlayR, playing ? kIconPause : kIconPlay, playing ? kFallbackPause : kFallbackPlay, iconCol );
 
@@ -177,6 +183,10 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         {
             ImGui::SetTooltip( kBlockedTooltip );
         }
+        else if( privacy && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) )
+        {
+            ImGui::SetTooltip( kPrivacyTooltip );
+        }
         else if( ImGui::IsItemHovered( ) )
         {
             ImGui::SetTooltip( playing ? "Pause preview" : "Play preview" );
@@ -185,7 +195,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
 
     // --- Forward (>>|) ---
     {
-        const bool disabled = blocked || !canGoForward;
+        const bool disabled = blocked || privacy || !canGoForward;
         auto [ pressed, center, iconCol ] = CircleBtn(
             "##forward",
             k_NavDia + k_Spacing + k_PlayDia + k_Spacing,
@@ -203,6 +213,10 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         {
             ImGui::SetTooltip( kBlockedTooltip );
         }
+        else if( privacy && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) )
+        {
+            ImGui::SetTooltip( kPrivacyTooltip );
+        }
         else if( ImGui::IsItemHovered( ) )
         {
             ImGui::SetTooltip( "Next item" );
@@ -211,7 +225,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
 
     // --- Mute / unmute ---
     {
-        const bool disabled = blocked || !canMute;
+        const bool disabled = blocked || privacy || !canMute;
         auto [ pressed, center, iconCol ] = CircleBtn(
             "##mute",
             k_NavDia + k_Spacing + k_PlayDia + k_Spacing + k_NavDia + k_Spacing,
@@ -228,6 +242,10 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         if( blocked && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) )
         {
             ImGui::SetTooltip( kBlockedTooltip );
+        }
+        else if( privacy && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) )
+        {
+            ImGui::SetTooltip( kPrivacyTooltip );
         }
         else if( ImGui::IsItemHovered( ) )
         {

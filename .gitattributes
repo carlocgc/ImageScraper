@@ -16,6 +16,8 @@ PLAN.md text eol=lf
 README.MD text eol=lf
 THIRD_PARTY_LICENSES.md text eol=lf
 docs/** text eol=lf
+installer/** text eol=lf
+installer/assets/** binary
 ImageScraper.runsettings text eol=lf
 ImageScraper.sln text eol=lf
 
@@ -70,6 +72,7 @@ ImageScraper/lib/**/curl-ca-bundle.crt text eol=crlf
 ImageScraperTests/include/catch2/** text eol=crlf
 ImageScraperTests/src/catch2/** text eol=crlf
 
+*.bmp binary
 *.dll binary
 *.exe binary
 *.ico binary
