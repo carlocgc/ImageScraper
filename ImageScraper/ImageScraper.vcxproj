@@ -138,7 +138,7 @@ xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
-if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
+if exist "$(TargetDir)config.json" del /F /Q "$(TargetDir)config.json"
 xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
@@ -198,7 +198,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <PreBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
-if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
+if exist "$(TargetDir)config.json" del /F /Q "$(TargetDir)config.json"
 xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avformat-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avcodec-62.dll" "$(TargetDir)" /Y
@@ -438,6 +438,9 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <None Include="include\curlpp\Option.inl" />
     <None Include="include\utilspp\ThreadingFactoryMutex.inl" />
     <None Include="include\utilspp\ThreadingSingle.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resources\ImageScraper.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
