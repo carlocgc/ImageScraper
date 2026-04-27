@@ -2,6 +2,7 @@
 
 #include "log/Logger.h"
 #include "nlohmann/json.hpp"
+#include "utils/StringUtils.h"
 
 #include <algorithm>
 #include <cctype>
@@ -116,25 +117,6 @@ namespace ImageScraper::BlueskyUtils
         return GetStringOrEmpty( blob, "mimeType" );
     }
 
-    inline std::string StripUrlQueryAndFragment( const std::string& url )
-    {
-        const std::size_t queryPos = url.find( '?' );
-        const std::size_t fragmentPos = url.find( '#' );
-
-        std::size_t endPos = std::string::npos;
-        if( queryPos != std::string::npos )
-        {
-            endPos = queryPos;
-        }
-
-        if( fragmentPos != std::string::npos )
-        {
-            endPos = ( endPos == std::string::npos ) ? fragmentPos : ( std::min )( endPos, fragmentPos );
-        }
-
-        return endPos == std::string::npos ? url : url.substr( 0, endPos );
-    }
-
     inline std::string SanitizePathComponent( const std::string& value, const std::string& fallback = "item" )
     {
         std::string sanitized{ };
@@ -204,10 +186,7 @@ namespace ImageScraper::BlueskyUtils
 
     inline std::string CanonicalizeImageExtension( std::string extension )
     {
-        std::transform( extension.begin( ), extension.end( ), extension.begin( ), []( unsigned char c )
-            {
-                return static_cast<char>( std::tolower( c ) );
-            } );
+        extension = StringUtils::ToLower( extension );
 
         if( extension == "jpeg" || extension == "jpe" || extension == "jfif" )
         {
@@ -234,7 +213,7 @@ namespace ImageScraper::BlueskyUtils
 
     inline std::string GetImageExtensionFromUrl( const std::string& url )
     {
-        const std::string normalizedUrl = StripUrlQueryAndFragment( url );
+        const std::string normalizedUrl = StringUtils::StripUrlQueryAndFragment( url );
         const std::size_t slashPos = normalizedUrl.find_last_of( '/' );
         const std::string filename = slashPos == std::string::npos ? normalizedUrl : normalizedUrl.substr( slashPos + 1 );
         if( filename.empty( ) )
@@ -285,10 +264,7 @@ namespace ImageScraper::BlueskyUtils
 
     inline std::string CanonicalizeVideoExtension( std::string extension )
     {
-        std::transform( extension.begin( ), extension.end( ), extension.begin( ), []( unsigned char c )
-            {
-                return static_cast<char>( std::tolower( c ) );
-            } );
+        extension = StringUtils::ToLower( extension );
 
         if( extension == "quicktime" )
         {
@@ -383,7 +359,7 @@ namespace ImageScraper::BlueskyUtils
                 continue;
             }
 
-            const std::string normalizedUrl = StripUrlQueryAndFragment( item.m_DownloadUrl );
+            const std::string normalizedUrl = StringUtils::StripUrlQueryAndFragment( item.m_DownloadUrl );
             if( normalizedUrl.empty( ) || !seenUrls.insert( normalizedUrl ).second )
             {
                 continue;

@@ -6,6 +6,7 @@
 #include "ui/DownloadHistoryPanel.h"
 #include "imgui/imgui_internal.h"
 #include "utils/DownloadUtils.h"
+#include "utils/StringUtils.h"
 #include "log/Logger.h"
 
 #include <filesystem>
@@ -30,16 +31,6 @@ namespace
     constexpr const char* kDownloadsSelectedPathKey = "downloads_selected_path";
     constexpr const char* kLegacySelectedPathKey    = "history_selected_path";
     constexpr const char* kDeleteConfirmPopupId     = "Confirm Delete##downloads";
-
-    std::string ToLowerCopy( const std::string& value )
-    {
-        std::string lower = value;
-        std::transform( lower.begin( ), lower.end( ), lower.begin( ), []( unsigned char c )
-        {
-            return static_cast<char>( std::tolower( c ) );
-        } );
-        return lower;
-    }
 
     std::filesystem::path NormalisePath( const std::filesystem::path& path )
     {
@@ -67,8 +58,8 @@ namespace
 
     int CompareStringsCaseInsensitive( const std::string& lhs, const std::string& rhs )
     {
-        const std::string lhsLower = ToLowerCopy( lhs );
-        const std::string rhsLower = ToLowerCopy( rhs );
+        const std::string lhsLower = ImageScraper::StringUtils::ToLower( lhs );
+        const std::string rhsLower = ImageScraper::StringUtils::ToLower( rhs );
         if( lhsLower < rhsLower )
         {
             return -1;
@@ -1391,11 +1382,7 @@ ImageScraper::DownloadHistoryPanel::DecodedThumbnail ImageScraper::DownloadHisto
 
 bool ImageScraper::DownloadHistoryPanel::IsSupportedMediaExtension( const std::string& filepath )
 {
-    std::string ext = std::filesystem::path( filepath ).extension( ).string( );
-    std::transform( ext.begin( ), ext.end( ), ext.begin( ), []( unsigned char c )
-    {
-        return static_cast<char>( std::tolower( c ) );
-    } );
+    const std::string ext = StringUtils::ToLower( std::filesystem::path( filepath ).extension( ).string( ) );
 
     static const std::unordered_set<std::string> k_Supported =
     {
@@ -1408,11 +1395,7 @@ bool ImageScraper::DownloadHistoryPanel::IsSupportedMediaExtension( const std::s
 
 bool ImageScraper::DownloadHistoryPanel::IsVideoExtension( const std::string& filepath )
 {
-    std::string ext = std::filesystem::path( filepath ).extension( ).string( );
-    std::transform( ext.begin( ), ext.end( ), ext.begin( ), []( unsigned char c )
-    {
-        return static_cast<char>( std::tolower( c ) );
-    } );
+    const std::string ext = StringUtils::ToLower( std::filesystem::path( filepath ).extension( ).string( ) );
 
     static const std::unordered_set<std::string> k_Video =
     {
@@ -1460,11 +1443,7 @@ std::string ImageScraper::DownloadHistoryPanel::GetTypeColumnLabel( const std::f
         return "Folder";
     }
 
-    std::string extension = path.extension( ).string( );
-    std::transform( extension.begin( ), extension.end( ), extension.begin( ), []( unsigned char c )
-    {
-        return static_cast<char>( std::tolower( c ) );
-    } );
+    std::string extension = StringUtils::ToLower( path.extension( ).string( ) );
 
     static const std::unordered_set<std::string> imageTypes =
     {
