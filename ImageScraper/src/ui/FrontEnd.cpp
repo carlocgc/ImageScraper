@@ -12,8 +12,10 @@ namespace
         static const ImWchar k_IconRanges[] = {
             0xE74F, 0xE74F, // Mute
             0xE767, 0xE769, // Volume, Play, Pause
+            0xE890, 0xE890, // View (privacy off)
             0xE892, 0xE893, // Previous, Next
             0xE992, 0xE992, // Volume0
+            0xED1A, 0xED1A, // Hide (privacy on)
             0,
         };
 
@@ -81,6 +83,7 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     m_DownloadHistoryPanel->Load( appConfig, exeDir / "Downloads" );
     m_DownloadOptionsPanel->LoadPanelState( appConfig );
     m_LogPanel->LoadPanelState( appConfig );
+    m_MediaPreviewPanel->LoadPanelState( appConfig );
 
     glfwSetErrorCallback( GLFW_ErrorCallback );
     if( !glfwInit( ) )
@@ -110,6 +113,7 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
 
     io.Fonts->AddFontDefault( );
     ImFont* mediaControlsIconFont = LoadMediaControlsIconFont( io );
+    m_MediaPreviewPanel->SetIconFont( mediaControlsIconFont );
 
     m_IniPath = ( exeDir / "imgui.ini" ).string( );
     io.IniFilename = m_IniPath.c_str( );
