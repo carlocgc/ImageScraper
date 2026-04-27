@@ -101,7 +101,7 @@ jobs:
           if (-not (Test-Path $iscc)) {
             throw "ISCC.exe was not found after installing Inno Setup."
           }
-          & $iscc "installer\ImageScraper.iss" "/DAppVersion=""$version""" "/DSourceDir=""$sourceDir""" "/DOutputDir=""$outputDir""" "/DRootDir=""$rootDir"""
+          & $iscc "installer\ImageScraper.iss" "/DAppVersion=$version" "/DSourceDir=$sourceDir" "/DOutputDir=$outputDir" "/DRootDir=$rootDir"
           $installer = Join-Path $outputDir "ImageScraper-v$version-x64-setup.exe"
           if (-not (Test-Path $installer)) {
             throw "Installer was not created at $installer."

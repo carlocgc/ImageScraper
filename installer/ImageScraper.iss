@@ -3,7 +3,6 @@
 #define AppVersion "0.0.0"
 #endif
 #define VersionInfo AppVersion + ".0"
-#pragma message "DEBUG AppVersion=[" + AppVersion + "] VersionInfo=[" + VersionInfo + "]"
 #ifndef SourceDir
 #define SourceDir "..\bin\ImageScraper\x64\Release"
 #endif
