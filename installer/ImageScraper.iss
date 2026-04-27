@@ -2,6 +2,9 @@
 #ifndef AppVersion
 #define AppVersion "0.0.0"
 #endif
+#ifndef VersionInfoVersion
+#define VersionInfoVersion AppVersion + ".0"
+#endif
 #ifndef SourceDir
 #define SourceDir "..\bin\ImageScraper\x64\Release"
 #endif
@@ -36,7 +39,7 @@ UninstallDisplayIcon={app}\ImageScraper.exe
 SetupIconFile=assets\ImageScraper.ico
 WizardImageFile=assets\WizardImage.bmp
 WizardSmallImageFile=assets\WizardImageSmall.bmp
-VersionInfoVersion={#AppVersion}
+VersionInfoVersion={#VersionInfoVersion}
 VersionInfoCompany=ImageScraper
 VersionInfoDescription=ImageScraper installer
 VersionInfoProductName=ImageScraper
