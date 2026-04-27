@@ -93,9 +93,6 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ steps.version.outputs.VERSION }}"
-          $parts = $version -split '\.'
-          while ($parts.Count -lt 4) { $parts += '0' }
-          $versionInfo = ($parts[0..3] -join '.')
           $sourceDir = (Resolve-Path "bin\ImageScraper\x64\Release").ProviderPath
           $rootDir = (Resolve-Path ".").ProviderPath
           $outputDir = Join-Path $PWD "dist"
@@ -104,7 +101,7 @@ jobs:
           if (-not (Test-Path $iscc)) {
             throw "ISCC.exe was not found after installing Inno Setup."
           }
-          & $iscc "installer\ImageScraper.iss" "/DAppVersion=""$version""" "/DVersionInfoVersion=""$versionInfo""" "/DSourceDir=""$sourceDir""" "/DOutputDir=""$outputDir""" "/DRootDir=""$rootDir"""
+          & $iscc "installer\ImageScraper.iss" "/DAppVersion=""$version""" "/DSourceDir=""$sourceDir""" "/DOutputDir=""$outputDir""" "/DRootDir=""$rootDir"""
           $installer = Join-Path $outputDir "ImageScraper-v$version-x64-setup.exe"
           if (-not (Test-Path $installer)) {
             throw "Installer was not created at $installer."
