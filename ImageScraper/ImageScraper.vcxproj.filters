@@ -613,4 +613,9 @@
     <None Include="data\config.template.json" />
     <None Include="data\auth.html" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resources\ImageScraper.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
 </Project>

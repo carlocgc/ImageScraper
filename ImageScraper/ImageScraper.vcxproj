@@ -439,6 +439,9 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <None Include="include\utilspp\ThreadingFactoryMutex.inl" />
     <None Include="include\utilspp\ThreadingSingle.inl" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resources\ImageScraper.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
