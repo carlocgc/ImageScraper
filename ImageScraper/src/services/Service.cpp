@@ -3,6 +3,7 @@
 #include "requests/VideoDownloadRequest.h"
 #include "requests/DownloadRequestTypes.h"
 #include "network/CurlHttpClient.h"
+#include "network/RedgifsResolver.h"
 #include "network/RetryHttpClient.h"
 #include "utils/DownloadUtils.h"
 #include "log/Logger.h"
@@ -87,8 +88,29 @@ std::optional<int> ImageScraper::Service::DownloadMediaUrls( std::vector<std::st
     std::vector<MediaDownload> downloads{ };
     downloads.reserve( mediaUrls.size( ) );
 
+    // Lazily constructed; created on the first redgifs URL we see so that
+    // downloads with no redgifs links don't perform an unnecessary auth.
+    std::unique_ptr<RedgifsResolver> redgifsResolver{ };
+
     for( std::string& url : mediaUrls )
     {
+        if( RedgifsResolver::IsRedgifsUrl( url ) )
+        {
+            if( !redgifsResolver )
+            {
+                redgifsResolver = std::make_unique<RedgifsResolver>(
+                    std::make_shared<CurlHttpClient>( ), m_CaBundle, m_UserAgent );
+            }
+
+            const std::optional<std::string> resolved = redgifsResolver->Resolve( url );
+            if( !resolved )
+            {
+                LogError( "[%s] Could not resolve redgifs URL, skipping: %s", __FUNCTION__, url.c_str( ) );
+                continue;
+            }
+            url = *resolved;
+        }
+
         const std::string newUrl = DownloadHelpers::RedirectToPreferredFileTypeUrl( url );
         if( !newUrl.empty( ) )
         {

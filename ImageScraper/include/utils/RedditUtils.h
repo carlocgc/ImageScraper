@@ -211,6 +211,11 @@ namespace ImageScraper::RedditUtils
 
             const std::vector<std::string> targetExts{ ".jpg", ".jpeg", ".png", ".webm", ".webp", ".gif", ".gifv", ".mp4" };
 
+            // Hosts whose URLs do not carry a media extension but can still be
+            // resolved to a direct media URL by a downstream resolver
+            // (e.g. RedgifsResolver). Matched as a substring against the URL.
+            const std::vector<std::string> resolvableHosts{ "redgifs.com" };
+
             for( const auto& post : children )
             {
                 const Json& postData = post[ "data" ];
@@ -233,12 +238,26 @@ namespace ImageScraper::RedditUtils
 
                 const std::string& url = postData[ contentKey ];
 
+                bool added = false;
                 for( const auto& ext : targetExts )
                 {
                     if( url.find( ext ) != std::string::npos )
                     {
                         result.m_Urls.push_back( url );
+                        added = true;
                         break;
+                    }
+                }
+
+                if( !added )
+                {
+                    for( const auto& host : resolvableHosts )
+                    {
+                        if( url.find( host ) != std::string::npos )
+                        {
+                            result.m_Urls.push_back( url );
+                            break;
+                        }
                     }
                 }
             }

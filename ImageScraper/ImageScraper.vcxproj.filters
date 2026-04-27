@@ -129,6 +129,9 @@
     <ClCompile Include="src\network\CurlHttpClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\network\RedgifsResolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\network\RetryHttpClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -528,6 +531,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\network\CurlHttpClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\network\RedgifsResolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\network\RetryHttpClient.h">
