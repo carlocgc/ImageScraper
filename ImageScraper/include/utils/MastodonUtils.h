@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nlohmann/json.hpp"
+#include "utils/StringUtils.h"
 
 #include <algorithm>
 #include <cctype>
@@ -57,60 +58,6 @@ namespace ImageScraper::MastodonUtils
         std::string m_AccountDirectory{ };
     };
 
-    inline std::string Trim( const std::string& value )
-    {
-        const auto first = std::find_if_not( value.begin( ), value.end( ), []( unsigned char c )
-            {
-                return std::isspace( c ) != 0;
-            } );
-
-        if( first == value.end( ) )
-        {
-            return { };
-        }
-
-        const auto last = std::find_if_not( value.rbegin( ), value.rend( ), []( unsigned char c )
-            {
-                return std::isspace( c ) != 0;
-            } ).base( );
-
-        return std::string( first, last );
-    }
-
-    inline std::string ToLower( std::string value )
-    {
-        std::transform( value.begin( ), value.end( ), value.begin( ), []( unsigned char c )
-            {
-                return static_cast<char>( std::tolower( c ) );
-            } );
-
-        return value;
-    }
-
-    inline bool StartsWith( const std::string& value, const std::string& prefix )
-    {
-        return value.rfind( prefix, 0 ) == 0;
-    }
-
-    inline std::string StripUrlQueryAndFragment( const std::string& url )
-    {
-        const std::size_t queryPos = url.find( '?' );
-        const std::size_t fragmentPos = url.find( '#' );
-
-        std::size_t endPos = std::string::npos;
-        if( queryPos != std::string::npos )
-        {
-            endPos = queryPos;
-        }
-
-        if( fragmentPos != std::string::npos )
-        {
-            endPos = ( endPos == std::string::npos ) ? fragmentPos : ( std::min )( endPos, fragmentPos );
-        }
-
-        return endPos == std::string::npos ? url : url.substr( 0, endPos );
-    }
-
     inline std::string SanitizePathComponent( const std::string& value, const std::string& fallback = "item" )
     {
         std::string sanitized{ };
@@ -144,22 +91,22 @@ namespace ImageScraper::MastodonUtils
 
     inline std::string GetHostFromUrl( const std::string& url )
     {
-        const std::string trimmed = Trim( StripUrlQueryAndFragment( url ) );
+        const std::string trimmed = StringUtils::Trim( StringUtils::StripUrlQueryAndFragment( url ) );
         const std::size_t schemePos = trimmed.find( "://" );
         if( schemePos == std::string::npos )
         {
             const std::size_t slashPos = trimmed.find( '/' );
-            return ToLower( slashPos == std::string::npos ? trimmed : trimmed.substr( 0, slashPos ) );
+            return StringUtils::ToLower( slashPos == std::string::npos ? trimmed : trimmed.substr( 0, slashPos ) );
         }
 
         const std::size_t hostStart = schemePos + 3;
         const std::size_t hostEnd = trimmed.find( '/', hostStart );
-        return ToLower( hostEnd == std::string::npos ? trimmed.substr( hostStart ) : trimmed.substr( hostStart, hostEnd - hostStart ) );
+        return StringUtils::ToLower( hostEnd == std::string::npos ? trimmed.substr( hostStart ) : trimmed.substr( hostStart, hostEnd - hostStart ) );
     }
 
     inline std::string NormalizeInstanceUrl( const std::string& instance )
     {
-        std::string normalized = Trim( StripUrlQueryAndFragment( instance ) );
+        std::string normalized = StringUtils::Trim( StringUtils::StripUrlQueryAndFragment( instance ) );
         std::replace( normalized.begin( ), normalized.end( ), '\\', '/' );
 
         if( normalized.empty( ) )
@@ -178,7 +125,7 @@ namespace ImageScraper::MastodonUtils
             return { };
         }
 
-        std::string scheme = ToLower( normalized.substr( 0, schemePos ) );
+        std::string scheme = StringUtils::ToLower( normalized.substr( 0, schemePos ) );
         if( scheme != "http" && scheme != "https" )
         {
             return { };
@@ -187,7 +134,7 @@ namespace ImageScraper::MastodonUtils
         const std::size_t hostStart = schemePos + 3;
         const std::size_t hostEnd = normalized.find( '/', hostStart );
         std::string host = hostEnd == std::string::npos ? normalized.substr( hostStart ) : normalized.substr( hostStart, hostEnd - hostStart );
-        host = ToLower( host );
+        host = StringUtils::ToLower( host );
 
         while( !host.empty( ) && host.back( ) == '/' )
         {
@@ -210,7 +157,7 @@ namespace ImageScraper::MastodonUtils
     inline NormalizedAccount NormalizeAccountInput( const std::string& account )
     {
         NormalizedAccount normalized{ };
-        std::string value = Trim( StripUrlQueryAndFragment( account ) );
+        std::string value = StringUtils::Trim( StringUtils::StripUrlQueryAndFragment( account ) );
         std::replace( value.begin( ), value.end( ), '\\', '/' );
 
         if( value.empty( ) )
@@ -218,7 +165,7 @@ namespace ImageScraper::MastodonUtils
             return normalized;
         }
 
-        if( StartsWith( ToLower( value ), "http://" ) || StartsWith( ToLower( value ), "https://" ) )
+        if( StringUtils::StartsWith( StringUtils::ToLower( value ), "http://" ) || StringUtils::StartsWith( StringUtils::ToLower( value ), "https://" ) )
         {
             normalized.m_Domain = GetHostFromUrl( value );
 
@@ -230,11 +177,11 @@ namespace ImageScraper::MastodonUtils
             }
 
             std::string path = value.substr( pathStart + 1 );
-            if( StartsWith( path, "@" ) )
+            if( StringUtils::StartsWith( path, "@" ) )
             {
                 path.erase( path.begin( ) );
             }
-            else if( StartsWith( path, "users/" ) )
+            else if( StringUtils::StartsWith( path, "users/" ) )
             {
                 path.erase( 0, 6 );
             }
@@ -263,7 +210,7 @@ namespace ImageScraper::MastodonUtils
 
         const std::size_t atPos = value.find( '@' );
         normalized.m_Username = atPos == std::string::npos ? value : value.substr( 0, atPos );
-        normalized.m_Domain = atPos == std::string::npos ? std::string{ } : ToLower( value.substr( atPos + 1 ) );
+        normalized.m_Domain = atPos == std::string::npos ? std::string{ } : StringUtils::ToLower( value.substr( atPos + 1 ) );
         normalized.m_SearchQuery = normalized.m_Domain.empty( ) ? normalized.m_Username : normalized.m_Username + "@" + normalized.m_Domain;
         return normalized;
     }
@@ -295,10 +242,10 @@ namespace ImageScraper::MastodonUtils
             return false;
         }
 
-        const std::string targetUsername = ToLower( target.m_Username );
-        const std::string targetDomain = ToLower( target.m_Domain );
-        const std::string accountUsername = ToLower( account.m_Username );
-        const std::string accountAcct = ToLower( account.m_Acct );
+        const std::string targetUsername = StringUtils::ToLower( target.m_Username );
+        const std::string targetDomain = StringUtils::ToLower( target.m_Domain );
+        const std::string accountUsername = StringUtils::ToLower( account.m_Username );
+        const std::string accountAcct = StringUtils::ToLower( account.m_Acct );
         const std::string accountUrlHost = GetHostFromUrl( account.m_Url );
 
         if( targetDomain.empty( ) )
@@ -364,7 +311,7 @@ namespace ImageScraper::MastodonUtils
 
     inline std::string CanonicalizeExtension( std::string extension )
     {
-        extension = ToLower( extension );
+        extension = StringUtils::ToLower( extension );
 
         if( extension == "jpeg" || extension == "jpe" || extension == "jfif" )
         {
@@ -401,7 +348,7 @@ namespace ImageScraper::MastodonUtils
 
     inline std::string GetExtensionFromUrl( const std::string& url )
     {
-        const std::string normalizedUrl = StripUrlQueryAndFragment( url );
+        const std::string normalizedUrl = StringUtils::StripUrlQueryAndFragment( url );
         const std::size_t slashPos = normalizedUrl.find_last_of( '/' );
         const std::string filename = slashPos == std::string::npos ? normalizedUrl : normalizedUrl.substr( slashPos + 1 );
         if( filename.empty( ) )
@@ -548,7 +495,7 @@ namespace ImageScraper::MastodonUtils
                 continue;
             }
 
-            const std::string normalizedUrl = StripUrlQueryAndFragment( item.m_DownloadUrl );
+            const std::string normalizedUrl = StringUtils::StripUrlQueryAndFragment( item.m_DownloadUrl );
             if( normalizedUrl.empty( ) || !seenUrls.insert( normalizedUrl ).second )
             {
                 continue;

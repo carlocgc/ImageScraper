@@ -2,6 +2,7 @@
 #include "ui/DownloadOptionControls.h"
 #include "log/Logger.h"
 #include "utils/RedditUtils.h"
+#include "utils/StringUtils.h"
 
 #include <algorithm>
 #include <cctype>
@@ -204,21 +205,15 @@ ImageScraper::UserInputOptions ImageScraper::RedditPanel::BuildInputOptions( ) c
         ? RedditUtils::NormalizeUserName( m_UserName )
         : RedditUtils::NormalizeSubredditName( m_SubredditName );
 
-    auto toLower = [ ]( unsigned char ch ) { return static_cast<char>( std::tolower( ch ) ); };
-
     if( m_RedditTargetType == RedditTargetType::Subreddit )
     {
-        std::string scope = s_RedditScopeStrings[ static_cast<int>( m_RedditScope ) ];
-        std::transform( scope.begin( ), scope.end( ), scope.begin( ), toLower );
-        options.m_RedditScope = scope;
+        options.m_RedditScope = StringUtils::ToLower( s_RedditScopeStrings[ static_cast<int>( m_RedditScope ) ] );
 
         if( m_RedditScope == RedditScope::Top ||
             m_RedditScope == RedditScope::Controversial ||
             m_RedditScope == RedditScope::Sort )
         {
-            std::string scopeTimeFrame = s_RedditScopeTimeFrameStrings[ static_cast<int>( m_RedditScopeTimeFrame ) ];
-            std::transform( scopeTimeFrame.begin( ), scopeTimeFrame.end( ), scopeTimeFrame.begin( ), toLower );
-            options.m_RedditScopeTimeFrame = scopeTimeFrame;
+            options.m_RedditScopeTimeFrame = StringUtils::ToLower( s_RedditScopeTimeFrameStrings[ static_cast<int>( m_RedditScopeTimeFrame ) ] );
         }
     }
 

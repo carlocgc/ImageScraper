@@ -1,13 +1,12 @@
 #include "requests/DownloadRequest.h"
 #include "utils/DownloadUtils.h"
+#include "utils/StringUtils.h"
 #include "log/Logger.h"
 #include "curlpp/Infos.hpp"
 #include "curlpp/Options.hpp"
 #include "curlpp/cURLpp.hpp"
 #include "curlpp/Easy.hpp"
 
-#include <algorithm>
-#include <cctype>
 #include <sstream>
 #include <cmath>
 
@@ -83,9 +82,7 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
             // Some responses don't expose a Content-Type; treat as empty.
         }
 
-        std::string contentTypeLower = contentType;
-        std::transform( contentTypeLower.begin( ), contentTypeLower.end( ), contentTypeLower.begin( ),
-                        []( unsigned char c ) { return static_cast<char>( std::tolower( c ) ); } );
+        const std::string contentTypeLower = StringUtils::ToLower( contentType );
 
         const bool statusOk = ( status >= 200 && status < 300 );
         const bool contentTypeIsError = contentTypeLower.rfind( "text/html", 0 ) == 0

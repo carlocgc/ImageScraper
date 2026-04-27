@@ -1,9 +1,9 @@
 #include "network/RedgifsResolver.h"
 #include "log/Logger.h"
 #include "nlohmann/json.hpp"
+#include "utils/StringUtils.h"
 
 #include <algorithm>
-#include <cctype>
 
 namespace
 {
@@ -14,16 +14,9 @@ namespace
     // racing the redgifs server clock.
     constexpr int k_TokenExpirySafetyBufferSeconds = 30;
 
-    std::string ToLowerCopy( std::string s )
-    {
-        std::transform( s.begin( ), s.end( ), s.begin( ),
-                        []( unsigned char c ) { return static_cast<char>( std::tolower( c ) ); } );
-        return s;
-    }
-
     bool ContainsHost( const std::string& url, const char* host )
     {
-        return ToLowerCopy( url ).find( host ) != std::string::npos;
+        return ImageScraper::StringUtils::ToLower( url ).find( host ) != std::string::npos;
     }
 }
 
@@ -51,7 +44,7 @@ std::string ImageScraper::RedgifsResolver::ExtractSlug( const std::string& url )
         trimmed.erase( queryPos );
     }
 
-    const std::string lowered = ToLowerCopy( trimmed );
+    const std::string lowered = StringUtils::ToLower( trimmed );
 
     static const char* k_Markers[] = { "/watch/", "/ifr/" };
     std::size_t slugStart = std::string::npos;
@@ -79,7 +72,7 @@ std::string ImageScraper::RedgifsResolver::ExtractSlug( const std::string& url )
         slug.erase( slashPos );
     }
 
-    return ToLowerCopy( slug );
+    return StringUtils::ToLower( slug );
 }
 
 bool ImageScraper::RedgifsResolver::EnsureToken( )

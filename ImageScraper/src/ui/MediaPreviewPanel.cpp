@@ -1,6 +1,7 @@
 #define NOMINMAX
 #include "ui/MediaPreviewPanel.h"
 #include "utils/DownloadUtils.h"
+#include "utils/StringUtils.h"
 #include "log/Logger.h"
 
 #include <algorithm>
@@ -912,9 +913,7 @@ bool ImageScraper::MediaPreviewPanel::IsGif( const std::string& filepath )
         return false;
     }
 
-    std::string ext = filepath.substr( dot + 1 );
-    std::transform( ext.begin( ), ext.end( ), ext.begin( ),
-        []( unsigned char c ) { return static_cast<char>( std::tolower( c ) ); } );
+    const std::string ext = StringUtils::ToLower( filepath.substr( dot + 1 ) );
     return ext == "gif";
 }
 
@@ -926,9 +925,7 @@ bool ImageScraper::MediaPreviewPanel::IsVideo( const std::string& filepath )
         return false;
     }
 
-    std::string ext = filepath.substr( dot + 1 );
-    std::transform( ext.begin( ), ext.end( ), ext.begin( ),
-        []( unsigned char c ) { return static_cast<char>( std::tolower( c ) ); } );
+    const std::string ext = StringUtils::ToLower( filepath.substr( dot + 1 ) );
     return ext == "mp4" || ext == "webm" || ext == "mov" || ext == "mkv" || ext == "avi";
 }
 

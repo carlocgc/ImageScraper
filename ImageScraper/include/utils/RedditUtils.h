@@ -2,6 +2,7 @@
 
 #include "log/Logger.h"
 #include "nlohmann/json.hpp"
+#include "utils/StringUtils.h"
 
 #include <cctype>
 #include <string>
@@ -14,29 +15,6 @@ namespace ImageScraper::RedditUtils
 
     namespace Detail
     {
-        inline void TrimWhitespace( std::string& text )
-        {
-            while( !text.empty( ) && std::isspace( static_cast<unsigned char>( text.front( ) ) ) )
-            {
-                text.erase( text.begin( ) );
-            }
-
-            while( !text.empty( ) && std::isspace( static_cast<unsigned char>( text.back( ) ) ) )
-            {
-                text.pop_back( );
-            }
-        }
-
-        inline std::string ToLowerCopy( const std::string& text )
-        {
-            std::string lowered = text;
-            for( char& ch : lowered )
-            {
-                ch = static_cast<char>( std::tolower( static_cast<unsigned char>( ch ) ) );
-            }
-            return lowered;
-        }
-
         inline void StripLeadingSlashes( std::string& text )
         {
             while( !text.empty( ) && text.front( ) == '/' )
@@ -60,13 +38,13 @@ namespace ImageScraper::RedditUtils
 
     inline std::string NormalizeUserName( std::string value )
     {
-        Detail::TrimWhitespace( value );
+        value = StringUtils::Trim( value );
         if( value.empty( ) )
         {
             return { };
         }
 
-        const std::string lowered = Detail::ToLowerCopy( value );
+        const std::string lowered = StringUtils::ToLower( value );
         const std::size_t redditPos = lowered.find( "reddit.com/" );
         if( redditPos != std::string::npos )
         {
@@ -75,7 +53,7 @@ namespace ImageScraper::RedditUtils
 
         Detail::StripLeadingSlashes( value );
 
-        const std::string prefixLowered = Detail::ToLowerCopy( value );
+        const std::string prefixLowered = StringUtils::ToLower( value );
         if( prefixLowered.rfind( "u/", 0 ) == 0 )
         {
             value.erase( 0, 2 );
@@ -93,7 +71,7 @@ namespace ImageScraper::RedditUtils
             value = value.substr( 0, endPos );
         }
 
-        const std::string finalLowered = Detail::ToLowerCopy( value );
+        const std::string finalLowered = StringUtils::ToLower( value );
         if( finalLowered == "u" || finalLowered == "user" )
         {
             return { };
@@ -104,13 +82,13 @@ namespace ImageScraper::RedditUtils
 
     inline std::string NormalizeSubredditName( std::string value )
     {
-        Detail::TrimWhitespace( value );
+        value = StringUtils::Trim( value );
         if( value.empty( ) )
         {
             return { };
         }
 
-        const std::string lowered = Detail::ToLowerCopy( value );
+        const std::string lowered = StringUtils::ToLower( value );
         const std::size_t redditPos = lowered.find( "reddit.com/" );
         if( redditPos != std::string::npos )
         {
@@ -119,7 +97,7 @@ namespace ImageScraper::RedditUtils
 
         Detail::StripLeadingSlashes( value );
 
-        const std::string prefixLowered = Detail::ToLowerCopy( value );
+        const std::string prefixLowered = StringUtils::ToLower( value );
         if( prefixLowered.rfind( "r/", 0 ) == 0 )
         {
             value.erase( 0, 2 );
@@ -133,7 +111,7 @@ namespace ImageScraper::RedditUtils
             value = value.substr( 0, endPos );
         }
 
-        if( Detail::ToLowerCopy( value ) == "r" )
+        if( StringUtils::ToLower( value ) == "r" )
         {
             return { };
         }
