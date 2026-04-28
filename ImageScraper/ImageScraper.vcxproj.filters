@@ -132,6 +132,9 @@
     <ClCompile Include="src\network\RedgifsTokenCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\network\RedgifsUrlResolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\requests\redgifs\GetTemporaryAuthRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -548,7 +551,13 @@
     <ClInclude Include="include\network\CurlHttpClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\network\IUrlResolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\network\RedgifsTokenCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\network\RedgifsUrlResolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\requests\redgifs\GetTemporaryAuthRequest.h">

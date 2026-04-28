@@ -14,7 +14,10 @@
 #include "config/Config.h"
 #include "ui/FrontEnd.h"
 #include "io/JsonFile.h"
+#include "network/CurlHttpClient.h"
 #include "network/ListenServer.h"
+#include "network/RedgifsUrlResolver.h"
+#include "network/RetryHttpClient.h"
 
 #include <string>
 #include <chrono>
@@ -63,12 +66,20 @@ ImageScraper::App::App( )
 
     const std::string caBundlePath = ( exeDir / s_CaBundleFile ).generic_string( );
     m_OutputDirPath = exeDir.generic_string( );
-    m_Services.push_back( std::make_shared<RedditService>(   m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
-    m_Services.push_back( std::make_shared<TumblrService>(   m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
-    m_Services.push_back( std::make_shared<FourChanService>( m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
-    m_Services.push_back( std::make_shared<BlueskyService>(  m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
-    m_Services.push_back( std::make_shared<MastodonService>( m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
-    m_Services.push_back( std::make_shared<RedgifsService>(  m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
+
+    // One URL resolver, shared across every service. Today only translates
+    // redgifs watch URLs; new resolvers can be added by composing them here.
+    auto urlResolver = std::make_shared<RedgifsUrlResolver>(
+        std::make_shared<RetryHttpClient>( std::make_shared<CurlHttpClient>( ) ),
+        caBundlePath,
+        Service::DefaultUserAgent( ) );
+
+    m_Services.push_back( std::make_shared<RedditService>(   m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd, urlResolver ) );
+    m_Services.push_back( std::make_shared<TumblrService>(   m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd, urlResolver ) );
+    m_Services.push_back( std::make_shared<FourChanService>( m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd, urlResolver ) );
+    m_Services.push_back( std::make_shared<BlueskyService>(  m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd, urlResolver ) );
+    m_Services.push_back( std::make_shared<MastodonService>( m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd, urlResolver ) );
+    m_Services.push_back( std::make_shared<RedgifsService>(  m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd, urlResolver ) );
 
     m_ListenServer = std::make_shared<ListenServer>( );
 }

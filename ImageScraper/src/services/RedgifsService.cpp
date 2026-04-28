@@ -18,8 +18,8 @@ namespace
     constexpr int s_RedgifsUserSearchPageSize = 100;
 }
 
-ImageScraper::RedgifsService::RedgifsService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
-    : Service( ContentProvider::Redgifs, appConfig, userConfig, caBundle, outputDir, sink )
+ImageScraper::RedgifsService::RedgifsService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver )
+    : Service( ContentProvider::Redgifs, appConfig, userConfig, caBundle, outputDir, sink, std::move( urlResolver ) )
 {
 }
 

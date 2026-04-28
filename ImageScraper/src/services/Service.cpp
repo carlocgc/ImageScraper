@@ -2,19 +2,16 @@
 #include "requests/DownloadRequest.h"
 #include "requests/VideoDownloadRequest.h"
 #include "requests/DownloadRequestTypes.h"
-#include "requests/RequestTypes.h"
-#include "requests/redgifs/GetGifRequest.h"
 #include "network/CurlHttpClient.h"
-#include "network/RedgifsTokenCache.h"
+#include "network/IUrlResolver.h"
 #include "network/RetryHttpClient.h"
 #include "utils/DownloadUtils.h"
-#include "utils/RedgifsUtils.h"
 #include "log/Logger.h"
 
 #include <chrono>
 #include <thread>
 
-ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
+ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver )
     : m_ContentProvider{ provider }
     , m_AppConfig{ appConfig }
     , m_UserConfig{ userConfig }
@@ -22,6 +19,7 @@ ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFi
     , m_OutputDir{ outputDir }
     , m_Sink{ sink }
     , m_HttpClient{ std::make_shared<RetryHttpClient>( std::make_shared<CurlHttpClient>( ) ) }
+    , m_UrlResolver{ std::move( urlResolver ) }
 {
 }
 
@@ -91,54 +89,17 @@ std::optional<int> ImageScraper::Service::DownloadMediaUrls( std::vector<std::st
     std::vector<MediaDownload> downloads{ };
     downloads.reserve( mediaUrls.size( ) );
 
-    // Lazily constructed; created on the first redgifs URL we see so that
-    // downloads with no redgifs links don't perform an unnecessary auth.
-    std::unique_ptr<RedgifsTokenCache> redgifsTokenCache{ };
-
     for( std::string& url : mediaUrls )
     {
-        if( RedgifsUtils::IsRedgifsUrl( url ) )
+        if( m_UrlResolver && m_UrlResolver->CanHandle( url ) )
         {
-            const std::string slug = RedgifsUtils::ExtractSlug( url );
-            if( slug.empty( ) )
+            const std::optional<std::string> resolved = m_UrlResolver->Resolve( url );
+            if( !resolved )
             {
-                LogError( "[%s] Could not parse slug from redgifs URL, skipping: %s", __FUNCTION__, url.c_str( ) );
+                LogError( "[%s] URL resolution failed, skipping: %s", __FUNCTION__, url.c_str( ) );
                 continue;
             }
-
-            if( !redgifsTokenCache )
-            {
-                redgifsTokenCache = std::make_unique<RedgifsTokenCache>( m_HttpClient, m_CaBundle, m_UserAgent );
-            }
-
-            if( !redgifsTokenCache->EnsureToken( ) )
-            {
-                LogError( "[%s] Could not acquire redgifs token, skipping: %s", __FUNCTION__, url.c_str( ) );
-                continue;
-            }
-
-            RequestOptions gifOptions{ };
-            gifOptions.m_CaBundle = m_CaBundle;
-            gifOptions.m_UserAgent = m_UserAgent;
-            gifOptions.m_AccessToken = redgifsTokenCache->Token( );
-            gifOptions.m_UrlExt = slug;
-
-            Redgifs::GetGifRequest gifRequest{ m_HttpClient };
-            const RequestResult gifResult = gifRequest.Perform( gifOptions );
-            if( !gifResult.m_Success )
-            {
-                LogError( "[%s] redgifs lookup failed for slug '%s': %s", __FUNCTION__, slug.c_str( ), gifResult.m_Error.m_ErrorString.c_str( ) );
-                continue;
-            }
-
-            const std::string resolved = RedgifsUtils::ExtractMediaUrlFromGifResponse( gifResult.m_Response );
-            if( resolved.empty( ) )
-            {
-                LogError( "[%s] redgifs response had no usable URL for slug '%s', skipping: %s", __FUNCTION__, slug.c_str( ), url.c_str( ) );
-                continue;
-            }
-
-            url = resolved;
+            url = *resolved;
         }
 
         const std::string newUrl = DownloadHelpers::RedirectToPreferredFileTypeUrl( url );

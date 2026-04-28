@@ -226,6 +226,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\network\ListenServer.cpp" />
     <ClCompile Include="src\network\CurlHttpClient.cpp" />
     <ClCompile Include="src\network\RedgifsTokenCache.cpp" />
+    <ClCompile Include="src\network\RedgifsUrlResolver.cpp" />
     <ClCompile Include="src\network\RetryHttpClient.cpp" />
     <ClCompile Include="src\requests\DownloadRequest.cpp" />
     <ClCompile Include="src\requests\VideoDownloadRequest.cpp" />
@@ -362,7 +363,9 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\network\HttpClientTypes.h" />
     <ClInclude Include="include\network\IHttpClient.h" />
     <ClInclude Include="include\network\CurlHttpClient.h" />
+    <ClInclude Include="include\network\IUrlResolver.h" />
     <ClInclude Include="include\network\RedgifsTokenCache.h" />
+    <ClInclude Include="include\network\RedgifsUrlResolver.h" />
     <ClInclude Include="include\network\RetryHttpClient.h" />
     <ClInclude Include="include\requests\bluesky\GetAuthorFeedRequest.h" />
     <ClInclude Include="include\requests\bluesky\ResolveHandleRequest.h" />
