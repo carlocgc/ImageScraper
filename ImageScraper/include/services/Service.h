@@ -15,13 +15,19 @@ namespace ImageScraper
 {
     class JsonFile;
     class IHttpClient;
+    class IUrlResolver;
 
     class Service
     {
     public:
         using AuthenticateCallback = std::function<void( ContentProvider, bool )>;
 
-        Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink );
+        Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver = nullptr );
+
+        // The user agent string sent on every HTTP request the services make.
+        // Exposed so external code (e.g. App.cpp constructing shared resolvers)
+        // can use the same value as the services themselves.
+        static constexpr const char* DefaultUserAgent( ) { return "Windows:ImageScraper:v0.1:carlocgc1@gmail.com"; }
 
         virtual ~Service( ) = default;
         virtual bool HandleUserInput( const UserInputOptions& options ) = 0;
@@ -60,10 +66,11 @@ namespace ImageScraper
         ContentProvider m_ContentProvider;
         std::shared_ptr<JsonFile> m_AppConfig{ nullptr };
         std::shared_ptr<JsonFile> m_UserConfig{ nullptr };
-        std::string m_UserAgent{ "Windows:ImageScraper:v0.1:carlocgc1@gmail.com" };
+        std::string m_UserAgent{ DefaultUserAgent( ) };
         std::string m_CaBundle{ };
         std::string m_OutputDir{ };
         std::shared_ptr<IServiceSink> m_Sink{ nullptr };
         std::shared_ptr<IHttpClient> m_HttpClient{ nullptr };
+        std::shared_ptr<IUrlResolver> m_UrlResolver{ nullptr };
     };
 }

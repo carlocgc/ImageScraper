@@ -17,8 +17,8 @@ namespace
     constexpr const char* s_BlueskyAuthorFeedFilter = "posts_with_media";
 }
 
-ImageScraper::BlueskyService::BlueskyService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
-    : Service( ContentProvider::Bluesky, appConfig, userConfig, caBundle, outputDir, sink )
+ImageScraper::BlueskyService::BlueskyService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver )
+    : Service( ContentProvider::Bluesky, appConfig, userConfig, caBundle, outputDir, sink, std::move( urlResolver ) )
 {
 }
 

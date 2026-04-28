@@ -3,7 +3,7 @@
 #include "requests/VideoDownloadRequest.h"
 #include "requests/DownloadRequestTypes.h"
 #include "network/CurlHttpClient.h"
-#include "network/RedgifsResolver.h"
+#include "network/IUrlResolver.h"
 #include "network/RetryHttpClient.h"
 #include "utils/DownloadUtils.h"
 #include "log/Logger.h"
@@ -11,7 +11,7 @@
 #include <chrono>
 #include <thread>
 
-ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
+ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver )
     : m_ContentProvider{ provider }
     , m_AppConfig{ appConfig }
     , m_UserConfig{ userConfig }
@@ -19,6 +19,7 @@ ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFi
     , m_OutputDir{ outputDir }
     , m_Sink{ sink }
     , m_HttpClient{ std::make_shared<RetryHttpClient>( std::make_shared<CurlHttpClient>( ) ) }
+    , m_UrlResolver{ std::move( urlResolver ) }
 {
 }
 
@@ -88,24 +89,14 @@ std::optional<int> ImageScraper::Service::DownloadMediaUrls( std::vector<std::st
     std::vector<MediaDownload> downloads{ };
     downloads.reserve( mediaUrls.size( ) );
 
-    // Lazily constructed; created on the first redgifs URL we see so that
-    // downloads with no redgifs links don't perform an unnecessary auth.
-    std::unique_ptr<RedgifsResolver> redgifsResolver{ };
-
     for( std::string& url : mediaUrls )
     {
-        if( RedgifsResolver::IsRedgifsUrl( url ) )
+        if( m_UrlResolver && m_UrlResolver->CanHandle( url ) )
         {
-            if( !redgifsResolver )
-            {
-                redgifsResolver = std::make_unique<RedgifsResolver>(
-                    std::make_shared<CurlHttpClient>( ), m_CaBundle, m_UserAgent );
-            }
-
-            const std::optional<std::string> resolved = redgifsResolver->Resolve( url );
+            const std::optional<std::string> resolved = m_UrlResolver->Resolve( url );
             if( !resolved )
             {
-                LogError( "[%s] Could not resolve redgifs URL, skipping: %s", __FUNCTION__, url.c_str( ) );
+                LogError( "[%s] URL resolution failed, skipping: %s", __FUNCTION__, url.c_str( ) );
                 continue;
             }
             url = *resolved;

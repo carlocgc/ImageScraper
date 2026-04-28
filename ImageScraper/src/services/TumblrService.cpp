@@ -26,8 +26,8 @@ const std::string ImageScraper::TumblrService::s_UserDataKey_ConsumerSecret = "t
 const std::string ImageScraper::TumblrService::s_AppDataKey_RefreshToken  = "tumblr_refresh_token";
 const std::string ImageScraper::TumblrService::s_AppDataKey_StateId       = "tumblr_state_id";
 
-ImageScraper::TumblrService::TumblrService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
-    : Service( ContentProvider::Tumblr, appConfig, userConfig, caBundle, outputDir, sink )
+ImageScraper::TumblrService::TumblrService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver )
+    : Service( ContentProvider::Tumblr, appConfig, userConfig, caBundle, outputDir, sink, std::move( urlResolver ) )
 {
     OAuthConfig oauthConfig{
         "https://www.tumblr.com/oauth2/authorize",

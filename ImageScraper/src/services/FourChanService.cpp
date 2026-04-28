@@ -11,8 +11,8 @@
 
 #include <string>
 
-ImageScraper::FourChanService::FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
-    : Service( ContentProvider::FourChan, appConfig, userConfig, caBundle, outputDir, sink )
+ImageScraper::FourChanService::FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver )
+    : Service( ContentProvider::FourChan, appConfig, userConfig, caBundle, outputDir, sink, std::move( urlResolver ) )
 {
 }
 
