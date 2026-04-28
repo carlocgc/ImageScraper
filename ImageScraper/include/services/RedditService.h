@@ -16,7 +16,7 @@ namespace ImageScraper
     class RedditService : public Service
     {
     public:
-        RedditService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink );
+        RedditService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver = nullptr );
         bool HandleUserInput( const UserInputOptions& options ) override;
         bool OpenExternalAuth( ) override;
         bool HandleExternalAuth( const std::string& response ) override;

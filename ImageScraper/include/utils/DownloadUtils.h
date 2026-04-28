@@ -164,6 +164,31 @@ namespace ImageScraper::DownloadHelpers
 
         if( providerName == "Reddit" )
         {
+            auto relativeIt = relativePath.begin( );
+            if( relativeIt == relativePath.end( ) )
+            {
+                return { };
+            }
+
+            const std::string firstPart = relativeIt->string( );
+            if( firstPart == "Subreddit" )
+            {
+                ++relativeIt;
+                if( relativeIt != relativePath.end( ) )
+                {
+                    return "r/" + relativeIt->string( );
+                }
+            }
+
+            if( firstPart == "User" )
+            {
+                ++relativeIt;
+                if( relativeIt != relativePath.end( ) )
+                {
+                    return "u/" + relativeIt->string( );
+                }
+            }
+
             return "r/" + subfolderName;
         }
 

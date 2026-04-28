@@ -4,6 +4,7 @@
 #include "ui/FourChanPanel.h"
 #include "ui/BlueskyPanel.h"
 #include "ui/MastodonPanel.h"
+#include "ui/RedgifsPanel.h"
 #include "ui/DownloadOptionControls.h"
 #include "log/Logger.h"
 
@@ -15,6 +16,7 @@ ImageScraper::DownloadOptionsPanel::DownloadOptionsPanel( const std::vector<std:
     m_ProviderPanels.push_back( std::make_unique<FourChanPanel>( ) );
     m_ProviderPanels.push_back( std::make_unique<BlueskyPanel>( ) );
     m_ProviderPanels.push_back( std::make_unique<MastodonPanel>( ) );
+    m_ProviderPanels.push_back( std::make_unique<RedgifsPanel>( ) );
 }
 
 void ImageScraper::DownloadOptionsPanel::LoadPanelState( std::shared_ptr<JsonFile> appConfig )

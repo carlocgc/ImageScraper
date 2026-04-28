@@ -1,8 +1,15 @@
 #pragma once
 
-#include <string>
+#include <algorithm>
+#include <cctype>
 #include <random>
+#include <string>
 
+// Block Windows.h from defining min/max macros that collide with std::min /
+// std::max in TUs that include this header transitively.
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <Windows.h>
 
 namespace ImageScraper
@@ -95,6 +102,59 @@ namespace ImageScraper
                 }
             }
             return result;
+        }
+
+        // Returns a lowercased copy of value. ASCII-only - non-ASCII bytes
+        // pass through unchanged.
+        static std::string ToLower( std::string value )
+        {
+            std::transform( value.begin( ), value.end( ), value.begin( ),
+                []( unsigned char c ) { return static_cast<char>( std::tolower( c ) ); } );
+            return value;
+        }
+
+        // Returns value with leading and trailing whitespace removed.
+        static std::string Trim( const std::string& value )
+        {
+            const auto first = std::find_if_not( value.begin( ), value.end( ),
+                []( unsigned char c ) { return std::isspace( c ) != 0; } );
+
+            if( first == value.end( ) )
+            {
+                return { };
+            }
+
+            const auto last = std::find_if_not( value.rbegin( ), value.rend( ),
+                []( unsigned char c ) { return std::isspace( c ) != 0; } ).base( );
+
+            return std::string( first, last );
+        }
+
+        // True iff value starts with prefix.
+        static bool StartsWith( const std::string& value, const std::string& prefix )
+        {
+            return value.rfind( prefix, 0 ) == 0;
+        }
+
+        // Returns the URL with any '?query' and/or '#fragment' suffix removed.
+        // The earliest of the two terminators wins.
+        static std::string StripUrlQueryAndFragment( const std::string& url )
+        {
+            const std::size_t queryPos    = url.find( '?' );
+            const std::size_t fragmentPos = url.find( '#' );
+
+            std::size_t endPos = std::string::npos;
+            if( queryPos != std::string::npos )
+            {
+                endPos = queryPos;
+            }
+
+            if( fragmentPos != std::string::npos )
+            {
+                endPos = ( endPos == std::string::npos ) ? fragmentPos : ( std::min )( endPos, fragmentPos );
+            }
+
+            return endPos == std::string::npos ? url : url.substr( 0, endPos );
         }
 
         // Decodes a percent-encoded URL string. '+' is treated as a space.

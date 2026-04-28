@@ -198,3 +198,39 @@ TEST_CASE( "GetMediaUrls bails on first post with no URL key", "[RedditUtils]" )
     auto result = GetMediaUrls( response );
     REQUIRE( result.m_Urls.empty( ) );
 }
+
+TEST_CASE( "GetMediaUrls accepts redgifs watch URLs even without an extension", "[RedditUtils]" )
+{
+    Json response = Json::parse( R"({
+        "data": {
+            "children": [
+                { "data": { "url": "https://redgifs.com/watch/somegifslug" } },
+                { "data": { "url": "https://www.redgifs.com/watch/anotherSlug" } },
+                { "data": { "url": "https://v3.redgifs.com/watch/thirdSlug" } }
+            ],
+            "after": null
+        }
+    })" );
+
+    auto result = GetMediaUrls( response );
+    REQUIRE( result.m_Urls.size( ) == 3 );
+    REQUIRE( result.m_Urls[ 0 ] == "https://redgifs.com/watch/somegifslug" );
+    REQUIRE( result.m_Urls[ 1 ] == "https://www.redgifs.com/watch/anotherSlug" );
+    REQUIRE( result.m_Urls[ 2 ] == "https://v3.redgifs.com/watch/thirdSlug" );
+}
+
+TEST_CASE( "GetMediaUrls still rejects unrelated extension-less URLs (e.g. gfycat)", "[RedditUtils]" )
+{
+    Json response = Json::parse( R"({
+        "data": {
+            "children": [
+                { "data": { "url": "https://gfycat.com/SomeSlug" } },
+                { "data": { "url": "https://reddit.com/r/sub/comments/xyz/title/" } }
+            ],
+            "after": null
+        }
+    })" );
+
+    auto result = GetMediaUrls( response );
+    REQUIRE( result.m_Urls.empty( ) );
+}

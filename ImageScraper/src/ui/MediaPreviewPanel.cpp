@@ -1,6 +1,7 @@
 #define NOMINMAX
 #include "ui/MediaPreviewPanel.h"
 #include "utils/DownloadUtils.h"
+#include "utils/StringUtils.h"
 #include "log/Logger.h"
 
 #include <algorithm>
@@ -169,6 +170,7 @@ void ImageScraper::MediaPreviewPanel::Update( )
             if( pressed )
             {
                 m_PrivacyMode = !m_PrivacyMode;
+                OnPrivacyModeChanged( );
                 if( m_AppConfig )
                 {
                     m_AppConfig->SetValue<bool>( "preview_privacy_mode", m_PrivacyMode );
@@ -613,6 +615,45 @@ void ImageScraper::MediaPreviewPanel::ApplyPreparedAudio( )
     }
 }
 
+void ImageScraper::MediaPreviewPanel::OnPrivacyModeChanged( )
+{
+    m_PlayOnUpload = false;
+    ResetPlaybackToStartPaused( );
+}
+
+void ImageScraper::MediaPreviewPanel::ResetPlaybackToStartPaused( )
+{
+    StopAudioPlayback( );
+    m_IsPlaybackClockRunning = false;
+    m_PlaybackTimeSeconds = 0.0;
+    m_CurrentFrame = 0;
+    m_FrameAccumMs = 0.0f;
+
+    if( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::LoadingFullFrames )
+    {
+        m_MediaState = MediaState::StaticFrame;
+    }
+
+    if( m_MediaState != MediaState::VideoPlaying && m_MediaState != MediaState::VideoPaused )
+    {
+        return;
+    }
+
+    m_MediaState = MediaState::VideoPaused;
+    m_VideoFrameIndex = 0;
+
+    if( !m_VideoPlayer || !m_VideoPlayer->IsOpen( ) || m_Textures.empty( ) )
+    {
+        return;
+    }
+
+    m_VideoPlayer->SeekToStart( );
+    if( m_VideoPlayer->DecodeNextFrame( m_VideoFrameBuffer ) )
+    {
+        UploadCurrentVideoFrame( );
+    }
+}
+
 void ImageScraper::MediaPreviewPanel::StartVideoPlayback( )
 {
     if( m_MediaState != MediaState::VideoPaused )
@@ -787,9 +828,10 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
         m_MediaState      = MediaState::VideoPaused;
 
         KickAudioPrepareIfNeeded( );
-        if( m_PlayOnUpload )
+        const bool shouldPlayOnUpload = m_PlayOnUpload && !m_PrivacyMode;
+        m_PlayOnUpload = false;
+        if( shouldPlayOnUpload )
         {
-            m_PlayOnUpload = false;
             StartVideoPlayback( );
         }
         return;
@@ -814,7 +856,7 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
 
     if( decoded.m_Frames > 1 )
     {
-        m_MediaState = MediaState::GifPlaying;
+        m_MediaState = m_PrivacyMode ? MediaState::StaticFrame : MediaState::GifPlaying;
     }
     else if( IsGif( decoded.m_FilePath ) )
     {
@@ -912,9 +954,7 @@ bool ImageScraper::MediaPreviewPanel::IsGif( const std::string& filepath )
         return false;
     }
 
-    std::string ext = filepath.substr( dot + 1 );
-    std::transform( ext.begin( ), ext.end( ), ext.begin( ),
-        []( unsigned char c ) { return static_cast<char>( std::tolower( c ) ); } );
+    const std::string ext = StringUtils::ToLower( filepath.substr( dot + 1 ) );
     return ext == "gif";
 }
 
@@ -926,9 +966,7 @@ bool ImageScraper::MediaPreviewPanel::IsVideo( const std::string& filepath )
         return false;
     }
 
-    std::string ext = filepath.substr( dot + 1 );
-    std::transform( ext.begin( ), ext.end( ), ext.begin( ),
-        []( unsigned char c ) { return static_cast<char>( std::tolower( c ) ); } );
+    const std::string ext = StringUtils::ToLower( filepath.substr( dot + 1 ) );
     return ext == "mp4" || ext == "webm" || ext == "mov" || ext == "mkv" || ext == "avi";
 }
 

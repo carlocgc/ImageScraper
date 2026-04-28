@@ -104,6 +104,20 @@ TEST_CASE( "GetSubfolderLabel formats provider-specific download labels", "[Down
         REQUIRE( GetSubfolderLabel( filepath ) == "r/cats" );
     }
 
+    SECTION( "Reddit subreddit target directory is omitted" )
+    {
+        const std::string filepath =
+            ( std::filesystem::path( "Downloads" ) / "Reddit" / "Subreddit" / "aww" / "kitten.png" ).string( );
+        REQUIRE( GetSubfolderLabel( filepath ) == "r/aww" );
+    }
+
+    SECTION( "Reddit user target directory uses u/ prefix" )
+    {
+        const std::string filepath =
+            ( std::filesystem::path( "Downloads" ) / "Reddit" / "User" / "spez" / "post.jpg" ).string( );
+        REQUIRE( GetSubfolderLabel( filepath ) == "u/spez" );
+    }
+
     SECTION( "Tumblr uses @ prefix" )
     {
         const std::string filepath =

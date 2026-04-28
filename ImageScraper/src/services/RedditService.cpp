@@ -64,8 +64,8 @@ const std::string ImageScraper::RedditService::s_AppDataKey_RefreshToken  = "red
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientId     = "reddit_client_id";
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientSecret = "reddit_client_secret";
 
-ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink )
-    : Service( ContentProvider::Reddit, appConfig, userConfig, caBundle, outputDir, sink )
+ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver )
+    : Service( ContentProvider::Reddit, appConfig, userConfig, caBundle, outputDir, sink, std::move( urlResolver ) )
 {
     OAuthConfig oauthConfig{
         "https://www.reddit.com/api/v1/authorize",

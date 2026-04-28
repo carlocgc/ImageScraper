@@ -131,6 +131,7 @@
     <ClCompile Include="src\tests\MastodonUtilsTests.cpp" />
     <ClCompile Include="src\tests\DownloadUtilsTests.cpp" />
     <ClCompile Include="src\tests\RedditUtilsTests.cpp" />
+    <ClCompile Include="src\tests\RedgifsUtilsTests.cpp" />
     <ClCompile Include="src\tests\TumblrUtilsTests.cpp" />
     <ClCompile Include="src\tests\FourChanUtilsTests.cpp" />
     <ClCompile Include="src\tests\RequestTests.cpp" />

@@ -1,6 +1,8 @@
 #include "requests/DownloadRequest.h"
 #include "utils/DownloadUtils.h"
+#include "utils/StringUtils.h"
 #include "log/Logger.h"
+#include "curlpp/Infos.hpp"
 #include "curlpp/Options.hpp"
 #include "curlpp/cURLpp.hpp"
 #include "curlpp/Easy.hpp"
@@ -64,6 +66,44 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
         request.setOpt( new curlpp::options::FollowLocation( true ) );
 
         request.perform( );
+
+        // Curl returns success for any completed transfer, including 4xx/5xx
+        // responses where the server's error body gets written to disk as if it
+        // were the requested media. Reject responses that aren't a real 2xx
+        // file payload so callers don't end up with HTML/JSON error stubs.
+        const long status = curlpp::infos::ResponseCode::get( request );
+        std::string contentType{ };
+        try
+        {
+            contentType = curlpp::infos::ContentType::get( request );
+        }
+        catch( const curlpp::RuntimeError& )
+        {
+            // Some responses don't expose a Content-Type; treat as empty.
+        }
+
+        const std::string contentTypeLower = StringUtils::ToLower( contentType );
+
+        const bool statusOk = ( status >= 200 && status < 300 );
+        const bool contentTypeIsError = contentTypeLower.rfind( "text/html", 0 ) == 0
+                                        || contentTypeLower.rfind( "application/json", 0 ) == 0
+                                        || contentTypeLower.rfind( "text/plain", 0 ) == 0;
+
+        if( !statusOk || contentTypeIsError )
+        {
+            CleanupPartialOutputFile( );
+            m_Result.SetError( ResponseErrorCode::InternalServerError );
+            std::ostringstream oss;
+            oss << "HTTP " << status;
+            if( !contentType.empty( ) )
+            {
+                oss << " (Content-Type: " << contentType << ")";
+            }
+            m_Result.m_Error.m_ErrorString = oss.str( );
+            LogError( "[%s] DownloadRequest rejected response: %s, url: %s",
+                      __FUNCTION__, m_Result.m_Error.m_ErrorString.c_str( ), options.m_Url.c_str( ) );
+            return m_Result;
+        }
     }
     catch( curlpp::RuntimeError& e )
     {

@@ -1,1 +1,2 @@
 IDI_APPICON ICON "..\\..\\installer\\assets\\ImageScraper.ico"
+GLFW_ICON ICON "..\\..\\installer\\assets\\ImageScraper.ico"
