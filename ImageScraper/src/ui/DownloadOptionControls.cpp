@@ -17,13 +17,17 @@ namespace
         return ImGui::CalcTextSize( label ).x;
     }
 
+    constexpr float k_MaxWidgetWidth = 220.0f;
+
     float GetWidgetWidth( const char* label, float trailingControlsWidth )
     {
         const ImGuiStyle& style = ImGui::GetStyle( );
         const float labelWidth = GetLabelWidth( label );
         const float spacing = style.ItemInnerSpacing.x;
         const float reservedWidth = trailingControlsWidth + labelWidth + ( labelWidth > 0.0f ? spacing : 0.0f );
-        return ( std::max )( 1.0f, ImGui::GetContentRegionAvail( ).x - reservedWidth );
+        const float availableWidth = ( std::max )( 1.0f, ImGui::GetContentRegionAvail( ).x - reservedWidth );
+        const float maxWidth = ( std::max )( 1.0f, k_MaxWidgetWidth - trailingControlsWidth );
+        return ( std::min )( availableWidth, maxWidth );
     }
 
     bool BeginRow( const char* rowId )
