@@ -185,6 +185,7 @@ void ImageScraper::FrontEnd::Update( )
     m_DownloadHistoryPanel->SetBlocked(
         isRunning ||
         m_DownloadOptionsPanel->GetSigningInProvider( ) != INVALID_CONTENT_PROVIDER );
+    m_DownloadHistoryPanel->SetPrivacyMode( m_MediaPreviewPanel->IsPrivacyMode( ) );
     m_DownloadHistoryPanel->Update( );
     m_LogPanel->Update( );
 

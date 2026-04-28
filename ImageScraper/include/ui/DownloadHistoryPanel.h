@@ -44,6 +44,7 @@ namespace ImageScraper
 
         // Called by FrontEnd each frame before Update() to propagate blocked state.
         void SetBlocked( bool blocked ) { m_Blocked = blocked; }
+        void SetPrivacyMode( bool privacyMode ) { m_PrivacyMode = privacyMode; }
 
         // Navigate to the next displayed item in the Downloads tree; fires preview callback.
         void SelectNext( );
@@ -159,6 +160,7 @@ namespace ImageScraper
         std::string m_SelectedPath{ };
         std::string m_DeleteConfirmPath{ };
         bool        m_Blocked{ false };
+        bool        m_PrivacyMode{ false };
         bool        m_ScrollToSelected{ false };
     };
 }

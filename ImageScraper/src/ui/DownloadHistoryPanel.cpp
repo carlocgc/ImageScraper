@@ -281,8 +281,18 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         && ImGui::IsKeyPressed( ImGuiKey_Delete )
         && CanDeletePath( std::filesystem::path{ m_SelectedPath } ) )
     {
-        m_DeleteConfirmPath = m_SelectedPath;
-        openDeleteConfirm = true;
+        const std::filesystem::path deletePath{ m_SelectedPath };
+        std::error_code ec;
+        const bool isDirectory = std::filesystem::is_directory( deletePath, ec );
+        if( ec || isDirectory )
+        {
+            m_DeleteConfirmPath = m_SelectedPath;
+            openDeleteConfirm = true;
+        }
+        else
+        {
+            DeletePath( deletePath );
+        }
     }
 
     if( openDeleteConfirm && !m_DeleteConfirmPath.empty( ) )
@@ -924,7 +934,7 @@ void ImageScraper::DownloadHistoryPanel::ShowPathTooltip( const TreeNodeSnapshot
         return;
     }
 
-    const ThumbnailEntry thumb = GetOrLoadThumbnail( node.m_PathString );
+    const ThumbnailEntry thumb = m_PrivacyMode ? ThumbnailEntry{ } : GetOrLoadThumbnail( node.m_PathString );
     float displayWidth = k_TooltipMaxSize;
     if( thumb.m_Texture != 0 )
     {

@@ -38,6 +38,7 @@ ImageScraper/include/traits/** text eol=lf
 ImageScraper/include/ui/** text eol=lf
 ImageScraper/include/utils/** text eol=lf
 ImageScraper/include/version/** text eol=lf
+ImageScraper/resources/** text eol=lf
 ImageScraper/src/app/** text eol=lf
 ImageScraper/src/async/** text eol=lf
 ImageScraper/src/auth/** text eol=lf
