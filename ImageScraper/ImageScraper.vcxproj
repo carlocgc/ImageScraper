@@ -225,7 +225,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\log\FrontEndLogger.cpp" />
     <ClCompile Include="src\network\ListenServer.cpp" />
     <ClCompile Include="src\network\CurlHttpClient.cpp" />
-    <ClCompile Include="src\network\RedgifsResolver.cpp" />
+    <ClCompile Include="src\network\RedgifsTokenCache.cpp" />
     <ClCompile Include="src\network\RetryHttpClient.cpp" />
     <ClCompile Include="src\requests\DownloadRequest.cpp" />
     <ClCompile Include="src\requests\VideoDownloadRequest.cpp" />
@@ -245,6 +245,9 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\requests\reddit\FetchAccessTokenRequest.cpp" />
     <ClCompile Include="src\requests\reddit\FetchSubredditPostsRequest.cpp" />
     <ClCompile Include="src\requests\reddit\RefreshAccessTokenRequest.cpp" />
+    <ClCompile Include="src\requests\redgifs\GetTemporaryAuthRequest.cpp" />
+    <ClCompile Include="src\requests\redgifs\GetGifRequest.cpp" />
+    <ClCompile Include="src\requests\redgifs\SearchUserGifsRequest.cpp" />
     <ClCompile Include="src\requests\tumblr\RetrievePublishedPostsRequest.cpp" />
     <ClCompile Include="src\requests\tumblr\TumblrFetchAccessTokenRequest.cpp" />
     <ClCompile Include="src\requests\tumblr\TumblrRefreshAccessTokenRequest.cpp" />
@@ -252,6 +255,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\services\BlueskyService.cpp" />
     <ClCompile Include="src\services\FourChanService.cpp" />
     <ClCompile Include="src\services\MastodonService.cpp" />
+    <ClCompile Include="src\services\RedgifsService.cpp" />
     <ClCompile Include="src\services\OAuthServiceHelpers.cpp" />
     <ClCompile Include="src\services\Service.cpp" />
     <ClCompile Include="src\services\TumblrService.cpp" />
@@ -263,6 +267,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\ui\DownloadOptionsPanel.cpp" />
     <ClCompile Include="src\ui\BlueskyPanel.cpp" />
     <ClCompile Include="src\ui\MastodonPanel.cpp" />
+    <ClCompile Include="src\ui\RedgifsPanel.cpp" />
     <ClCompile Include="src\ui\RedditPanel.cpp" />
     <ClCompile Include="src\ui\TumblrPanel.cpp" />
     <ClCompile Include="src\ui\FourChanPanel.cpp" />
@@ -357,7 +362,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\network\HttpClientTypes.h" />
     <ClInclude Include="include\network\IHttpClient.h" />
     <ClInclude Include="include\network\CurlHttpClient.h" />
-    <ClInclude Include="include\network\RedgifsResolver.h" />
+    <ClInclude Include="include\network\RedgifsTokenCache.h" />
     <ClInclude Include="include\network\RetryHttpClient.h" />
     <ClInclude Include="include\requests\bluesky\GetAuthorFeedRequest.h" />
     <ClInclude Include="include\requests\bluesky\ResolveHandleRequest.h" />
@@ -368,6 +373,9 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\requests\mastodon\SearchAccountsRequest.h" />
     <ClInclude Include="include\requests\reddit\FetchAccessTokenRequest.h" />
     <ClInclude Include="include\requests\reddit\RefreshAccessTokenRequest.h" />
+    <ClInclude Include="include\requests\redgifs\GetTemporaryAuthRequest.h" />
+    <ClInclude Include="include\requests\redgifs\GetGifRequest.h" />
+    <ClInclude Include="include\requests\redgifs\SearchUserGifsRequest.h" />
     <ClInclude Include="include\requests\tumblr\RetrievePublishedPostsRequest.h" />
     <ClInclude Include="include\requests\tumblr\TumblrFetchAccessTokenRequest.h" />
     <ClInclude Include="include\requests\tumblr\TumblrRefreshAccessTokenRequest.h" />
@@ -375,6 +383,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\services\IServiceSink.h" />
     <ClInclude Include="include\services\BlueskyService.h" />
     <ClInclude Include="include\services\MastodonService.h" />
+    <ClInclude Include="include\services\RedgifsService.h" />
     <ClInclude Include="include\services\FourChanService.h" />
     <ClInclude Include="include\services\TumblrService.h" />
     <ClInclude Include="include\services\ServiceOptionTypes.h" />
@@ -395,6 +404,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\ui\ProviderSearchInput.h" />
     <ClInclude Include="include\ui\BlueskyPanel.h" />
     <ClInclude Include="include\ui\MastodonPanel.h" />
+    <ClInclude Include="include\ui\RedgifsPanel.h" />
     <ClInclude Include="include\ui\RedditPanel.h" />
     <ClInclude Include="include\ui\TumblrPanel.h" />
     <ClInclude Include="include\ui\FourChanPanel.h" />
@@ -408,6 +418,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\utils\DownloadUtils.h" />
     <ClInclude Include="include\utils\BlueskyUtils.h" />
     <ClInclude Include="include\utils\MastodonUtils.h" />
+    <ClInclude Include="include\utils\RedgifsUtils.h" />
     <ClInclude Include="include\utils\RedditUtils.h" />
     <ClInclude Include="include\utils\TumblrUtils.h" />
     <ClInclude Include="include\utils\FourChanUtils.h" />

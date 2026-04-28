@@ -110,7 +110,6 @@
     <ClCompile Include="..\ImageScraper\src\async\ThreadPool.cpp" />
     <ClCompile Include="..\ImageScraper\src\log\Logger.cpp" />
     <ClCompile Include="..\ImageScraper\src\network\CurlHttpClient.cpp" />
-    <ClCompile Include="..\ImageScraper\src\network\RedgifsResolver.cpp" />
     <ClCompile Include="..\ImageScraper\src\network\RetryHttpClient.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\bluesky\GetAuthorFeedRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\bluesky\ResolveHandleRequest.cpp" />
@@ -132,7 +131,7 @@
     <ClCompile Include="src\tests\MastodonUtilsTests.cpp" />
     <ClCompile Include="src\tests\DownloadUtilsTests.cpp" />
     <ClCompile Include="src\tests\RedditUtilsTests.cpp" />
-    <ClCompile Include="src\tests\RedgifsResolverTests.cpp" />
+    <ClCompile Include="src\tests\RedgifsUtilsTests.cpp" />
     <ClCompile Include="src\tests\TumblrUtilsTests.cpp" />
     <ClCompile Include="src\tests\FourChanUtilsTests.cpp" />
     <ClCompile Include="src\tests\RequestTests.cpp" />

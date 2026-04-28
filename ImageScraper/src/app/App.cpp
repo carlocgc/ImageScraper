@@ -9,6 +9,7 @@
 #include "services/FourChanService.h"
 #include "services/BlueskyService.h"
 #include "services/MastodonService.h"
+#include "services/RedgifsService.h"
 #include "async/TaskManager.h"
 #include "config/Config.h"
 #include "ui/FrontEnd.h"
@@ -67,6 +68,7 @@ ImageScraper::App::App( )
     m_Services.push_back( std::make_shared<FourChanService>( m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
     m_Services.push_back( std::make_shared<BlueskyService>(  m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
     m_Services.push_back( std::make_shared<MastodonService>( m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
+    m_Services.push_back( std::make_shared<RedgifsService>(  m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd ) );
 
     m_ListenServer = std::make_shared<ListenServer>( );
 }
