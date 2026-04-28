@@ -93,6 +93,8 @@ namespace ImageScraper
         void ApplyPreparedAudio( );
 
         void AdvanceVideoFrame( );
+        void OnPrivacyModeChanged( );
+        void ResetPlaybackToStartPaused( );
         void StartVideoPlayback( );
         void PauseVideoPlayback( );
         void RestartVideoPlayback( );
