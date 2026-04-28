@@ -61,10 +61,15 @@ namespace ImageScraper::RedgifsUtils
 
         std::string slug = trimmed.substr( slugStart );
 
-        const std::size_t slashPos = slug.find( '/' );
-        if( slashPos != std::string::npos )
+        // Strip any trailing path segments and SEO descriptor tails. Redgifs
+        // sometimes appends a slug with descriptive words separated by '-'
+        // (e.g. /watch/<slug>-some-descriptive-text). The actual gif slug is
+        // the part before the first '-'; sending the long form to the API
+        // returns 405 because it doesn't match the /v2/gifs/<slug> route.
+        const std::size_t cutPos = slug.find_first_of( "/-" );
+        if( cutPos != std::string::npos )
         {
-            slug.erase( slashPos );
+            slug.erase( cutPos );
         }
 
         return StringUtils::ToLower( slug );

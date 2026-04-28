@@ -61,6 +61,13 @@ TEST_CASE( "ExtractSlug strips trailing path segments", "[RedgifsUtils]" )
     REQUIRE( Utils::ExtractSlug( "https://redgifs.com/watch/someslug/" )      == "someslug" );
 }
 
+TEST_CASE( "ExtractSlug strips SEO descriptor tails after the slug", "[RedgifsUtils]" )
+{
+    REQUIRE( Utils::ExtractSlug( "https://www.redgifs.com/watch/assuredunsungbeaver-homemade-orgasms-with-taleri-love" ) == "assuredunsungbeaver" );
+    REQUIRE( Utils::ExtractSlug( "https://redgifs.com/watch/MixedCaseSlug-some-descriptive-words" ) == "mixedcaseslug" );
+    REQUIRE( Utils::ExtractSlug( "https://www.redgifs.com/ifr/EmbedSlug-with-tail" ) == "embedslug" );
+}
+
 TEST_CASE( "ExtractSlug returns empty for URLs that don't carry a slug", "[RedgifsUtils]" )
 {
     REQUIRE( Utils::ExtractSlug( "https://redgifs.com/" )         == "" );
