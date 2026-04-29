@@ -7,6 +7,7 @@
 
 std::vector<std::shared_ptr<ImageScraper::LoggerBase>> ImageScraper::Logger::s_Loggers{ };
 std::mutex ImageScraper::Logger::s_LogMutex{ };
+std::atomic<uint64_t> ImageScraper::Logger::s_NextId{ 1 };
 
 std::string ImageScraper::Logger::TimeStamp( )
 {
@@ -42,6 +43,9 @@ void ImageScraper::Logger::Log( LogLevel logLevel, const char* message, ... )
     case LogLevel::Debug:
         levelTag = " [DBUG] ";
         break;
+    case LogLevel::Success:
+        levelTag = " [ OK ] ";
+        break;
     default:
         levelTag = " [INFO] ";
         break;
@@ -69,12 +73,14 @@ void ImageScraper::Logger::Log( LogLevel logLevel, const char* message, ... )
         strcat_s( output, "\n" );
     }
 
+    const uint64_t lineId = s_NextId.fetch_add( 1, std::memory_order_relaxed );
+
     // TODO Add buffering rather than locking every line...
     std::scoped_lock lock{ s_LogMutex };
 
     for( auto logger : s_Loggers )
     {
-        LogLine line{ logLevel, output };
+        LogLine line{ logLevel, output, lineId };
         logger->Log( line );
     }
 }

@@ -37,6 +37,7 @@ namespace ImageScraper
 
         std::string m_AuthHtmlPath{ };
         std::string m_OutputDirPath{ };
+        std::string m_LogFilePath{ };
         std::vector<std::shared_ptr<Service>> m_Services{ };
 
         int m_AuthenticatingCount{ 0 };

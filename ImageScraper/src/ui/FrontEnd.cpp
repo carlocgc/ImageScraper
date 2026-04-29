@@ -223,6 +223,14 @@ void ImageScraper::FrontEnd::Log( const LogLine& line )
     m_LogPanel->Log( line );
 }
 
+void ImageScraper::FrontEnd::SetLogFilePath( const std::string& path )
+{
+    if( m_LogPanel )
+    {
+        m_LogPanel->SetLogFilePath( path );
+    }
+}
+
 void ImageScraper::FrontEnd::SetInputState( InputState state )
 {
     m_DownloadOptionsPanel->SetInputState( state );

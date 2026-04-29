@@ -201,14 +201,14 @@ void ImageScraper::RedditService::FetchCurrentUser( )
         m_Username = response[ "name" ].get<std::string>( );
     }
 
-    InfoLog( "[%s] Reddit signed in as: %s", __FUNCTION__, m_Username.c_str( ) );
+    SuccessLog( "[%s] Reddit signed in as: %s", __FUNCTION__, m_Username.c_str( ) );
 }
 
 void ImageScraper::RedditService::DownloadContent( const UserInputOptions& inputOptions )
 {
     auto onComplete = [ this ]( int filesDownloaded )
     {
-        InfoLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
+        SuccessLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
         m_Sink->OnRunComplete( );
     };
 
@@ -317,7 +317,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                     mediaUrls.erase( mediaUrls.begin( ) + maxItems, mediaUrls.end( ) );
                 }
 
-                InfoLog( "[%s] Reddit listing (page %i) fetched successfully. Media urls queued: %i/%i", __FUNCTION__, pageNum, static_cast< int >( mediaUrls.size( ) ), options.m_RedditMaxMediaItems );
+                SuccessLog( "[%s] Reddit listing (page %i) fetched successfully. Media urls queued: %i/%i", __FUNCTION__, pageNum, static_cast< int >( mediaUrls.size( ) ), options.m_RedditMaxMediaItems );
                 LogDebug( "[%s] Response: %s", __FUNCTION__, fetchResult.m_Response.c_str( ) );
 
                 ++pageNum;
@@ -331,7 +331,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 return;
             }
 
-            InfoLog( "[%s] All Reddit listing data fetched successfully.", __FUNCTION__ );
+            SuccessLog( "[%s] All Reddit listing data fetched successfully.", __FUNCTION__ );
 
             // Create download directory
             const std::filesystem::path dir = BuildRedditDownloadDirectory( m_OutputDir, options );
@@ -389,7 +389,7 @@ bool ImageScraper::RedditService::TryPerformAppOnlyAuth( )
 
     m_OAuthClient->StoreAccessToken( tokenData->m_Token, tokenData->m_ExpireSeconds );
 
-    InfoLog( "[%s] Reddit authenticated successfully (app-only)!", __FUNCTION__ );
+    SuccessLog( "[%s] Reddit authenticated successfully (app-only)!", __FUNCTION__ );
     return true;
 }
 

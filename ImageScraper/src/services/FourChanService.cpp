@@ -60,7 +60,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
     auto onComplete = [ this ]( int filesDownloaded )
     {
-        InfoLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
+        SuccessLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
         m_Sink->OnRunComplete( );
     };
 
@@ -95,7 +95,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 return;
             }
 
-            InfoLog( "[%s] 4chan boards retrieved successfully.", __FUNCTION__ );
+            SuccessLog( "[%s] 4chan boards retrieved successfully.", __FUNCTION__ );
             LogDebug( "[%s] Response: %s", __FUNCTION__, getBoardResult.m_Response.c_str( ) );
 
             // Get page count for board
@@ -137,7 +137,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                     continue;;
                 }
 
-                InfoLog( "[%s] Threads on page %i retrieved successfully.", __FUNCTION__, i );
+                SuccessLog( "[%s] Threads on page %i retrieved successfully.", __FUNCTION__, i );
                 LogDebug( "[%s] Response: %s", __FUNCTION__, getThreadResult.m_Response.c_str( ) );
 
                 json getThreadResponse = json::parse( getThreadResult.m_Response );
