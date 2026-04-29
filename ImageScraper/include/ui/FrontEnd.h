@@ -44,6 +44,7 @@ namespace ImageScraper
         void SetInputState( InputState state );
         void Render( );
         void Log( const LogLine& line );
+        void SetLogFilePath( const std::string& path );
 
         GLFWwindow* GetWindow( ) const { return m_WindowPtr; }
         LogLevel    GetLogLevel( ) const;

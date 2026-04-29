@@ -78,7 +78,7 @@ std::optional<int> ImageScraper::Service::DownloadMedia( const std::vector<Media
 
         m_Sink->OnTotalDownloadProgress( filesDownloaded, totalDownloads );
 
-        InfoLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, totalDownloads, filepathStr.c_str( ) );
+        SuccessLog( "[%s] (%i/%i) Download complete: %s", __FUNCTION__, filesDownloaded, totalDownloads, filepathStr.c_str( ) );
     }
 
     return filesDownloaded;

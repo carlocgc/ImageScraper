@@ -335,7 +335,7 @@ bool ImageScraper::MediaAudioPlayer::Open( const std::string& filepath )
     return true;
 }
 
-bool ImageScraper::MediaAudioPlayer::StartFrom( double seconds, bool muted )
+bool ImageScraper::MediaAudioPlayer::StartFrom( double seconds, float volume )
 {
     if( m_AudioData.empty( ) )
     {
@@ -398,7 +398,7 @@ bool ImageScraper::MediaAudioPlayer::StartFrom( double seconds, bool muted )
         return false;
     }
 
-    m_SourceVoice->SetVolume( muted ? 0.0f : 1.0f );
+    m_SourceVoice->SetVolume( std::clamp( volume, 0.0f, 1.0f ) );
     hr = m_SourceVoice->Start( 0 );
     if( FAILED( hr ) )
     {
@@ -415,14 +415,14 @@ void ImageScraper::MediaAudioPlayer::Stop( )
     DestroySourceVoice( );
 }
 
-void ImageScraper::MediaAudioPlayer::SetMuted( bool muted )
+void ImageScraper::MediaAudioPlayer::SetVolume( float volume )
 {
     if( m_SourceVoice == nullptr )
     {
         return;
     }
 
-    m_SourceVoice->SetVolume( muted ? 0.0f : 1.0f );
+    m_SourceVoice->SetVolume( std::clamp( volume, 0.0f, 1.0f ) );
 }
 
 void ImageScraper::MediaAudioPlayer::Close( )

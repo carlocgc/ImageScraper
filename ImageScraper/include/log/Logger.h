@@ -2,7 +2,9 @@
 
 #include "traits/TypeTraits.h"
 
+#include <atomic>
 #include <cstdarg>
+#include <cstdint>
 #include <cstdio>
 #include <iostream>
 #include <cassert>
@@ -14,6 +16,7 @@ namespace ImageScraper
     enum class LogLevel
     {
         Info,
+        Success,
         Warning,
         Error,
         Debug
@@ -21,8 +24,9 @@ namespace ImageScraper
 
     struct LogLine
     {
-        LogLevel m_Level;
+        LogLevel    m_Level;
         std::string m_String;
+        uint64_t    m_Id{ 0 };  // monotonic, assigned by Logger::Log
     };
 
     class LoggerBase;
@@ -50,6 +54,7 @@ namespace ImageScraper
         static std::string TimeStamp( );
         static std::vector<std::shared_ptr<LoggerBase>> s_Loggers;
         static std::mutex s_LogMutex;
+        static std::atomic<uint64_t> s_NextId;
     };
 }
 
@@ -57,6 +62,7 @@ namespace ImageScraper
 #define WarningLog( message, ... ) ImageScraper::Logger::Log( LogLevel::Warning, message, __VA_ARGS__ );
 #define LogError( message, ... ) ImageScraper::Logger::Log( LogLevel::Error, message, __VA_ARGS__ );
 #define LogDebug( message, ... ) ImageScraper::Logger::Log( LogLevel::Debug, message, __VA_ARGS__ );
+#define SuccessLog( message, ... ) ImageScraper::Logger::Log( LogLevel::Success, message, __VA_ARGS__ );
 
 // TODO Add condition to assert
 #define Assert( message, ... ) ImageScraper::Logger::Assert( message, __VA_ARGS__ );

@@ -45,7 +45,7 @@ bool ImageScraper::OAuthServiceHelpers::HandleExternalAuth( ContentProvider prov
                 TaskManager::Instance( ).SubmitMain( [ provider, providerName, sinkCopy ]( )
                     {
                         sinkCopy->OnSignInComplete( provider );
-                        InfoLog( "[%s] %s signed in successfully!", __FUNCTION__, providerName.c_str( ) );
+                        SuccessLog( "[%s] %s signed in successfully!", __FUNCTION__, providerName.c_str( ) );
                     } );
             }
             else

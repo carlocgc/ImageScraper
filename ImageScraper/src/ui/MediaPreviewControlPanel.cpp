@@ -3,6 +3,8 @@
 #include "imgui/imgui.h"
 
 #include <algorithm>
+#include <cmath>
+#include <cstdio>
 
 namespace
 {
@@ -46,11 +48,18 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
                                     k_NavDia_min + k_Spacing_min + k_NavDia_min;
     constexpr float k_MinContentH = k_PlayDia_min;
 
+    // Scrub bar reservation along the top edge of the content region.
+    constexpr float k_ScrubHitH    = 14.f;  // generous click target
+    constexpr float k_ScrubBarRest = 6.f;
+    constexpr float k_ScrubBarHot  = 10.f;
+    constexpr float k_ScrubGap     = 6.f;   // gap between scrub strip and buttons
+
     // Prevent the window from being resized smaller than needed to show the buttons at base size
     {
         const ImGuiStyle& style = ImGui::GetStyle( );
         const float minW = k_MinContentW + style.WindowPadding.x * 2.f;
-        const float minH = k_MinContentH + style.WindowPadding.y * 2.f + ImGui::GetFrameHeight( );
+        const float minH = k_MinContentH + k_ScrubHitH + k_ScrubGap +
+                           style.WindowPadding.y * 2.f + ImGui::GetFrameHeight( );
         ImGui::SetNextWindowSizeConstraints( ImVec2( minW, minH ), ImVec2( FLT_MAX, FLT_MAX ) );
     }
 
@@ -62,7 +71,90 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         return;
     }
 
-    // Scale buttons proportionally to fill the available content region.
+    const float fullAvailW = ImGui::GetContentRegionAvail( ).x;
+    const float fullAvailH = ImGui::GetContentRegionAvail( ).y;
+
+    // --- Scrub bar (top edge of content region) ---
+    {
+        const bool blocked = m_Blocked;
+        const bool privacy = m_PreviewPanel && m_PreviewPanel->IsPrivacyMode( );
+        const bool canScrub = m_PreviewPanel && m_PreviewPanel->CanScrub( ) && !blocked && !privacy;
+        const float progress = m_PreviewPanel ? m_PreviewPanel->GetProgress( ) : -1.0f;
+
+        const ImVec2 cursorTL = ImGui::GetCursorScreenPos( );
+        const float barAreaY = cursorTL.y;
+        const float barAreaX = cursorTL.x;
+
+        ImGui::PushID( "##scrubBar" );
+        ImGui::BeginDisabled( !canScrub );
+        ImGui::InvisibleButton( "scrubHit", ImVec2( fullAvailW, k_ScrubHitH ) );
+        const bool hovered = ImGui::IsItemHovered( );
+        const bool active  = ImGui::IsItemActive( );
+
+        if( canScrub )
+        {
+            if( ImGui::IsItemActivated( ) )
+            {
+                m_PreviewPanel->BeginScrub( );
+            }
+            if( active )
+            {
+                const float mouseX = ImGui::GetIO( ).MousePos.x;
+                const float t = std::clamp( ( mouseX - barAreaX ) / std::max( fullAvailW, 1.f ), 0.f, 1.f );
+                m_PreviewPanel->UpdateScrub( t );
+            }
+            if( ImGui::IsItemDeactivated( ) )
+            {
+                const float mouseX = ImGui::GetIO( ).MousePos.x;
+                const float t = std::clamp( ( mouseX - barAreaX ) / std::max( fullAvailW, 1.f ), 0.f, 1.f );
+                m_PreviewPanel->EndScrub( t );
+            }
+        }
+        ImGui::EndDisabled( );
+
+        // Re-fetch progress after a possible UpdateScrub above so the bar tracks the cursor live.
+        const float drawProgress = ( m_PreviewPanel && canScrub ) ? m_PreviewPanel->GetProgress( ) : progress;
+
+        const float barH    = ( hovered || active ) ? k_ScrubBarHot : k_ScrubBarRest;
+        const float barY0   = barAreaY + ( k_ScrubHitH - barH ) * 0.5f;
+        const float barY1   = barY0 + barH;
+        ImDrawList* sdl     = ImGui::GetWindowDrawList( );
+
+        const ImU32 bgCol = canScrub ? IM_COL32( 0, 0, 0, 120 ) : IM_COL32( 60, 60, 60, 90 );
+        sdl->AddRectFilled( ImVec2( barAreaX, barY0 ),
+                            ImVec2( barAreaX + fullAvailW, barY1 ), bgCol );
+
+        if( drawProgress >= 0.0f )
+        {
+            const ImU32 fillCol = canScrub ? IM_COL32( 100, 180, 255, 220 )
+                                           : IM_COL32( 130, 130, 130, 160 );
+            const float fillW = fullAvailW * std::clamp( drawProgress, 0.0f, 1.0f );
+            sdl->AddRectFilled( ImVec2( barAreaX, barY0 ),
+                                ImVec2( barAreaX + fillW, barY1 ), fillCol );
+
+            if( canScrub && ( hovered || active ) )
+            {
+                const float handleR = barH * 0.9f;
+                sdl->AddCircleFilled( ImVec2( barAreaX + fillW, ( barY0 + barY1 ) * 0.5f ),
+                                      handleR, IM_COL32( 230, 240, 255, 255 ) );
+            }
+        }
+
+        if( hovered && canScrub && m_PreviewPanel )
+        {
+            const std::string label = m_PreviewPanel->GetProgressLabel( );
+            if( !label.empty( ) )
+            {
+                ImGui::SetTooltip( "%s", label.c_str( ) );
+            }
+        }
+        ImGui::PopID( );
+
+        // Advance cursor past the scrub strip so buttons render below it.
+        ImGui::Dummy( ImVec2( 0.0f, k_ScrubGap ) );
+    }
+
+    // Scale buttons proportionally to fill the remaining content region.
     // Scale is always >= 1 so buttons never shrink below their base size.
     const float availW  = ImGui::GetContentRegionAvail( ).x;
     const float availH  = ImGui::GetContentRegionAvail( ).y;
@@ -89,7 +181,8 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
     const bool canPlay      = m_PreviewPanel && m_PreviewPanel->CanPlayPause( );
     const bool canMute      = m_PreviewPanel && m_PreviewPanel->CanMute( );
     const bool playing      = m_PreviewPanel && m_PreviewPanel->IsPlaying( );
-    const bool muted        = !m_PreviewPanel || m_PreviewPanel->IsMuted( );
+    const float volume      = m_PreviewPanel ? m_PreviewPanel->GetVolume( ) : 1.0f;
+    const bool muted        = !m_PreviewPanel || m_PreviewPanel->IsMuted( ) || volume <= 0.0f;
     const bool blocked      = m_Blocked;
     const bool privacy      = m_PreviewPanel && m_PreviewPanel->IsPrivacyMode( );
 
@@ -223,16 +316,21 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         }
     }
 
-    // --- Mute / unmute ---
+    // --- Mute / unmute (with hover-popup volume slider) ---
+    ImVec2 muteCenter{ 0.f, 0.f };
+    bool   muteHovered = false;
+    bool   muteDisabled = false;
     {
-        const bool disabled = blocked || privacy || !canMute;
+        muteDisabled = blocked || privacy || !canMute;
         auto [ pressed, center, iconCol ] = CircleBtn(
             "##mute",
             k_NavDia + k_Spacing + k_PlayDia + k_Spacing + k_NavDia + k_Spacing,
             navOffY,
             k_NavR,
-            disabled );
+            muteDisabled );
         DrawButtonIcon( center, k_NavR, muted ? kIconMuted : kIconVolume0, muted ? kFallbackMuted : kFallbackVolume0, iconCol );
+        muteCenter  = center;
+        muteHovered = ImGui::IsItemHovered( );
 
         if( pressed )
         {
@@ -247,11 +345,87 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         {
             ImGui::SetTooltip( kPrivacyTooltip );
         }
-        else if( ImGui::IsItemHovered( ) )
-        {
-            ImGui::SetTooltip( muted ? "Unmute preview" : "Mute preview" );
-        }
+        // Note: no plain hover tooltip here; the slider popup serves as the affordance.
     }
 
     ImGui::End( );
+
+    // --- Volume slider popup ---
+    // Rendered as a separate floating window outside the controls Begin/End so it can
+    // overflow past the controls window's bounds.
+    if( m_PreviewPanel )
+    {
+        const bool canShow = canMute && !muteDisabled;
+        if( !canShow )
+        {
+            m_VolumePopupOpen = false;
+            m_VolumeHoverLeftAt = 0.0;
+        }
+        else if( muteHovered )
+        {
+            m_VolumePopupOpen = true;
+        }
+
+        if( m_VolumePopupOpen )
+        {
+            const float anchorY = muteCenter.y - k_NavR - 6.0f;
+            ImGui::SetNextWindowPos( ImVec2( muteCenter.x, anchorY ), ImGuiCond_Always, ImVec2( 0.5f, 1.0f ) );
+
+            constexpr ImGuiWindowFlags k_PopupFlags =
+                ImGuiWindowFlags_NoTitleBar |
+                ImGuiWindowFlags_NoResize |
+                ImGuiWindowFlags_NoMove |
+                ImGuiWindowFlags_NoScrollbar |
+                ImGuiWindowFlags_NoFocusOnAppearing |
+                ImGuiWindowFlags_NoSavedSettings |
+                ImGuiWindowFlags_AlwaysAutoResize;
+
+            bool sliderActive    = false;
+            bool windowHovered   = false;
+
+            if( ImGui::Begin( "##volumeOverlay", nullptr, k_PopupFlags ) )
+            {
+                float v = m_PreviewPanel->GetVolume( );
+                if( ImGui::VSliderFloat( "##vol", ImVec2( 22.0f, 90.0f ), &v, 0.0f, 1.0f, "" ) )
+                {
+                    m_PreviewPanel->SetVolume( v, /*persist=*/false );
+                }
+                sliderActive = ImGui::IsItemActive( );
+                if( ImGui::IsItemDeactivatedAfterEdit( ) )
+                {
+                    m_PreviewPanel->SetVolume( v, /*persist=*/true );
+                }
+
+                const int pct = static_cast<int>( std::round( m_PreviewPanel->GetVolume( ) * 100.0f ) );
+                char pctText[ 8 ];
+                std::snprintf( pctText, sizeof( pctText ), "%d%%", pct );
+                const float textW = ImGui::CalcTextSize( pctText ).x;
+                const float availPctW = ImGui::GetContentRegionAvail( ).x;
+                ImGui::SetCursorPosX( ImGui::GetCursorPosX( ) + std::max( 0.0f, ( availPctW - textW ) * 0.5f ) );
+                ImGui::TextUnformatted( pctText );
+
+                windowHovered = ImGui::IsWindowHovered( ImGuiHoveredFlags_AllowWhenBlockedByActiveItem );
+            }
+            ImGui::End( );
+
+            const bool keepOpen = muteHovered || windowHovered || sliderActive;
+            const double now = ImGui::GetTime( );
+            if( keepOpen )
+            {
+                m_VolumeHoverLeftAt = 0.0;
+            }
+            else
+            {
+                if( m_VolumeHoverLeftAt == 0.0 )
+                {
+                    m_VolumeHoverLeftAt = now;
+                }
+                else if( now - m_VolumeHoverLeftAt > 0.15 )
+                {
+                    m_VolumePopupOpen = false;
+                    m_VolumeHoverLeftAt = 0.0;
+                }
+            }
+        }
+    }
 }

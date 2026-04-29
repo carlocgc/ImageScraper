@@ -19,8 +19,9 @@ void ImageScraper::FrontEndLogger::Log( const LogLine& line )
         return;
     }
 
-    LogLine noDebugLine{ };
-    noDebugLine.m_Level = line.m_Level;
+    // Preserve m_Id (and any other future LogLine fields) - the panel keys
+    // selection by id, so losing it collapses every panel line to id 0.
+    LogLine noDebugLine = line;
     noDebugLine.m_String = RemoveDebugLogInfo( line.m_String );
 
     m_FrontEnd->Log( noDebugLine );

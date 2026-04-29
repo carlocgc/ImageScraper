@@ -4,6 +4,7 @@
 #include "log/FrontEndLogger.h"
 #include "log/DevLogger.h"
 #include "log/ConsoleLogger.h"
+#include "log/FileLogger.h"
 #include "services/RedditService.h"
 #include "services/TumblrService.h"
 #include "services/FourChanService.h"
@@ -42,6 +43,10 @@ ImageScraper::App::App( )
     GetModuleFileNameA( nullptr, exePath, MAX_PATH );
     const std::filesystem::path exeDir = std::filesystem::path( exePath ).parent_path( );
 
+    auto fileLogger = std::make_shared<FileLogger>( exeDir / "logs" );
+    Logger::AddLogger( fileLogger );
+    m_LogFilePath = fileLogger->GetLogFilePath( ).string( );
+
     const std::string appConfigPath = ( std::filesystem::temp_directory_path( ) / s_AppConfigFile ).generic_string( );
     m_AppConfig = std::make_shared<JsonFile>( appConfigPath );
 
@@ -51,17 +56,18 @@ ImageScraper::App::App( )
     m_AuthHtmlPath = ( exeDir / s_AuthHtmlFile ).generic_string( );
 
     m_FrontEnd = std::make_shared<FrontEnd>( UI_MAX_LOG_LINES );
+    m_FrontEnd->SetLogFilePath( m_LogFilePath );
 
     Logger::AddLogger( std::make_shared<FrontEndLogger>( m_FrontEnd ) );
 
     if( m_AppConfig->Deserialise( ) )
     {
-        InfoLog( "[%s] App Config Loaded!", __FUNCTION__ );
+        SuccessLog( "[%s] App Config Loaded!", __FUNCTION__ );
     }
 
     if( m_UserConfig->Deserialise( ) )
     {
-        InfoLog( "[%s] User Config Loaded!", __FUNCTION__ );
+        SuccessLog( "[%s] User Config Loaded!", __FUNCTION__ );
     }
 
     const std::string caBundlePath = ( exeDir / s_CaBundleFile ).generic_string( );

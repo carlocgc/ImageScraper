@@ -1,6 +1,8 @@
 #include "ui/VideoPlayer.h"
 #include "log/Logger.h"
 
+#include <algorithm>
+
 extern "C"
 {
 #include <libavformat/avformat.h>
@@ -81,6 +83,7 @@ ImageScraper::VideoPlayer& ImageScraper::VideoPlayer::operator=( VideoPlayer&& o
     m_Width       = other.m_Width;
     m_Height      = other.m_Height;
     m_Fps         = other.m_Fps;
+    m_LastFramePtsSeconds = other.m_LastFramePtsSeconds;
 
     other.m_FormatCtx   = nullptr;
     other.m_CodecCtx    = nullptr;
@@ -92,6 +95,7 @@ ImageScraper::VideoPlayer& ImageScraper::VideoPlayer::operator=( VideoPlayer&& o
     other.m_Width       = 0;
     other.m_Height      = 0;
     other.m_Fps         = 30.0;
+    other.m_LastFramePtsSeconds = -1.0;
 
     return *this;
 }
@@ -273,6 +277,12 @@ bool ImageScraper::VideoPlayer::DecodeNextFrame( std::vector<uint8_t>& rgbaOut )
         const int recvRet = avcodec_receive_frame( m_CodecCtx, m_Frame );
         if( recvRet == 0 )
         {
+            const int64_t bestPts = m_Frame->best_effort_timestamp;
+            if( bestPts != AV_NOPTS_VALUE && m_VideoStream >= 0 && m_FormatCtx )
+            {
+                const AVRational tb = m_FormatCtx->streams[ m_VideoStream ]->time_base;
+                m_LastFramePtsSeconds = static_cast<double>( bestPts ) * av_q2d( tb );
+            }
             return ConvertFrame( rgbaOut );
         }
 
@@ -324,6 +334,65 @@ void ImageScraper::VideoPlayer::SeekToStart( )
 
     av_seek_frame( m_FormatCtx, m_VideoStream, 0, AVSEEK_FLAG_BACKWARD );
     avcodec_flush_buffers( m_CodecCtx );
+    m_LastFramePtsSeconds = -1.0;
+}
+
+bool ImageScraper::VideoPlayer::SeekToKeyframe( double targetSeconds )
+{
+    if( !m_FormatCtx || m_VideoStream < 0 )
+    {
+        return false;
+    }
+
+    const double duration = GetDuration( );
+    if( duration > 0.0 )
+    {
+        targetSeconds = std::clamp( targetSeconds, 0.0, duration );
+    }
+    else if( targetSeconds < 0.0 )
+    {
+        targetSeconds = 0.0;
+    }
+
+    const AVRational tb = m_FormatCtx->streams[ m_VideoStream ]->time_base;
+    const int64_t streamTs = av_rescale_q(
+        static_cast<int64_t>( targetSeconds * AV_TIME_BASE ),
+        AVRational{ 1, AV_TIME_BASE },
+        tb );
+
+    const int ret = av_seek_frame( m_FormatCtx, m_VideoStream, streamTs, AVSEEK_FLAG_BACKWARD );
+    if( ret < 0 )
+    {
+        return false;
+    }
+    avcodec_flush_buffers( m_CodecCtx );
+    m_LastFramePtsSeconds = -1.0;
+    return true;
+}
+
+bool ImageScraper::VideoPlayer::SeekToTimeExact( double targetSeconds, std::vector<uint8_t>& rgbaOut )
+{
+    if( !SeekToKeyframe( targetSeconds ) )
+    {
+        return false;
+    }
+
+    // Decode forward until we land on or past the requested PTS.
+    constexpr int k_MaxForwardFrames = 240;
+    bool produced = false;
+    for( int i = 0; i < k_MaxForwardFrames; ++i )
+    {
+        if( !DecodeNextFrame( rgbaOut ) )
+        {
+            return produced;
+        }
+        produced = true;
+        if( m_LastFramePtsSeconds < 0.0 || m_LastFramePtsSeconds + 1e-3 >= targetSeconds )
+        {
+            return true;
+        }
+    }
+    return produced;
 }
 
 void ImageScraper::VideoPlayer::Close( )
@@ -339,6 +408,7 @@ void ImageScraper::VideoPlayer::Close( )
     m_Width       = 0;
     m_Height      = 0;
     m_Fps         = 30.0;
+    m_LastFramePtsSeconds = -1.0;
 }
 
 bool ImageScraper::VideoPlayer::ConvertFrame( std::vector<uint8_t>& rgbaOut )

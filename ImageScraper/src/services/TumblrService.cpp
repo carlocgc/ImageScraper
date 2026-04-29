@@ -172,7 +172,7 @@ void ImageScraper::TumblrService::FetchCurrentUser( )
             m_Username = response[ "response" ][ "user" ][ "name" ].get<std::string>( );
         }
 
-        InfoLog( "[%s] Tumblr signed in as: %s", __FUNCTION__, m_Username.c_str( ) );
+        SuccessLog( "[%s] Tumblr signed in as: %s", __FUNCTION__, m_Username.c_str( ) );
     }
     catch( const Json::exception& ex )
     {
@@ -187,7 +187,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
 
     auto onComplete = [ this ]( int filesDownloaded )
     {
-        InfoLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
+        SuccessLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
         m_Sink->OnRunComplete( );
     };
 
@@ -246,7 +246,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
                 return;
             }
 
-            InfoLog( "[%s] Tumblr posts retrieved successfully.", __FUNCTION__ );
+            SuccessLog( "[%s] Tumblr posts retrieved successfully.", __FUNCTION__ );
             LogDebug( "[%s] Response: %s", __FUNCTION__, fetchResult.m_Response.c_str( ) );
 
             Json response = Json::parse( fetchResult.m_Response );

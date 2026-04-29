@@ -212,7 +212,7 @@ void ImageScraper::ListenServer::Start( )
                 return;
             }
 
-            InfoLog( "[%s] ListenServer started successfully, waiting for connections!", __FUNCTION__ );
+            SuccessLog( "[%s] ListenServer started successfully, waiting for connections!", __FUNCTION__ );
 
             while( m_Running.load( ) )
             {
