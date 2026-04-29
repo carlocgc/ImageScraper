@@ -103,7 +103,7 @@ void ImageScraper::MediaPreviewPanel::Update( )
         }
         else
         {
-            if( m_MediaState == MediaState::GifPlaying && m_Textures.size( ) > 1 )
+            if( m_MediaState == MediaState::GifPlaying && m_Textures.size( ) > 1 && !m_IsScrubbing )
             {
                 m_FrameAccumMs += ImGui::GetIO( ).DeltaTime * 1000.0f;
 
@@ -273,44 +273,6 @@ void ImageScraper::MediaPreviewPanel::Update( )
             {
                 const ImVec2 badgeSize = DrawBadge( ImVec2( badgeX, badgeRowY ), badgeText.c_str( ) );
                 badgeRowY += badgeSize.y + 4.0f;
-            }
-        }
-
-        {
-            float progress = -1.0f;
-
-            if( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::StaticFrame )
-                && m_Textures.size( ) > 1 )
-            {
-                progress = static_cast<float>( m_CurrentFrame ) /
-                           static_cast<float>( m_Textures.size( ) - 1 );
-            }
-            else if( ( m_MediaState == MediaState::VideoPlaying || m_MediaState == MediaState::VideoPaused )
-                     && m_VideoPlayer )
-            {
-                const double duration = m_VideoPlayer->GetDuration( );
-                if( duration > 0.0 )
-                {
-                    const double currentTime = std::clamp( GetPlaybackTimeSeconds( ), 0.0, duration );
-                    progress = static_cast<float>( currentTime / duration );
-                }
-            }
-
-            if( progress >= 0.0f )
-            {
-                constexpr float k_BarH = 4.0f;
-                const float barW  = contentScreenMax.x - contentScreenMin.x;
-                const float barY0 = contentScreenMax.y - k_BarH;
-                const float barY1 = contentScreenMax.y;
-
-                dl->AddRectFilled(
-                    ImVec2( contentScreenMin.x, barY0 ),
-                    ImVec2( contentScreenMax.x, barY1 ),
-                    IM_COL32( 0, 0, 0, 120 ) );
-                dl->AddRectFilled(
-                    ImVec2( contentScreenMin.x, barY0 ),
-                    ImVec2( contentScreenMin.x + barW * progress, barY1 ),
-                    IM_COL32( 100, 180, 255, 220 ) );
             }
         }
 
@@ -747,6 +709,219 @@ double ImageScraper::MediaPreviewPanel::GetPlaybackTimeSeconds( ) const
     }
 
     return std::max( playbackTime, 0.0 );
+}
+
+bool ImageScraper::MediaPreviewPanel::CanScrub( ) const
+{
+    if( m_PrivacyMode )
+    {
+        return false;
+    }
+    if( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::StaticFrame )
+        && m_Textures.size( ) > 1 )
+    {
+        return true;
+    }
+    if( ( m_MediaState == MediaState::VideoPlaying || m_MediaState == MediaState::VideoPaused )
+        && m_VideoPlayer && m_VideoPlayer->IsOpen( ) && m_VideoPlayer->GetDuration( ) > 0.0 )
+    {
+        return true;
+    }
+    return false;
+}
+
+float ImageScraper::MediaPreviewPanel::GetProgress( ) const
+{
+    if( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::StaticFrame )
+        && m_Textures.size( ) > 1 )
+    {
+        return static_cast<float>( m_CurrentFrame ) /
+               static_cast<float>( m_Textures.size( ) - 1 );
+    }
+
+    if( ( m_MediaState == MediaState::VideoPlaying || m_MediaState == MediaState::VideoPaused )
+        && m_VideoPlayer )
+    {
+        const double duration = m_VideoPlayer->GetDuration( );
+        if( duration > 0.0 )
+        {
+            const double currentTime = std::clamp( GetPlaybackTimeSeconds( ), 0.0, duration );
+            return static_cast<float>( currentTime / duration );
+        }
+    }
+
+    return -1.0f;
+}
+
+std::string ImageScraper::MediaPreviewPanel::GetProgressLabel( ) const
+{
+    auto FormatSeconds = []( double seconds )
+    {
+        if( seconds < 0.0 ) seconds = 0.0;
+        const int total = static_cast<int>( seconds );
+        const int mm = total / 60;
+        const int ss = total % 60;
+        std::ostringstream oss;
+        oss << std::setw( 2 ) << std::setfill( '0' ) << mm << ":"
+            << std::setw( 2 ) << std::setfill( '0' ) << ss;
+        return oss.str( );
+    };
+
+    if( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::StaticFrame )
+        && m_Textures.size( ) > 1 )
+    {
+        std::ostringstream oss;
+        oss << "frame " << ( m_CurrentFrame + 1 ) << " / " << m_Textures.size( );
+        return oss.str( );
+    }
+
+    if( ( m_MediaState == MediaState::VideoPlaying || m_MediaState == MediaState::VideoPaused )
+        && m_VideoPlayer )
+    {
+        const double duration = m_VideoPlayer->GetDuration( );
+        if( duration > 0.0 )
+        {
+            const double currentTime = std::clamp( GetPlaybackTimeSeconds( ), 0.0, duration );
+            return FormatSeconds( currentTime ) + " / " + FormatSeconds( duration );
+        }
+    }
+
+    return { };
+}
+
+void ImageScraper::MediaPreviewPanel::BeginScrub( )
+{
+    if( !CanScrub( ) || m_IsScrubbing )
+    {
+        return;
+    }
+
+    m_WasPlayingBeforeScrub = ( m_MediaState == MediaState::GifPlaying
+                              || m_MediaState == MediaState::VideoPlaying );
+
+    if( m_MediaState == MediaState::VideoPlaying )
+    {
+        PauseVideoPlayback( );
+    }
+
+    m_IsScrubbing = true;
+    m_LastScrubSeekAt = std::chrono::steady_clock::time_point{ };
+}
+
+void ImageScraper::MediaPreviewPanel::UpdateScrub( float normalized )
+{
+    if( !m_IsScrubbing )
+    {
+        return;
+    }
+
+    normalized = std::clamp( normalized, 0.0f, 1.0f );
+
+    if( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::StaticFrame )
+        && m_Textures.size( ) > 1 )
+    {
+        const int frameCount = static_cast<int>( m_Textures.size( ) );
+        int target = static_cast<int>( std::round( normalized * static_cast<float>( frameCount - 1 ) ) );
+        target = std::clamp( target, 0, frameCount - 1 );
+        m_CurrentFrame  = target;
+        m_FrameAccumMs  = 0.0f;
+        return;
+    }
+
+    if( ( m_MediaState == MediaState::VideoPlaying || m_MediaState == MediaState::VideoPaused )
+        && m_VideoPlayer && m_VideoPlayer->IsOpen( ) )
+    {
+        const double duration = m_VideoPlayer->GetDuration( );
+        if( duration <= 0.0 )
+        {
+            return;
+        }
+
+        const double targetSec = static_cast<double>( normalized ) * duration;
+        m_PlaybackTimeSeconds  = targetSec;  // bar follows cursor
+
+        const auto now = std::chrono::steady_clock::now( );
+        constexpr auto k_MinSeekInterval = std::chrono::milliseconds( 80 );
+        if( m_LastScrubSeekAt != std::chrono::steady_clock::time_point{ }
+            && now - m_LastScrubSeekAt < k_MinSeekInterval )
+        {
+            return;
+        }
+        m_LastScrubSeekAt = now;
+
+        if( !m_VideoPlayer->SeekToKeyframe( targetSec ) )
+        {
+            return;
+        }
+        if( m_VideoPlayer->DecodeNextFrame( m_VideoFrameBuffer ) )
+        {
+            UploadCurrentVideoFrame( );
+        }
+
+        const double fps = m_VideoPlayer->GetFPS( );
+        if( fps > 0.0 )
+        {
+            m_VideoFrameIndex = static_cast<int>( targetSec * fps );
+        }
+    }
+}
+
+void ImageScraper::MediaPreviewPanel::EndScrub( float normalized )
+{
+    if( !m_IsScrubbing )
+    {
+        return;
+    }
+
+    normalized = std::clamp( normalized, 0.0f, 1.0f );
+
+    if( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::StaticFrame )
+        && m_Textures.size( ) > 1 )
+    {
+        const int frameCount = static_cast<int>( m_Textures.size( ) );
+        int target = static_cast<int>( std::round( normalized * static_cast<float>( frameCount - 1 ) ) );
+        target = std::clamp( target, 0, frameCount - 1 );
+        m_CurrentFrame = target;
+        m_FrameAccumMs = 0.0f;
+
+        m_IsScrubbing = false;
+        if( m_WasPlayingBeforeScrub && m_MediaState == MediaState::StaticFrame )
+        {
+            m_MediaState = MediaState::GifPlaying;
+        }
+        return;
+    }
+
+    if( ( m_MediaState == MediaState::VideoPlaying || m_MediaState == MediaState::VideoPaused )
+        && m_VideoPlayer && m_VideoPlayer->IsOpen( ) )
+    {
+        const double duration = m_VideoPlayer->GetDuration( );
+        if( duration > 0.0 )
+        {
+            const double targetSec = static_cast<double>( normalized ) * duration;
+
+            if( m_VideoPlayer->SeekToTimeExact( targetSec, m_VideoFrameBuffer ) )
+            {
+                UploadCurrentVideoFrame( );
+            }
+            m_PlaybackTimeSeconds = targetSec;
+
+            const double fps = m_VideoPlayer->GetFPS( );
+            if( fps > 0.0 )
+            {
+                m_VideoFrameIndex = static_cast<int>( targetSec * fps );
+            }
+        }
+
+        m_IsScrubbing = false;
+        if( m_WasPlayingBeforeScrub && m_MediaState == MediaState::VideoPaused )
+        {
+            StartVideoPlayback( );
+        }
+        return;
+    }
+
+    m_IsScrubbing = false;
 }
 
 void ImageScraper::MediaPreviewPanel::AdvanceVideoFrame( )

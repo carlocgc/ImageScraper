@@ -46,11 +46,18 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
                                     k_NavDia_min + k_Spacing_min + k_NavDia_min;
     constexpr float k_MinContentH = k_PlayDia_min;
 
+    // Scrub bar reservation along the top edge of the content region.
+    constexpr float k_ScrubHitH    = 14.f;  // generous click target
+    constexpr float k_ScrubBarRest = 6.f;
+    constexpr float k_ScrubBarHot  = 10.f;
+    constexpr float k_ScrubGap     = 6.f;   // gap between scrub strip and buttons
+
     // Prevent the window from being resized smaller than needed to show the buttons at base size
     {
         const ImGuiStyle& style = ImGui::GetStyle( );
         const float minW = k_MinContentW + style.WindowPadding.x * 2.f;
-        const float minH = k_MinContentH + style.WindowPadding.y * 2.f + ImGui::GetFrameHeight( );
+        const float minH = k_MinContentH + k_ScrubHitH + k_ScrubGap +
+                           style.WindowPadding.y * 2.f + ImGui::GetFrameHeight( );
         ImGui::SetNextWindowSizeConstraints( ImVec2( minW, minH ), ImVec2( FLT_MAX, FLT_MAX ) );
     }
 
@@ -62,7 +69,90 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         return;
     }
 
-    // Scale buttons proportionally to fill the available content region.
+    const float fullAvailW = ImGui::GetContentRegionAvail( ).x;
+    const float fullAvailH = ImGui::GetContentRegionAvail( ).y;
+
+    // --- Scrub bar (top edge of content region) ---
+    {
+        const bool blocked = m_Blocked;
+        const bool privacy = m_PreviewPanel && m_PreviewPanel->IsPrivacyMode( );
+        const bool canScrub = m_PreviewPanel && m_PreviewPanel->CanScrub( ) && !blocked && !privacy;
+        const float progress = m_PreviewPanel ? m_PreviewPanel->GetProgress( ) : -1.0f;
+
+        const ImVec2 cursorTL = ImGui::GetCursorScreenPos( );
+        const float barAreaY = cursorTL.y;
+        const float barAreaX = cursorTL.x;
+
+        ImGui::PushID( "##scrubBar" );
+        ImGui::BeginDisabled( !canScrub );
+        ImGui::InvisibleButton( "scrubHit", ImVec2( fullAvailW, k_ScrubHitH ) );
+        const bool hovered = ImGui::IsItemHovered( );
+        const bool active  = ImGui::IsItemActive( );
+
+        if( canScrub )
+        {
+            if( ImGui::IsItemActivated( ) )
+            {
+                m_PreviewPanel->BeginScrub( );
+            }
+            if( active )
+            {
+                const float mouseX = ImGui::GetIO( ).MousePos.x;
+                const float t = std::clamp( ( mouseX - barAreaX ) / std::max( fullAvailW, 1.f ), 0.f, 1.f );
+                m_PreviewPanel->UpdateScrub( t );
+            }
+            if( ImGui::IsItemDeactivated( ) )
+            {
+                const float mouseX = ImGui::GetIO( ).MousePos.x;
+                const float t = std::clamp( ( mouseX - barAreaX ) / std::max( fullAvailW, 1.f ), 0.f, 1.f );
+                m_PreviewPanel->EndScrub( t );
+            }
+        }
+        ImGui::EndDisabled( );
+
+        // Re-fetch progress after a possible UpdateScrub above so the bar tracks the cursor live.
+        const float drawProgress = ( m_PreviewPanel && canScrub ) ? m_PreviewPanel->GetProgress( ) : progress;
+
+        const float barH    = ( hovered || active ) ? k_ScrubBarHot : k_ScrubBarRest;
+        const float barY0   = barAreaY + ( k_ScrubHitH - barH ) * 0.5f;
+        const float barY1   = barY0 + barH;
+        ImDrawList* sdl     = ImGui::GetWindowDrawList( );
+
+        const ImU32 bgCol = canScrub ? IM_COL32( 0, 0, 0, 120 ) : IM_COL32( 60, 60, 60, 90 );
+        sdl->AddRectFilled( ImVec2( barAreaX, barY0 ),
+                            ImVec2( barAreaX + fullAvailW, barY1 ), bgCol );
+
+        if( drawProgress >= 0.0f )
+        {
+            const ImU32 fillCol = canScrub ? IM_COL32( 100, 180, 255, 220 )
+                                           : IM_COL32( 130, 130, 130, 160 );
+            const float fillW = fullAvailW * std::clamp( drawProgress, 0.0f, 1.0f );
+            sdl->AddRectFilled( ImVec2( barAreaX, barY0 ),
+                                ImVec2( barAreaX + fillW, barY1 ), fillCol );
+
+            if( canScrub && ( hovered || active ) )
+            {
+                const float handleR = barH * 0.9f;
+                sdl->AddCircleFilled( ImVec2( barAreaX + fillW, ( barY0 + barY1 ) * 0.5f ),
+                                      handleR, IM_COL32( 230, 240, 255, 255 ) );
+            }
+        }
+
+        if( hovered && canScrub && m_PreviewPanel )
+        {
+            const std::string label = m_PreviewPanel->GetProgressLabel( );
+            if( !label.empty( ) )
+            {
+                ImGui::SetTooltip( "%s", label.c_str( ) );
+            }
+        }
+        ImGui::PopID( );
+
+        // Advance cursor past the scrub strip so buttons render below it.
+        ImGui::Dummy( ImVec2( 0.0f, k_ScrubGap ) );
+    }
+
+    // Scale buttons proportionally to fill the remaining content region.
     // Scale is always >= 1 so buttons never shrink below their base size.
     const float availW  = ImGui::GetContentRegionAvail( ).x;
     const float availH  = ImGui::GetContentRegionAvail( ).y;

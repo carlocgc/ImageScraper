@@ -52,6 +52,25 @@ namespace ImageScraper
         // True when the preview is currently hidden by the user's privacy toggle
         bool IsPrivacyMode( ) const { return m_PrivacyMode; }
 
+        // True when the loaded media supports interactive seek (multi-frame GIF or
+        // open video with known duration).
+        bool CanScrub( ) const;
+
+        // Current playback progress in 0..1, or -1 if not currently scrubbable.
+        float GetProgress( ) const;
+
+        // Optional human-readable position label for the scrub tooltip
+        // (e.g. "00:12 / 01:34" for video, "frame 4 / 12" for GIFs). Empty if N/A.
+        std::string GetProgressLabel( ) const;
+
+        // Interactive scrub. Driven by the control panel.
+        // BeginScrub: pause playback (remember play-state).
+        // UpdateScrub: live throttled seek; videos snap to keyframes.
+        // EndScrub: commit the final position with an exact seek; resume playback if it was playing.
+        void BeginScrub( );
+        void UpdateScrub( float normalized );
+        void EndScrub( float normalized );
+
         // Loads persisted preferences (currently: privacy mode toggle)
         void LoadPanelState( std::shared_ptr<JsonFile> appConfig );
 
@@ -155,5 +174,10 @@ namespace ImageScraper
         double                       m_PlaybackTimeSeconds{ 0.0 };
         std::chrono::steady_clock::time_point m_PlaybackStartedAt{ };
         bool                         m_IsPlaybackClockRunning{ false };
+
+        // Scrubbing state - main thread only.
+        bool                         m_IsScrubbing{ false };
+        bool                         m_WasPlayingBeforeScrub{ false };
+        std::chrono::steady_clock::time_point m_LastScrubSeekAt{ };
     };
 }
