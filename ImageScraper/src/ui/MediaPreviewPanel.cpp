@@ -430,7 +430,34 @@ void ImageScraper::MediaPreviewPanel::ToggleMute( )
 
     if( m_AudioPlayer && m_AudioPlayer->IsPlaying( ) )
     {
-        m_AudioPlayer->SetMuted( m_IsMuted );
+        m_AudioPlayer->SetVolume( m_IsMuted ? 0.0f : m_Volume );
+    }
+}
+
+float ImageScraper::MediaPreviewPanel::GetVolume( ) const
+{
+    return m_Volume;
+}
+
+void ImageScraper::MediaPreviewPanel::SetVolume( float volume, bool persist )
+{
+    volume = std::clamp( volume, 0.0f, 1.0f );
+    if( volume == m_Volume && !persist )
+    {
+        return;
+    }
+
+    m_Volume = volume;
+
+    if( m_AudioPlayer && m_AudioPlayer->IsPlaying( ) )
+    {
+        m_AudioPlayer->SetVolume( m_IsMuted ? 0.0f : m_Volume );
+    }
+
+    if( persist && m_AppConfig )
+    {
+        m_AppConfig->SetValue<float>( "preview_volume", m_Volume );
+        m_AppConfig->Serialise( );
     }
 }
 
@@ -676,7 +703,7 @@ void ImageScraper::MediaPreviewPanel::StartAudioPlaybackFromCurrentTime( )
         return;
     }
 
-    m_AudioPlayer->StartFrom( GetPlaybackTimeSeconds( ), m_IsMuted );
+    m_AudioPlayer->StartFrom( GetPlaybackTimeSeconds( ), m_IsMuted ? 0.0f : m_Volume );
 }
 
 void ImageScraper::MediaPreviewPanel::StopAudioPlayback( )
@@ -1184,6 +1211,12 @@ void ImageScraper::MediaPreviewPanel::LoadPanelState( std::shared_ptr<JsonFile> 
     if( m_AppConfig->GetValue<bool>( "preview_privacy_mode", privacy ) )
     {
         m_PrivacyMode = privacy;
+    }
+
+    float volume = 1.0f;
+    if( m_AppConfig->GetValue<float>( "preview_volume", volume ) )
+    {
+        m_Volume = std::clamp( volume, 0.0f, 1.0f );
     }
 }
 
