@@ -75,6 +75,9 @@
     <ClCompile Include="src\log\FrontEndLogger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\log\FileLogger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\io\JsonFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -399,6 +402,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\log\FrontEndLogger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\FileLogger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\collections\RingBuffer.h">

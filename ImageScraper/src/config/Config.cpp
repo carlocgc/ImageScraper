@@ -36,6 +36,6 @@ bool ImageScraper::Config::ReadFromFile( const std::string& filename )
 
     m_Json = json::parse( file );
 
-    InfoLog( "[%s] Config Loaded successfully.", __FUNCTION__ );
+    SuccessLog( "[%s] Config Loaded successfully.", __FUNCTION__ );
     return true;
 }

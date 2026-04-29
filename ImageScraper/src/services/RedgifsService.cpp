@@ -65,7 +65,7 @@ void ImageScraper::RedgifsService::DownloadContent( const UserInputOptions& inpu
 {
     auto onComplete = [ this ]( int filesDownloaded )
     {
-        InfoLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
+        SuccessLog( "[%s] Content download complete!, files downloaded: %i", __FUNCTION__, filesDownloaded );
         m_Sink->OnRunComplete( );
     };
 

@@ -222,6 +222,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\imgui\imgui_tables.cpp" />
     <ClCompile Include="src\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\io\JsonFile.cpp" />
+    <ClCompile Include="src\log\FileLogger.cpp" />
     <ClCompile Include="src\log\FrontEndLogger.cpp" />
     <ClCompile Include="src\network\ListenServer.cpp" />
     <ClCompile Include="src\network\CurlHttpClient.cpp" />
@@ -356,6 +357,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\io\JsonFile.h" />
     <ClInclude Include="include\log\ConsoleLogger.h" />
     <ClInclude Include="include\log\DevLogger.h" />
+    <ClInclude Include="include\log\FileLogger.h" />
     <ClInclude Include="include\log\FrontEndLogger.h" />
     <ClInclude Include="include\log\LoggerBase.h" />
     <ClInclude Include="include\ui\MediaAudioPlayer.h" />
