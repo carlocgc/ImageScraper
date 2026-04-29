@@ -41,6 +41,13 @@ namespace ImageScraper
         void TogglePlayPause( );
         void ToggleMute( );
 
+        // Volume control. SetVolume clamps to [0,1] and pushes the new effective level
+        // (0 if muted) to the audio player live. When persist is true, also writes to
+        // appConfig - the control panel passes false during a slider drag and true on
+        // release to avoid disk thrash.
+        float GetVolume( ) const;
+        void  SetVolume( float volume, bool persist );
+
         // True when media is actively animating (GifPlaying or VideoPlaying)
         bool IsPlaying( ) const;
         bool IsMuted( ) const;
@@ -161,6 +168,7 @@ namespace ImageScraper
         MediaState  m_MediaState{ MediaState::None };
         bool        m_HasAudio{ false };
         bool        m_IsMuted{ true };
+        float       m_Volume{ 1.0f };
         bool        m_PrivacyMode{ false };
 
         std::shared_ptr<JsonFile> m_AppConfig{ };

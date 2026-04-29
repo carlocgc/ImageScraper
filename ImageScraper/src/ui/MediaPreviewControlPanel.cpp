@@ -3,6 +3,8 @@
 #include "imgui/imgui.h"
 
 #include <algorithm>
+#include <cmath>
+#include <cstdio>
 
 namespace
 {
@@ -179,7 +181,8 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
     const bool canPlay      = m_PreviewPanel && m_PreviewPanel->CanPlayPause( );
     const bool canMute      = m_PreviewPanel && m_PreviewPanel->CanMute( );
     const bool playing      = m_PreviewPanel && m_PreviewPanel->IsPlaying( );
-    const bool muted        = !m_PreviewPanel || m_PreviewPanel->IsMuted( );
+    const float volume      = m_PreviewPanel ? m_PreviewPanel->GetVolume( ) : 1.0f;
+    const bool muted        = !m_PreviewPanel || m_PreviewPanel->IsMuted( ) || volume <= 0.0f;
     const bool blocked      = m_Blocked;
     const bool privacy      = m_PreviewPanel && m_PreviewPanel->IsPrivacyMode( );
 
@@ -313,16 +316,21 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         }
     }
 
-    // --- Mute / unmute ---
+    // --- Mute / unmute (with hover-popup volume slider) ---
+    ImVec2 muteCenter{ 0.f, 0.f };
+    bool   muteHovered = false;
+    bool   muteDisabled = false;
     {
-        const bool disabled = blocked || privacy || !canMute;
+        muteDisabled = blocked || privacy || !canMute;
         auto [ pressed, center, iconCol ] = CircleBtn(
             "##mute",
             k_NavDia + k_Spacing + k_PlayDia + k_Spacing + k_NavDia + k_Spacing,
             navOffY,
             k_NavR,
-            disabled );
+            muteDisabled );
         DrawButtonIcon( center, k_NavR, muted ? kIconMuted : kIconVolume0, muted ? kFallbackMuted : kFallbackVolume0, iconCol );
+        muteCenter  = center;
+        muteHovered = ImGui::IsItemHovered( );
 
         if( pressed )
         {
@@ -337,11 +345,87 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         {
             ImGui::SetTooltip( kPrivacyTooltip );
         }
-        else if( ImGui::IsItemHovered( ) )
-        {
-            ImGui::SetTooltip( muted ? "Unmute preview" : "Mute preview" );
-        }
+        // Note: no plain hover tooltip here; the slider popup serves as the affordance.
     }
 
     ImGui::End( );
+
+    // --- Volume slider popup ---
+    // Rendered as a separate floating window outside the controls Begin/End so it can
+    // overflow past the controls window's bounds.
+    if( m_PreviewPanel )
+    {
+        const bool canShow = canMute && !muteDisabled;
+        if( !canShow )
+        {
+            m_VolumePopupOpen = false;
+            m_VolumeHoverLeftAt = 0.0;
+        }
+        else if( muteHovered )
+        {
+            m_VolumePopupOpen = true;
+        }
+
+        if( m_VolumePopupOpen )
+        {
+            const float anchorY = muteCenter.y - k_NavR - 6.0f;
+            ImGui::SetNextWindowPos( ImVec2( muteCenter.x, anchorY ), ImGuiCond_Always, ImVec2( 0.5f, 1.0f ) );
+
+            constexpr ImGuiWindowFlags k_PopupFlags =
+                ImGuiWindowFlags_NoTitleBar |
+                ImGuiWindowFlags_NoResize |
+                ImGuiWindowFlags_NoMove |
+                ImGuiWindowFlags_NoScrollbar |
+                ImGuiWindowFlags_NoFocusOnAppearing |
+                ImGuiWindowFlags_NoSavedSettings |
+                ImGuiWindowFlags_AlwaysAutoResize;
+
+            bool sliderActive    = false;
+            bool windowHovered   = false;
+
+            if( ImGui::Begin( "##volumeOverlay", nullptr, k_PopupFlags ) )
+            {
+                float v = m_PreviewPanel->GetVolume( );
+                if( ImGui::VSliderFloat( "##vol", ImVec2( 22.0f, 90.0f ), &v, 0.0f, 1.0f, "" ) )
+                {
+                    m_PreviewPanel->SetVolume( v, /*persist=*/false );
+                }
+                sliderActive = ImGui::IsItemActive( );
+                if( ImGui::IsItemDeactivatedAfterEdit( ) )
+                {
+                    m_PreviewPanel->SetVolume( v, /*persist=*/true );
+                }
+
+                const int pct = static_cast<int>( std::round( m_PreviewPanel->GetVolume( ) * 100.0f ) );
+                char pctText[ 8 ];
+                std::snprintf( pctText, sizeof( pctText ), "%d%%", pct );
+                const float textW = ImGui::CalcTextSize( pctText ).x;
+                const float availPctW = ImGui::GetContentRegionAvail( ).x;
+                ImGui::SetCursorPosX( ImGui::GetCursorPosX( ) + std::max( 0.0f, ( availPctW - textW ) * 0.5f ) );
+                ImGui::TextUnformatted( pctText );
+
+                windowHovered = ImGui::IsWindowHovered( ImGuiHoveredFlags_AllowWhenBlockedByActiveItem );
+            }
+            ImGui::End( );
+
+            const bool keepOpen = muteHovered || windowHovered || sliderActive;
+            const double now = ImGui::GetTime( );
+            if( keepOpen )
+            {
+                m_VolumeHoverLeftAt = 0.0;
+            }
+            else
+            {
+                if( m_VolumeHoverLeftAt == 0.0 )
+                {
+                    m_VolumeHoverLeftAt = now;
+                }
+                else if( now - m_VolumeHoverLeftAt > 0.15 )
+                {
+                    m_VolumePopupOpen = false;
+                    m_VolumeHoverLeftAt = 0.0;
+                }
+            }
+        }
+    }
 }

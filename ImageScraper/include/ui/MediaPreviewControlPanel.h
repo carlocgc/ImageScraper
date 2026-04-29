@@ -22,5 +22,9 @@ namespace ImageScraper
         DownloadHistoryPanel* m_HistoryPanel{ nullptr };
         ImFont*               m_IconFont{ nullptr };
         bool                  m_Blocked{ false };
+
+        // Hover-popup volume slider state
+        bool                  m_VolumePopupOpen{ false };
+        double                m_VolumeHoverLeftAt{ 0.0 };  // ImGui::GetTime() of last "all hovers lost"; 0 means currently hovered
     };
 }

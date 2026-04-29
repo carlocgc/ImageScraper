@@ -21,9 +21,9 @@ namespace ImageScraper
         MediaAudioPlayer& operator=( MediaAudioPlayer&& other ) noexcept;
 
         bool Open( const std::string& filepath );
-        bool StartFrom( double seconds, bool muted );
+        bool StartFrom( double seconds, float volume );
         void Stop( );
-        void SetMuted( bool muted );
+        void SetVolume( float volume );
         void Close( );
 
         bool HasAudio( )  const { return !m_AudioData.empty( ); }
