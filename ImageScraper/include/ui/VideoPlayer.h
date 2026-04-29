@@ -44,6 +44,21 @@ namespace ImageScraper
         bool DecodeNextFrame( std::vector<uint8_t>& rgbaOut );
 
         void SeekToStart( );
+
+        // Seeks to the nearest keyframe at or before targetSeconds. Cheap - no decode
+        // is performed. Subsequent DecodeNextFrame() calls return frames starting at
+        // that keyframe. Returns true if the seek was issued.
+        bool SeekToKeyframe( double targetSeconds );
+
+        // Seeks to the keyframe at-or-before targetSeconds, then decodes forward
+        // until a frame with PTS >= targetSeconds is produced (or a small frame budget
+        // is exhausted). The final frame is written to rgbaOut. Used on drag-release
+        // for exact positioning.
+        bool SeekToTimeExact( double targetSeconds, std::vector<uint8_t>& rgbaOut );
+
+        // Last successfully produced frame's PTS in seconds, or -1 if none.
+        double GetLastFramePts( ) const { return m_LastFramePtsSeconds; }
+
         void Close( );
 
         bool   IsOpen( )      const { return m_FormatCtx != nullptr; }
@@ -66,5 +81,6 @@ namespace ImageScraper
         int              m_Width      { 0 };
         int              m_Height     { 0 };
         double           m_Fps        { 30.0 };
+        double           m_LastFramePtsSeconds{ -1.0 };
     };
 }
