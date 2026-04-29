@@ -166,7 +166,8 @@ void ImageScraper::FrontEnd::Update( )
     // receives focus.  Keep this ordering intentional:
     //   Top-left node    - Download Options (first) focused, Credentials secondary
     //   Right node       - Media Preview (first) focused, Dear ImGui Demo secondary
-    //   Bottom-left node - Downloads (first) focused, Output secondary
+    //   Mid-left node    - Downloads (sole occupant)
+    //   Bottom-left node - Event Log (sole occupant)
     //   Bottom node      - Download Progress (last, sole occupant)
     const bool wasRunning = m_DownloadOptionsPanel->IsRunning( );
     m_DownloadOptionsPanel->Update( );
@@ -259,9 +260,13 @@ void ImageScraper::FrontEnd::SetupDefaultLayout( ImGuiID dockspaceId )
     ImGuiID dockLeft, dockRight;
     ImGui::DockBuilderSplitNode( dockTop, ImGuiDir_Left, 732.0f / 1600.0f, &dockLeft, &dockRight );
 
-    // Split the left column into top (options) and bottom (log/history)
+    // Split the left column into top (options) and bottom (downloads + event log)
     ImGuiID dockTopLeft, dockBottomLeft;
     ImGui::DockBuilderSplitNode( dockLeft, ImGuiDir_Up, 350.0f / 841.0f, &dockTopLeft, &dockBottomLeft );
+
+    // Split the bottom-left further: Downloads folder on top, Event Log beneath it
+    ImGuiID dockMidLeft, dockEventLog;
+    ImGui::DockBuilderSplitNode( dockBottomLeft, ImGuiDir_Up, 0.5f, &dockMidLeft, &dockEventLog );
 
     // Split right node: narrow controls strip at the bottom, main preview above
     ImGuiID dockRightMain, dockRightControls;
@@ -271,8 +276,8 @@ void ImageScraper::FrontEnd::SetupDefaultLayout( ImGuiID dockspaceId )
     // Dock all panels
     ImGui::DockBuilderDockWindow( "Download Options",  dockTopLeft );
     ImGui::DockBuilderDockWindow( "Credentials",       dockTopLeft );
-    ImGui::DockBuilderDockWindow( "Output",            dockBottomLeft );
-    ImGui::DockBuilderDockWindow( "Downloads",         dockBottomLeft );
+    ImGui::DockBuilderDockWindow( "Downloads",         dockMidLeft );
+    ImGui::DockBuilderDockWindow( "Event Log",         dockEventLog );
     ImGui::DockBuilderDockWindow( "Media Preview",     dockRightMain );
     ImGui::DockBuilderDockWindow( "Media Controls",    dockRightControls );
     ImGui::DockBuilderDockWindow( "Download Progress", dockBottom );
