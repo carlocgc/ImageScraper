@@ -27,7 +27,6 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
 
     m_Result = RequestResult{ };
     m_OutputFilePath = options.m_OutputFilePath;
-    m_BytesWritten = 0;
 
     if( !m_OutputFilePath.empty( ) )
     {
@@ -165,9 +164,6 @@ size_t ImageScraper::DownloadRequest::WriteCallback( char* contents, size_t size
         return 0;
     }
 
-    m_BytesWritten += realsize;
-
-    LogDebug( "[%s] %i bytes written.", __FUNCTION__, static_cast< int >( m_BytesWritten ) );
     return realsize;
 }
 
