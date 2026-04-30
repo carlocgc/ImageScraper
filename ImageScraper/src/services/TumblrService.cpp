@@ -26,8 +26,21 @@ const std::string ImageScraper::TumblrService::s_UserDataKey_ConsumerSecret = "t
 const std::string ImageScraper::TumblrService::s_AppDataKey_RefreshToken  = "tumblr_refresh_token";
 const std::string ImageScraper::TumblrService::s_AppDataKey_StateId       = "tumblr_state_id";
 
+namespace
+{
+    // Tumblr documents 1000/hour AND 5000/day for the v2 API; both bind under sustained scraping.
+    const ImageScraper::RateLimitTable s_Limits =
+    {
+        { "retrieve_posts",                    { { 1000, 3600 }, { 5000, 86400 } } },
+        { "current_user",                      { {   60,   60 } } },
+        { "fetch_token",                       { {   30,   60 } } },
+        { "refresh_token",                     { {   30,   60 } } },
+        { ImageScraper::s_DefaultRateLimitKey, { {   60,   60 } } },
+    };
+}
+
 ImageScraper::TumblrService::TumblrService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver )
-    : Service( ContentProvider::Tumblr, appConfig, userConfig, caBundle, outputDir, sink, std::move( urlResolver ) )
+    : Service( ContentProvider::Tumblr, appConfig, userConfig, caBundle, outputDir, sink, s_Limits, std::move( urlResolver ) )
 {
     OAuthConfig oauthConfig{
         "https://www.tumblr.com/oauth2/authorize",

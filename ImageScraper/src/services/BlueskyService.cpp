@@ -15,10 +15,18 @@ namespace
 {
     constexpr int s_BlueskyAuthorFeedPageLimit = 100;
     constexpr const char* s_BlueskyAuthorFeedFilter = "posts_with_media";
+
+    // Bluesky publishes a global 3000 / 5min ceiling for many xrpc endpoints.
+    const ImageScraper::RateLimitTable s_Limits =
+    {
+        { "resolve_handle",                    { { 3000, 300 } } },
+        { "get_author_feed",                   { { 3000, 300 } } },
+        { ImageScraper::s_DefaultRateLimitKey, { { 1500, 300 } } },
+    };
 }
 
 ImageScraper::BlueskyService::BlueskyService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver )
-    : Service( ContentProvider::Bluesky, appConfig, userConfig, caBundle, outputDir, sink, std::move( urlResolver ) )
+    : Service( ContentProvider::Bluesky, appConfig, userConfig, caBundle, outputDir, sink, s_Limits, std::move( urlResolver ) )
 {
 }
 

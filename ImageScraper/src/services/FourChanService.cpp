@@ -11,8 +11,19 @@
 
 #include <string>
 
+namespace
+{
+    // 4chan API docs: 1 request per second per IP across the JSON API.
+    const ImageScraper::RateLimitTable s_Limits =
+    {
+        { "get_boards",                        { { 1, 1 } } },
+        { "get_threads",                       { { 1, 1 } } },
+        { ImageScraper::s_DefaultRateLimitKey, { { 1, 1 } } },
+    };
+}
+
 ImageScraper::FourChanService::FourChanService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver )
-    : Service( ContentProvider::FourChan, appConfig, userConfig, caBundle, outputDir, sink, std::move( urlResolver ) )
+    : Service( ContentProvider::FourChan, appConfig, userConfig, caBundle, outputDir, sink, s_Limits, std::move( urlResolver ) )
 {
 }
 

@@ -30,7 +30,7 @@ ImageScraper::RequestResult ImageScraper::Bluesky::GetAuthorFeedRequest::Perform
 
     LogDebug( "[%s] Bluesky::GetAuthorFeedRequest, URL: %s", __FUNCTION__, request.m_Url.c_str( ) );
 
-    const HttpResponse response = m_HttpClient->Get( request );
+    const HttpResponse response = m_HttpClient->Get( request, "get_author_feed" );
     if( !response.m_Success )
     {
         result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );

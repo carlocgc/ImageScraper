@@ -41,7 +41,7 @@ ImageScraper::RequestResult ImageScraper::Redgifs::SearchUserGifsRequest::Perfor
 
     LogDebug( "[%s] URL: %s", __FUNCTION__, request.m_Url.c_str( ) );
 
-    const HttpResponse response = m_HttpClient->Get( request );
+    const HttpResponse response = m_HttpClient->Get( request, "search_user_gifs" );
     if( !response.m_Success )
     {
         result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );

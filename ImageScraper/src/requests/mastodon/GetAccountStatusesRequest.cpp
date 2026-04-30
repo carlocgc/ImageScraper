@@ -51,7 +51,7 @@ ImageScraper::RequestResult ImageScraper::Mastodon::GetAccountStatusesRequest::P
 
     LogDebug( "[%s] Mastodon::GetAccountStatusesRequest, URL: %s", __FUNCTION__, request.m_Url.c_str( ) );
 
-    const HttpResponse response = m_HttpClient->Get( request );
+    const HttpResponse response = m_HttpClient->Get( request, "get_account_statuses" );
     const RequestResult result = RequestHelpers::CreateResultFromResponse( response );
     if( !result.m_Success )
     {

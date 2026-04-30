@@ -4,6 +4,7 @@
 #include "requests/DownloadRequestTypes.h"
 #include "network/CurlHttpClient.h"
 #include "network/IUrlResolver.h"
+#include "network/RateLimitedHttpClient.h"
 #include "network/RetryHttpClient.h"
 #include "utils/DownloadUtils.h"
 #include "log/Logger.h"
@@ -11,14 +12,56 @@
 #include <chrono>
 #include <thread>
 
-ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver )
+namespace
+{
+    const char* ContentProviderName( ImageScraper::ContentProvider provider )
+    {
+        switch( provider )
+        {
+            case ImageScraper::ContentProvider::Reddit:    return "Reddit";
+            case ImageScraper::ContentProvider::Tumblr:    return "Tumblr";
+            case ImageScraper::ContentProvider::FourChan:  return "4chan";
+            case ImageScraper::ContentProvider::Bluesky:   return "Bluesky";
+            case ImageScraper::ContentProvider::Mastodon:  return "Mastodon";
+            case ImageScraper::ContentProvider::Redgifs:   return "Redgifs";
+            default:                                       return "Service";
+        }
+    }
+}
+
+ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, RateLimitTable rateLimits, std::shared_ptr<IUrlResolver> urlResolver )
     : m_ContentProvider{ provider }
     , m_AppConfig{ appConfig }
     , m_UserConfig{ userConfig }
     , m_CaBundle{ caBundle }
     , m_OutputDir{ outputDir }
     , m_Sink{ sink }
-    , m_HttpClient{ std::make_shared<RetryHttpClient>( std::make_shared<CurlHttpClient>( ) ) }
+    , m_HttpClient{ }
+    , m_UrlResolver{ std::move( urlResolver ) }
+{
+    auto retry = std::make_shared<RetryHttpClient>( std::make_shared<CurlHttpClient>( ) );
+
+    auto cancelPredicate = [ this ]( ) -> bool
+    {
+        return m_Sink ? m_Sink->IsCancelled( ) : false;
+    };
+
+    m_HttpClient = std::make_shared<RateLimitedHttpClient>(
+        std::move( retry ),
+        std::move( rateLimits ),
+        std::move( cancelPredicate ),
+        m_Sink,
+        ContentProviderName( provider ) );
+}
+
+ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IHttpClient> httpClient, std::shared_ptr<IUrlResolver> urlResolver )
+    : m_ContentProvider{ provider }
+    , m_AppConfig{ appConfig }
+    , m_UserConfig{ userConfig }
+    , m_CaBundle{ caBundle }
+    , m_OutputDir{ outputDir }
+    , m_Sink{ sink }
+    , m_HttpClient{ std::move( httpClient ) }
     , m_UrlResolver{ std::move( urlResolver ) }
 {
 }

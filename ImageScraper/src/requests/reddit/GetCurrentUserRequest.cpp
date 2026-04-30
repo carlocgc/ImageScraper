@@ -35,7 +35,7 @@ ImageScraper::RequestResult ImageScraper::Reddit::GetCurrentUserRequest::Perform
     request.m_CaBundle  = options.m_CaBundle;
     request.m_Headers   = { "Authorization: Bearer " + options.m_AccessToken };
 
-    const HttpResponse response = m_HttpClient->Get( request );
+    const HttpResponse response = m_HttpClient->Get( request, "current_user" );
 
     if( !response.m_Success )
     {
