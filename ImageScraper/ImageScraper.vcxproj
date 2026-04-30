@@ -229,6 +229,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\network\RedgifsTokenCache.cpp" />
     <ClCompile Include="src\network\RedgifsUrlResolver.cpp" />
     <ClCompile Include="src\network\RetryHttpClient.cpp" />
+    <ClCompile Include="src\network\RateLimitedHttpClient.cpp" />
     <ClCompile Include="src\requests\DownloadRequest.cpp" />
     <ClCompile Include="src\requests\VideoDownloadRequest.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -369,6 +370,8 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\network\RedgifsTokenCache.h" />
     <ClInclude Include="include\network\RedgifsUrlResolver.h" />
     <ClInclude Include="include\network\RetryHttpClient.h" />
+    <ClInclude Include="include\network\RateLimitedHttpClient.h" />
+    <ClInclude Include="include\network\RateLimitTypes.h" />
     <ClInclude Include="include\requests\bluesky\GetAuthorFeedRequest.h" />
     <ClInclude Include="include\requests\bluesky\ResolveHandleRequest.h" />
     <ClInclude Include="include\requests\fourchan\GetThreadsRequest.h" />

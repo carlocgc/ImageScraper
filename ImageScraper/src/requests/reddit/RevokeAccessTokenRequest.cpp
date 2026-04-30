@@ -56,7 +56,7 @@ ImageScraper::RequestResult ImageScraper::Reddit::RevokeAccessTokenRequest::Perf
         "Authorization: Basic " + encodedCredentials
     };
 
-    const HttpResponse response = m_HttpClient->Post( request );
+    const HttpResponse response = m_HttpClient->Post( request, "revoke_token" );
 
     // Reddit returns 204 No Content on success - no body to parse
     if( response.m_StatusCode == 204 || response.m_Success )

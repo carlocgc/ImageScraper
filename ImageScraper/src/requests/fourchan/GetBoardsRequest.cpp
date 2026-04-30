@@ -27,7 +27,7 @@ ImageScraper::RequestResult ImageScraper::FourChan::GetBoardsRequest::Perform( c
     request.m_UserAgent = options.m_UserAgent;
     request.m_CaBundle = options.m_CaBundle;
 
-    const HttpResponse response = m_HttpClient->Get( request );
+    const HttpResponse response = m_HttpClient->Get( request, "get_boards" );
 
     if( !response.m_Success )
     {

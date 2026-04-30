@@ -16,10 +16,18 @@ namespace
 {
     constexpr int s_MastodonAccountSearchLimit = 40;
     constexpr int s_MastodonStatusesPageLimit = 40;
+
+    // Mastodon's reference default is 300 requests per 5 minutes for unauthenticated calls; varies by instance.
+    const ImageScraper::RateLimitTable s_Limits =
+    {
+        { "search_accounts",                   { { 300, 300 } } },
+        { "get_account_statuses",              { { 300, 300 } } },
+        { ImageScraper::s_DefaultRateLimitKey, { { 300, 300 } } },
+    };
 }
 
 ImageScraper::MastodonService::MastodonService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver )
-    : Service( ContentProvider::Mastodon, appConfig, userConfig, caBundle, outputDir, sink, std::move( urlResolver ) )
+    : Service( ContentProvider::Mastodon, appConfig, userConfig, caBundle, outputDir, sink, s_Limits, std::move( urlResolver ) )
 {
 }
 

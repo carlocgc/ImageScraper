@@ -52,7 +52,7 @@ ImageScraper::RequestResult ImageScraper::Mastodon::SearchAccountsRequest::Perfo
 
     LogDebug( "[%s] Mastodon::SearchAccountsRequest, URL: %s", __FUNCTION__, request.m_Url.c_str( ) );
 
-    const HttpResponse response = m_HttpClient->Get( request );
+    const HttpResponse response = m_HttpClient->Get( request, "search_accounts" );
     const RequestResult result = RequestHelpers::CreateResultFromResponse( response );
     if( !result.m_Success )
     {

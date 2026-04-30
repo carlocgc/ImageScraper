@@ -55,7 +55,7 @@ ImageScraper::RequestResult ImageScraper::Tumblr::TumblrFetchAccessTokenRequest:
         "Content-Type: application/x-www-form-urlencoded"
     };
 
-    const HttpResponse response = m_HttpClient->Post( request );
+    const HttpResponse response = m_HttpClient->Post( request, "fetch_token" );
 
     if( !response.m_Success )
     {

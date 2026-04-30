@@ -16,10 +16,12 @@
 namespace
 {
     constexpr int s_RedgifsUserSearchPageSize = 100;
+    // Note: redgifs rate-limit constants live in App.cpp because the limiter is shared with
+    // RedgifsUrlResolver. See s_RedgifsLimits there.
 }
 
-ImageScraper::RedgifsService::RedgifsService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver )
-    : Service( ContentProvider::Redgifs, appConfig, userConfig, caBundle, outputDir, sink, std::move( urlResolver ) )
+ImageScraper::RedgifsService::RedgifsService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IHttpClient> httpClient, std::shared_ptr<IUrlResolver> urlResolver )
+    : Service( ContentProvider::Redgifs, appConfig, userConfig, caBundle, outputDir, sink, std::move( httpClient ), std::move( urlResolver ) )
 {
 }
 

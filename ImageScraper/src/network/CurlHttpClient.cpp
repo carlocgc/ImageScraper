@@ -9,12 +9,12 @@
 #include <sstream>
 #include <list>
 
-ImageScraper::HttpResponse ImageScraper::CurlHttpClient::Get( const HttpRequest& request )
+ImageScraper::HttpResponse ImageScraper::CurlHttpClient::Get( const HttpRequest& request, const std::string& /*rateLimitKey*/ )
 {
     return Execute( request, false );
 }
 
-ImageScraper::HttpResponse ImageScraper::CurlHttpClient::Post( const HttpRequest& request )
+ImageScraper::HttpResponse ImageScraper::CurlHttpClient::Post( const HttpRequest& request, const std::string& /*rateLimitKey*/ )
 {
     return Execute( request, true );
 }

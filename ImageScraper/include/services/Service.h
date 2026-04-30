@@ -2,6 +2,7 @@
 
 #include "services/ServiceOptionTypes.h"
 #include "services/IServiceSink.h"
+#include "network/RateLimitTypes.h"
 
 #include <filesystem>
 #include <optional>
@@ -22,7 +23,12 @@ namespace ImageScraper
     public:
         using AuthenticateCallback = std::function<void( ContentProvider, bool )>;
 
-        Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver = nullptr );
+        Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, RateLimitTable rateLimits = { }, std::shared_ptr<IUrlResolver> urlResolver = nullptr );
+
+        // Alternative ctor: accepts a pre-built HTTP client instead of building one from a rate-limit
+        // table. Used when the limiter must be shared with another component (e.g. the redgifs URL
+        // resolver shares its budget with RedgifsService - both hit the same redgifs API).
+        Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IHttpClient> httpClient, std::shared_ptr<IUrlResolver> urlResolver = nullptr );
 
         // The user agent string sent on every HTTP request the services make.
         // Exposed so external code (e.g. App.cpp constructing shared resolvers)

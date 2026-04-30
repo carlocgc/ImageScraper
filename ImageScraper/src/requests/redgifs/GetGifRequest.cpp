@@ -37,7 +37,7 @@ ImageScraper::RequestResult ImageScraper::Redgifs::GetGifRequest::Perform( const
         request.m_Headers.push_back( "Authorization: Bearer " + options.m_AccessToken );
     }
 
-    const HttpResponse response = m_HttpClient->Get( request );
+    const HttpResponse response = m_HttpClient->Get( request, "get_gif" );
     if( !response.m_Success )
     {
         result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );

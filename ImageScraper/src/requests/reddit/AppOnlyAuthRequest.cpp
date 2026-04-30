@@ -51,7 +51,7 @@ ImageScraper::RequestResult ImageScraper::Reddit::AppOnlyAuthRequest::Perform( c
         "Authorization: Basic " + encodedCredentials
     };
 
-    const HttpResponse response = m_HttpClient->Post( request );
+    const HttpResponse response = m_HttpClient->Post( request, "app_only_auth" );
 
     if( !response.m_Success )
     {

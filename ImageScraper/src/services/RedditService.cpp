@@ -64,8 +64,23 @@ const std::string ImageScraper::RedditService::s_AppDataKey_RefreshToken  = "red
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientId     = "reddit_client_id";
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientSecret = "reddit_client_secret";
 
+namespace
+{
+    // Reddit documents 100 QPM for OAuth-authenticated clients.
+    const ImageScraper::RateLimitTable s_Limits =
+    {
+        { "fetch_listing",                     { { 100, 60 } } },
+        { "refresh_token",                     { {  30, 60 } } },
+        { "current_user",                      { {  30, 60 } } },
+        { "app_only_auth",                     { {  10, 60 } } },
+        { "revoke_token",                      { {  10, 60 } } },
+        { "fetch_token",                       { {  10, 60 } } },
+        { ImageScraper::s_DefaultRateLimitKey, { {  60, 60 } } },
+    };
+}
+
 ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IUrlResolver> urlResolver )
-    : Service( ContentProvider::Reddit, appConfig, userConfig, caBundle, outputDir, sink, std::move( urlResolver ) )
+    : Service( ContentProvider::Reddit, appConfig, userConfig, caBundle, outputDir, sink, s_Limits, std::move( urlResolver ) )
 {
     OAuthConfig oauthConfig{
         "https://www.reddit.com/api/v1/authorize",

@@ -42,7 +42,7 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchSubredditPostsRequest::Pe
 
     LogDebug( "[%s] FetchSubredditPostsRequest, URL: %s", __FUNCTION__, request.m_Url.c_str( ) );
 
-    const HttpResponse response = m_HttpClient->Get( request );
+    const HttpResponse response = m_HttpClient->Get( request, "fetch_listing" );
 
     if( !response.m_Success )
     {
