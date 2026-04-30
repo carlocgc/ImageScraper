@@ -14,23 +14,23 @@ ImageScraper::RetryHttpClient::RetryHttpClient( std::shared_ptr<IHttpClient> inn
 {
 }
 
-ImageScraper::HttpResponse ImageScraper::RetryHttpClient::Get( const HttpRequest& request )
+ImageScraper::HttpResponse ImageScraper::RetryHttpClient::Get( const HttpRequest& request, const std::string& rateLimitKey )
 {
-    return Execute( request, false );
+    return Execute( request, rateLimitKey, false );
 }
 
-ImageScraper::HttpResponse ImageScraper::RetryHttpClient::Post( const HttpRequest& request )
+ImageScraper::HttpResponse ImageScraper::RetryHttpClient::Post( const HttpRequest& request, const std::string& rateLimitKey )
 {
-    return Execute( request, true );
+    return Execute( request, rateLimitKey, true );
 }
 
-ImageScraper::HttpResponse ImageScraper::RetryHttpClient::Execute( const HttpRequest& request, bool isPost )
+ImageScraper::HttpResponse ImageScraper::RetryHttpClient::Execute( const HttpRequest& request, const std::string& rateLimitKey, bool isPost )
 {
     HttpResponse response{ };
 
     for( int attempt = 0; attempt <= m_MaxRetries; ++attempt )
     {
-        response = isPost ? m_Inner->Post( request ) : m_Inner->Get( request );
+        response = isPost ? m_Inner->Post( request, rateLimitKey ) : m_Inner->Get( request, rateLimitKey );
 
         if( response.m_Success )
         {

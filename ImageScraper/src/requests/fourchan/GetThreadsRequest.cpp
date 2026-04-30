@@ -31,7 +31,7 @@ ImageScraper::RequestResult ImageScraper::FourChan::GetThreadsRequest::Perform( 
 
     LogDebug( "[%s] FourChan::GetThreadsRequest, URL: %s", __FUNCTION__, url.c_str( ) );
 
-    const HttpResponse response = m_HttpClient->Get( request );
+    const HttpResponse response = m_HttpClient->Get( request, "get_threads" );
 
     if( !response.m_Success )
     {

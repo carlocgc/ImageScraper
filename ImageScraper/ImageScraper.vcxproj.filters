@@ -156,6 +156,9 @@
     <ClCompile Include="src\network\RetryHttpClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\network\RateLimitedHttpClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\ui\LogPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -585,6 +588,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\network\RetryHttpClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\network\RateLimitedHttpClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\network\RateLimitTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\utils\RedditUtils.h">

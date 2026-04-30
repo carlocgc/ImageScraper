@@ -27,7 +27,7 @@ ImageScraper::RequestResult ImageScraper::Redgifs::GetTemporaryAuthRequest::Perf
     request.m_UserAgent = options.m_UserAgent;
     request.m_CaBundle = options.m_CaBundle;
 
-    const HttpResponse response = m_HttpClient->Get( request );
+    const HttpResponse response = m_HttpClient->Get( request, "get_temp_auth" );
     if( !response.m_Success )
     {
         result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );

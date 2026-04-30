@@ -32,5 +32,12 @@ namespace ImageScraper
 
         // Called after each file is successfully written to disk
         virtual void OnFileDownloaded( const std::string& filepath, const std::string& sourceUrl ) = 0;
+
+        // Called when a service request begins waiting on a rate limit (only fires for waits past a threshold).
+        // Default-empty so existing implementors do not have to override unless they want UI feedback.
+        virtual void OnRateLimitWait( const std::string& /*serviceName*/, const std::string& /*rateLimitKey*/, int /*waitSeconds*/ ) { }
+
+        // Called when the corresponding wait is over (admission granted or cancelled).
+        virtual void OnRateLimitResume( const std::string& /*serviceName*/, const std::string& /*rateLimitKey*/ ) { }
     };
 }
