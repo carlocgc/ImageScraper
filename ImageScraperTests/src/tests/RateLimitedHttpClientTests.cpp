@@ -223,8 +223,11 @@ TEST_CASE( "RateLimitedHttpClient enforces stacked windows independently", "[rat
     inner->m_Response = MakeSuccess( );
 
     RateLimitTable table{ };
-    // Two stacked windows: 5/sec AND 8/3sec. Burst saturates 5/sec immediately;
-    // after some refill, the 8/3sec cap is the binding one.
+    // Two stacked windows: 5/sec AND 8/3sec.
+    //   - The 5/sec rule is the binding one for calls 6-8 (the original burst ages out together).
+    //   - The 8/3sec rule must bind on call 9: at that point the 5/sec window has only 3
+    //     entries (room to spare), but the 8/3sec window is full and its oldest entry won't
+    //     age out until ~3s after the burst started.
     table[ "stacked" ] = { { 5, 1 }, { 8, 3 } };
 
     auto sink = std::make_shared<RecordingSink>( );
@@ -239,7 +242,7 @@ TEST_CASE( "RateLimitedHttpClient enforces stacked windows independently", "[rat
     HttpRequest req = MakeRequest( );
     const auto start = std::chrono::steady_clock::now( );
 
-    // First 5 should fly through.
+    // First 5 should fly through (5/sec window has room).
     for( int i = 0; i < 5; ++i )
     {
         REQUIRE( client.Get( req, "stacked" ).m_Success );
@@ -247,13 +250,24 @@ TEST_CASE( "RateLimitedHttpClient enforces stacked windows independently", "[rat
     const auto afterFirst5 = std::chrono::steady_clock::now( ) - start;
     REQUIRE( afterFirst5 < std::chrono::milliseconds( 500 ) );
 
-    // Calls 6, 7, 8 must wait for the 5/sec window to roll, then admit.
+    // Calls 6, 7, 8 must wait for the 5/sec window to roll. After call 6 admits, calls 7 and 8
+    // follow quickly because the entire original burst ages out of the 5/sec window together.
     for( int i = 0; i < 3; ++i )
     {
         REQUIRE( client.Get( req, "stacked" ).m_Success );
     }
+    const auto afterFirst8 = std::chrono::steady_clock::now( ) - start;
+    REQUIRE( afterFirst8 >= std::chrono::milliseconds( 900 ) );
+    REQUIRE( afterFirst8 < std::chrono::milliseconds( 2500 ) );
 
-    REQUIRE( inner->m_CallCount == 8 );
+    // Call 9 is the test of the 8/3sec window: the 5/sec window has 3 entries (room for 2),
+    // but the 8/3sec window is full. Its oldest entry was admitted near t=0, so call 9 cannot
+    // admit until t ~= 3s. If only the 5/sec rule were enforced, call 9 would admit at t ~= 1s.
+    REQUIRE( client.Get( req, "stacked" ).m_Success );
+    const auto afterFirst9 = std::chrono::steady_clock::now( ) - start;
+    REQUIRE( afterFirst9 >= std::chrono::milliseconds( 2800 ) );
+
+    REQUIRE( inner->m_CallCount == 9 );
 }
 
 TEST_CASE( "RateLimitedHttpClient fires sink callback when wait exceeds threshold", "[ratelimit]" )
