@@ -17,6 +17,8 @@
 #include "io/JsonFile.h"
 #include "network/CurlHttpClient.h"
 #include "network/ListenServer.h"
+#include "network/RateLimitedHttpClient.h"
+#include "network/RateLimitTypes.h"
 #include "network/RedgifsUrlResolver.h"
 #include "network/RetryHttpClient.h"
 
@@ -28,6 +30,22 @@
 #define LISTEN_SERVER_PORT 8080
 #define MIN_FRAME_TIME_MS 16
 #define THREAD_POOL_MAX_THREADS 2
+
+namespace
+{
+    // Redgifs has no published rate-limit policy; conservative defaults to avoid being flagged.
+    // This table is owned at App scope (not RedgifsService) because the same RateLimitedHttpClient
+    // instance is shared between RedgifsService and RedgifsUrlResolver - both hit the redgifs API
+    // and a single shared bucket prevents combined throughput from exceeding what either path could
+    // safely sustain alone.
+    const ImageScraper::RateLimitTable s_RedgifsLimits =
+    {
+        { "search_user_gifs",                  { { 60, 60 } } },
+        { "get_temp_auth",                     { { 30, 60 } } },
+        { "get_gif",                           { { 60, 60 } } },
+        { ImageScraper::s_DefaultRateLimitKey, { { 60, 60 } } },
+    };
+}
 
 const std::string ImageScraper::App::s_UserConfigFile = "config.json";
 const std::string ImageScraper::App::s_AppConfigFile = "ImageScraper/config.json";
@@ -73,10 +91,21 @@ ImageScraper::App::App( )
     const std::string caBundlePath = ( exeDir / s_CaBundleFile ).generic_string( );
     m_OutputDirPath = exeDir.generic_string( );
 
+    // One rate-limited HTTP client for all redgifs traffic, shared between RedgifsUrlResolver
+    // (used by every service that may encounter redgifs URLs) and RedgifsService itself.
+    // Without this sharing, the resolver and the service would each get their own independent
+    // bucket and combined throughput could exceed the documented limits.
+    auto redgifsHttpClient = std::make_shared<RateLimitedHttpClient>(
+        std::make_shared<RetryHttpClient>( std::make_shared<CurlHttpClient>( ) ),
+        s_RedgifsLimits,
+        [ sink = m_FrontEnd ]( ) { return sink ? sink->IsCancelled( ) : false; },
+        m_FrontEnd,
+        "Redgifs" );
+
     // One URL resolver, shared across every service. Today only translates
     // redgifs watch URLs; new resolvers can be added by composing them here.
     auto urlResolver = std::make_shared<RedgifsUrlResolver>(
-        std::make_shared<RetryHttpClient>( std::make_shared<CurlHttpClient>( ) ),
+        redgifsHttpClient,
         caBundlePath,
         Service::DefaultUserAgent( ) );
 
@@ -85,7 +114,7 @@ ImageScraper::App::App( )
     m_Services.push_back( std::make_shared<FourChanService>( m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd, urlResolver ) );
     m_Services.push_back( std::make_shared<BlueskyService>(  m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd, urlResolver ) );
     m_Services.push_back( std::make_shared<MastodonService>( m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd, urlResolver ) );
-    m_Services.push_back( std::make_shared<RedgifsService>(  m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd, urlResolver ) );
+    m_Services.push_back( std::make_shared<RedgifsService>(  m_AppConfig, m_UserConfig, caBundlePath, m_OutputDirPath, m_FrontEnd, redgifsHttpClient, urlResolver ) );
 
     m_ListenServer = std::make_shared<ListenServer>( );
 }

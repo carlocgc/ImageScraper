@@ -54,6 +54,18 @@ ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFi
         ContentProviderName( provider ) );
 }
 
+ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFile> appConfig, std::shared_ptr<JsonFile> userConfig, const std::string& caBundle, const std::string& outputDir, std::shared_ptr<IServiceSink> sink, std::shared_ptr<IHttpClient> httpClient, std::shared_ptr<IUrlResolver> urlResolver )
+    : m_ContentProvider{ provider }
+    , m_AppConfig{ appConfig }
+    , m_UserConfig{ userConfig }
+    , m_CaBundle{ caBundle }
+    , m_OutputDir{ outputDir }
+    , m_Sink{ sink }
+    , m_HttpClient{ std::move( httpClient ) }
+    , m_UrlResolver{ std::move( urlResolver ) }
+{
+}
+
 std::optional<int> ImageScraper::Service::DownloadMedia( const std::vector<MediaDownload>& downloads, const std::filesystem::path& dir )
 {
     const std::string providerName = GetProviderDisplayName( );
