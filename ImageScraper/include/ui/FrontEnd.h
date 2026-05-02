@@ -18,6 +18,7 @@
 #include "ui/DownloadHistoryPanel.h"
 #include "ui/CredentialsPanel.h"
 #include "ui/MediaPreviewControlPanel.h"
+#include "ui/SettingsPanel.h"
 #include "io/JsonFile.h"
 
 #include <stdio.h>
@@ -74,5 +75,6 @@ namespace ImageScraper
         std::unique_ptr<DownloadHistoryPanel>       m_DownloadHistoryPanel{ };
         std::unique_ptr<CredentialsPanel>           m_CredentialsPanel{ };
         std::unique_ptr<MediaPreviewControlPanel>   m_MediaPreviewControlPanel{ };
+        std::unique_ptr<SettingsPanel>              m_SettingsPanel{ };
     };
 }

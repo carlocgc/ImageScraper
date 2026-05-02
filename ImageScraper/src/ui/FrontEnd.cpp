@@ -1,6 +1,7 @@
 #include "ui/FrontEnd.h"
 #include "ui/DownloadProgressPanel.h"
 #include "log/Logger.h"
+#include "version/Version.h"
 
 #include "imgui/imgui_internal.h"
 
@@ -80,6 +81,7 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
         [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->RequestPreview( filepath ); },
         [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->ReleaseFileIfCurrent( filepath ); } );
     m_CredentialsPanel      = std::make_unique<CredentialsPanel>( userConfig );
+    m_SettingsPanel         = std::make_unique<SettingsPanel>( appConfig, ( exeDir / "curl-ca-bundle.crt" ).generic_string( ) );
     m_DownloadHistoryPanel->Load( appConfig, exeDir / "Downloads" );
     m_DownloadOptionsPanel->LoadPanelState( appConfig );
     m_LogPanel->LoadPanelState( appConfig );
@@ -95,7 +97,8 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 3 );
     glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 0 );
 
-    m_WindowPtr = glfwCreateWindow( 1600, 900, "Image Scraper", NULL, NULL );
+    const std::string windowTitle = std::string( "Image Scraper v" ) + VERSION_STRING;
+    m_WindowPtr = glfwCreateWindow( 1600, 900, windowTitle.c_str( ), NULL, NULL );
     if( m_WindowPtr == NULL )
     {
         return false;
@@ -180,6 +183,7 @@ void ImageScraper::FrontEnd::Update( )
     const bool isRunning = m_DownloadOptionsPanel->IsRunning( );
 
     m_CredentialsPanel->Update( );
+    m_SettingsPanel->Update( );
     m_MediaPreviewPanel->Update( );
     m_MediaPreviewControlPanel->SetBlocked( isRunning );
     m_MediaPreviewControlPanel->Update( );
@@ -276,6 +280,7 @@ void ImageScraper::FrontEnd::SetupDefaultLayout( ImGuiID dockspaceId )
     // Dock all panels
     ImGui::DockBuilderDockWindow( "Download Options",  dockTopLeft );
     ImGui::DockBuilderDockWindow( "Credentials",       dockTopLeft );
+    ImGui::DockBuilderDockWindow( "Settings",          dockTopLeft );
     ImGui::DockBuilderDockWindow( "Downloads",         dockMidLeft );
     ImGui::DockBuilderDockWindow( "Event Log",         dockEventLog );
     ImGui::DockBuilderDockWindow( "Media Preview",     dockRightMain );

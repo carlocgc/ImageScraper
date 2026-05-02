@@ -1,6 +1,7 @@
 # Release Installer
 
 The release workflow builds a portable zip and an Inno Setup installer.
+Release versions are derived from the pushed `vX.X.X` tag.
 
 ## Release Artifacts
 
@@ -24,6 +25,12 @@ as `config.json`, `imgui.ini`, debug symbols, and download output.
 The installer is currently unsigned. This is enough to provide a normal Windows setup
 experience, Start Menu shortcut, uninstall entry, and predictable install location.
 It does not establish publisher trust with Windows Defender or SmartScreen.
+
+## Update Notifications
+
+ImageScraper can check GitHub Releases for the latest stable `vX.X.X` release and
+open the release page in the user's default browser. The app intentionally does not
+download or run the setup executable itself while the installer remains unsigned.
 
 If Microsoft Defender quarantines a release, submit the exact flagged artifact to
 Microsoft as a software developer false positive:
