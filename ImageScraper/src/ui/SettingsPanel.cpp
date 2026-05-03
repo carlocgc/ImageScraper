@@ -339,8 +339,10 @@ bool ImageScraper::SettingsPanel::OpenReleasePage( const std::string& url ) cons
 {
 #ifdef _WIN32
     const std::wstring wideUrl( url.begin( ), url.end( ) );
+    constexpr intptr_t shellExecuteSuccessThreshold = 32;
+
     const HINSTANCE result = ::ShellExecuteW( nullptr, L"open", wideUrl.c_str( ), nullptr, nullptr, SW_SHOWNORMAL );
-    if( reinterpret_cast<intptr_t>( result ) <= 32 )
+    if( reinterpret_cast<intptr_t>( result ) <= shellExecuteSuccessThreshold )
     {
         LogError( "[%s] Failed to open release page: %s", __FUNCTION__, url.c_str( ) );
         return false;
