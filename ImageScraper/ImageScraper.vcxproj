@@ -230,6 +230,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\network\RedgifsUrlResolver.cpp" />
     <ClCompile Include="src\network\RetryHttpClient.cpp" />
     <ClCompile Include="src\network\RateLimitedHttpClient.cpp" />
+    <ClCompile Include="src\updater\UpdateChecker.cpp" />
     <ClCompile Include="src\requests\DownloadRequest.cpp" />
     <ClCompile Include="src\requests\VideoDownloadRequest.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -282,6 +283,7 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClCompile Include="src\ui\DownloadProgressPanel.cpp" />
     <ClCompile Include="src\ui\CredentialsPanel.cpp" />
     <ClCompile Include="src\ui\MediaPreviewControlPanel.cpp" />
+    <ClCompile Include="src\ui\SettingsPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\auth\OAuthClient.h" />
@@ -423,6 +425,8 @@ xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Co
     <ClInclude Include="include\ui\DownloadProgressPanel.h" />
     <ClInclude Include="include\ui\CredentialsPanel.h" />
     <ClInclude Include="include\ui\MediaPreviewControlPanel.h" />
+    <ClInclude Include="include\ui\SettingsPanel.h" />
+    <ClInclude Include="include\updater\UpdateChecker.h" />
     <ClInclude Include="include\utils\DownloadUtils.h" />
     <ClInclude Include="include\utils\BlueskyUtils.h" />
     <ClInclude Include="include\utils\MastodonUtils.h" />

@@ -12,10 +12,9 @@ Swap `Debug` for `Release` or `/t:ImageScraper` for `/t:ImageScraperTests` as ne
 
 ## Release
 
-- Bump repo-root `VERSION` for the new release.
 - Merge `development` into `master`.
 - Tag `master` with the release version in `vX.X.X` format.
-- Push the `master` update and the tag. The `Release` GitHub Actions workflow runs on the version tag and regenerates `ImageScraper/include/version/Version.h` from `VERSION`.
+- Push the `master` update and the tag. The `Release` GitHub Actions workflow runs on the version tag and regenerates `ImageScraper/include/version/Version.h` from that tag.
 
 ## Repo-Specific Rules
 
