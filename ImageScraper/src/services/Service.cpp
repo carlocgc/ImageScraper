@@ -66,6 +66,11 @@ ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFi
 {
 }
 
+void ImageScraper::Service::SetDownloadRoot( const std::filesystem::path& downloadRoot )
+{
+    m_OutputDir = downloadRoot.generic_string( );
+}
+
 std::optional<int> ImageScraper::Service::DownloadMedia( const std::vector<MediaDownload>& downloads, const std::filesystem::path& dir )
 {
     const std::string providerName = GetProviderDisplayName( );

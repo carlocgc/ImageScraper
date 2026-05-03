@@ -13,6 +13,7 @@
 #include "services/RedgifsService.h"
 #include "async/TaskManager.h"
 #include "config/Config.h"
+#include "config/DownloadLocationConfig.h"
 #include "ui/FrontEnd.h"
 #include "io/JsonFile.h"
 #include "network/CurlHttpClient.h"
@@ -89,7 +90,8 @@ ImageScraper::App::App( )
     }
 
     const std::string caBundlePath = ( exeDir / s_CaBundleFile ).generic_string( );
-    m_OutputDirPath = exeDir.generic_string( );
+    const std::filesystem::path defaultDownloadRoot = DownloadLocationConfig::GetDefaultDownloadRoot( exeDir );
+    m_OutputDirPath = DownloadLocationConfig::LoadDownloadRoot( m_AppConfig, defaultDownloadRoot ).generic_string( );
 
     // One rate-limited HTTP client for all redgifs traffic, shared between RedgifsUrlResolver
     // (used by every service that may encounter redgifs URLs) and RedgifsService itself.

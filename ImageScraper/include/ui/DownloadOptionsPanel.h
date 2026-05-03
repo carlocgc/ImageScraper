@@ -24,11 +24,13 @@ namespace ImageScraper
 
         // State queries used by FrontEnd to coordinate with other panels
         bool IsRunning( ) const { return m_Running; }
+        const std::vector<std::shared_ptr<Service>>& GetServices( ) const { return m_Services; }
 
         // IServiceSink delegation targets - called by FrontEnd
         bool IsCancelled( ) const { return m_DownloadCancelled.load( ); }
         void OnRunComplete( );
         void SetInputState( InputState state );
+        void SetDownloadLocationResolved( bool resolved ) { m_DownloadLocationResolved = resolved; }
         int  GetSigningInProvider( ) const { return m_SigningInProvider.load( ); }
         void OnSignInComplete( ContentProvider provider );
 
@@ -58,6 +60,7 @@ namespace ImageScraper
         int  m_ContentProvider{ 0 };
         bool m_StartProcess{ false };
         bool m_Running{ false };
+        bool m_DownloadLocationResolved{ true };
         bool m_OpenWarningPopup{ false };
         std::string m_WarningMessage{ };
         std::shared_ptr<JsonFile> m_AppConfig{ };

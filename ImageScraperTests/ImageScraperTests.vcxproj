@@ -112,6 +112,7 @@
     <ClCompile Include="..\ImageScraper\src\network\CurlHttpClient.cpp" />
     <ClCompile Include="..\ImageScraper\src\network\RetryHttpClient.cpp" />
     <ClCompile Include="..\ImageScraper\src\network\RateLimitedHttpClient.cpp" />
+    <ClCompile Include="..\ImageScraper\src\updater\UpdateChecker.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\bluesky\GetAuthorFeedRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\bluesky\ResolveHandleRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\fourchan\GetBoardsRequest.cpp" />
@@ -142,6 +143,7 @@
     <ClCompile Include="src\tests\LogPanelTests.cpp" />
     <ClCompile Include="src\tests\RingBufferTests.cpp" />
     <ClCompile Include="src\tests\StringUtilsTests.cpp" />
+    <ClCompile Include="src\tests\UpdateCheckerTests.cpp" />
     <ClCompile Include="..\ImageScraper\src\io\JsonFile.cpp" />
   </ItemGroup>
   <ItemGroup>

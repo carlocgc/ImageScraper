@@ -273,7 +273,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
             }
 
             // Create download directory
-            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Downloads" / "Tumblr" / options.m_TumblrUser;
+            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Tumblr" / options.m_TumblrUser;
             const std::string dirStr = dir.generic_string( );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {

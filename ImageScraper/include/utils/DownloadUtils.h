@@ -112,8 +112,26 @@ namespace ImageScraper::DownloadHelpers
         return true;
     }
 
-    static std::filesystem::path GetProviderRoot( const std::string& filepath )
+    static std::filesystem::path GetProviderRoot( const std::string& filepath, const std::filesystem::path& downloadsRoot )
     {
+        if( !downloadsRoot.empty( ) )
+        {
+            const std::filesystem::path filePath = std::filesystem::path( filepath );
+            const std::filesystem::path relativePath = filePath.lexically_relative( downloadsRoot );
+            if( relativePath.empty( ) || relativePath == std::filesystem::path( "." ) )
+            {
+                return { };
+            }
+
+            auto relativeIt = relativePath.begin( );
+            if( relativeIt == relativePath.end( ) || relativeIt->string( ) == ".." )
+            {
+                return { };
+            }
+
+            return downloadsRoot / *relativeIt;
+        }
+
         std::filesystem::path result;
         bool foundDownloads = false;
         for( const auto& part : std::filesystem::path( filepath ) )
@@ -133,14 +151,24 @@ namespace ImageScraper::DownloadHelpers
         return { };
     }
 
+    static std::filesystem::path GetProviderRoot( const std::string& filepath )
+    {
+        return GetProviderRoot( filepath, { } );
+    }
+
     static std::string GetProviderName( const std::string& filepath )
     {
         return GetProviderRoot( filepath ).filename( ).string( );
     }
 
-    static std::string GetSubfolderLabel( const std::string& filepath )
+    static std::string GetProviderName( const std::string& filepath, const std::filesystem::path& downloadsRoot )
     {
-        const auto providerRoot = GetProviderRoot( filepath );
+        return GetProviderRoot( filepath, downloadsRoot ).filename( ).string( );
+    }
+
+    static std::string GetSubfolderLabel( const std::string& filepath, const std::filesystem::path& downloadsRoot )
+    {
+        const auto providerRoot = GetProviderRoot( filepath, downloadsRoot );
         if( providerRoot.empty( ) )
         {
             return { };
@@ -208,6 +236,11 @@ namespace ImageScraper::DownloadHelpers
         }
 
         return subfolderName;
+    }
+
+    static std::string GetSubfolderLabel( const std::string& filepath )
+    {
+        return GetSubfolderLabel( filepath, { } );
     }
 
     static std::string CreateQueryParamString( const std::vector<QueryParam>& params )

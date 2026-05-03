@@ -54,7 +54,7 @@ namespace
             ? "User"
             : "Subreddit";
 
-        return std::filesystem::path( outputDir ) / "Downloads" / "Reddit" / targetTypeDirectory / options.m_RedditTargetName;
+        return std::filesystem::path( outputDir ) / "Reddit" / targetTypeDirectory / options.m_RedditTargetName;
     }
 }
 

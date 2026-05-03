@@ -50,6 +50,8 @@ namespace ImageScraper
         virtual std::string GetProviderDisplayName( ) const { return "Service"; }
         virtual std::string GetBrandColor( ) const { return "#888888"; }
         ContentProvider GetContentProvider( ) const { return m_ContentProvider; }
+        void SetDownloadRoot( const std::filesystem::path& downloadRoot );
+        std::filesystem::path GetDownloadRoot( ) const { return m_OutputDir; }
 
     protected:
         enum class DownloadMethod : uint8_t

@@ -1,6 +1,8 @@
 #include "ui/FrontEnd.h"
 #include "ui/DownloadProgressPanel.h"
+#include "config/DownloadLocationConfig.h"
 #include "log/Logger.h"
+#include "version/Version.h"
 
 #include "imgui/imgui_internal.h"
 
@@ -72,15 +74,37 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     char exePath[ MAX_PATH ];
     GetModuleFileNameA( nullptr, exePath, MAX_PATH );
     const std::filesystem::path exeDir = std::filesystem::path( exePath ).parent_path( );
+    const std::filesystem::path defaultDownloadRoot = DownloadLocationConfig::GetDefaultDownloadRoot( exeDir );
+    const std::filesystem::path initialDownloadRoot = DownloadLocationConfig::LoadDownloadRoot( appConfig, defaultDownloadRoot );
 
     m_DownloadOptionsPanel  = std::make_unique<DownloadOptionsPanel>( services );
     m_DownloadProgressPanel = std::make_unique<DownloadProgressPanel>( );
     m_MediaPreviewPanel     = std::make_unique<MediaPreviewPanel>( );
+    m_MediaPreviewPanel->SetDownloadRoot( initialDownloadRoot );
     m_DownloadHistoryPanel  = std::make_unique<DownloadHistoryPanel>(
         [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->RequestPreview( filepath ); },
         [ this ]( const std::string& filepath ) { m_MediaPreviewPanel->ReleaseFileIfCurrent( filepath ); } );
     m_CredentialsPanel      = std::make_unique<CredentialsPanel>( userConfig );
-    m_DownloadHistoryPanel->Load( appConfig, exeDir / "Downloads" );
+    m_SettingsPanel         = std::make_unique<SettingsPanel>(
+        appConfig,
+        ( exeDir / "curl-ca-bundle.crt" ).generic_string( ),
+        defaultDownloadRoot,
+        initialDownloadRoot,
+        [ this, appConfig ]( const std::filesystem::path& downloadRoot )
+        {
+            for( const auto& service : m_DownloadOptionsPanel->GetServices( ) )
+            {
+                if( service )
+                {
+                    service->SetDownloadRoot( downloadRoot );
+                }
+            }
+
+            m_MediaPreviewPanel->SetDownloadRoot( downloadRoot );
+            m_MediaPreviewPanel->ClearPreview( );
+            m_DownloadHistoryPanel->Load( appConfig, downloadRoot );
+        } );
+    m_DownloadHistoryPanel->Load( appConfig, initialDownloadRoot );
     m_DownloadOptionsPanel->LoadPanelState( appConfig );
     m_LogPanel->LoadPanelState( appConfig );
     m_MediaPreviewPanel->LoadPanelState( appConfig );
@@ -95,7 +119,8 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 3 );
     glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 0 );
 
-    m_WindowPtr = glfwCreateWindow( 1600, 900, "Image Scraper", NULL, NULL );
+    const std::string windowTitle = std::string( "Image Scraper v" ) + VERSION_STRING;
+    m_WindowPtr = glfwCreateWindow( 1600, 900, windowTitle.c_str( ), NULL, NULL );
     if( m_WindowPtr == NULL )
     {
         return false;
@@ -141,6 +166,11 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
 void ImageScraper::FrontEnd::Update( )
 {
     glfwPollEvents( );
+    const bool settingsOperationActive = m_SettingsPanel && m_SettingsPanel->IsLocationOperationActive( );
+    if( settingsOperationActive && m_WindowPtr && glfwWindowShouldClose( m_WindowPtr ) )
+    {
+        glfwSetWindowShouldClose( m_WindowPtr, GLFW_FALSE );
+    }
 
     ImGui_ImplOpenGL3_NewFrame( );
     ImGui_ImplGlfw_NewFrame( );
@@ -169,6 +199,10 @@ void ImageScraper::FrontEnd::Update( )
     //   Mid-left node    - Downloads (sole occupant)
     //   Bottom-left node - Event Log (sole occupant)
     //   Bottom node      - Download Progress (last, sole occupant)
+    m_DownloadOptionsPanel->SetDownloadLocationResolved(
+        ( !m_SettingsPanel || m_SettingsPanel->IsDownloadLocationResolved( ) )
+        && !settingsOperationActive );
+
     const bool wasRunning = m_DownloadOptionsPanel->IsRunning( );
     m_DownloadOptionsPanel->Update( );
     if( !wasRunning && m_DownloadOptionsPanel->IsRunning( ) )
@@ -178,14 +212,18 @@ void ImageScraper::FrontEnd::Update( )
     }
 
     const bool isRunning = m_DownloadOptionsPanel->IsRunning( );
+    const bool isBlockedForSettings =
+        isRunning ||
+        settingsOperationActive ||
+        m_DownloadOptionsPanel->GetSigningInProvider( ) != INVALID_CONTENT_PROVIDER;
 
     m_CredentialsPanel->Update( );
+    m_SettingsPanel->SetBlocked( isBlockedForSettings );
+    m_SettingsPanel->Update( );
     m_MediaPreviewPanel->Update( );
-    m_MediaPreviewControlPanel->SetBlocked( isRunning );
+    m_MediaPreviewControlPanel->SetBlocked( isRunning || settingsOperationActive );
     m_MediaPreviewControlPanel->Update( );
-    m_DownloadHistoryPanel->SetBlocked(
-        isRunning ||
-        m_DownloadOptionsPanel->GetSigningInProvider( ) != INVALID_CONTENT_PROVIDER );
+    m_DownloadHistoryPanel->SetBlocked( isBlockedForSettings );
     m_DownloadHistoryPanel->SetPrivacyMode( m_MediaPreviewPanel->IsPrivacyMode( ) );
     m_DownloadHistoryPanel->Update( );
     m_LogPanel->Update( );
@@ -276,6 +314,7 @@ void ImageScraper::FrontEnd::SetupDefaultLayout( ImGuiID dockspaceId )
     // Dock all panels
     ImGui::DockBuilderDockWindow( "Download Options",  dockTopLeft );
     ImGui::DockBuilderDockWindow( "Credentials",       dockTopLeft );
+    ImGui::DockBuilderDockWindow( "Settings",          dockTopLeft );
     ImGui::DockBuilderDockWindow( "Downloads",         dockMidLeft );
     ImGui::DockBuilderDockWindow( "Event Log",         dockEventLog );
     ImGui::DockBuilderDockWindow( "Media Preview",     dockRightMain );
