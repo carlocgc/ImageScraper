@@ -250,7 +250,13 @@ void ImageScraper::DownloadOptionsPanel::UpdateRunCancelButton( )
 {
     if( !m_Running )
     {
+        ImGui::BeginDisabled( !m_DownloadLocationResolved );
         m_StartProcess = ImGui::Button( "Run", ImVec2( 100, 40 ) );
+        if( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) && !m_DownloadLocationResolved )
+        {
+            ImGui::SetTooltip( "Resolve the missing download location in Settings before running downloads." );
+        }
+        ImGui::EndDisabled( );
     }
     else
     {
@@ -269,6 +275,12 @@ bool ImageScraper::DownloadOptionsPanel::HandleUserInput( )
 {
     if( IsInputBlocked( ) )
     {
+        return false;
+    }
+
+    if( !m_DownloadLocationResolved )
+    {
+        m_StartProcess = false;
         return false;
     }
 

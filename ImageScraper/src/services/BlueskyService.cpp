@@ -233,7 +233,7 @@ void ImageScraper::BlueskyService::DownloadContent( const UserInputOptions& inpu
 
             InfoLog( "[%s] Prepared %i unique Bluesky downloads for %s from %i fetched media items (%i images, %i videos -> %i image downloads, %i video downloads).", __FUNCTION__, static_cast<int>( preparedDownloads.size( ) ), actor.c_str( ), static_cast<int>( mediaItems.size( ) ), imageCount, videoCount, preparedImageCount, preparedVideoCount );
 
-            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Downloads" / "Bluesky" / preparedDownloads.front( ).m_ActorDirectory;
+            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Bluesky" / preparedDownloads.front( ).m_ActorDirectory;
             const std::string dirStr = dir.generic_string( );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {

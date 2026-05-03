@@ -317,6 +317,9 @@
     <ClInclude Include="include\config\Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\config\DownloadLocationConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\log\Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
