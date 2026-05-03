@@ -185,7 +185,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
 
             // Create download directory
 
-            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Downloads" / "4chan" / options.m_FourChanBoard;
+            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "4chan" / options.m_FourChanBoard;
             const std::string dirStr = dir.generic_string( );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {

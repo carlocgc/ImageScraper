@@ -95,6 +95,16 @@ TEST_CASE( "GetProviderName extracts the provider folder from a download path", 
     REQUIRE( GetProviderName( missingDownloadsPath ).empty( ) );
 }
 
+TEST_CASE( "Download labels support an explicit custom download root", "[DownloadUtils]" )
+{
+    const std::filesystem::path root = std::filesystem::path( "CustomRoot" );
+    const std::string filepath =
+        ( root / "Reddit" / "Subreddit" / "aww" / "kitten.png" ).string( );
+
+    REQUIRE( GetProviderName( filepath, root ) == "Reddit" );
+    REQUIRE( GetSubfolderLabel( filepath, root ) == "r/aww" );
+}
+
 TEST_CASE( "GetSubfolderLabel formats provider-specific download labels", "[DownloadUtils]" )
 {
     SECTION( "Reddit uses r/ prefix" )

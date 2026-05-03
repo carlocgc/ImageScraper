@@ -241,8 +241,8 @@ void ImageScraper::MediaPreviewPanel::Update( )
             const ImVec2 nameBadgeSize = DrawBadge( ImVec2( contentScreenMin.x + k_Pad, badgeY ), name.c_str( ) );
 
             std::vector<std::string> metadataBadges{ };
-            const std::string providerName = DownloadHelpers::GetProviderName( m_CurrentFilePath );
-            const std::string subfolderLabel = DownloadHelpers::GetSubfolderLabel( m_CurrentFilePath );
+            const std::string providerName = DownloadHelpers::GetProviderName( m_CurrentFilePath, m_DownloadRoot );
+            const std::string subfolderLabel = DownloadHelpers::GetSubfolderLabel( m_CurrentFilePath, m_DownloadRoot );
             const std::string dimensionsLabel = FormatDimensionsLabel( m_Width, m_Height );
             const std::string fileSize = FormatFileSize( m_CurrentFilePath );
 

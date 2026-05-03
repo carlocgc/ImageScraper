@@ -14,6 +14,7 @@
 #include <atomic>
 #include <memory>
 #include <future>
+#include <filesystem>
 
 namespace ImageScraper
 {
@@ -80,6 +81,7 @@ namespace ImageScraper
 
         // Loads persisted preferences (currently: privacy mode toggle)
         void LoadPanelState( std::shared_ptr<JsonFile> appConfig );
+        void SetDownloadRoot( const std::filesystem::path& downloadRoot ) { m_DownloadRoot = downloadRoot; }
 
         // Optional icon font used for the privacy toggle. nullptr falls back to a text glyph.
         void SetIconFont( ImFont* iconFont );
@@ -148,6 +150,7 @@ namespace ImageScraper
         std::atomic_bool    m_IsDecoding{ false };
         std::atomic_bool    m_CancelDecode{ false };  // set by RequestPreview to discard in-flight result
         std::future<void>   m_DecodeFuture{ };
+        std::filesystem::path m_DownloadRoot{ };
         std::mutex                       m_PendingAudioMutex{ };
         std::unique_ptr<MediaAudioPlayer> m_PendingAudioPlayer{ };
         std::atomic_bool                 m_IsPreparingAudio{ false };

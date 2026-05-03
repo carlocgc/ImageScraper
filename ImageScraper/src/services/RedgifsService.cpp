@@ -169,7 +169,7 @@ void ImageScraper::RedgifsService::DownloadContent( const UserInputOptions& inpu
                 return;
             }
 
-            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Downloads" / "Redgifs" / lowerUser;
+            const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Redgifs" / lowerUser;
             const std::string dirStr = dir.generic_string( );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
