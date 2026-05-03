@@ -667,8 +667,9 @@ void ImageScraper::DownloadHistoryPanel::DeletePath( const std::filesystem::path
     std::error_code typeEc;
     const bool isDirectory = std::filesystem::is_directory( path, typeEc );
     const std::string pathString = MakePreferredPathString( path );
+    const std::string selectedPathBeforeDelete = m_SelectedPath;
     const bool selectionImpacted = IsSelectedPath( path ) || HasSelectedDescendant( pathString );
-    const std::vector<std::filesystem::path>& navigableFiles = GetNavigableFiles( );
+    GetNavigableFiles( );
     const int preferredIndex = selectionImpacted
         ? FindNavigableIndexByPath( m_SelectedPath )
         : -1;
@@ -701,6 +702,24 @@ void ImageScraper::DownloadHistoryPanel::DeletePath( const std::filesystem::path
                     __FUNCTION__,
                     pathString.c_str( ),
                     ec.message( ).c_str( ) );
+
+        EvictThumbnailsInPath( path, isDirectory );
+        InvalidateTreeCaches( );
+        if( selectionImpacted )
+        {
+            std::error_code existsEc;
+            if( !selectedPathBeforeDelete.empty( )
+                && std::filesystem::exists( std::filesystem::path{ selectedPathBeforeDelete }, existsEc )
+                && !existsEc )
+            {
+                SetSelection( selectedPathBeforeDelete, false, true );
+            }
+            else
+            {
+                m_SelectedPath.clear( );
+                AdvanceSelectionAndPreview( preferredIndex );
+            }
+        }
         return;
     }
 
