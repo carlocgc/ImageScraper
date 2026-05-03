@@ -162,17 +162,14 @@ void ImageScraper::SettingsPanel::Update( )
         return;
     }
 
-    ImGui::Text( "Application" );
-    ImGui::Separator( );
+    DrawDownloadsSettings( );
+    ImGui::Spacing( );
+    ImGui::Spacing( );
+    
+    ImGui::SeparatorText( "Updates" );
+    ImGui::Spacing( );
     ImGui::Text( "Current version: %s", VERSION_STRING );
     ImGui::Spacing( );
-
-    DrawDownloadsSettings( );
-
-    ImGui::Spacing( );
-    ImGui::Separator( );
-    ImGui::Spacing( );
-    ImGui::Text( "Updates" );
 
     bool checkUpdatesOnStartup = m_CheckUpdatesOnStartup;
     if( ImGui::Checkbox( "Check for updates on startup", &checkUpdatesOnStartup ) )
@@ -197,6 +194,7 @@ void ImageScraper::SettingsPanel::Update( )
 
     ImGui::SameLine( );
     DrawUpdateStatus( );
+    ImGui::Spacing( );
 
     if( m_UpdateStatus == SettingsUpdateStatus::UpdateAvailable && !m_LatestRelease.m_HtmlUrl.empty( ) )
     {
@@ -214,10 +212,11 @@ void ImageScraper::SettingsPanel::Update( )
         ImGui::TextWrapped( "%s", m_LastError.c_str( ) );
     }
 
-#ifdef _DEBUG
     ImGui::Spacing( );
     ImGui::Separator( );
     ImGui::Spacing( );
+
+#ifdef _DEBUG    
     ImGui::TextColored( ImVec4( 1.0f, 0.8f, 0.2f, 1.0f ), "Dev" );
     ImGui::SameLine( );
     bool checkDevelopmentVersion = m_CheckDevelopmentVersion;
@@ -451,8 +450,8 @@ bool ImageScraper::SettingsPanel::OpenReleasePage( const std::string& url ) cons
 
 void ImageScraper::SettingsPanel::DrawDownloadsSettings( )
 {
-    ImGui::Text( "Downloads" );
-    ImGui::Separator( );
+    ImGui::SeparatorText( "Downloads" );
+    ImGui::Spacing( );
     ImGui::TextUnformatted( "Location" );
     ImGui::SameLine( 110.0f );
     ImGui::PushTextWrapPos( ImGui::GetCursorPosX( ) + ImGui::GetContentRegionAvail( ).x );
