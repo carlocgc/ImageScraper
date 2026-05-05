@@ -587,6 +587,29 @@ ImageScraper::DownloadHistoryPanel::BuildTreeNodeSnapshot(
         return std::nullopt;
     }
 
+    ULARGE_INTEGER fileSize{ };
+    fileSize.LowPart  = attrData.nFileSizeLow;
+    fileSize.HighPart = attrData.nFileSizeHigh;
+
+    ULARGE_INTEGER creationTime{ };
+    creationTime.LowPart  = attrData.ftCreationTime.dwLowDateTime;
+    creationTime.HighPart = attrData.ftCreationTime.dwHighDateTime;
+
+    NodeAttributes attrs{ };
+    attrs.m_IsDirectory   = ( attrData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) != 0;
+    attrs.m_SizeBytes     = static_cast<uintmax_t>( fileSize.QuadPart );
+    attrs.m_CreationTicks = creationTime.QuadPart;
+
+    return BuildTreeNodeSnapshot( path, attrs, sortColumnUserId, sortDirection );
+}
+
+std::optional<ImageScraper::DownloadHistoryPanel::TreeNodeSnapshot>
+ImageScraper::DownloadHistoryPanel::BuildTreeNodeSnapshot(
+    const std::filesystem::path& path,
+    const NodeAttributes& attrs,
+    ImGuiID sortColumnUserId,
+    ImGuiSortDirection sortDirection ) const
+{
     TreeNodeSnapshot node{ };
     node.m_Path = path;
     node.m_PathString = MakeFastPreferredPathString( path );
@@ -595,7 +618,7 @@ ImageScraper::DownloadHistoryPanel::BuildTreeNodeSnapshot(
         return std::nullopt;
     }
 
-    node.m_IsDirectory = ( attrData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) != 0;
+    node.m_IsDirectory = attrs.m_IsDirectory;
 
     node.m_Label = path.filename( ).string( );
     if( node.m_Label.empty( ) )
@@ -610,18 +633,12 @@ ImageScraper::DownloadHistoryPanel::BuildTreeNodeSnapshot(
     }
     else
     {
-        ULARGE_INTEGER fileSize{ };
-        fileSize.LowPart = attrData.nFileSizeLow;
-        fileSize.HighPart = attrData.nFileSizeHigh;
-        node.m_SizeBytes = static_cast<uintmax_t>( fileSize.QuadPart );
-        node.m_SizeLabel = FormatFileSizeBytes( node.m_SizeBytes );
-        node.m_TypeLabel = GetTypeLabelFromExtension( path );
+        node.m_SizeBytes  = attrs.m_SizeBytes;
+        node.m_SizeLabel  = FormatFileSizeBytes( node.m_SizeBytes );
+        node.m_TypeLabel  = GetTypeLabelFromExtension( path );
     }
 
-    ULARGE_INTEGER creationTime{ };
-    creationTime.LowPart = attrData.ftCreationTime.dwLowDateTime;
-    creationTime.HighPart = attrData.ftCreationTime.dwHighDateTime;
-    node.m_CreationTicks = creationTime.QuadPart;
+    node.m_CreationTicks = attrs.m_CreationTicks;
     node.m_CreationLabel = FormatCreationTimeTicks( node.m_CreationTicks );
 
     if( !node.m_IsDirectory )
@@ -640,64 +657,30 @@ ImageScraper::DownloadHistoryPanel::BuildTreeNodeSnapshot(
     std::vector<TreeNodeSnapshot> children{ };
     do
     {
-        if( findData.cFileName[ 0 ] == L'.' &&
-            ( findData.cFileName[ 1 ] == L'\0' ||
-              ( findData.cFileName[ 1 ] == L'.' && findData.cFileName[ 2 ] == L'\0' ) ) )
+        if( wcscmp( findData.cFileName, L"." ) == 0 || wcscmp( findData.cFileName, L".." ) == 0 )
         {
             continue;
         }
 
         const std::filesystem::path childPath = path / findData.cFileName;
-        const bool childIsDirectory = ( findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) != 0;
 
-        TreeNodeSnapshot child{ };
-        child.m_Path = childPath;
-        child.m_PathString = MakeFastPreferredPathString( childPath );
-        if( child.m_PathString.empty( ) )
+        ULARGE_INTEGER childSize{ };
+        childSize.LowPart  = findData.nFileSizeLow;
+        childSize.HighPart = findData.nFileSizeHigh;
+
+        ULARGE_INTEGER childCreation{ };
+        childCreation.LowPart  = findData.ftCreationTime.dwLowDateTime;
+        childCreation.HighPart = findData.ftCreationTime.dwHighDateTime;
+
+        NodeAttributes childAttrs{ };
+        childAttrs.m_IsDirectory   = ( findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) != 0;
+        childAttrs.m_SizeBytes     = static_cast<uintmax_t>( childSize.QuadPart );
+        childAttrs.m_CreationTicks = childCreation.QuadPart;
+
+        std::optional<TreeNodeSnapshot> child = BuildTreeNodeSnapshot( childPath, childAttrs, sortColumnUserId, sortDirection );
+        if( child.has_value( ) )
         {
-            continue;
-        }
-
-        child.m_IsDirectory = childIsDirectory;
-        child.m_Label = childPath.filename( ).string( );
-        if( child.m_Label.empty( ) )
-        {
-            child.m_Label = child.m_PathString;
-        }
-
-        if( childIsDirectory )
-        {
-            child.m_SizeLabel = "--";
-            child.m_TypeLabel = "Folder";
-
-            ULARGE_INTEGER childCreation{ };
-            childCreation.LowPart = findData.ftCreationTime.dwLowDateTime;
-            childCreation.HighPart = findData.ftCreationTime.dwHighDateTime;
-            child.m_CreationTicks = childCreation.QuadPart;
-            child.m_CreationLabel = FormatCreationTimeTicks( child.m_CreationTicks );
-
-            std::optional<TreeNodeSnapshot> subtree = BuildTreeNodeSnapshot( childPath, sortColumnUserId, sortDirection );
-            if( subtree.has_value( ) )
-            {
-                children.push_back( std::move( *subtree ) );
-            }
-        }
-        else
-        {
-            ULARGE_INTEGER childSize{ };
-            childSize.LowPart = findData.nFileSizeLow;
-            childSize.HighPart = findData.nFileSizeHigh;
-            child.m_SizeBytes = static_cast<uintmax_t>( childSize.QuadPart );
-            child.m_SizeLabel = FormatFileSizeBytes( child.m_SizeBytes );
-            child.m_TypeLabel = GetTypeLabelFromExtension( childPath );
-
-            ULARGE_INTEGER childCreation{ };
-            childCreation.LowPart = findData.ftCreationTime.dwLowDateTime;
-            childCreation.HighPart = findData.ftCreationTime.dwHighDateTime;
-            child.m_CreationTicks = childCreation.QuadPart;
-            child.m_CreationLabel = FormatCreationTimeTicks( child.m_CreationTicks );
-
-            children.push_back( std::move( child ) );
+            children.push_back( std::move( *child ) );
         }
     }
     while( FindNextFileW( hFind, &findData ) );

@@ -82,6 +82,13 @@ namespace ImageScraper
             std::vector<TreeNodeSnapshot> m_Children{ };
         };
 
+        struct NodeAttributes
+        {
+            bool               m_IsDirectory{ false };
+            uintmax_t          m_SizeBytes{ 0 };
+            unsigned long long m_CreationTicks{ 0 };
+        };
+
         void FlushPending( );
         void FlushDecodedThumbnails( );
         void InvalidateTreeCaches( );
@@ -89,6 +96,11 @@ namespace ImageScraper
         void RefreshTreeSnapshot( const ImGuiTableSortSpecs* sortSpecs );
         std::optional<TreeNodeSnapshot> BuildTreeNodeSnapshot(
             const std::filesystem::path& path,
+            ImGuiID sortColumnUserId,
+            ImGuiSortDirection sortDirection ) const;
+        std::optional<TreeNodeSnapshot> BuildTreeNodeSnapshot(
+            const std::filesystem::path& path,
+            const NodeAttributes& attrs,
             ImGuiID sortColumnUserId,
             ImGuiSortDirection sortDirection ) const;
         void CollectNavigableFiles(
