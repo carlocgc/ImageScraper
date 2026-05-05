@@ -158,7 +158,8 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     m_MediaPreviewControlPanel = std::make_unique<MediaPreviewControlPanel>(
         m_MediaPreviewPanel.get( ),
         m_DownloadHistoryPanel.get( ),
-        mediaControlsIconFont );
+        mediaControlsIconFont,
+        exeDir / "resources" / "icons" );
 
     return true;
 }
