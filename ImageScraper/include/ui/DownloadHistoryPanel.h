@@ -10,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include <functional>
+#include <chrono>
 #include <filesystem>
 #include <future>
 #include <optional>
@@ -152,6 +153,8 @@ namespace ImageScraper
         mutable ImGuiID                                    m_TreeSortColumnUserId{ 0 };
         mutable ImGuiSortDirection                         m_TreeSortDirection{ ImGuiSortDirection_Ascending };
         mutable bool                                       m_TreeDirty{ true };
+        mutable bool                                       m_TreeDirtyFromDownload{ false };
+        mutable std::chrono::steady_clock::time_point      m_LastTreeRebuild{ };
         mutable std::vector<std::filesystem::path>         m_NavigableFilesCache{ };
         mutable std::unordered_map<std::string, int>       m_NavigableFileIndexByPath{ };
         mutable bool                                       m_NavigableFilesDirty{ true };
