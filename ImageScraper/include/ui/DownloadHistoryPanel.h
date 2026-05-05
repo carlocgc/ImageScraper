@@ -105,7 +105,8 @@ namespace ImageScraper
             ImGuiSortDirection sortDirection ) const;
         void CollectNavigableFiles(
             const TreeNodeSnapshot& node,
-            std::vector<std::filesystem::path>& files ) const;
+            std::vector<std::filesystem::path>& files,
+            std::unordered_map<std::string, int>& indexByPath ) const;
         void SaveSelectedPath( );
         void SetSelection( const std::string& path, bool scrollToSelected, bool requestPreview );
         void ClearSelection( bool requestPreview );
