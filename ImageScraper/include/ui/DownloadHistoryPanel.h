@@ -10,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include <functional>
+#include <chrono>
 #include <filesystem>
 #include <future>
 #include <optional>
@@ -81,6 +82,13 @@ namespace ImageScraper
             std::vector<TreeNodeSnapshot> m_Children{ };
         };
 
+        struct NodeAttributes
+        {
+            bool               m_IsDirectory{ false };
+            uintmax_t          m_SizeBytes{ 0 };
+            unsigned long long m_CreationTicks{ 0 };
+        };
+
         void FlushPending( );
         void FlushDecodedThumbnails( );
         void InvalidateTreeCaches( );
@@ -90,9 +98,15 @@ namespace ImageScraper
             const std::filesystem::path& path,
             ImGuiID sortColumnUserId,
             ImGuiSortDirection sortDirection ) const;
+        std::optional<TreeNodeSnapshot> BuildTreeNodeSnapshot(
+            const std::filesystem::path& path,
+            const NodeAttributes& attrs,
+            ImGuiID sortColumnUserId,
+            ImGuiSortDirection sortDirection ) const;
         void CollectNavigableFiles(
             const TreeNodeSnapshot& node,
-            std::vector<std::filesystem::path>& files ) const;
+            std::vector<std::filesystem::path>& files,
+            std::unordered_map<std::string, int>& indexByPath ) const;
         void SaveSelectedPath( );
         void SetSelection( const std::string& path, bool scrollToSelected, bool requestPreview );
         void ClearSelection( bool requestPreview );
@@ -105,6 +119,8 @@ namespace ImageScraper
         bool HasSelectedDescendant( const std::string& pathString ) const;
         bool CanDeletePath( const std::filesystem::path& path ) const;
         bool IsRootPath( const std::string& pathString ) const;
+        void RefreshDownloadsRootExists( );
+        static bool PathExists( const std::string& preferredPath );
         const std::vector<std::filesystem::path>& GetNavigableFiles( ) const;
         int  FindNavigableIndexByPath( const std::string& filepath ) const;
         void EvictThumbnailsInPath( const std::filesystem::path& targetPath, bool treatAsDirectory );
@@ -152,6 +168,8 @@ namespace ImageScraper
         mutable ImGuiID                                    m_TreeSortColumnUserId{ 0 };
         mutable ImGuiSortDirection                         m_TreeSortDirection{ ImGuiSortDirection_Ascending };
         mutable bool                                       m_TreeDirty{ true };
+        mutable bool                                       m_TreeDirtyFromDownload{ false };
+        mutable std::chrono::steady_clock::time_point      m_LastTreeRebuild{ };
         mutable std::vector<std::filesystem::path>         m_NavigableFilesCache{ };
         mutable std::unordered_map<std::string, int>       m_NavigableFileIndexByPath{ };
         mutable bool                                       m_NavigableFilesDirty{ true };
@@ -162,5 +180,7 @@ namespace ImageScraper
         bool        m_Blocked{ false };
         bool        m_PrivacyMode{ false };
         bool        m_ScrollToSelected{ false };
+        bool        m_DownloadsRootExists{ false };
+        bool        m_SelectedPathExists{ false };
     };
 }
