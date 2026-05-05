@@ -467,6 +467,7 @@ void ImageScraper::DownloadHistoryPanel::FlushPending( )
     }
 
     InvalidateTreeCaches( );
+    m_TreeDirtyFromDownload = true;
 
     // Follow the newest downloaded item and request preview from the main thread
     // so auto-preview stays in sync with the Downloads selection.
@@ -551,7 +552,7 @@ void ImageScraper::DownloadHistoryPanel::EnsureTreeSnapshotCached( ) const
 
     constexpr auto k_RebuildCooldown = std::chrono::milliseconds{ 500 };
     const auto now = std::chrono::steady_clock::now( );
-    if( m_TreeSnapshot.has_value( ) && ( now - m_LastTreeRebuild ) < k_RebuildCooldown )
+    if( m_TreeDirtyFromDownload && m_TreeSnapshot.has_value( ) && ( now - m_LastTreeRebuild ) < k_RebuildCooldown )
     {
         return;
     }
@@ -570,6 +571,7 @@ void ImageScraper::DownloadHistoryPanel::EnsureTreeSnapshotCached( ) const
 
     m_TreeSnapshot = BuildTreeNodeSnapshot( m_DownloadsRoot, sortColumnUserId, sortDirection );
     m_TreeDirty = false;
+    m_TreeDirtyFromDownload = false;
     m_LastTreeRebuild = now;
 }
 
