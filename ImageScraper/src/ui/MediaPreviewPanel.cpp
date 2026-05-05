@@ -237,23 +237,19 @@ void ImageScraper::MediaPreviewPanel::Update( )
 
         if( !m_CurrentFilePath.empty( ) )
         {
-            const std::string name = std::filesystem::path( m_CurrentFilePath ).filename( ).string( );
-            const ImVec2 nameBadgeSize = DrawBadge( ImVec2( contentScreenMin.x + k_Pad, badgeY ), name.c_str( ) );
+            const ImVec2 nameBadgeSize = DrawBadge( ImVec2( contentScreenMin.x + k_Pad, badgeY ), m_CurrentFileName.c_str( ) );
 
             std::vector<std::string> metadataBadges{ };
-            const std::string providerName = DownloadHelpers::GetProviderName( m_CurrentFilePath, m_DownloadRoot );
-            const std::string subfolderLabel = DownloadHelpers::GetSubfolderLabel( m_CurrentFilePath, m_DownloadRoot );
             const std::string dimensionsLabel = FormatDimensionsLabel( m_Width, m_Height );
-            const std::string fileSize = FormatFileSize( m_CurrentFilePath );
 
-            if( !providerName.empty( ) )
+            if( !m_CurrentProviderName.empty( ) )
             {
-                metadataBadges.push_back( providerName );
+                metadataBadges.push_back( m_CurrentProviderName );
             }
 
-            if( !subfolderLabel.empty( ) )
+            if( !m_CurrentSubfolderLabel.empty( ) )
             {
-                metadataBadges.push_back( subfolderLabel );
+                metadataBadges.push_back( m_CurrentSubfolderLabel );
             }
 
             if( !dimensionsLabel.empty( ) )
@@ -261,9 +257,9 @@ void ImageScraper::MediaPreviewPanel::Update( )
                 metadataBadges.push_back( dimensionsLabel );
             }
 
-            if( !fileSize.empty( ) )
+            if( !m_CurrentFileSizeLabel.empty( ) )
             {
-                metadataBadges.push_back( fileSize );
+                metadataBadges.push_back( m_CurrentFileSizeLabel );
             }
 
             float badgeRowY = badgeY + nameBadgeSize.y + 4.0f;
@@ -372,6 +368,7 @@ void ImageScraper::MediaPreviewPanel::ClearPreview( )
     m_AudioPlayer.reset( );
     m_MediaState             = MediaState::None;
     m_CurrentFilePath.clear( );
+    ClearMetadataCache( );
     m_LoadingFilePath.clear( );
     m_VideoFrameBuffer.clear( );
     m_VideoFrameIndex        = 0;
@@ -1003,6 +1000,7 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
     }
 
     m_CurrentFilePath = decoded.m_FilePath;
+    RefreshMetadataCache( );
     m_Width           = decoded.m_Width;
     m_Height          = decoded.m_Height;
     m_CurrentFrame    = 0;
@@ -1196,6 +1194,37 @@ std::string ImageScraper::MediaPreviewPanel::FormatFileSize( const std::string& 
     }
 
     return ss.str( );
+}
+
+void ImageScraper::MediaPreviewPanel::SetDownloadRoot( const std::filesystem::path& downloadRoot )
+{
+    m_DownloadRoot = downloadRoot;
+    if( !m_CurrentFilePath.empty( ) )
+    {
+        RefreshMetadataCache( );
+    }
+}
+
+void ImageScraper::MediaPreviewPanel::RefreshMetadataCache( )
+{
+    if( m_CurrentFilePath.empty( ) )
+    {
+        ClearMetadataCache( );
+        return;
+    }
+
+    m_CurrentFileName = std::filesystem::path( m_CurrentFilePath ).filename( ).string( );
+    m_CurrentProviderName = DownloadHelpers::GetProviderName( m_CurrentFilePath, m_DownloadRoot );
+    m_CurrentSubfolderLabel = DownloadHelpers::GetSubfolderLabel( m_CurrentFilePath, m_DownloadRoot );
+    m_CurrentFileSizeLabel = FormatFileSize( m_CurrentFilePath );
+}
+
+void ImageScraper::MediaPreviewPanel::ClearMetadataCache( )
+{
+    m_CurrentFileName.clear( );
+    m_CurrentProviderName.clear( );
+    m_CurrentSubfolderLabel.clear( );
+    m_CurrentFileSizeLabel.clear( );
 }
 
 void ImageScraper::MediaPreviewPanel::LoadPanelState( std::shared_ptr<JsonFile> appConfig )

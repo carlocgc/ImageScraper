@@ -81,7 +81,7 @@ namespace ImageScraper
 
         // Loads persisted preferences (currently: privacy mode toggle)
         void LoadPanelState( std::shared_ptr<JsonFile> appConfig );
-        void SetDownloadRoot( const std::filesystem::path& downloadRoot ) { m_DownloadRoot = downloadRoot; }
+        void SetDownloadRoot( const std::filesystem::path& downloadRoot );
 
         // Optional icon font used for the privacy toggle. nullptr falls back to a text glyph.
         void SetIconFont( ImFont* iconFont );
@@ -137,6 +137,8 @@ namespace ImageScraper
         static bool IsGif( const std::string& filepath );
         static bool IsVideo( const std::string& filepath );
         static std::string FormatFileSize( const std::string& filepath );
+        void RefreshMetadataCache( );
+        void ClearMetadataCache( );
 
         // Latest path posted by OnFileDownloaded (worker thread → Update)
         std::mutex  m_PathMutex{ };
@@ -168,6 +170,10 @@ namespace ImageScraper
         int         m_CurrentFrame{ 0 };
         float       m_FrameAccumMs{ 0.0f };
         std::string m_CurrentFilePath{ };
+        std::string m_CurrentFileName{ };
+        std::string m_CurrentProviderName{ };
+        std::string m_CurrentSubfolderLabel{ };
+        std::string m_CurrentFileSizeLabel{ };
         MediaState  m_MediaState{ MediaState::None };
         bool        m_HasAudio{ false };
         bool        m_IsMuted{ true };

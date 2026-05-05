@@ -119,6 +119,8 @@ namespace ImageScraper
         bool HasSelectedDescendant( const std::string& pathString ) const;
         bool CanDeletePath( const std::filesystem::path& path ) const;
         bool IsRootPath( const std::string& pathString ) const;
+        void RefreshDownloadsRootExists( );
+        static bool PathExists( const std::string& preferredPath );
         const std::vector<std::filesystem::path>& GetNavigableFiles( ) const;
         int  FindNavigableIndexByPath( const std::string& filepath ) const;
         void EvictThumbnailsInPath( const std::filesystem::path& targetPath, bool treatAsDirectory );
@@ -178,5 +180,7 @@ namespace ImageScraper
         bool        m_Blocked{ false };
         bool        m_PrivacyMode{ false };
         bool        m_ScrollToSelected{ false };
+        bool        m_DownloadsRootExists{ false };
+        bool        m_SelectedPathExists{ false };
     };
 }
