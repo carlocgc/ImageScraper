@@ -1,40 +1,201 @@
 #define NOMINMAX
 #include "ui/MediaPreviewControlPanel.h"
 #include "imgui/imgui.h"
+#include "imgui/imgui_impl_opengl3_loader.h"
+
+#include <Windows.h>
+#include <objidl.h>
+#include <gdiplus.h>
 
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <filesystem>
+
+#pragma comment( lib, "gdiplus.lib" )
 
 namespace
 {
-    constexpr const char* kIconPrevious = u8"\uE892";
-    constexpr const char* kIconNext     = u8"\uE893";
-    constexpr const char* kIconPlay     = u8"\uE768";
-    constexpr const char* kIconPause    = u8"\uE769";
-    constexpr const char* kIconMuted    = u8"\uE74F";
-    constexpr const char* kIconVolume0  = u8"\uE992";
+    constexpr const char* kFallbackPrevious   = "|<";
+    constexpr const char* kFallbackNext       = ">|";
+    constexpr const char* kFallbackPlay       = ">";
+    constexpr const char* kFallbackPause      = "||";
+    constexpr const char* kFallbackMuted      = "x";
+    constexpr const char* kFallbackVolume0    = "o";
+    constexpr const char* kFallbackFullscreen = "[ ]";
 
-    constexpr const char* kFallbackPrevious = "|<";
-    constexpr const char* kFallbackNext     = ">|";
-    constexpr const char* kFallbackPlay     = ">";
-    constexpr const char* kFallbackPause    = "||";
-    constexpr const char* kFallbackMuted    = "x";
-    constexpr const char* kFallbackVolume0  = "o";
+    class GdiplusSession
+    {
+    public:
+        GdiplusSession( )
+        {
+            Gdiplus::GdiplusStartupInput startupInput;
+            const Gdiplus::Status status = Gdiplus::GdiplusStartup( &m_Token, &startupInput, nullptr );
+            m_IsValid = ( status == Gdiplus::Ok );
+        }
+
+        ~GdiplusSession( )
+        {
+            if( m_IsValid )
+            {
+                Gdiplus::GdiplusShutdown( m_Token );
+            }
+        }
+
+        bool IsValid( ) const { return m_IsValid; }
+
+    private:
+        ULONG_PTR m_Token{ 0 };
+        bool      m_IsValid{ false };
+    };
+
+    const GdiplusSession& GetGdiplusSession( )
+    {
+        static const GdiplusSession session;
+        return session;
+    }
+
+    ImageScraper::MediaPreviewControlPanel::IconTexture LoadIconTexture(
+        const std::filesystem::path& path )
+    {
+        if( !GetGdiplusSession( ).IsValid( ) || !std::filesystem::exists( path ) )
+        {
+            return { };
+        }
+
+        const std::wstring widePath = path.wstring( );
+        Gdiplus::Bitmap sourceBitmap( widePath.c_str( ) );
+        if( sourceBitmap.GetLastStatus( ) != Gdiplus::Ok )
+        {
+            return { };
+        }
+
+        const int width  = static_cast<int>( sourceBitmap.GetWidth( ) );
+        const int height = static_cast<int>( sourceBitmap.GetHeight( ) );
+        if( width <= 0 || height <= 0 )
+        {
+            return { };
+        }
+
+        Gdiplus::Bitmap rgbaBitmap( width, height, PixelFormat32bppARGB );
+        Gdiplus::Graphics graphics( &rgbaBitmap );
+        if( graphics.GetLastStatus( ) != Gdiplus::Ok ||
+            graphics.DrawImage( &sourceBitmap, 0, 0, width, height ) != Gdiplus::Ok )
+        {
+            return { };
+        }
+
+        Gdiplus::Rect lockRect( 0, 0, width, height );
+        Gdiplus::BitmapData bitmapData{ };
+        if( rgbaBitmap.LockBits( &lockRect, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData ) != Gdiplus::Ok )
+        {
+            return { };
+        }
+
+        std::vector<unsigned char> pixels( static_cast<size_t>( width ) * static_cast<size_t>( height ) * 4 );
+
+        for( int y = 0; y < height; ++y )
+        {
+            const auto* srcRow = static_cast<const unsigned char*>( bitmapData.Scan0 ) + ( static_cast<size_t>( y ) * static_cast<size_t>( bitmapData.Stride ) );
+            auto* dstRow = pixels.data( ) + ( static_cast<size_t>( y ) * static_cast<size_t>( width ) * 4 );
+
+            for( int x = 0; x < width; ++x )
+            {
+                const unsigned char blue  = srcRow[ x * 4 + 0 ];
+                const unsigned char green = srcRow[ x * 4 + 1 ];
+                const unsigned char red   = srcRow[ x * 4 + 2 ];
+                const unsigned char alpha = srcRow[ x * 4 + 3 ];
+
+                dstRow[ x * 4 + 0 ] = red;
+                dstRow[ x * 4 + 1 ] = green;
+                dstRow[ x * 4 + 2 ] = blue;
+                dstRow[ x * 4 + 3 ] = alpha;
+            }
+        }
+
+        rgbaBitmap.UnlockBits( &bitmapData );
+
+        GLuint texture = 0;
+        glGenTextures( 1, &texture );
+        glBindTexture( GL_TEXTURE_2D, texture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexImage2D( GL_TEXTURE_2D,
+                      0,
+                      GL_RGBA,
+                      width,
+                      height,
+                      0,
+                      GL_RGBA,
+                      GL_UNSIGNED_BYTE,
+                      pixels.data( ) );
+        glBindTexture( GL_TEXTURE_2D, 0 );
+
+        return { texture, width, height };
+    }
+}
+
+ImageScraper::MediaPreviewControlPanel::~MediaPreviewControlPanel( )
+{
+    ReleaseIcons( );
 }
 
 ImageScraper::MediaPreviewControlPanel::MediaPreviewControlPanel(
     MediaPreviewPanel* previewPanel,
     DownloadHistoryPanel* historyPanel,
-    ImFont* iconFont )
+    ImFont* iconFont,
+    const std::filesystem::path& assetRoot )
     : m_PreviewPanel{ previewPanel }
     , m_HistoryPanel{ historyPanel }
     , m_IconFont{ iconFont }
+    , m_AssetRoot{ assetRoot }
 {
+}
+
+void ImageScraper::MediaPreviewControlPanel::EnsureIconsLoaded( )
+{
+    if( m_IconsAttempted )
+    {
+        return;
+    }
+
+    m_IconsAttempted = true;
+
+    m_PreviousIcon   = LoadIconTexture( m_AssetRoot / "previous.png" );
+    m_NextIcon       = LoadIconTexture( m_AssetRoot / "next.png" );
+    m_PlayIcon       = LoadIconTexture( m_AssetRoot / "play.png" );
+    m_PauseIcon      = LoadIconTexture( m_AssetRoot / "pause.png" );
+    m_MutedIcon      = LoadIconTexture( m_AssetRoot / "muted.png" );
+    m_VolumeIcon     = LoadIconTexture( m_AssetRoot / "volume.png" );
+    m_FullscreenIcon = LoadIconTexture( m_AssetRoot / "fullscreen.png" );
+}
+
+void ImageScraper::MediaPreviewControlPanel::ReleaseIcons( )
+{
+    auto ReleaseIcon = []( IconTexture& icon )
+    {
+        if( icon.m_Texture != 0 )
+        {
+            glDeleteTextures( 1, &icon.m_Texture );
+        }
+        icon = { };
+    };
+
+    ReleaseIcon( m_PreviousIcon );
+    ReleaseIcon( m_NextIcon );
+    ReleaseIcon( m_PlayIcon );
+    ReleaseIcon( m_PauseIcon );
+    ReleaseIcon( m_MutedIcon );
+    ReleaseIcon( m_VolumeIcon );
+    ReleaseIcon( m_FullscreenIcon );
 }
 
 void ImageScraper::MediaPreviewControlPanel::Update( )
 {
+    EnsureIconsLoaded( );
+
     constexpr const char* kBlockedTooltip = "Controls unavailable while a download is running";
     constexpr const char* kPrivacyTooltip = "Controls unavailable while privacy mode is on";
 
@@ -45,7 +206,8 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
     constexpr float k_NavDia_min  = k_NavR_min  * 2.f;
     constexpr float k_Spacing_min = 8.f;
     constexpr float k_MinContentW = k_NavDia_min + k_Spacing_min + k_PlayDia_min + k_Spacing_min +
-                                    k_NavDia_min + k_Spacing_min + k_NavDia_min;
+                                    k_NavDia_min + k_Spacing_min + k_NavDia_min + k_Spacing_min +
+                                    k_NavDia_min;
     constexpr float k_MinContentH = k_PlayDia_min;
 
     // Scrub bar reservation along the top edge of the content region.
@@ -167,7 +329,8 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
     const float k_PlayDia = k_PlayR * 2.f;
     const float k_NavDia  = k_NavR  * 2.f;
     const float k_Spacing = k_Spacing_min * scale;
-    const float k_TotalW  = k_NavDia + k_Spacing + k_PlayDia + k_Spacing + k_NavDia + k_Spacing + k_NavDia;
+    const float k_TotalW  = k_NavDia + k_Spacing + k_PlayDia + k_Spacing + k_NavDia + k_Spacing +
+                            k_NavDia + k_Spacing + k_NavDia;
 
     const float startX  = ( availW - k_TotalW ) * 0.5f;
     const float baseY   = ( availH - k_PlayDia ) * 0.5f;
@@ -195,18 +358,40 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
         ImU32 iconCol;
     };
 
-    auto DrawButtonIcon = [ & ]( ImVec2 center, float radius, const char* iconGlyph, const char* fallbackGlyph, ImU32 iconCol )
+    auto DrawButtonIcon = [ & ]( ImVec2 center,
+                                 float radius,
+                                 const IconTexture& iconTexture,
+                                 const char* fallbackGlyph,
+                                 ImU32 iconCol )
     {
+        if( iconTexture.m_Texture != 0 && iconTexture.m_Width > 0 && iconTexture.m_Height > 0 )
+        {
+            float drawW = radius * 1.2f;
+            float drawH = drawW * ( static_cast<float>( iconTexture.m_Height ) / static_cast<float>( iconTexture.m_Width ) );
+            const float maxIconH = radius * 1.2f;
+            if( drawH > maxIconH )
+            {
+                const float scaleDown = maxIconH / drawH;
+                drawW *= scaleDown;
+                drawH *= scaleDown;
+            }
+
+            const ImVec2 min( center.x - drawW * 0.5f, center.y - drawH * 0.5f );
+            const ImVec2 max( center.x + drawW * 0.5f, center.y + drawH * 0.5f );
+            dl->AddImage( static_cast<ImTextureID>( static_cast<intptr_t>( iconTexture.m_Texture ) ), min, max,
+                          ImVec2( 0.0f, 0.0f ), ImVec2( 1.0f, 1.0f ), iconCol );
+            return;
+        }
+
         ImFont* font = m_IconFont ? m_IconFont : ImGui::GetFont( );
         const float fontSize = m_IconFont ? radius * 1.395f : radius * 1.05f;
-        const char* glyph = m_IconFont ? iconGlyph : fallbackGlyph;
-        const ImVec2 textSize = font->CalcTextSizeA( fontSize, FLT_MAX, 0.0f, glyph );
+        const ImVec2 textSize = font->CalcTextSizeA( fontSize, FLT_MAX, 0.0f, fallbackGlyph );
         const float verticalNudge = m_IconFont ? 0.5f : 0.0f;
-        const ImVec2 textPos = ImVec2(
+        const ImVec2 textPos(
             center.x - textSize.x * 0.5f,
             center.y - textSize.y * 0.5f + verticalNudge );
 
-        dl->AddText( font, fontSize, textPos, iconCol, glyph );
+        dl->AddText( font, fontSize, textPos, iconCol, fallbackGlyph );
     };
 
     auto CircleBtn = [ & ]( const char* id, float localX, float localY, float radius, bool disabled ) -> BtnResult
@@ -240,7 +425,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
     {
         const bool disabled = blocked || privacy || !canGoBack;
         auto [ pressed, center, iconCol ] = CircleBtn( "##back", 0.f, navOffY, k_NavR, disabled );
-        DrawButtonIcon( center, k_NavR, kIconPrevious, kFallbackPrevious, iconCol );
+        DrawButtonIcon( center, k_NavR, m_PreviousIcon, kFallbackPrevious, iconCol );
 
         if( pressed )
         {
@@ -265,7 +450,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
     {
         const bool disabled = blocked || privacy || !canPlay;
         auto [ pressed, center, iconCol ] = CircleBtn( "##play", k_NavDia + k_Spacing, 0.f, k_PlayR, disabled );
-        DrawButtonIcon( center, k_PlayR, playing ? kIconPause : kIconPlay, playing ? kFallbackPause : kFallbackPlay, iconCol );
+        DrawButtonIcon( center, k_PlayR, playing ? m_PauseIcon : m_PlayIcon, playing ? kFallbackPause : kFallbackPlay, iconCol );
 
         if( pressed )
         {
@@ -295,7 +480,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
             navOffY,
             k_NavR,
             disabled );
-        DrawButtonIcon( center, k_NavR, kIconNext, kFallbackNext, iconCol );
+        DrawButtonIcon( center, k_NavR, m_NextIcon, kFallbackNext, iconCol );
 
         if( pressed )
         {
@@ -328,7 +513,7 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
             navOffY,
             k_NavR,
             muteDisabled );
-        DrawButtonIcon( center, k_NavR, muted ? kIconMuted : kIconVolume0, muted ? kFallbackMuted : kFallbackVolume0, iconCol );
+        DrawButtonIcon( center, k_NavR, muted ? m_MutedIcon : m_VolumeIcon, muted ? kFallbackMuted : kFallbackVolume0, iconCol );
         muteCenter  = center;
         muteHovered = ImGui::IsItemHovered( );
 
@@ -346,6 +531,27 @@ void ImageScraper::MediaPreviewControlPanel::Update( )
             ImGui::SetTooltip( kPrivacyTooltip );
         }
         // Note: no plain hover tooltip here; the slider popup serves as the affordance.
+    }
+
+    // --- Fullscreen (stub) ---
+    {
+        auto [ pressed, center, iconCol ] = CircleBtn(
+            "##fullscreen",
+            k_NavDia + k_Spacing + k_PlayDia + k_Spacing + k_NavDia + k_Spacing + k_NavDia + k_Spacing,
+            navOffY,
+            k_NavR,
+            false );
+        DrawButtonIcon( center, k_NavR, m_FullscreenIcon, kFallbackFullscreen, iconCol );
+
+        if( pressed )
+        {
+            // Placeholder only. Fullscreen behavior is intentionally not implemented yet.
+        }
+
+        if( ImGui::IsItemHovered( ) )
+        {
+            ImGui::SetTooltip( "Fullscreen (not implemented yet)" );
+        }
     }
 
     ImGui::End( );
