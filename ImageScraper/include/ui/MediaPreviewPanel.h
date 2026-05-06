@@ -60,8 +60,8 @@ namespace ImageScraper
         // True when the preview is currently hidden by the user's privacy toggle
         bool IsPrivacyMode( ) const { return m_PrivacyMode; }
 
-        // True when the loaded media supports interactive seek (multi-frame GIF or
-        // open video with known duration).
+        // True when the loaded media supports interactive seek
+        // (open non-GIF video with known duration).
         bool CanScrub( ) const;
 
         // Current playback progress in 0..1, or -1 if not currently scrubbable.

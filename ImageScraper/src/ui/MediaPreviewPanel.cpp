@@ -741,11 +741,12 @@ bool ImageScraper::MediaPreviewPanel::CanScrub( ) const
     {
         return false;
     }
-    if( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::StaticFrame )
-        && m_Textures.size( ) > 1 )
+
+    if( !m_CurrentFilePath.empty( ) && IsGif( m_CurrentFilePath ) )
     {
-        return true;
+        return false;
     }
+
     if( ( m_MediaState == MediaState::VideoPlaying || m_MediaState == MediaState::VideoPaused )
         && m_VideoPlayer && m_VideoPlayer->IsOpen( ) && m_VideoPlayer->GetDuration( ) > 0.0 )
     {
