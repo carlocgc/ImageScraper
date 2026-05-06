@@ -32,6 +32,7 @@ namespace ImageScraper
             std::vector<Frame> m_Frames{ };
 
             bool    HasMultipleFrames( ) const;
+            uint64_t GetTotalFrameBytes( ) const;
             int64_t GetTimeMsForNormalized( float normalized ) const;
             size_t  GetFrameIndexForTimeMs( int64_t targetTimeMs ) const;
         };

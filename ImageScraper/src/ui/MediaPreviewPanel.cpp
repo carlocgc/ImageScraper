@@ -14,6 +14,8 @@
 namespace
 {
     constexpr size_t k_MaxRetainedReadyGifs = 3;
+    constexpr uint64_t k_MaxRetainedGifBytes = 512ull * 1024ull * 1024ull;
+    constexpr uint64_t k_MaxSingleGifBytes = 256ull * 1024ull * 1024ull;
 
     // Segoe MDL2 Assets glyphs for the privacy toggle
     constexpr const char* kIconEyeOpen   = "\xEE\xA2\x90"; // U+E890 View
@@ -198,6 +200,8 @@ void ImageScraper::MediaPreviewPanel::Update( )
 
             const char* drawText = useIconFont ? glyph : fallback;
             const ImVec2 size = ImGui::CalcTextSize( drawText );
+            // Glyph from Segoe MDL2 at 36pt is taller than our 32px button; nudge
+            // it up slightly so it visually centres.
             const ImVec2 textPos(
                 center.x - size.x * 0.5f,
                 center.y - size.y * 0.5f - 1.0f );
@@ -601,8 +605,29 @@ void ImageScraper::MediaPreviewPanel::ApplyPreparedGifWarmDecode( )
 
     if( pending->m_Result.m_Status == GifPlaybackCache::DecodeStatus::Ready )
     {
+        const uint64_t gifBytes = pending->m_Result.m_Runtime.GetTotalFrameBytes( );
+        if( gifBytes > k_MaxSingleGifBytes )
+        {
+            WarningLog(
+                "[%s] Skipping retained GIF warm-up for %s because decoded size %llu bytes exceeds limit %llu bytes",
+                __FUNCTION__,
+                pending->m_FilePath.c_str( ),
+                static_cast<unsigned long long>( gifBytes ),
+                static_cast<unsigned long long>( k_MaxSingleGifBytes ) );
+            entry->m_Runtime.reset( );
+            entry->m_State = GifWarmState::Failed;
+            m_ActiveGifWarmFilePath.clear( );
+            return;
+        }
+
         entry->m_Runtime = std::make_unique<GifPlaybackCache::Runtime>( std::move( pending->m_Result.m_Runtime ) );
         entry->m_State = GifWarmState::Ready;
+        InfoLog(
+            "[%s] Warmed GIF %s into %llu bytes across %zu frames",
+            __FUNCTION__,
+            pending->m_FilePath.c_str( ),
+            static_cast<unsigned long long>( gifBytes ),
+            entry->m_Runtime->m_Frames.size( ) );
         TrimGifRetention( );
 
         if( m_CurrentFilePath == pending->m_FilePath )
@@ -660,7 +685,12 @@ void ImageScraper::MediaPreviewPanel::StartNextGifWarmDecode( )
     m_PendingGifWarmQueue.pop_back( );
 
     GifRetainedEntry* entry = FindGifEntry( filepath );
-    if( !entry || entry->m_State == GifWarmState::Ready )
+    if( !entry )
+    {
+        WarningLog( "[%s] Pending GIF warm-up queue lost entry for: %s", __FUNCTION__, filepath.c_str( ) );
+        return;
+    }
+    if( entry->m_State == GifWarmState::Ready )
     {
         return;
     }
@@ -697,7 +727,7 @@ void ImageScraper::MediaPreviewPanel::CancelGifWarmDecode( bool waitForCompletio
     }
 }
 
-void ImageScraper::MediaPreviewPanel::TouchGifEntry( const std::string& filepath )
+void ImageScraper::MediaPreviewPanel::EnsureGifEntry( const std::string& filepath )
 {
     GifRetainedEntry* entry = FindGifEntry( filepath );
     if( !entry )
@@ -706,22 +736,32 @@ void ImageScraper::MediaPreviewPanel::TouchGifEntry( const std::string& filepath
         entry = &m_GifEntries.back( );
         entry->m_FilePath = filepath;
     }
+}
 
+void ImageScraper::MediaPreviewPanel::TouchGifEntry( const std::string& filepath )
+{
+    EnsureGifEntry( filepath );
+    GifRetainedEntry* entry = FindGifEntry( filepath );
     entry->m_LastTouched = ++m_GifTouchCounter;
 }
 
 void ImageScraper::MediaPreviewPanel::TrimGifRetention( )
 {
-    size_t readyCount = 0;
-    for( const GifRetainedEntry& entry : m_GifEntries )
+    auto NeedsEviction = [this]( )
     {
-        if( entry.m_State == GifWarmState::Ready && entry.m_Runtime )
+        size_t readyCount = 0;
+        for( const GifRetainedEntry& entry : m_GifEntries )
         {
-            ++readyCount;
+            if( entry.m_State == GifWarmState::Ready && entry.m_Runtime )
+            {
+                ++readyCount;
+            }
         }
-    }
 
-    while( readyCount > k_MaxRetainedReadyGifs )
+        return readyCount > k_MaxRetainedReadyGifs || GetTotalReadyGifBytes( ) > k_MaxRetainedGifBytes;
+    };
+
+    while( NeedsEviction( ) )
     {
         auto victim = m_GifEntries.end( );
         for( auto it = m_GifEntries.begin( ); it != m_GifEntries.end( ); ++it )
@@ -745,9 +785,26 @@ void ImageScraper::MediaPreviewPanel::TrimGifRetention( )
             break;
         }
 
+        InfoLog(
+            "[%s] Evicting warmed GIF %s to enforce retention limits",
+            __FUNCTION__,
+            victim->m_FilePath.c_str( ) );
         m_GifEntries.erase( victim );
-        --readyCount;
     }
+}
+
+uint64_t ImageScraper::MediaPreviewPanel::GetTotalReadyGifBytes( ) const
+{
+    uint64_t totalBytes = 0;
+    for( const GifRetainedEntry& entry : m_GifEntries )
+    {
+        if( entry.m_State == GifWarmState::Ready && entry.m_Runtime )
+        {
+            totalBytes += entry.m_Runtime->GetTotalFrameBytes( );
+        }
+    }
+
+    return totalBytes;
 }
 
 void ImageScraper::MediaPreviewPanel::RemovePendingGifWarmDecode( const std::string& filepath )
@@ -858,7 +915,9 @@ bool ImageScraper::MediaPreviewPanel::IsCurrentGifWarming( ) const
 
 bool ImageScraper::MediaPreviewPanel::HasCurrentGifPlayback( ) const
 {
-    return !m_PrivacyMode && IsCurrentGifReady( );
+    return !m_PrivacyMode &&
+           IsCurrentGifReady( ) &&
+           ( m_MediaState == MediaState::StaticFrame || m_MediaState == MediaState::GifPlaying );
 }
 
 ImageScraper::MediaPreviewPanel::GifRetainedEntry* ImageScraper::MediaPreviewPanel::FindGifEntry( const std::string& filepath )
@@ -1378,7 +1437,7 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
 
     if( IsGif( decoded.m_FilePath ) )
     {
-        TouchGifEntry( decoded.m_FilePath );
+        EnsureGifEntry( decoded.m_FilePath );
         if( !m_PrivacyMode && !IsCurrentGifReady( ) )
         {
             QueueGifWarmDecode( decoded.m_FilePath );

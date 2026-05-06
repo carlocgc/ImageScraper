@@ -1,7 +1,5 @@
 # Frame-Addressable GIF Playback Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` or `superpowers:executing-plans` when implementing this plan.
-
 **Goal:** Replace the prototype cached-preview GIF scrub path with a frame-addressable GIF playback path that keeps exact GIF frame data in CPU memory, uses one reusable display texture, disables GIF controls until ready, and leaves video behavior unchanged.
 
 **Architecture:** Split GIF handling into three explicit layers:

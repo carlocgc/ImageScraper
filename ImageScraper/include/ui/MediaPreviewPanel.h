@@ -132,17 +132,22 @@ namespace ImageScraper
             GifPlaybackCache::DecodeResult m_Result{ };
         };
 
+        // --- Preview decode / upload ---
         void KickDecodeIfNeeded( );
         void KickAudioPrepareIfNeeded( );
         void UploadDecoded( DecodedMedia&& decoded );
         void FreeTextures( );
         void ApplyPreparedAudio( );
+
+        // --- GIF warm-up / retention ---
         void ApplyPreparedGifWarmDecode( );
         void QueueGifWarmDecode( const std::string& filepath );
         void StartNextGifWarmDecode( );
         void CancelGifWarmDecode( bool waitForCompletion );
+        void EnsureGifEntry( const std::string& filepath );
         void TouchGifEntry( const std::string& filepath );
         void TrimGifRetention( );
+        uint64_t GetTotalReadyGifBytes( ) const;
         void RemovePendingGifWarmDecode( const std::string& filepath );
         void SyncCurrentGifSelectionState( );
         void AdvanceGifFrame( );

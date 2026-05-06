@@ -79,7 +79,7 @@ namespace
         return static_cast<int>( std::min<int64_t>( roundedMs, std::numeric_limits<int>::max( ) ) );
     }
 
-    bool ConvertFrameToRgba(
+    void ConvertFrameToRgba(
         AVFrame* frame,
         SwsContext* swsContext,
         int width,
@@ -104,7 +104,6 @@ namespace
             dstLines );
 
         rgbaOut.resize( static_cast<size_t>( exactBytes ) );
-        return true;
     }
 
     struct DecodeContext
@@ -130,6 +129,17 @@ namespace
 bool ImageScraper::GifPlaybackCache::Runtime::HasMultipleFrames( ) const
 {
     return m_Frames.size( ) > 1 && m_TotalDurationMs > 0;
+}
+
+uint64_t ImageScraper::GifPlaybackCache::Runtime::GetTotalFrameBytes( ) const
+{
+    uint64_t totalBytes = 0;
+    for( const Frame& frame : m_Frames )
+    {
+        totalBytes += static_cast<uint64_t>( frame.m_RgbaPixels.size( ) );
+    }
+
+    return totalBytes;
 }
 
 int64_t ImageScraper::GifPlaybackCache::Runtime::GetTimeMsForNormalized( float normalized ) const
@@ -335,13 +345,7 @@ ImageScraper::GifPlaybackCache::DecodeResult ImageScraper::GifPlaybackCache::Dec
             }
 
             Frame frame;
-            if( !ConvertFrameToRgba( ctx.m_Frame, ctx.m_SwsContext, width, height, frame.m_RgbaPixels ) )
-            {
-                result.m_Error = "ConvertFrameToRgba failed";
-                result.m_Status = DecodeStatus::Failed;
-                return false;
-            }
-
+            ConvertFrameToRgba( ctx.m_Frame, ctx.m_SwsContext, width, height, frame.m_RgbaPixels );
             int64_t durationTicks = ctx.m_Frame->duration;
             if( durationTicks <= 0 )
             {
