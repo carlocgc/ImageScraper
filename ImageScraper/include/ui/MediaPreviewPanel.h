@@ -1,6 +1,7 @@
 #pragma once
 
 #include "io/JsonFile.h"
+#include "ui/GifPlaybackCache.h"
 #include "ui/IUiPanel.h"
 #include "ui/MediaAudioPlayer.h"
 #include "ui/VideoPlayer.h"
@@ -8,13 +9,13 @@
 #include "imgui/imgui_impl_opengl3_loader.h"
 
 #include <chrono>
+#include <future>
+#include <atomic>
+#include <filesystem>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
-#include <mutex>
-#include <atomic>
-#include <memory>
-#include <future>
-#include <filesystem>
 
 namespace ImageScraper
 {
@@ -90,11 +91,8 @@ namespace ImageScraper
         enum class MediaState
         {
             None,
-            // GIF states
             StaticFrame,
-            LoadingFullFrames,
             GifPlaying,
-            // Video states
             VideoPlaying,
             VideoPaused,
         };
@@ -102,23 +100,61 @@ namespace ImageScraper
         // Holds preview data produced on a background thread before texture upload on the main thread.
         struct DecodedMedia
         {
-            std::vector<unsigned char> m_PixelData;     // RGBA, all frames contiguous
-            std::vector<int>           m_FrameDelaysMs;
+            std::vector<unsigned char> m_PixelData;
             std::unique_ptr<VideoPlayer> m_VideoPlayer{ };
             int         m_Width{ 0 };
             int         m_Height{ 0 };
-            int         m_Frames{ 1 };
             bool        m_HasAudio{ false };
             std::string m_FilePath;
             bool        m_IsVideo{ false };
         };
 
+        enum class GifWarmState
+        {
+            None,
+            Queued,
+            Warming,
+            Ready,
+            Failed,
+        };
+
+        struct GifRetainedEntry
+        {
+            std::string                                  m_FilePath{ };
+            GifWarmState                                 m_State{ GifWarmState::None };
+            std::unique_ptr<GifPlaybackCache::Runtime>   m_Runtime{ };
+            uint64_t                                     m_LastTouched{ 0 };
+        };
+
+        struct PendingGifWarmDecode
+        {
+            std::string                    m_FilePath{ };
+            GifPlaybackCache::DecodeResult m_Result{ };
+        };
+
         void KickDecodeIfNeeded( );
         void KickAudioPrepareIfNeeded( );
-        void KickFullGifDecode( );
         void UploadDecoded( DecodedMedia&& decoded );
         void FreeTextures( );
         void ApplyPreparedAudio( );
+        void ApplyPreparedGifWarmDecode( );
+        void QueueGifWarmDecode( const std::string& filepath );
+        void StartNextGifWarmDecode( );
+        void CancelGifWarmDecode( bool waitForCompletion );
+        void TouchGifEntry( const std::string& filepath );
+        void TrimGifRetention( );
+        void RemovePendingGifWarmDecode( const std::string& filepath );
+        void SyncCurrentGifSelectionState( );
+        void AdvanceGifFrame( );
+        void UploadCurrentGifFrame( size_t frameIndex );
+        void SetCurrentGifTimeMs( int64_t timeMs );
+        bool IsCurrentGifReady( ) const;
+        bool IsCurrentGifWarming( ) const;
+        bool HasCurrentGifPlayback( ) const;
+        GifRetainedEntry* FindGifEntry( const std::string& filepath );
+        const GifRetainedEntry* FindGifEntry( const std::string& filepath ) const;
+        GifPlaybackCache::Runtime* GetCurrentGifRuntime( );
+        const GifPlaybackCache::Runtime* GetCurrentGifRuntime( ) const;
 
         void AdvanceVideoFrame( );
         void OnPrivacyModeChanged( );
@@ -131,7 +167,7 @@ namespace ImageScraper
         void UploadCurrentVideoFrame( ) const;
         double GetPlaybackTimeSeconds( ) const;
 
-        static std::unique_ptr<DecodedMedia> DecodeFile( const std::string& filepath, bool firstFrameOnly );
+        static std::unique_ptr<DecodedMedia> DecodeFile( const std::string& filepath );
         static std::unique_ptr<DecodedMedia> DecodeStillImageFile( const std::string& filepath );
         static std::unique_ptr<DecodedMedia> DecodeVideoFile( const std::string& filepath );
         static bool IsGif( const std::string& filepath );
@@ -162,13 +198,22 @@ namespace ImageScraper
         bool                m_ForceLoad{ false };
         bool                m_PlayOnUpload{ false };
 
+        std::mutex                                m_PendingGifWarmMutex{ };
+        std::unique_ptr<PendingGifWarmDecode>     m_PendingGifWarmDecode{ };
+        std::atomic_bool                          m_IsGifWarmDecoding{ false };
+        std::atomic_bool                          m_CancelGifWarmDecodeRequested{ false };
+        std::future<void>                         m_GifWarmDecodeFuture{ };
+        std::string                               m_ActiveGifWarmFilePath{ };
+        std::vector<std::string>                  m_PendingGifWarmQueue{ };
+        std::vector<GifRetainedEntry>             m_GifEntries{ };
+        uint64_t                                  m_GifTouchCounter{ 0 };
+
         // Current display state - only touched on the main thread
         std::vector<GLuint> m_Textures{ };
-        std::vector<int>    m_FrameDelaysMs{ };
         int         m_Width{ 0 };
         int         m_Height{ 0 };
         int         m_CurrentFrame{ 0 };
-        float       m_FrameAccumMs{ 0.0f };
+        double      m_GifPlaybackTimeMs{ 0.0 };
         std::string m_CurrentFilePath{ };
         std::string m_CurrentFileName{ };
         std::string m_CurrentProviderName{ };
