@@ -14,7 +14,7 @@ namespace ImageScraper
         std::string m_PrimaryDetail{ };
         std::string m_SecondaryDetail{ };
         std::string m_CurrentPath{ };
-        const char* m_ActionLabel{ nullptr };
+        std::string m_ActionLabel{ };
         ImVec2      m_ActionButtonSize{ 0.0f, 0.0f };
     };
 

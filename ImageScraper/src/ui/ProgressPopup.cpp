@@ -25,10 +25,10 @@ bool ImageScraper::DrawProgressPopupContents( const ProgressPopupContent& conten
     }
 
     bool actionRequested = false;
-    if( content.m_ActionLabel != nullptr && content.m_ActionLabel[0] != '\0' )
+    if( !content.m_ActionLabel.empty( ) )
     {
         ImGui::Spacing( );
-        actionRequested = ImGui::Button( content.m_ActionLabel, content.m_ActionButtonSize );
+        actionRequested = ImGui::Button( content.m_ActionLabel.c_str( ), content.m_ActionButtonSize );
     }
     return actionRequested;
 }

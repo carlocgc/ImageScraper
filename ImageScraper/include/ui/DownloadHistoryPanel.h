@@ -58,7 +58,6 @@ namespace ImageScraper
             bool deleteWorkStarted,
             bool deleteReady );
         static bool ShouldKeepDeleteProgressVisible(
-            std::chrono::steady_clock::time_point startedAt,
             std::chrono::steady_clock::time_point visibleUntil,
             std::chrono::steady_clock::time_point now,
             bool deleteReady );
@@ -168,7 +167,7 @@ namespace ImageScraper
             const std::filesystem::path& path,
             std::vector<DeleteOperationEntry>& deletePlan,
             DeleteOperationProgress& progress );
-        bool DeleteDeletePlanEntry( const DeleteOperationEntry& entry, DeleteOperationProgress& progress );
+        bool ExecuteDeletePlanEntry( const DeleteOperationEntry& entry, DeleteOperationProgress& progress );
         void FinaliseDeleteOperation( bool success, const std::string& errorMessage );
         void DrawDeleteProgressPopup( );
         bool IsDeleteOperationActive( ) const;

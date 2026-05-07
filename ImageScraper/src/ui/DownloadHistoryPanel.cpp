@@ -33,7 +33,8 @@ namespace
     constexpr const char* kDownloadsSelectedPathKey = "downloads_selected_path";
     constexpr const char* kLegacySelectedPathKey    = "history_selected_path";
     constexpr const char* kDeleteConfirmPopupId     = "Confirm Delete##downloads";
-    constexpr auto k_MinDeleteProgressVisible = std::chrono::seconds{ 1 };
+    constexpr auto k_MinDirectoryDeleteProgressVisible = std::chrono::seconds{ 1 };
+    constexpr auto k_MinFileDeleteProgressVisible = std::chrono::milliseconds{ 300 };
 
     std::filesystem::path NormalisePath( const std::filesystem::path& path )
     {
@@ -496,12 +497,10 @@ float ImageScraper::DownloadHistoryPanel::CalculateDeleteModalProgressFraction(
 }
 
 bool ImageScraper::DownloadHistoryPanel::ShouldKeepDeleteProgressVisible(
-    std::chrono::steady_clock::time_point startedAt,
     std::chrono::steady_clock::time_point visibleUntil,
     std::chrono::steady_clock::time_point now,
     bool deleteReady )
 {
-    (void)startedAt;
     return deleteReady && now < visibleUntil;
 }
 
@@ -584,7 +583,7 @@ void ImageScraper::DownloadHistoryPanel::PumpDeleteOperation( )
     }
 
     const auto now = std::chrono::steady_clock::now( );
-    if( ShouldKeepDeleteProgressVisible( m_DeleteOperationStartedAt, m_DeleteOperationVisibleUntil, now, true ) )
+    if( ShouldKeepDeleteProgressVisible( m_DeleteOperationVisibleUntil, now, true ) )
     {
         return;
     }
@@ -942,7 +941,8 @@ void ImageScraper::DownloadHistoryPanel::StartDeleteOperation( DeleteOperationCo
     m_ActiveDeleteOperation = std::move( context );
     m_DeleteCompletedResult.reset( );
     m_DeleteOperationStartedAt = std::chrono::steady_clock::now( );
-    m_DeleteOperationVisibleUntil = m_DeleteOperationStartedAt + k_MinDeleteProgressVisible;
+    const auto minVisibleDuration = context.m_IsDirectory ? k_MinDirectoryDeleteProgressVisible : k_MinFileDeleteProgressVisible;
+    m_DeleteOperationVisibleUntil = m_DeleteOperationStartedAt + minVisibleDuration;
     UpdateDeleteOperationProgress( DeleteOperationProgress{ } );
     SetDeleteOperationStage(
         DeleteOperationStage::Scanning,
@@ -968,7 +968,7 @@ void ImageScraper::DownloadHistoryPanel::StartDeleteOperation( DeleteOperationCo
 
         for( const DeleteOperationEntry& entry : deletePlan )
         {
-            if( !DeleteDeletePlanEntry( entry, progress ) )
+            if( !ExecuteDeletePlanEntry( entry, progress ) )
             {
                 return { false, progress.m_Error };
             }
@@ -1048,7 +1048,7 @@ void ImageScraper::DownloadHistoryPanel::BuildDeletePlan(
     deletePlan = std::move( stagedEntries );
 }
 
-bool ImageScraper::DownloadHistoryPanel::DeleteDeletePlanEntry(
+bool ImageScraper::DownloadHistoryPanel::ExecuteDeletePlanEntry(
     const DeleteOperationEntry& entry,
     DeleteOperationProgress& progress )
 {
@@ -1199,7 +1199,7 @@ void ImageScraper::DownloadHistoryPanel::DrawDeleteProgressPopup( )
             + " / " + FormatFileSizeBytes( progress.m_TotalBytes );
     }
 
-    DrawProgressPopupContents( ProgressPopupContent{
+    (void)DrawProgressPopupContents( ProgressPopupContent{
         fraction,
         360.0f,
         progress.m_Message,

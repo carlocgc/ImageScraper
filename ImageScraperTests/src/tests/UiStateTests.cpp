@@ -31,14 +31,14 @@ TEST_CASE( "MediaPreviewPanel stops playback only when a new download run starts
 
 TEST_CASE( "DownloadHistoryPanel computes deletion progress from bytes when available", "[UiState]" )
 {
-    REQUIRE( DownloadHistoryPanel::CalculateDeleteWorkProgressFraction( 100, 25, 0, 0 ) == Approx( 0.25f ) );
-    REQUIRE( DownloadHistoryPanel::CalculateDeleteWorkProgressFraction( 100, 250, 0, 0 ) == Approx( 1.0f ) );
+    REQUIRE( DownloadHistoryPanel::CalculateDeleteWorkProgressFraction( 100, 25, 0, 0 ) == Catch::Approx( 0.25f ) );
+    REQUIRE( DownloadHistoryPanel::CalculateDeleteWorkProgressFraction( 100, 250, 0, 0 ) == Catch::Approx( 1.0f ) );
 }
 
 TEST_CASE( "DownloadHistoryPanel falls back to entry counts when total bytes are unknown", "[UiState]" )
 {
-    REQUIRE( DownloadHistoryPanel::CalculateDeleteWorkProgressFraction( 0, 0, 4, 1 ) == Approx( 0.25f ) );
-    REQUIRE( DownloadHistoryPanel::CalculateDeleteWorkProgressFraction( 0, 0, 0, 0 ) == Approx( 0.0f ) );
+    REQUIRE( DownloadHistoryPanel::CalculateDeleteWorkProgressFraction( 0, 0, 4, 1 ) == Catch::Approx( 0.25f ) );
+    REQUIRE( DownloadHistoryPanel::CalculateDeleteWorkProgressFraction( 0, 0, 0, 0 ) == Catch::Approx( 0.0f ) );
 }
 
 TEST_CASE( "DownloadHistoryPanel keeps delete progress visible until the minimum duration elapses", "[UiState]" )
@@ -46,10 +46,10 @@ TEST_CASE( "DownloadHistoryPanel keeps delete progress visible until the minimum
     const auto startedAt = std::chrono::steady_clock::time_point{ std::chrono::milliseconds{ 1000 } };
     const auto visibleUntil = startedAt + std::chrono::milliseconds{ 1000 };
 
-    REQUIRE( DownloadHistoryPanel::ShouldKeepDeleteProgressVisible( startedAt, visibleUntil, startedAt + std::chrono::milliseconds{ 500 }, true ) == true );
-    REQUIRE( DownloadHistoryPanel::ShouldKeepDeleteProgressVisible( startedAt, visibleUntil, startedAt + std::chrono::milliseconds{ 999 }, true ) == true );
-    REQUIRE( DownloadHistoryPanel::ShouldKeepDeleteProgressVisible( startedAt, visibleUntil, startedAt + std::chrono::milliseconds{ 1000 }, true ) == false );
-    REQUIRE( DownloadHistoryPanel::ShouldKeepDeleteProgressVisible( startedAt, visibleUntil, startedAt + std::chrono::milliseconds{ 500 }, false ) == false );
+    REQUIRE( DownloadHistoryPanel::ShouldKeepDeleteProgressVisible( visibleUntil, startedAt + std::chrono::milliseconds{ 500 }, true ) == true );
+    REQUIRE( DownloadHistoryPanel::ShouldKeepDeleteProgressVisible( visibleUntil, startedAt + std::chrono::milliseconds{ 999 }, true ) == true );
+    REQUIRE( DownloadHistoryPanel::ShouldKeepDeleteProgressVisible( visibleUntil, startedAt + std::chrono::milliseconds{ 1000 }, true ) == false );
+    REQUIRE( DownloadHistoryPanel::ShouldKeepDeleteProgressVisible( visibleUntil, startedAt + std::chrono::milliseconds{ 500 }, false ) == false );
 }
 
 TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time into modal progress", "[UiState]" )
@@ -67,7 +67,7 @@ TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time i
             visibleUntil,
             startedAt + std::chrono::milliseconds{ 250 },
             true,
-            false ) == Approx( 0.25f ) );
+            false ) == Catch::Approx( 0.25f ) );
 
     REQUIRE(
         DownloadHistoryPanel::CalculateDeleteModalProgressFraction(
@@ -79,7 +79,7 @@ TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time i
             visibleUntil,
             startedAt + std::chrono::milliseconds{ 250 },
             true,
-            false ) == Approx( 0.25f ) );
+            false ) == Catch::Approx( 0.25f ) );
 
     REQUIRE(
         DownloadHistoryPanel::CalculateDeleteModalProgressFraction(
@@ -91,7 +91,7 @@ TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time i
             visibleUntil,
             startedAt + std::chrono::milliseconds{ 1500 },
             true,
-            false ) == Approx( 0.6f ) );
+            false ) == Catch::Approx( 0.6f ) );
 
     REQUIRE(
         DownloadHistoryPanel::CalculateDeleteModalProgressFraction(
@@ -103,7 +103,7 @@ TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time i
             visibleUntil,
             startedAt + std::chrono::milliseconds{ 250 },
             true,
-            true ) == Approx( 0.25f ) );
+            true ) == Catch::Approx( 0.25f ) );
 
     REQUIRE(
         DownloadHistoryPanel::CalculateDeleteModalProgressFraction(
@@ -115,7 +115,7 @@ TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time i
             visibleUntil,
             startedAt + std::chrono::milliseconds{ 750 },
             true,
-            true ) == Approx( 0.75f ) );
+            true ) == Catch::Approx( 0.75f ) );
 
     REQUIRE(
         DownloadHistoryPanel::CalculateDeleteModalProgressFraction(
@@ -127,7 +127,7 @@ TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time i
             visibleUntil,
             startedAt + std::chrono::milliseconds{ 1000 },
             true,
-            true ) == Approx( 1.0f ) );
+            true ) == Catch::Approx( 1.0f ) );
 
     REQUIRE(
         DownloadHistoryPanel::CalculateDeleteModalProgressFraction(
@@ -139,5 +139,5 @@ TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time i
             visibleUntil,
             startedAt + std::chrono::milliseconds{ 250 },
             false,
-            false ) == Approx( 0.0f ) );
+            false ) == Catch::Approx( 0.0f ) );
 }
