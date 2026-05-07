@@ -378,6 +378,17 @@ void ImageScraper::MediaPreviewPanel::ClearPreview( )
     m_PlaybackTimeSeconds    = 0.0;
 }
 
+void ImageScraper::MediaPreviewPanel::StopPlayback( )
+{
+    if( m_MediaState == MediaState::None )
+    {
+        return;
+    }
+
+    m_PlayOnUpload = false;
+    ResetPlaybackToStartPaused( );
+}
+
 void ImageScraper::MediaPreviewPanel::ReleaseFileIfCurrent( const std::string& filepath )
 {
     if( m_CurrentFilePath != filepath && m_LoadingFilePath != filepath )

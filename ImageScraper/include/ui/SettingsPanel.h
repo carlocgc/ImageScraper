@@ -48,6 +48,7 @@ namespace ImageScraper
 
         void Update( ) override;
         void SetBlocked( bool blocked ) { m_Blocked = blocked; }
+        static bool ShouldDisableCheckNowButton( bool checkRunning, bool blocked ) { return checkRunning || blocked; }
 
         bool IsCheckUpdatesOnStartupEnabled( ) const { return m_CheckUpdatesOnStartup; }
         bool IsDownloadLocationResolved( ) const { return m_DownloadLocationResolved; }

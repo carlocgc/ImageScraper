@@ -33,6 +33,8 @@ namespace ImageScraper
         // Main-thread only - synchronously clears all display state;
         // waits for any in-progress background decode to finish so file handles are released.
         void ClearPreview( );
+        void StopPlayback( );
+        static bool ShouldStopPlaybackForDownloadTransition( bool wasRunning, bool isRunning ) { return !wasRunning && isRunning; }
 
         // Main-thread only - clears the preview if the given filepath is currently loaded
         // or being decoded; no-op otherwise. Waits for any in-progress decode to finish.

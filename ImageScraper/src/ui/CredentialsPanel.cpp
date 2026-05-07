@@ -50,6 +50,12 @@ void ImageScraper::CredentialsPanel::Update( )
     ImGui::TextDisabled( "Changes are saved automatically." );
     ImGui::Spacing( );
 
+    const bool disableEditing = ShouldDisableEditing( m_Blocked );
+    if( disableEditing )
+    {
+        ImGui::BeginDisabled( );
+    }
+
     const ImVec4 red   = ImVec4( 1.0f, 0.3f, 0.3f, 1.0f );
     const ImVec4 grey  = ImVec4( 0.7f, 0.7f, 0.7f, 1.0f );
     constexpr float labelW = 160.0f;
@@ -141,6 +147,11 @@ void ImageScraper::CredentialsPanel::Update( )
         ImGui::SetTooltip( "Backs up config.json to ImageScraper/data/ on every save.\nDebug builds only - keeps dev credentials persistent across rebuilds." );
     }
 #endif
+
+    if( disableEditing )
+    {
+        ImGui::EndDisabled( );
+    }
 
     ImGui::End( );
 }

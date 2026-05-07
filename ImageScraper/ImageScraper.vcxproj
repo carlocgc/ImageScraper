@@ -397,6 +397,7 @@ xcopy "$(ProjectDir)resources\icons" "$(TargetDir)resources\icons\" /Y /I /E</Co
     <ClCompile Include="src\ui\TumblrPanel.cpp" />
     <ClCompile Include="src\ui\FourChanPanel.cpp" />
     <ClCompile Include="src\ui\MediaPreviewPanel.cpp" />
+    <ClCompile Include="src\ui\ProgressPopup.cpp" />
     <ClCompile Include="src\ui\ProviderSearchInput.cpp" />
     <ClCompile Include="src\ui\VideoPlayer.cpp" />
     <ClCompile Include="src\ui\DownloadHistoryPanel.cpp" />
@@ -541,6 +542,7 @@ xcopy "$(ProjectDir)resources\icons" "$(TargetDir)resources\icons\" /Y /I /E</Co
     <ClInclude Include="include\ui\TumblrPanel.h" />
     <ClInclude Include="include\ui\FourChanPanel.h" />
     <ClInclude Include="include\ui\MediaPreviewPanel.h" />
+    <ClInclude Include="include\ui\ProgressPopup.h" />
     <ClInclude Include="include\ui\VideoPlayer.h" />
     <ClInclude Include="include\ui\DownloadHistoryPanel.h" />
     <ClInclude Include="include\ui\SearchHistory.h" />
