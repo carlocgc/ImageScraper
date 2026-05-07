@@ -6,6 +6,7 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl3_loader.h"
 
+#include <algorithm>
 #include <string>
 #include <memory>
 #include <mutex>
@@ -46,7 +47,20 @@ namespace ImageScraper
         // Called by FrontEnd each frame before Update() to propagate blocked state.
         void SetBlocked( bool blocked ) { m_Blocked = blocked; }
         void SetPrivacyMode( bool privacyMode ) { m_PrivacyMode = privacyMode; }
-        static float CalculateDeleteWorkProgressFraction( uintmax_t totalBytes, uintmax_t processedBytes, int totalEntries, int processedEntries );
+        static float CalculateDeleteWorkProgressFraction( uintmax_t totalBytes, uintmax_t processedBytes, int totalEntries, int processedEntries )
+        {
+            if( totalBytes > 0 )
+            {
+                return (std::min)( 1.0f, static_cast<float>( static_cast<double>( processedBytes ) / static_cast<double>( totalBytes ) ) );
+            }
+
+            if( totalEntries <= 0 )
+            {
+                return 0.0f;
+            }
+
+            return (std::min)( 1.0f, static_cast<float>( processedEntries ) / static_cast<float>( totalEntries ) );
+        }
         static float CalculateDeleteModalProgressFraction(
             uintmax_t totalBytes,
             uintmax_t processedBytes,
@@ -56,11 +70,37 @@ namespace ImageScraper
             std::chrono::steady_clock::time_point visibleUntil,
             std::chrono::steady_clock::time_point now,
             bool deleteWorkStarted,
-            bool deleteReady );
+            bool deleteReady )
+        {
+            if( !deleteWorkStarted )
+            {
+                return 0.0f;
+            }
+
+            const float workFraction = CalculateDeleteWorkProgressFraction( totalBytes, processedBytes, totalEntries, processedEntries );
+            const auto visibleDuration = visibleUntil - startedAt;
+            if( visibleDuration <= std::chrono::steady_clock::duration::zero( ) )
+            {
+                return deleteReady ? 1.0f : workFraction;
+            }
+
+            const auto elapsed = (std::max)( std::chrono::steady_clock::duration::zero( ), now - startedAt );
+            const double timeFraction = static_cast<double>( elapsed.count( ) ) / static_cast<double>( visibleDuration.count( ) );
+            const float clampedTimeFraction = (std::min)( 1.0f, static_cast<float>( timeFraction ) );
+            if( deleteReady )
+            {
+                return clampedTimeFraction;
+            }
+
+            return (std::min)( workFraction, clampedTimeFraction );
+        }
         static bool ShouldKeepDeleteProgressVisible(
             std::chrono::steady_clock::time_point visibleUntil,
             std::chrono::steady_clock::time_point now,
-            bool deleteReady );
+            bool deleteReady )
+        {
+            return deleteReady && now < visibleUntil;
+        }
 
         // Navigate to the next displayed item in the Downloads tree; fires preview callback.
         void SelectNext( );
