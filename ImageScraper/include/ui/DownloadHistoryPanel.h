@@ -46,6 +46,22 @@ namespace ImageScraper
         // Called by FrontEnd each frame before Update() to propagate blocked state.
         void SetBlocked( bool blocked ) { m_Blocked = blocked; }
         void SetPrivacyMode( bool privacyMode ) { m_PrivacyMode = privacyMode; }
+        static float CalculateDeleteWorkProgressFraction( uintmax_t totalBytes, uintmax_t processedBytes, int totalEntries, int processedEntries );
+        static float CalculateDeleteModalProgressFraction(
+            uintmax_t totalBytes,
+            uintmax_t processedBytes,
+            int totalEntries,
+            int processedEntries,
+            std::chrono::steady_clock::time_point startedAt,
+            std::chrono::steady_clock::time_point visibleUntil,
+            std::chrono::steady_clock::time_point now,
+            bool deleteWorkStarted,
+            bool deleteReady );
+        static bool ShouldKeepDeleteProgressVisible(
+            std::chrono::steady_clock::time_point startedAt,
+            std::chrono::steady_clock::time_point visibleUntil,
+            std::chrono::steady_clock::time_point now,
+            bool deleteReady );
 
         // Navigate to the next displayed item in the Downloads tree; fires preview callback.
         void SelectNext( );
@@ -89,8 +105,44 @@ namespace ImageScraper
             unsigned long long m_CreationTicks{ 0 };
         };
 
+        enum class DeleteOperationStage
+        {
+            Idle,
+            Scanning,
+            Deleting,
+        };
+
+        struct DeleteOperationEntry
+        {
+            std::filesystem::path m_Path{ };
+            uintmax_t             m_SizeBytes{ 0 };
+            bool                  m_IsDirectory{ false };
+        };
+
+        struct DeleteOperationProgress
+        {
+            uintmax_t   m_TotalBytes{ 0 };
+            uintmax_t   m_ProcessedBytes{ 0 };
+            int         m_TotalEntries{ 0 };
+            int         m_ProcessedEntries{ 0 };
+            std::string m_CurrentPath{ };
+            std::string m_Message{ };
+            std::string m_Error{ };
+        };
+
+        struct DeleteOperationContext
+        {
+            std::filesystem::path m_TargetPath{ };
+            std::string           m_TargetPathString{ };
+            std::string           m_SelectedPathBeforeDelete{ };
+            int                   m_PreferredIndex{ -1 };
+            bool                  m_IsDirectory{ false };
+            bool                  m_SelectionImpacted{ false };
+        };
+
         void FlushPending( );
         void FlushDecodedThumbnails( );
+        void PumpDeleteOperation( );
         void InvalidateTreeCaches( );
         void EnsureTreeSnapshotCached( ) const;
         void RefreshTreeSnapshot( const ImGuiTableSortSpecs* sortSpecs );
@@ -111,6 +163,19 @@ namespace ImageScraper
         void SetSelection( const std::string& path, bool scrollToSelected, bool requestPreview );
         void ClearSelection( bool requestPreview );
         void DeletePath( const std::filesystem::path& path );
+        void StartDeleteOperation( DeleteOperationContext context );
+        void BuildDeletePlan(
+            const std::filesystem::path& path,
+            std::vector<DeleteOperationEntry>& deletePlan,
+            DeleteOperationProgress& progress );
+        bool DeleteDeletePlanEntry( const DeleteOperationEntry& entry, DeleteOperationProgress& progress );
+        void FinaliseDeleteOperation( bool success, const std::string& errorMessage );
+        void DrawDeleteProgressPopup( );
+        bool IsDeleteOperationActive( ) const;
+        DeleteOperationStage GetDeleteOperationStage( ) const;
+        DeleteOperationProgress GetDeleteOperationProgressSnapshot( ) const;
+        void SetDeleteOperationStage( DeleteOperationStage stage, const std::string& message );
+        void UpdateDeleteOperationProgress( const DeleteOperationProgress& progress );
         void AdvanceSelectionAndPreview( int preferredIndex = -1 );
         void RenderTreeNode( const TreeNodeSnapshot& node, bool* openDeleteConfirm );
         void ShowPathContextMenu( const TreeNodeSnapshot& node, bool* openDeleteConfirm );
@@ -164,6 +229,7 @@ namespace ImageScraper
         std::vector<DecodedThumbnail>                      m_DecodedThumbnails{ };
         std::unordered_map<std::string, std::future<void>> m_ThumbnailFutures{ };
         std::unordered_set<std::string>                    m_InFlightThumbnails{ };
+        mutable std::mutex                                 m_DeleteOperationMutex{ };
         mutable std::optional<TreeNodeSnapshot>            m_TreeSnapshot{ };
         mutable ImGuiID                                    m_TreeSortColumnUserId{ 0 };
         mutable ImGuiSortDirection                         m_TreeSortDirection{ ImGuiSortDirection_Ascending };
@@ -177,6 +243,13 @@ namespace ImageScraper
 
         std::string m_SelectedPath{ };
         std::string m_DeleteConfirmPath{ };
+        std::future<std::pair<bool, std::string>> m_DeleteFuture{ };
+        std::optional<std::pair<bool, std::string>> m_DeleteCompletedResult{ };
+        std::optional<DeleteOperationContext> m_ActiveDeleteOperation{ };
+        DeleteOperationStage m_DeleteOperationStage{ DeleteOperationStage::Idle };
+        DeleteOperationProgress m_DeleteOperationProgress{ };
+        std::chrono::steady_clock::time_point m_DeleteOperationStartedAt{ };
+        std::chrono::steady_clock::time_point m_DeleteOperationVisibleUntil{ };
         bool        m_Blocked{ false };
         bool        m_PrivacyMode{ false };
         bool        m_ScrollToSelected{ false };

@@ -193,6 +193,7 @@
     <ClCompile Include="src\tests\LogPanelTests.cpp" />
     <ClCompile Include="src\tests\RingBufferTests.cpp" />
     <ClCompile Include="src\tests\StringUtilsTests.cpp" />
+    <ClCompile Include="src\tests\UiStateTests.cpp" />
     <ClCompile Include="src\tests\UpdateCheckerTests.cpp" />
     <ClCompile Include="..\ImageScraper\src\io\JsonFile.cpp" />
   </ItemGroup>

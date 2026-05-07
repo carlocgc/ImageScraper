@@ -213,11 +213,17 @@ void ImageScraper::FrontEnd::Update( )
     }
 
     const bool isRunning = m_DownloadOptionsPanel->IsRunning( );
+    if( MediaPreviewPanel::ShouldStopPlaybackForDownloadTransition( wasRunning, isRunning ) )
+    {
+        m_MediaPreviewPanel->StopPlayback( );
+    }
+
     const bool isBlockedForSettings =
         isRunning ||
         settingsOperationActive ||
         m_DownloadOptionsPanel->GetSigningInProvider( ) != INVALID_CONTENT_PROVIDER;
 
+    m_CredentialsPanel->SetBlocked( isRunning );
     m_CredentialsPanel->Update( );
     m_SettingsPanel->SetBlocked( isBlockedForSettings );
     m_SettingsPanel->Update( );
