@@ -194,6 +194,7 @@
     <ClCompile Include="src\tests\RingBufferTests.cpp" />
     <ClCompile Include="src\tests\StringUtilsTests.cpp" />
     <ClCompile Include="src\tests\UpdateCheckerTests.cpp" />
+    <ClCompile Include="src\tests\AuthRequestHelpersTests.cpp" />
     <ClCompile Include="..\ImageScraper\src\io\JsonFile.cpp" />
   </ItemGroup>
   <ItemGroup>
