@@ -13,6 +13,8 @@ namespace ImageScraper
     public:
         explicit CredentialsPanel( std::shared_ptr<JsonFile> userConfig );
         void Update( ) override;
+        void SetBlocked( bool blocked ) { m_Blocked = blocked; }
+        static bool ShouldDisableEditing( bool blocked ) { return blocked; }
 
     private:
         void SaveField( const std::string& key, const char* value );
@@ -33,5 +35,6 @@ namespace ImageScraper
 #ifdef _DEBUG
         bool m_SaveDevCredentials{ false };
 #endif
+        bool m_Blocked{ false };
     };
 }

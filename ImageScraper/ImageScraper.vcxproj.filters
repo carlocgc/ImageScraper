@@ -189,6 +189,12 @@
     <ClCompile Include="src\ui\MediaPreviewPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ui\ProgressPopup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\DownloadDeleteController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\ui\ProviderSearchInput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -687,6 +693,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ui\MediaPreviewPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ui\ProgressPopup.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ui\DownloadDeleteController.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ui\DownloadHistoryPanel.h">

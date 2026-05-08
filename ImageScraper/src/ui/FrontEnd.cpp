@@ -158,7 +158,8 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     m_MediaPreviewControlPanel = std::make_unique<MediaPreviewControlPanel>(
         m_MediaPreviewPanel.get( ),
         m_DownloadHistoryPanel.get( ),
-        mediaControlsIconFont );
+        mediaControlsIconFont,
+        exeDir / "resources" / "icons" );
 
     return true;
 }
@@ -212,11 +213,17 @@ void ImageScraper::FrontEnd::Update( )
     }
 
     const bool isRunning = m_DownloadOptionsPanel->IsRunning( );
+    if( MediaPreviewPanel::ShouldStopPlaybackForDownloadTransition( wasRunning, isRunning ) )
+    {
+        m_MediaPreviewPanel->StopPlayback( );
+    }
+
     const bool isBlockedForSettings =
         isRunning ||
         settingsOperationActive ||
         m_DownloadOptionsPanel->GetSigningInProvider( ) != INVALID_CONTENT_PROVIDER;
 
+    m_CredentialsPanel->SetBlocked( isRunning );
     m_CredentialsPanel->Update( );
     m_SettingsPanel->SetBlocked( isBlockedForSettings );
     m_SettingsPanel->Update( );

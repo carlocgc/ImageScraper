@@ -13,6 +13,7 @@ permissions:
 jobs:
   build-and-test:
     runs-on: windows-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -25,6 +26,7 @@ jobs:
         run: msbuild ImageScraper.sln /p:Configuration=Debug /p:Platform=x64 /m /nologo /verbosity:minimal
 
       - name: Run tests with JUnit output
+        timeout-minutes: 5
         run: bin\ImageScraperTests\x64\Debug\ImageScraperTests.exe --reporter junit --out test-results.xml
 
       - name: Publish test results

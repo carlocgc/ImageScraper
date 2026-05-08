@@ -4,8 +4,10 @@
 #include <shellapi.h>
 
 #include "ui/DownloadHistoryPanel.h"
+#include "ui/ProgressPopup.h"
 #include "imgui/imgui_internal.h"
 #include "utils/DownloadUtils.h"
+#include "utils/FilesystemUtils.h"
 #include "utils/StringUtils.h"
 #include "log/Logger.h"
 
@@ -14,37 +16,16 @@
 #include <iomanip>
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <unordered_set>
 #include <vector>
 
 namespace
 {
-    enum class SortColumn : ImGuiID
-    {
-        Name    = 0,
-        Size    = 1,
-        Type    = 2,
-        Created = 3
-    };
-
     constexpr const char* kLegacyDownloadHistoryKey = "download_history";
     constexpr const char* kDownloadsSelectedPathKey = "downloads_selected_path";
     constexpr const char* kLegacySelectedPathKey    = "history_selected_path";
     constexpr const char* kDeleteConfirmPopupId     = "Confirm Delete##downloads";
-
-    std::filesystem::path NormalisePath( const std::filesystem::path& path )
-    {
-        std::error_code ec;
-        std::filesystem::path normalised = std::filesystem::weakly_canonical( path, ec );
-        if( ec )
-        {
-            normalised = path.lexically_normal( );
-        }
-
-        normalised.make_preferred( );
-        return normalised;
-    }
-
     std::string MakeFastPreferredPathString( const std::filesystem::path& path )
     {
         if( path.empty( ) )
@@ -62,7 +43,7 @@ namespace
         std::string label = path.filename( ).string( );
         if( label.empty( ) )
         {
-            label = NormalisePath( path ).string( );
+            label = ImageScraper::FilesystemUtils::NormalisePath(path ).string( );
         }
 
         return label;
@@ -133,23 +114,6 @@ namespace
         } );
 
         return extension + " file";
-    }
-
-    int CompareStringsCaseInsensitive( const std::string& lhs, const std::string& rhs )
-    {
-        const std::string lhsLower = ImageScraper::StringUtils::ToLower( lhs );
-        const std::string rhsLower = ImageScraper::StringUtils::ToLower( rhs );
-        if( lhsLower < rhsLower )
-        {
-            return -1;
-        }
-
-        if( lhsLower > rhsLower )
-        {
-            return 1;
-        }
-
-        return 0;
     }
 
     uintmax_t GetPathFileSizeBytes( const std::filesystem::path& path )
@@ -272,165 +236,165 @@ ImageScraper::DownloadHistoryPanel::~DownloadHistoryPanel( )
 
 void ImageScraper::DownloadHistoryPanel::Update( )
 {
+    PumpDeleteOperation( );
     FlushPending( );
     FlushDecodedThumbnails( );
 
     ImGui::SetNextWindowSize( ImVec2( 700, 300 ), ImGuiCond_FirstUseEver );
 
-    if( !ImGui::Begin( "Downloads", nullptr ) )
+    const bool downloadsWindowOpen = ImGui::Begin( "Downloads", nullptr );
+    if( downloadsWindowOpen )
     {
-        ImGui::End( );
-        return;
-    }
-
-    bool openDeleteConfirm = false;
-    if( !m_SelectedPath.empty( ) && !m_SelectedPathExists )
-    {
-        EvictThumbnail( m_SelectedPath );
-        m_SelectedPath.clear( );
-        m_SelectedPathExists = false;
-        InvalidateTreeCaches( );
-        AdvanceSelectionAndPreview( );
-    }
-
-    if( m_DownloadsRoot.empty( ) || !m_DownloadsRootExists )
-    {
-        ImGui::TextDisabled( "No downloads yet" );
-        if( !m_DownloadsRoot.empty( ) )
+        bool openDeleteConfirm = false;
+        if( !m_SelectedPath.empty( ) && !m_SelectedPathExists )
         {
-            ImGui::Spacing( );
-            ImGui::TextDisabled( "%s", MakePreferredPathString( m_DownloadsRoot ).c_str( ) );
+            EvictThumbnail( m_SelectedPath );
+            m_SelectedPath.clear( );
+            m_SelectedPathExists = false;
+            InvalidateTreeCaches( );
+            AdvanceSelectionAndPreview( );
         }
-    }
-    else
-    {
-        constexpr ImGuiTableFlags tableFlags =
-            ImGuiTableFlags_BordersV |
-            ImGuiTableFlags_BordersOuterH |
-            ImGuiTableFlags_Resizable |
-            ImGuiTableFlags_RowBg |
-            ImGuiTableFlags_NoBordersInBody |
-            ImGuiTableFlags_Sortable |
-            ImGuiTableFlags_ScrollY;
 
-        ImGui::PushStyleColor( ImGuiCol_TableHeaderBg, IM_COL32( 52, 52, 56, 255 ) );
-        ImGui::PushStyleColor( ImGuiCol_TableBorderStrong, IM_COL32( 62, 62, 68, 255 ) );
-        ImGui::PushStyleColor( ImGuiCol_TableBorderLight, IM_COL32( 48, 48, 54, 255 ) );
-        ImGui::PushStyleColor( ImGuiCol_TableRowBg, IM_COL32( 20, 20, 22, 255 ) );
-        ImGui::PushStyleColor( ImGuiCol_TableRowBgAlt, IM_COL32( 30, 30, 33, 255 ) );
-        ImGui::PushStyleColor( ImGuiCol_TreeLines, IM_COL32( 112, 112, 118, 170 ) );
-        ImGui::PushStyleVar( ImGuiStyleVar_CellPadding, ImVec2( 8.0f, 1.0f ) );
-
-        if( ImGui::BeginTable( "DownloadsTable", 4, tableFlags, ImGui::GetContentRegionAvail( ) ) )
+        if( m_DownloadsRoot.empty( ) || !m_DownloadsRootExists )
         {
-            ImGui::TableSetupScrollFreeze( 0, 1 );
-            ImGui::TableSetupColumn(
-                "Name",
-                ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_DefaultSort,
-                0.0f,
-                static_cast<ImGuiID>( SortColumn::Name ) );
-            ImGui::TableSetupColumn(
-                "Size",
-                ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending,
-                120.0f,
-                static_cast<ImGuiID>( SortColumn::Size ) );
-            ImGui::TableSetupColumn(
-                "Type",
-                ImGuiTableColumnFlags_WidthFixed,
-                160.0f,
-                static_cast<ImGuiID>( SortColumn::Type ) );
-            ImGui::TableSetupColumn(
-                "Created",
-                ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending,
-                145.0f,
-                static_cast<ImGuiID>( SortColumn::Created ) );
-            ImGui::TableHeadersRow( );
-            RefreshTreeSnapshot( ImGui::TableGetSortSpecs( ) );
-            if( m_TreeSnapshot.has_value( ) )
+            ImGui::TextDisabled( "No downloads yet" );
+            if( !m_DownloadsRoot.empty( ) )
             {
-                RenderTreeNode( *m_TreeSnapshot, &openDeleteConfirm );
+                ImGui::Spacing( );
+                ImGui::TextDisabled( "%s", MakePreferredPathString( m_DownloadsRoot ).c_str( ) );
             }
-            ImGui::EndTable( );
-        }
-
-        ImGui::PopStyleVar( );
-        ImGui::PopStyleColor( 6 );
-    }
-
-    if( ImGui::IsWindowFocused( ImGuiFocusedFlags_ChildWindows )
-        && ImGui::IsKeyPressed( ImGuiKey_Delete )
-        && CanDeletePath( std::filesystem::path{ m_SelectedPath } ) )
-    {
-        const std::filesystem::path deletePath{ m_SelectedPath };
-        std::error_code ec;
-        const bool isDirectory = std::filesystem::is_directory( deletePath, ec );
-        if( ec || isDirectory )
-        {
-            m_DeleteConfirmPath = m_SelectedPath;
-            openDeleteConfirm = true;
         }
         else
         {
-            DeletePath( deletePath );
+            constexpr ImGuiTableFlags tableFlags =
+                ImGuiTableFlags_BordersV |
+                ImGuiTableFlags_BordersOuterH |
+                ImGuiTableFlags_Resizable |
+                ImGuiTableFlags_RowBg |
+                ImGuiTableFlags_NoBordersInBody |
+                ImGuiTableFlags_Sortable |
+                ImGuiTableFlags_ScrollY;
+
+            ImGui::PushStyleColor( ImGuiCol_TableHeaderBg, IM_COL32( 52, 52, 56, 255 ) );
+            ImGui::PushStyleColor( ImGuiCol_TableBorderStrong, IM_COL32( 62, 62, 68, 255 ) );
+            ImGui::PushStyleColor( ImGuiCol_TableBorderLight, IM_COL32( 48, 48, 54, 255 ) );
+            ImGui::PushStyleColor( ImGuiCol_TableRowBg, IM_COL32( 20, 20, 22, 255 ) );
+            ImGui::PushStyleColor( ImGuiCol_TableRowBgAlt, IM_COL32( 30, 30, 33, 255 ) );
+            ImGui::PushStyleColor( ImGuiCol_TreeLines, IM_COL32( 112, 112, 118, 170 ) );
+            ImGui::PushStyleVar( ImGuiStyleVar_CellPadding, ImVec2( 8.0f, 1.0f ) );
+
+            if( ImGui::BeginTable( "DownloadsTable", 4, tableFlags, ImGui::GetContentRegionAvail( ) ) )
+            {
+                ImGui::TableSetupScrollFreeze( 0, 1 );
+                ImGui::TableSetupColumn(
+                    "Name",
+                    ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_DefaultSort,
+                    0.0f,
+                    static_cast<ImGuiID>( ImageScraper::HistorySortColumn::Name ) );
+                ImGui::TableSetupColumn(
+                    "Size",
+                    ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending,
+                    120.0f,
+                    static_cast<ImGuiID>( ImageScraper::HistorySortColumn::Size ) );
+                ImGui::TableSetupColumn(
+                    "Type",
+                    ImGuiTableColumnFlags_WidthFixed,
+                    160.0f,
+                    static_cast<ImGuiID>( ImageScraper::HistorySortColumn::Type ) );
+                ImGui::TableSetupColumn(
+                    "Created",
+                    ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending,
+                    145.0f,
+                    static_cast<ImGuiID>( ImageScraper::HistorySortColumn::Created ) );
+                ImGui::TableHeadersRow( );
+                RefreshTreeSnapshot( ImGui::TableGetSortSpecs( ) );
+                if( m_TreeSnapshot.has_value( ) )
+                {
+                    RenderTreeNode( *m_TreeSnapshot, &openDeleteConfirm );
+                }
+                ImGui::EndTable( );
+            }
+
+            ImGui::PopStyleVar( );
+            ImGui::PopStyleColor( 6 );
+        }
+
+        if( ImGui::IsWindowFocused( ImGuiFocusedFlags_ChildWindows )
+            && ImGui::IsKeyPressed( ImGuiKey_Delete )
+            && CanDeletePath( std::filesystem::path{ m_SelectedPath } ) )
+        {
+            const std::filesystem::path deletePath{ m_SelectedPath };
+            std::error_code ec;
+            const bool isDirectory = std::filesystem::is_directory( deletePath, ec );
+            if( ec || isDirectory )
+            {
+                m_DeleteConfirmPath = m_SelectedPath;
+                openDeleteConfirm = true;
+            }
+            else
+            {
+                DeletePath( deletePath );
+            }
+        }
+
+        if( openDeleteConfirm && !m_DeleteConfirmPath.empty( ) )
+        {
+            ImGui::OpenPopup( kDeleteConfirmPopupId );
+        }
+
+        ImGui::SetNextWindowSize( ImVec2( 420, 0 ), ImGuiCond_Always );
+        if( ImGui::BeginPopupModal( kDeleteConfirmPopupId, nullptr,
+                ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize ) )
+        {
+            const std::filesystem::path deletePath = m_DeleteConfirmPath;
+            std::error_code ec;
+            const bool isDirectory = std::filesystem::is_directory( deletePath, ec );
+            const std::string deleteLabel =
+                deletePath.filename( ).empty( )
+                ? MakePreferredPathString( deletePath )
+                : deletePath.filename( ).string( );
+
+            ImGui::Spacing( );
+            ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 1.0f, 0.6f, 0.1f, 1.0f ) );
+            if( isDirectory )
+            {
+                ImGui::TextWrapped(
+                    "This will permanently delete the folder %s and all of its contents from disk.",
+                    deleteLabel.c_str( ) );
+            }
+            else
+            {
+                ImGui::TextWrapped(
+                    "This will permanently delete the file %s from disk.",
+                    deleteLabel.c_str( ) );
+            }
+            ImGui::PopStyleColor( );
+            ImGui::Spacing( );
+
+            ImGui::PushStyleColor( ImGuiCol_Button,        ImVec4( 0.7f, 0.3f, 0.0f, 1.0f ) );
+            ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.9f, 0.4f, 0.0f, 1.0f ) );
+            ImGui::PushStyleColor( ImGuiCol_ButtonActive,  ImVec4( 0.5f, 0.2f, 0.0f, 1.0f ) );
+
+            if( ImGui::Button( "Delete", ImVec2( 110, 0 ) ) )
+            {
+                DeletePath( deletePath );
+                m_DeleteConfirmPath.clear( );
+                ImGui::CloseCurrentPopup( );
+            }
+
+            ImGui::PopStyleColor( 3 );
+            ImGui::SameLine( );
+            if( ImGui::Button( "Cancel", ImVec2( 100, 0 ) ) )
+            {
+                m_DeleteConfirmPath.clear( );
+                ImGui::CloseCurrentPopup( );
+            }
+
+            ImGui::EndPopup( );
         }
     }
 
-    if( openDeleteConfirm && !m_DeleteConfirmPath.empty( ) )
-    {
-        ImGui::OpenPopup( kDeleteConfirmPopupId );
-    }
-
-    ImGui::SetNextWindowSize( ImVec2( 420, 0 ), ImGuiCond_Always );
-    if( ImGui::BeginPopupModal( kDeleteConfirmPopupId, nullptr,
-            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize ) )
-    {
-        const std::filesystem::path deletePath = m_DeleteConfirmPath;
-        std::error_code ec;
-        const bool isDirectory = std::filesystem::is_directory( deletePath, ec );
-        const std::string deleteLabel =
-            deletePath.filename( ).empty( )
-            ? MakePreferredPathString( deletePath )
-            : deletePath.filename( ).string( );
-
-        ImGui::Spacing( );
-        ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 1.0f, 0.6f, 0.1f, 1.0f ) );
-        if( isDirectory )
-        {
-            ImGui::TextWrapped(
-                "This will permanently delete the folder %s and all of its contents from disk.",
-                deleteLabel.c_str( ) );
-        }
-        else
-        {
-            ImGui::TextWrapped(
-                "This will permanently delete the file %s from disk.",
-                deleteLabel.c_str( ) );
-        }
-        ImGui::PopStyleColor( );
-        ImGui::Spacing( );
-
-        ImGui::PushStyleColor( ImGuiCol_Button,        ImVec4( 0.7f, 0.3f, 0.0f, 1.0f ) );
-        ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.9f, 0.4f, 0.0f, 1.0f ) );
-        ImGui::PushStyleColor( ImGuiCol_ButtonActive,  ImVec4( 0.5f, 0.2f, 0.0f, 1.0f ) );
-
-        if( ImGui::Button( "Delete", ImVec2( 110, 0 ) ) )
-        {
-            DeletePath( deletePath );
-            m_DeleteConfirmPath.clear( );
-            ImGui::CloseCurrentPopup( );
-        }
-
-        ImGui::PopStyleColor( 3 );
-        ImGui::SameLine( );
-        if( ImGui::Button( "Cancel", ImVec2( 100, 0 ) ) )
-        {
-            m_DeleteConfirmPath.clear( );
-            ImGui::CloseCurrentPopup( );
-        }
-
-        ImGui::EndPopup( );
-    }
-
+    DrawDeleteProgressPopup( );
     ImGui::End( );
 }
 
@@ -495,6 +459,20 @@ void ImageScraper::DownloadHistoryPanel::FlushDecodedThumbnails( )
     }
 }
 
+void ImageScraper::DownloadHistoryPanel::PumpDeleteOperation( )
+{
+    m_DeleteController.Update( );
+
+    const auto now = std::chrono::steady_clock::now( );
+    const std::optional<DownloadDeleteController::Result> result = m_DeleteController.TryConsumeCompletedResult( now );
+    if( !result.has_value( ) )
+    {
+        return;
+    }
+
+    FinaliseDeleteOperation( result->m_Success, result->m_ErrorMessage );
+}
+
 void ImageScraper::DownloadHistoryPanel::InvalidateTreeCaches( )
 {
     m_TreeSnapshot.reset( );
@@ -506,7 +484,7 @@ void ImageScraper::DownloadHistoryPanel::InvalidateTreeCaches( )
 
 void ImageScraper::DownloadHistoryPanel::RefreshTreeSnapshot( const ImGuiTableSortSpecs* sortSpecs )
 {
-    ImGuiID sortColumnUserId = static_cast<ImGuiID>( SortColumn::Name );
+    ImGuiID sortColumnUserId = static_cast<ImGuiID>( ImageScraper::HistorySortColumn::Name );
     ImGuiSortDirection sortDirection = ImGuiSortDirection_Ascending;
 
     if( sortSpecs != nullptr && sortSpecs->SpecsCount > 0 )
@@ -562,7 +540,7 @@ void ImageScraper::DownloadHistoryPanel::EnsureTreeSnapshotCached( ) const
     ImGuiID sortColumnUserId = m_TreeSortColumnUserId;
     if( sortColumnUserId == 0 )
     {
-        sortColumnUserId = static_cast<ImGuiID>( SortColumn::Name );
+        sortColumnUserId = static_cast<ImGuiID>( ImageScraper::HistorySortColumn::Name );
     }
 
     ImGuiSortDirection sortDirection = m_TreeSortDirection;
@@ -689,50 +667,9 @@ ImageScraper::DownloadHistoryPanel::BuildTreeNodeSnapshot(
 
     FindClose( hFind );
 
-    std::sort( children.begin( ), children.end( ), [ sortColumnUserId, sortDirection ]( const TreeNodeSnapshot& lhs, const TreeNodeSnapshot& rhs )
-    {
-        if( lhs.m_IsDirectory != rhs.m_IsDirectory )
-        {
-            return lhs.m_IsDirectory > rhs.m_IsDirectory;
-        }
-
-        int comparison = 0;
-        switch( static_cast<SortColumn>( sortColumnUserId ) )
-        {
-            case SortColumn::Name:
-                comparison = CompareStringsCaseInsensitive( lhs.m_Label, rhs.m_Label );
-                break;
-
-            case SortColumn::Size:
-                comparison = ( lhs.m_SizeBytes < rhs.m_SizeBytes ) ? -1 : ( lhs.m_SizeBytes > rhs.m_SizeBytes ? 1 : 0 );
-                break;
-
-            case SortColumn::Type:
-                comparison = CompareStringsCaseInsensitive( lhs.m_TypeLabel, rhs.m_TypeLabel );
-                break;
-
-            case SortColumn::Created:
-                comparison = ( lhs.m_CreationTicks < rhs.m_CreationTicks ) ? -1 : ( lhs.m_CreationTicks > rhs.m_CreationTicks ? 1 : 0 );
-                break;
-        }
-
-        if( sortDirection == ImGuiSortDirection_Descending )
-        {
-            comparison = -comparison;
-        }
-
-        if( comparison == 0 )
-        {
-            comparison = CompareStringsCaseInsensitive( lhs.m_Label, rhs.m_Label );
-        }
-
-        if( comparison == 0 )
-        {
-            comparison = CompareStringsCaseInsensitive( lhs.m_PathString, rhs.m_PathString );
-        }
-
-        return comparison < 0;
-    } );
+    const bool ascending = ( sortDirection != ImGuiSortDirection_Descending );
+    std::sort( children.begin( ), children.end( ),
+        ImageScraper::MakeHistoryComparator( static_cast<ImageScraper::HistorySortColumn>( sortColumnUserId ), ascending ) );
 
     node.m_Children = std::move( children );
     return node;
@@ -801,7 +738,7 @@ void ImageScraper::DownloadHistoryPanel::ClearSelection( bool requestPreview )
 
 void ImageScraper::DownloadHistoryPanel::DeletePath( const std::filesystem::path& path )
 {
-    if( !CanDeletePath( path ) )
+    if( !CanDeletePath( path ) || m_DeleteController.IsActive( ) )
     {
         return;
     }
@@ -828,51 +765,71 @@ void ImageScraper::DownloadHistoryPanel::DeletePath( const std::filesystem::path
         m_OnReleaseRequested( pathString );
     }
 
-    std::error_code ec;
-    if( isDirectory )
-    {
-        std::filesystem::remove_all( path, ec );
-    }
-    else
-    {
-        std::filesystem::remove( path, ec );
-    }
+    DeleteOperationContext context{ };
+    context.m_TargetPath = path;
+    context.m_TargetPathString = pathString;
+    context.m_SelectedPathBeforeDelete = selectedPathBeforeDelete;
+    context.m_PreferredIndex = preferredIndex;
+    context.m_IsDirectory = isDirectory;
+    context.m_SelectionImpacted = selectionImpacted;
+    StartDeleteOperation( std::move( context ) );
+}
 
-    if( ec )
-    {
-        WarningLog( "[%s] Failed to delete %s: %s",
-                    __FUNCTION__,
-                    pathString.c_str( ),
-                    ec.message( ).c_str( ) );
+void ImageScraper::DownloadHistoryPanel::StartDeleteOperation( DeleteOperationContext context )
+{
+    m_ActiveDeleteOperation = std::move( context );
+    m_DeleteController.Start( DownloadDeleteController::Request{
+        m_ActiveDeleteOperation->m_TargetPath,
+        m_ActiveDeleteOperation->m_IsDirectory } );
+}
 
-        EvictThumbnailsInPath( path, isDirectory );
-        InvalidateTreeCaches( );
-        if( selectionImpacted )
-        {
-            std::error_code existsEc;
-            if( !selectedPathBeforeDelete.empty( )
-                && std::filesystem::exists( std::filesystem::path{ selectedPathBeforeDelete }, existsEc )
-                && !existsEc )
-            {
-                SetSelection( selectedPathBeforeDelete, false, true );
-            }
-            else
-            {
-                m_SelectedPath.clear( );
-                m_SelectedPathExists = false;
-                AdvanceSelectionAndPreview( preferredIndex );
-            }
-        }
+void ImageScraper::DownloadHistoryPanel::FinaliseDeleteOperation( bool success, const std::string& errorMessage )
+{
+    if( !m_ActiveDeleteOperation.has_value( ) )
+    {
         return;
     }
 
-    EvictThumbnailsInPath( path, isDirectory );
+    const DeleteOperationContext context = *m_ActiveDeleteOperation;
+    m_ActiveDeleteOperation.reset( );
+
+    if( !success )
+    {
+        WarningLog( "[%s] Failed to delete %s: %s",
+                    __FUNCTION__,
+                    context.m_TargetPathString.c_str( ),
+                    errorMessage.c_str( ) );
+    }
+
+    EvictThumbnailsInPath( context.m_TargetPath, context.m_IsDirectory );
     InvalidateTreeCaches( );
     RefreshDownloadsRootExists( );
-    if( selectionImpacted )
+
+    if( !context.m_SelectionImpacted )
+    {
+        return;
+    }
+
+    if( success )
     {
         m_SelectedPath.clear( );
-        AdvanceSelectionAndPreview( preferredIndex );
+        m_SelectedPathExists = false;
+        AdvanceSelectionAndPreview( context.m_PreferredIndex );
+        return;
+    }
+
+    std::error_code existsEc;
+    if( !context.m_SelectedPathBeforeDelete.empty( )
+        && std::filesystem::exists( std::filesystem::path{ context.m_SelectedPathBeforeDelete }, existsEc )
+        && !existsEc )
+    {
+        SetSelection( context.m_SelectedPathBeforeDelete, false, true );
+    }
+    else
+    {
+        m_SelectedPath.clear( );
+        m_SelectedPathExists = false;
+        AdvanceSelectionAndPreview( context.m_PreferredIndex );
     }
 }
 
@@ -903,6 +860,47 @@ void ImageScraper::DownloadHistoryPanel::AdvanceSelectionAndPreview( int preferr
     SetSelection( MakeFastPreferredPathString( navigableFiles[ targetIndex ] ), false, true );
 }
 
+void ImageScraper::DownloadHistoryPanel::DrawDeleteProgressPopup( )
+{
+    if( !m_DeleteController.IsActive( ) )
+    {
+        return;
+    }
+
+    ImGui::OpenPopup( "Deleting downloads" );
+    if( !ImGui::BeginPopupModal( "Deleting downloads", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize ) )
+    {
+        return;
+    }
+
+    const DownloadDeleteController::Progress progress = m_DeleteController.GetProgressSnapshot( );
+    const auto now = std::chrono::steady_clock::now( );
+    const float fraction = m_DeleteController.GetModalProgressFraction( now );
+
+    std::string primaryDetail{ };
+    if( progress.m_TotalEntries > 0 )
+    {
+        primaryDetail = std::to_string( progress.m_ProcessedEntries )
+            + " / " + std::to_string( progress.m_TotalEntries ) + " item(s)";
+    }
+
+    std::string secondaryDetail{ };
+    if( progress.m_TotalBytes > 0 )
+    {
+        secondaryDetail = FormatFileSizeBytes( progress.m_ProcessedBytes )
+            + " / " + FormatFileSizeBytes( progress.m_TotalBytes );
+    }
+
+    (void)DrawProgressPopupContents( ProgressPopupContent{
+        fraction,
+        360.0f,
+        progress.m_Message,
+        primaryDetail,
+        secondaryDetail,
+        progress.m_CurrentPath } );
+    ImGui::EndPopup( );
+}
+
 void ImageScraper::DownloadHistoryPanel::EvictThumbnailsInPath( const std::filesystem::path& targetPath, bool treatAsDirectory )
 {
     if( targetPath.empty( ) )
@@ -910,12 +908,12 @@ void ImageScraper::DownloadHistoryPanel::EvictThumbnailsInPath( const std::files
         return;
     }
 
-    const std::filesystem::path normalisedTarget = NormalisePath( targetPath );
+    const std::filesystem::path normalisedTarget = ImageScraper::FilesystemUtils::NormalisePath(targetPath );
     std::vector<std::string> pathsToRemove{ };
     for( const auto& [ filepath, entry ] : m_ThumbnailCache )
     {
         const std::filesystem::path entryPath = filepath;
-        const std::filesystem::path normalisedEntry = NormalisePath( entryPath );
+        const std::filesystem::path normalisedEntry = ImageScraper::FilesystemUtils::NormalisePath(entryPath );
         const bool matchesTarget =
             treatAsDirectory
             ? IsPathWithinRoot( normalisedEntry, normalisedTarget )
@@ -1153,7 +1151,7 @@ bool ImageScraper::DownloadHistoryPanel::HasSelectedDescendant( const std::strin
 
 bool ImageScraper::DownloadHistoryPanel::CanDeletePath( const std::filesystem::path& path ) const
 {
-    if( m_Blocked || path.empty( ) || m_DownloadsRoot.empty( ) || IsRootPath( MakeFastPreferredPathString( path ) ) )
+    if( m_Blocked || m_DeleteController.IsActive( ) || path.empty( ) || m_DownloadsRoot.empty( ) || IsRootPath( MakeFastPreferredPathString( path ) ) )
     {
         return false;
     }
@@ -1345,7 +1343,7 @@ void ImageScraper::DownloadHistoryPanel::OnFileDownloaded( const std::string& fi
 void ImageScraper::DownloadHistoryPanel::Load( std::shared_ptr<JsonFile> appConfig, const std::filesystem::path& downloadsRoot )
 {
     m_AppConfig = std::move( appConfig );
-    m_DownloadsRoot = downloadsRoot.empty( ) ? downloadsRoot : NormalisePath( downloadsRoot );
+    m_DownloadsRoot = downloadsRoot.empty( ) ? downloadsRoot : ImageScraper::FilesystemUtils::NormalisePath(downloadsRoot );
     m_DownloadsRootString = MakeFastPreferredPathString( m_DownloadsRoot );
     RefreshDownloadsRootExists( );
     m_OpenDirectoryPaths.clear( );
@@ -1439,7 +1437,7 @@ std::string ImageScraper::DownloadHistoryPanel::MakePreferredPathString( const s
         return { };
     }
 
-    return NormalisePath( path ).string( );
+    return ImageScraper::FilesystemUtils::NormalisePath(path ).string( );
 }
 
 bool ImageScraper::DownloadHistoryPanel::IsPathWithinRoot( const std::filesystem::path& path, const std::filesystem::path& root )

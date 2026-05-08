@@ -4,7 +4,9 @@
 #include "config\DownloadLocationConfig.h"
 #include "log\Logger.h"
 #include "network\CurlHttpClient.h"
+#include "ui\ProgressPopup.h"
 #include "services\ServiceOptionTypes.h"
+#include "utils\FilesystemUtils.h"
 #include "version\Version.h"
 
 #include "imgui\imgui.h"
@@ -32,18 +34,6 @@ namespace
     constexpr uintmax_t k_MinFreeSpaceBufferBytes = 1024ull * 1024ull * 1024ull;
     constexpr int k_MinOperationStageMs = 750;
 
-    bool DirectoryHasEntries( const std::filesystem::path& path )
-    {
-        std::error_code ec;
-        if( !std::filesystem::exists( path, ec ) || ec || !std::filesystem::is_directory( path, ec ) || ec )
-        {
-            return false;
-        }
-
-        std::filesystem::directory_iterator it{ path, std::filesystem::directory_options::skip_permission_denied, ec };
-        return !ec && it != std::filesystem::directory_iterator{ };
-    }
-
     std::vector<std::filesystem::path> GetManagedProviderRoots( const std::filesystem::path& downloadRoot )
     {
         std::vector<std::filesystem::path> providerRoots{ };
@@ -60,7 +50,7 @@ namespace
     {
         for( const std::filesystem::path& providerRoot : GetManagedProviderRoots( downloadRoot ) )
         {
-            if( DirectoryHasEntries( providerRoot ) )
+            if( ImageScraper::FilesystemUtils::DirectoryHasEntries( providerRoot ) )
             {
                 return true;
             }
@@ -156,87 +146,84 @@ void ImageScraper::SettingsPanel::Update( )
     }
 
     ImGui::SetNextWindowSize( ImVec2( 420, 220 ), ImGuiCond_FirstUseEver );
-    if( !ImGui::Begin( "Settings", nullptr ) )
+    const bool settingsWindowOpen = ImGui::Begin( "Settings", nullptr );
+    if( settingsWindowOpen )
     {
-        ImGui::End( );
-        return;
-    }
+        DrawDownloadsSettings( );
+        ImGui::Spacing( );
+        ImGui::Spacing( );
 
-    DrawDownloadsSettings( );
-    ImGui::Spacing( );
-    ImGui::Spacing( );
-    
-    ImGui::SeparatorText( "Updates" );
-    ImGui::Spacing( );
-    ImGui::Text( "Current version: %s", VERSION_STRING );
-    ImGui::Spacing( );
+        ImGui::SeparatorText( "Updates" );
+        ImGui::Spacing( );
+        ImGui::Text( "Current version: %s", VERSION_STRING );
+        ImGui::Spacing( );
 
-    bool checkUpdatesOnStartup = m_CheckUpdatesOnStartup;
-    if( ImGui::Checkbox( "Check for updates on startup", &checkUpdatesOnStartup ) )
-    {
-        m_CheckUpdatesOnStartup = checkUpdatesOnStartup;
-        PersistCheckUpdatesOnStartup( );
-    }
-
-    const bool checkWasRunning = m_CheckRunning;
-    if( checkWasRunning )
-    {
-        ImGui::BeginDisabled( );
-    }
-    if( ImGui::Button( "Check now" ) )
-    {
-        StartUpdateCheck( true );
-    }
-    if( checkWasRunning )
-    {
-        ImGui::EndDisabled( );
-    }
-
-    ImGui::SameLine( );
-    DrawUpdateStatus( );
-    ImGui::Spacing( );
-
-    if( m_UpdateStatus == SettingsUpdateStatus::UpdateAvailable && !m_LatestRelease.m_HtmlUrl.empty( ) )
-    {
-        if( ImGui::Button( "Open release page" ) )
+        bool checkUpdatesOnStartup = m_CheckUpdatesOnStartup;
+        if( ImGui::Checkbox( "Check for updates on startup", &checkUpdatesOnStartup ) )
         {
-            if( OpenReleasePage( m_LatestRelease.m_HtmlUrl ) )
+            m_CheckUpdatesOnStartup = checkUpdatesOnStartup;
+            PersistCheckUpdatesOnStartup( );
+        }
+
+        const bool disableCheckNowButton = ShouldDisableCheckNowButton( m_CheckRunning, m_Blocked );
+        if( disableCheckNowButton )
+        {
+            ImGui::BeginDisabled( );
+        }
+        if( ImGui::Button( "Check now" ) )
+        {
+            StartUpdateCheck( true );
+        }
+        if( disableCheckNowButton )
+        {
+            ImGui::EndDisabled( );
+        }
+
+        ImGui::SameLine( );
+        DrawUpdateStatus( );
+        ImGui::Spacing( );
+
+        if( m_UpdateStatus == SettingsUpdateStatus::UpdateAvailable && !m_LatestRelease.m_HtmlUrl.empty( ) )
+        {
+            if( ImGui::Button( "Open release page" ) )
             {
-                PersistStringValue( s_LastUpdatePromptedVersionConfigKey, m_LatestRelease.m_TagName );
+                if( OpenReleasePage( m_LatestRelease.m_HtmlUrl ) )
+                {
+                    PersistStringValue( s_LastUpdatePromptedVersionConfigKey, m_LatestRelease.m_TagName );
+                }
             }
         }
-    }
 
-    if( m_UpdateStatus == SettingsUpdateStatus::Failed && !m_LastError.empty( ) )
-    {
-        ImGui::TextWrapped( "%s", m_LastError.c_str( ) );
-    }
+        if( m_UpdateStatus == SettingsUpdateStatus::Failed && !m_LastError.empty( ) )
+        {
+            ImGui::TextWrapped( "%s", m_LastError.c_str( ) );
+        }
 
-    ImGui::Spacing( );
-    ImGui::Separator( );
-    ImGui::Spacing( );
+        ImGui::Spacing( );
+        ImGui::Separator( );
+        ImGui::Spacing( );
 
-#ifdef _DEBUG    
-    ImGui::TextColored( ImVec4( 1.0f, 0.8f, 0.2f, 1.0f ), "Dev" );
-    ImGui::SameLine( );
-    bool checkDevelopmentVersion = m_CheckDevelopmentVersion;
-    if( ImGui::Checkbox( "Allow update checks for dev version", &checkDevelopmentVersion ) )
-    {
-        m_CheckDevelopmentVersion = checkDevelopmentVersion;
-        PersistCheckDevelopmentVersion( );
-    }
-    if( ImGui::IsItemHovered( ) )
-    {
-        ImGui::SetTooltip( "Treats the local dev fallback version as 0.0.0 so update notification UI can be tested.\nDebug builds only." );
-    }
+#ifdef _DEBUG
+        ImGui::TextColored( ImVec4( 1.0f, 0.8f, 0.2f, 1.0f ), "Dev" );
+        ImGui::SameLine( );
+        bool checkDevelopmentVersion = m_CheckDevelopmentVersion;
+        if( ImGui::Checkbox( "Allow update checks for dev version", &checkDevelopmentVersion ) )
+        {
+            m_CheckDevelopmentVersion = checkDevelopmentVersion;
+            PersistCheckDevelopmentVersion( );
+        }
+        if( ImGui::IsItemHovered( ) )
+        {
+            ImGui::SetTooltip( "Treats the local dev fallback version as 0.0.0 so update notification UI can be tested.\nDebug builds only." );
+        }
 #endif
+    }
+    ImGui::End( );
 
     DrawUpdatePopup( );
     DrawMissingDownloadLocationPopup( );
     DrawMoveDownloadsPopup( );
     DrawLocationOperationPopup( );
-
-    ImGui::End( );
 }
 
 void ImageScraper::SettingsPanel::PersistCheckUpdatesOnStartup( )
@@ -611,29 +598,28 @@ void ImageScraper::SettingsPanel::DrawLocationOperationPopup( )
     case DownloadLocationOperationStage::Copying:
     case DownloadLocationOperationStage::Deleting:
     {
-        ImGui::TextWrapped( "%s", progress.m_Message.c_str( ) );
-        ImGui::Spacing( );
-        const float fraction = CalculateProgressFraction( progress );
-        ImGui::ProgressBar( fraction, ImVec2( 420.0f, 0.0f ) );
-        ImGui::TextDisabled(
-            "%s / %s, %i / %i files",
-            FormatBytes( progress.m_ProcessedBytes ).c_str( ),
-            FormatBytes( progress.m_TotalBytes ).c_str( ),
-            progress.m_ProcessedFiles,
-            progress.m_TotalFiles );
+        std::ostringstream primaryDetail;
+        primaryDetail
+            << FormatBytes( progress.m_ProcessedBytes )
+            << " / " << FormatBytes( progress.m_TotalBytes )
+            << ", " << progress.m_ProcessedFiles
+            << " / " << progress.m_TotalFiles << " files";
+
+        std::string secondaryDetail{ };
         if( progress.m_SkippedFiles > 0 )
         {
-            ImGui::TextDisabled( "Skipped: %i", progress.m_SkippedFiles );
-        }
-        if( !progress.m_CurrentPath.empty( ) )
-        {
-            ImGui::PushTextWrapPos( ImGui::GetCursorPosX( ) + 420.0f );
-            ImGui::TextDisabled( "%s", progress.m_CurrentPath.c_str( ) );
-            ImGui::PopTextWrapPos( );
+            secondaryDetail = "Skipped: " + std::to_string( progress.m_SkippedFiles );
         }
 
-        ImGui::Spacing( );
-        if( ImGui::Button( "Cancel", ImVec2( 100, 0 ) ) )
+        if( DrawProgressPopupContents( ProgressPopupContent{
+                CalculateProgressFraction( progress ),
+                420.0f,
+                progress.m_Message,
+                primaryDetail.str( ),
+                secondaryDetail,
+                progress.m_CurrentPath,
+                "Cancel",
+                ImVec2( 100.0f, 0.0f ) } ) )
         {
             RequestLocationOperationCancel( );
         }

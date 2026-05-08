@@ -1,11 +1,14 @@
 #pragma once
 
 #include "ui/IUiPanel.h"
+#include "ui/DownloadDeleteController.h"
 #include "ui/VideoPlayer.h"
+#include "ui/HistoryEntrySorter.h"
 #include "io/JsonFile.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl3_loader.h"
 
+#include <algorithm>
 #include <string>
 #include <memory>
 #include <mutex>
@@ -68,16 +71,10 @@ namespace ImageScraper
             int                        m_Height{ 0 };
         };
 
-        struct TreeNodeSnapshot
+        struct TreeNodeSnapshot : HistorySortEntry
         {
             std::filesystem::path       m_Path{ };
-            std::string                 m_PathString{ };
-            std::string                 m_Label{ };
-            bool                        m_IsDirectory{ false };
-            uintmax_t                   m_SizeBytes{ 0 };
             std::string                 m_SizeLabel{ };
-            std::string                 m_TypeLabel{ };
-            unsigned long long          m_CreationTicks{ 0 };
             std::string                 m_CreationLabel{ };
             std::vector<TreeNodeSnapshot> m_Children{ };
         };
@@ -89,8 +86,19 @@ namespace ImageScraper
             unsigned long long m_CreationTicks{ 0 };
         };
 
+        struct DeleteOperationContext
+        {
+            std::filesystem::path m_TargetPath{ };
+            std::string           m_TargetPathString{ };
+            std::string           m_SelectedPathBeforeDelete{ };
+            int                   m_PreferredIndex{ -1 };
+            bool                  m_IsDirectory{ false };
+            bool                  m_SelectionImpacted{ false };
+        };
+
         void FlushPending( );
         void FlushDecodedThumbnails( );
+        void PumpDeleteOperation( );
         void InvalidateTreeCaches( );
         void EnsureTreeSnapshotCached( ) const;
         void RefreshTreeSnapshot( const ImGuiTableSortSpecs* sortSpecs );
@@ -111,6 +119,9 @@ namespace ImageScraper
         void SetSelection( const std::string& path, bool scrollToSelected, bool requestPreview );
         void ClearSelection( bool requestPreview );
         void DeletePath( const std::filesystem::path& path );
+        void StartDeleteOperation( DeleteOperationContext context );
+        void FinaliseDeleteOperation( bool success, const std::string& errorMessage );
+        void DrawDeleteProgressPopup( );
         void AdvanceSelectionAndPreview( int preferredIndex = -1 );
         void RenderTreeNode( const TreeNodeSnapshot& node, bool* openDeleteConfirm );
         void ShowPathContextMenu( const TreeNodeSnapshot& node, bool* openDeleteConfirm );
@@ -177,6 +188,8 @@ namespace ImageScraper
 
         std::string m_SelectedPath{ };
         std::string m_DeleteConfirmPath{ };
+        DownloadDeleteController m_DeleteController{ };
+        std::optional<DeleteOperationContext> m_ActiveDeleteOperation{ };
         bool        m_Blocked{ false };
         bool        m_PrivacyMode{ false };
         bool        m_ScrollToSelected{ false };

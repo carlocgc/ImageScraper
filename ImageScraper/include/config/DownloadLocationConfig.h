@@ -1,6 +1,7 @@
 #pragma once
 
 #include "io/JsonFile.h"
+#include "utils/FilesystemUtils.h"
 
 #include <filesystem>
 #include <memory>
@@ -12,24 +13,7 @@ namespace ImageScraper::DownloadLocationConfig
 
     inline std::filesystem::path NormalisePath( const std::filesystem::path& path )
     {
-        if( path.empty( ) )
-        {
-            return { };
-        }
-
-        std::error_code ec;
-        std::filesystem::path normalised = std::filesystem::weakly_canonical( path, ec );
-        if( ec )
-        {
-            normalised = std::filesystem::absolute( path, ec );
-            if( ec )
-            {
-                normalised = path.lexically_normal( );
-            }
-        }
-
-        normalised.make_preferred( );
-        return normalised;
+        return FilesystemUtils::NormalisePath( path );
     }
 
     inline std::filesystem::path GetDefaultDownloadRoot( const std::filesystem::path& exeDir )

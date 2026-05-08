@@ -1,11 +1,12 @@
 #pragma once
 
 #include "io/JsonFile.h"
+#include "ui/GifFrameAnimator.h"
+#include "ui/GifTextureManager.h"
 #include "ui/IUiPanel.h"
 #include "ui/MediaAudioPlayer.h"
 #include "ui/VideoPlayer.h"
 #include "imgui/imgui.h"
-#include "imgui/imgui_impl_opengl3_loader.h"
 
 #include <chrono>
 #include <string>
@@ -33,6 +34,8 @@ namespace ImageScraper
         // Main-thread only - synchronously clears all display state;
         // waits for any in-progress background decode to finish so file handles are released.
         void ClearPreview( );
+        void StopPlayback( );
+        static bool ShouldStopPlaybackForDownloadTransition( bool wasRunning, bool isRunning ) { return !wasRunning && isRunning; }
 
         // Main-thread only - clears the preview if the given filepath is currently loaded
         // or being decoded; no-op otherwise. Waits for any in-progress decode to finish.
@@ -60,8 +63,8 @@ namespace ImageScraper
         // True when the preview is currently hidden by the user's privacy toggle
         bool IsPrivacyMode( ) const { return m_PrivacyMode; }
 
-        // True when the loaded media supports interactive seek (multi-frame GIF or
-        // open video with known duration).
+        // True when the loaded media supports interactive seek
+        // (open non-GIF video with known duration).
         bool CanScrub( ) const;
 
         // Current playback progress in 0..1, or -1 if not currently scrubbable.
@@ -163,12 +166,8 @@ namespace ImageScraper
         bool                m_PlayOnUpload{ false };
 
         // Current display state - only touched on the main thread
-        std::vector<GLuint> m_Textures{ };
-        std::vector<int>    m_FrameDelaysMs{ };
-        int         m_Width{ 0 };
-        int         m_Height{ 0 };
-        int         m_CurrentFrame{ 0 };
-        float       m_FrameAccumMs{ 0.0f };
+        GifTextureManager m_TextureManager{ };
+        GifFrameAnimator  m_FrameAnimator{ };
         std::string m_CurrentFilePath{ };
         std::string m_CurrentFileName{ };
         std::string m_CurrentProviderName{ };

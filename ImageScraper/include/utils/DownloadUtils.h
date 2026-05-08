@@ -269,40 +269,34 @@ namespace ImageScraper::DownloadHelpers
         return paramString;
     }
 
-    static bool IsRedditResponseError( RequestResult& result )
+    namespace Detail
     {
-        try
+        // Parses result.m_Response as JSON and forwards the payload to visit().
+        // Returns visit(payload) on success, or true + InternalServerError on parse failure.
+        template<typename Visitor>
+        static bool ParseAndInspect( RequestResult& result, Visitor&& visit )
         {
-            Json payload = Json::parse( result.m_Response );
-
-            if( payload.contains( "error" ) )
+            try
             {
-                const int errorCode = payload[ "error" ];
-                result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( errorCode );
+                const Json payload = Json::parse( result.m_Response );
+                return std::forward<Visitor>( visit )( payload );
+            }
+            catch( const Json::exception& ex )
+            {
+                result.m_Error.m_ErrorCode = ResponseErrorCode::InternalServerError;
+                result.m_Error.m_ErrorString = ex.what( );
                 return true;
             }
-
-            if( payload.contains( "message" ) )
-            {
-                result.m_Error.m_ErrorString = payload[ "message" ];
-            }
         }
-        catch( const Json::exception& ex )
-        {
-            result.m_Error.m_ErrorCode = ResponseErrorCode::InternalServerError;
-            result.m_Error.m_ErrorString = ex.what( );
-            return true;
-        }
-
-        return false;
     }
 
-    static bool IsTumblrResponseError( RequestResult& result )
+    // Checks for the standard { "error": <int>, "message": <string> } pattern
+    // used by Reddit, Tumblr, and 4chan. Exposed so future providers with the
+    // same format can reuse it directly.
+    static bool IsStandardResponseError( RequestResult& result )
     {
-        try
+        return Detail::ParseAndInspect( result, [ &result ]( const Json& payload ) -> bool
         {
-            Json payload = Json::parse( result.m_Response );
-
             if( payload.contains( "error" ) )
             {
                 const int errorCode = payload[ "error" ];
@@ -314,51 +308,15 @@ namespace ImageScraper::DownloadHelpers
             {
                 result.m_Error.m_ErrorString = payload[ "message" ];
             }
-        }
-        catch( const Json::exception& ex )
-        {
-            result.m_Error.m_ErrorCode = ResponseErrorCode::InternalServerError;
-            result.m_Error.m_ErrorString = ex.what( );
-            return true;
-        }
 
-        return false;
-    }
-
-    static bool IsFourChanResponseError( RequestResult& result )
-    {
-        try
-        {
-            Json payload = Json::parse( result.m_Response );
-
-            if( payload.contains( "error" ) )
-            {
-                const int errorCode = payload[ "error" ];
-                result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( errorCode );
-                return true;
-            }
-
-            if( payload.contains( "message" ) )
-            {
-                result.m_Error.m_ErrorString = payload[ "message" ];
-            }
-        }
-        catch( const Json::exception& ex )
-        {
-            result.m_Error.m_ErrorCode = ResponseErrorCode::InternalServerError;
-            result.m_Error.m_ErrorString = ex.what( );
-            return true;
-        }
-
-        return false;
+            return false;
+        } );
     }
 
     static bool IsMastodonResponseError( RequestResult& result )
     {
-        try
+        return Detail::ParseAndInspect( result, [ &result ]( const Json& payload ) -> bool
         {
-            Json payload = Json::parse( result.m_Response );
-
             if( payload.contains( "error" ) )
             {
                 if( payload[ "error" ].is_string( ) )
@@ -380,14 +338,8 @@ namespace ImageScraper::DownloadHelpers
 
                 return true;
             }
-        }
-        catch( const Json::exception& ex )
-        {
-            result.m_Error.m_ErrorCode = ResponseErrorCode::InternalServerError;
-            result.m_Error.m_ErrorString = ex.what( );
-            return true;
-        }
 
-        return false;
+            return false;
+        } );
     }
 }

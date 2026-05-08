@@ -150,7 +150,8 @@
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl-d.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(ProjectDir)data\config.json" xcopy "$(ProjectDir)data\config.json" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)resources\icons" "$(TargetDir)resources\icons\" /Y /I /E</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -179,7 +180,8 @@ xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(TargetDir)config.json" del /F /Q "$(TargetDir)config.json"
-xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)resources\icons" "$(TargetDir)resources\icons\" /Y /I /E</Command>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -210,7 +212,8 @@ xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
       <Command>xcopy "$(ProjectDir)lib\$(Configuration)\libcurl.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\curl-ca-bundle.crt" "$(TargetDir)" /Y
 if exist "$(TargetDir)config.json" del /F /Q "$(TargetDir)config.json"
-xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)data\auth.html" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)resources\icons" "$(TargetDir)resources\icons\" /Y /I /E</Command>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -242,7 +245,8 @@ xcopy "$(ProjectDir)lib\$(Configuration)\avutil-60.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avdevice-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avfilter-11.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\swscale-9.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)resources\icons" "$(TargetDir)resources\icons\" /Y /I /E</Command>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -282,7 +286,8 @@ xcopy "$(ProjectDir)lib\$(Configuration)\avutil-60.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avdevice-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\avfilter-11.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\$(Configuration)\swscale-9.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)lib\$(Configuration)\swresample-6.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)resources\icons" "$(TargetDir)resources\icons\" /Y /I /E</Command>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -321,7 +326,8 @@ xcopy "$(ProjectDir)lib\Release\avutil-60.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\Release\avdevice-62.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\Release\avfilter-11.dll" "$(TargetDir)" /Y
 xcopy "$(ProjectDir)lib\Release\swscale-9.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)lib\Release\swresample-6.dll" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)lib\Release\swresample-6.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)resources\icons" "$(TargetDir)resources\icons\" /Y /I /E</Command>
       <Message>Copy dependencies to target directory</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -390,7 +396,12 @@ xcopy "$(ProjectDir)lib\Release\swresample-6.dll" "$(TargetDir)" /Y</Command>
     <ClCompile Include="src\ui\RedditPanel.cpp" />
     <ClCompile Include="src\ui\TumblrPanel.cpp" />
     <ClCompile Include="src\ui\FourChanPanel.cpp" />
+    <ClCompile Include="src\ui\GifFrameAnimator.cpp" />
+    <ClCompile Include="src\ui\GifTextureManager.cpp" />
+    <ClCompile Include="src\ui\HistoryEntrySorter.cpp" />
     <ClCompile Include="src\ui\MediaPreviewPanel.cpp" />
+    <ClCompile Include="src\ui\ProgressPopup.cpp" />
+    <ClCompile Include="src\ui\DownloadDeleteController.cpp" />
     <ClCompile Include="src\ui\ProviderSearchInput.cpp" />
     <ClCompile Include="src\ui\VideoPlayer.cpp" />
     <ClCompile Include="src\ui\DownloadHistoryPanel.cpp" />
@@ -534,7 +545,12 @@ xcopy "$(ProjectDir)lib\Release\swresample-6.dll" "$(TargetDir)" /Y</Command>
     <ClInclude Include="include\ui\RedditPanel.h" />
     <ClInclude Include="include\ui\TumblrPanel.h" />
     <ClInclude Include="include\ui\FourChanPanel.h" />
+    <ClInclude Include="include\ui\GifFrameAnimator.h" />
+    <ClInclude Include="include\ui\GifTextureManager.h" />
+    <ClInclude Include="include\ui\HistoryEntrySorter.h" />
     <ClInclude Include="include\ui\MediaPreviewPanel.h" />
+    <ClInclude Include="include\ui\ProgressPopup.h" />
+    <ClInclude Include="include\ui\DownloadDeleteController.h" />
     <ClInclude Include="include\ui\VideoPlayer.h" />
     <ClInclude Include="include\ui\DownloadHistoryPanel.h" />
     <ClInclude Include="include\ui\SearchHistory.h" />

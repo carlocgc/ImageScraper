@@ -175,12 +175,17 @@
     <ClCompile Include="..\ImageScraper\src\requests\reddit\RefreshAccessTokenRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\reddit\FetchSubredditPostsRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\tumblr\RetrievePublishedPostsRequest.cpp" />
+    <ClCompile Include="..\ImageScraper\src\ui\GifFrameAnimator.cpp" />
+    <ClCompile Include="..\ImageScraper\src\ui\DownloadDeleteController.cpp" />
+    <ClCompile Include="..\ImageScraper\src\ui\HistoryEntrySorter.cpp" />
     <ClCompile Include="..\ImageScraper\src\auth\OAuthClient.cpp" />
     <ClCompile Include="src\tests\OAuthClientTests.cpp" />
     <ClCompile Include="src\tests\SanityTests.cpp" />
     <ClCompile Include="src\tests\RequestTypesTests.cpp" />
     <ClCompile Include="src\tests\BlueskyUtilsTests.cpp" />
     <ClCompile Include="src\tests\MastodonUtilsTests.cpp" />
+    <ClCompile Include="src\tests\GifFrameAnimatorTests.cpp" />
+    <ClCompile Include="src\tests\HistoryEntrySorterTests.cpp" />
     <ClCompile Include="src\tests\DownloadUtilsTests.cpp" />
     <ClCompile Include="src\tests\RedditUtilsTests.cpp" />
     <ClCompile Include="src\tests\RedgifsUtilsTests.cpp" />
@@ -193,7 +198,10 @@
     <ClCompile Include="src\tests\LogPanelTests.cpp" />
     <ClCompile Include="src\tests\RingBufferTests.cpp" />
     <ClCompile Include="src\tests\StringUtilsTests.cpp" />
+    <ClCompile Include="src\tests\UiStateTests.cpp" />
     <ClCompile Include="src\tests\UpdateCheckerTests.cpp" />
+    <ClCompile Include="src\tests\AuthRequestHelpersTests.cpp" />
+    <ClCompile Include="src\tests\FilesystemUtilsTests.cpp" />
     <ClCompile Include="..\ImageScraper\src\io\JsonFile.cpp" />
   </ItemGroup>
   <ItemGroup>
