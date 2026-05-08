@@ -188,14 +188,14 @@ TEST_CASE( "IsRedditResponseError returns false for valid response", "[DownloadU
 {
     RequestResult result;
     result.m_Response = R"({ "data": { "children": [] } })";
-    REQUIRE( IsRedditResponseError( result ) == false );
+    REQUIRE( IsStandardResponseError(result ) == false );
 }
 
 TEST_CASE( "IsRedditResponseError returns true and sets error code when error field present", "[DownloadUtils][Reddit]" )
 {
     RequestResult result;
     result.m_Response = R"({ "error": 401 })";
-    REQUIRE( IsRedditResponseError( result ) == true );
+    REQUIRE( IsStandardResponseError(result ) == true );
     REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::Unauthorized );
 }
 
@@ -203,7 +203,7 @@ TEST_CASE( "IsRedditResponseError sets error string when message field present",
 {
     RequestResult result;
     result.m_Response = R"({ "message": "Unauthorized" })";
-    REQUIRE( IsRedditResponseError( result ) == false );
+    REQUIRE( IsStandardResponseError(result ) == false );
     REQUIRE( result.m_Error.m_ErrorString == "Unauthorized" );
 }
 
@@ -211,7 +211,7 @@ TEST_CASE( "IsRedditResponseError returns true for invalid JSON", "[DownloadUtil
 {
     RequestResult result;
     result.m_Response = "not valid json{{";
-    REQUIRE( IsRedditResponseError( result ) == true );
+    REQUIRE( IsStandardResponseError(result ) == true );
     REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::InternalServerError );
 }
 
@@ -219,14 +219,14 @@ TEST_CASE( "IsTumblrResponseError returns false for valid response", "[DownloadU
 {
     RequestResult result;
     result.m_Response = R"({ "response": { "posts": [] } })";
-    REQUIRE( IsTumblrResponseError( result ) == false );
+    REQUIRE( IsStandardResponseError(result ) == false );
 }
 
 TEST_CASE( "IsTumblrResponseError returns true and sets error code when error field present", "[DownloadUtils][Tumblr]" )
 {
     RequestResult result;
     result.m_Response = R"({ "error": 403 })";
-    REQUIRE( IsTumblrResponseError( result ) == true );
+    REQUIRE( IsStandardResponseError(result ) == true );
     REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::Forbidden );
 }
 
@@ -234,29 +234,109 @@ TEST_CASE( "IsTumblrResponseError returns true for invalid JSON", "[DownloadUtil
 {
     RequestResult result;
     result.m_Response = "not valid json{{";
-    REQUIRE( IsTumblrResponseError( result ) == true );
+    REQUIRE( IsStandardResponseError(result ) == true );
     REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::InternalServerError );
 }
 
-TEST_CASE( "IsFourChanResponseError returns false for valid response", "[DownloadUtils][FourChan]" )
+TEST_CASE( "IsStandardResponseError returns false for valid 4chan response", "[DownloadUtils][FourChan]" )
 {
     RequestResult result;
     result.m_Response = R"({ "boards": [] })";
-    REQUIRE( IsFourChanResponseError( result ) == false );
+    REQUIRE( IsStandardResponseError( result ) == false );
 }
 
-TEST_CASE( "IsFourChanResponseError returns true and sets error code when error field present", "[DownloadUtils][FourChan]" )
+TEST_CASE( "IsStandardResponseError returns true and sets error code for 4chan error field", "[DownloadUtils][FourChan]" )
 {
     RequestResult result;
     result.m_Response = R"({ "error": 404 })";
-    REQUIRE( IsFourChanResponseError( result ) == true );
+    REQUIRE( IsStandardResponseError( result ) == true );
     REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::NotFound );
 }
 
-TEST_CASE( "IsFourChanResponseError returns true for invalid JSON", "[DownloadUtils][FourChan]" )
+TEST_CASE( "IsStandardResponseError returns true for invalid 4chan JSON", "[DownloadUtils][FourChan]" )
 {
     RequestResult result;
     result.m_Response = "not valid json{{";
-    REQUIRE( IsFourChanResponseError( result ) == true );
+    REQUIRE( IsStandardResponseError( result ) == true );
+    REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::InternalServerError );
+}
+
+// ----------------------------------------------------------------------------
+// IsStandardResponseError (shared implementation for Reddit / Tumblr / 4chan)
+// ----------------------------------------------------------------------------
+
+TEST_CASE( "IsStandardResponseError returns false for valid response with no error field", "[DownloadUtils]" )
+{
+    RequestResult result;
+    result.m_Response = R"({ "data": {} })";
+    REQUIRE( IsStandardResponseError( result ) == false );
+}
+
+TEST_CASE( "IsStandardResponseError sets error code from integer error field", "[DownloadUtils]" )
+{
+    RequestResult result;
+    result.m_Response = R"({ "error": 403 })";
+    REQUIRE( IsStandardResponseError( result ) == true );
+    REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::Forbidden );
+}
+
+TEST_CASE( "IsStandardResponseError sets message string without treating it as error", "[DownloadUtils]" )
+{
+    RequestResult result;
+    result.m_Response = R"({ "message": "Rate limited" })";
+    REQUIRE( IsStandardResponseError( result ) == false );
+    REQUIRE( result.m_Error.m_ErrorString == "Rate limited" );
+}
+
+TEST_CASE( "IsStandardResponseError returns true for malformed JSON", "[DownloadUtils]" )
+{
+    RequestResult result;
+    result.m_Response = "{bad json";
+    REQUIRE( IsStandardResponseError( result ) == true );
+    REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::InternalServerError );
+}
+
+// ----------------------------------------------------------------------------
+// IsMastodonResponseError
+// ----------------------------------------------------------------------------
+
+TEST_CASE( "IsMastodonResponseError returns false for valid response", "[DownloadUtils][Mastodon]" )
+{
+    RequestResult result;
+    result.m_Response = R"({ "id": "123", "content": "hello" })";
+    REQUIRE( IsMastodonResponseError( result ) == false );
+}
+
+TEST_CASE( "IsMastodonResponseError sets BadRequest and error string for string error field", "[DownloadUtils][Mastodon]" )
+{
+    RequestResult result;
+    result.m_Response = R"({ "error": "The access token is invalid" })";
+    REQUIRE( IsMastodonResponseError( result ) == true );
+    REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::BadRequest );
+    REQUIRE( result.m_Error.m_ErrorString == "The access token is invalid" );
+}
+
+TEST_CASE( "IsMastodonResponseError maps integer error field to error code", "[DownloadUtils][Mastodon]" )
+{
+    RequestResult result;
+    result.m_Response = R"({ "error": 401 })";
+    REQUIRE( IsMastodonResponseError( result ) == true );
+    REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::Unauthorized );
+}
+
+TEST_CASE( "IsMastodonResponseError sets generic message for unexpected error field type", "[DownloadUtils][Mastodon]" )
+{
+    RequestResult result;
+    result.m_Response = R"({ "error": true })";
+    REQUIRE( IsMastodonResponseError( result ) == true );
+    REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::BadRequest );
+    REQUIRE( result.m_Error.m_ErrorString == "Mastodon API error" );
+}
+
+TEST_CASE( "IsMastodonResponseError returns true for malformed JSON", "[DownloadUtils][Mastodon]" )
+{
+    RequestResult result;
+    result.m_Response = "{bad json";
+    REQUIRE( IsMastodonResponseError( result ) == true );
     REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::InternalServerError );
 }

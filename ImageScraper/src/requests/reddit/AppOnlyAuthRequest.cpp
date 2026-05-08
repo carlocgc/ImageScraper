@@ -53,7 +53,7 @@ ImageScraper::RequestResult ImageScraper::Reddit::AppOnlyAuthRequest::Perform( c
 
     result.m_Response = response.m_Body;
 
-    if( DownloadHelpers::IsRedditResponseError( result ) )
+    if( DownloadHelpers::IsStandardResponseError( result ) )
     {
         LogDebug( "[%s] AppOnlyAuthRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;

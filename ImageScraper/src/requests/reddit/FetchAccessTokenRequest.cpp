@@ -54,7 +54,7 @@ ImageScraper::RequestResult ImageScraper::Reddit::FetchAccessTokenRequest::Perfo
 
     result.m_Response = response.m_Body;
 
-    if( DownloadHelpers::IsRedditResponseError( result ) )
+    if( DownloadHelpers::IsStandardResponseError( result ) )
     {
         LogDebug( "[%s] FetchAccessTokenRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
