@@ -188,14 +188,14 @@ TEST_CASE( "IsRedditResponseError returns false for valid response", "[DownloadU
 {
     RequestResult result;
     result.m_Response = R"({ "data": { "children": [] } })";
-    REQUIRE( IsRedditResponseError( result ) == false );
+    REQUIRE( IsStandardResponseError(result ) == false );
 }
 
 TEST_CASE( "IsRedditResponseError returns true and sets error code when error field present", "[DownloadUtils][Reddit]" )
 {
     RequestResult result;
     result.m_Response = R"({ "error": 401 })";
-    REQUIRE( IsRedditResponseError( result ) == true );
+    REQUIRE( IsStandardResponseError(result ) == true );
     REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::Unauthorized );
 }
 
@@ -203,7 +203,7 @@ TEST_CASE( "IsRedditResponseError sets error string when message field present",
 {
     RequestResult result;
     result.m_Response = R"({ "message": "Unauthorized" })";
-    REQUIRE( IsRedditResponseError( result ) == false );
+    REQUIRE( IsStandardResponseError(result ) == false );
     REQUIRE( result.m_Error.m_ErrorString == "Unauthorized" );
 }
 
@@ -211,7 +211,7 @@ TEST_CASE( "IsRedditResponseError returns true for invalid JSON", "[DownloadUtil
 {
     RequestResult result;
     result.m_Response = "not valid json{{";
-    REQUIRE( IsRedditResponseError( result ) == true );
+    REQUIRE( IsStandardResponseError(result ) == true );
     REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::InternalServerError );
 }
 
@@ -219,14 +219,14 @@ TEST_CASE( "IsTumblrResponseError returns false for valid response", "[DownloadU
 {
     RequestResult result;
     result.m_Response = R"({ "response": { "posts": [] } })";
-    REQUIRE( IsTumblrResponseError( result ) == false );
+    REQUIRE( IsStandardResponseError(result ) == false );
 }
 
 TEST_CASE( "IsTumblrResponseError returns true and sets error code when error field present", "[DownloadUtils][Tumblr]" )
 {
     RequestResult result;
     result.m_Response = R"({ "error": 403 })";
-    REQUIRE( IsTumblrResponseError( result ) == true );
+    REQUIRE( IsStandardResponseError(result ) == true );
     REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::Forbidden );
 }
 
@@ -234,30 +234,30 @@ TEST_CASE( "IsTumblrResponseError returns true for invalid JSON", "[DownloadUtil
 {
     RequestResult result;
     result.m_Response = "not valid json{{";
-    REQUIRE( IsTumblrResponseError( result ) == true );
+    REQUIRE( IsStandardResponseError(result ) == true );
     REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::InternalServerError );
 }
 
-TEST_CASE( "IsFourChanResponseError returns false for valid response", "[DownloadUtils][FourChan]" )
+TEST_CASE( "IsStandardResponseError returns false for valid 4chan response", "[DownloadUtils][FourChan]" )
 {
     RequestResult result;
     result.m_Response = R"({ "boards": [] })";
-    REQUIRE( IsFourChanResponseError( result ) == false );
+    REQUIRE( IsStandardResponseError( result ) == false );
 }
 
-TEST_CASE( "IsFourChanResponseError returns true and sets error code when error field present", "[DownloadUtils][FourChan]" )
+TEST_CASE( "IsStandardResponseError returns true and sets error code for 4chan error field", "[DownloadUtils][FourChan]" )
 {
     RequestResult result;
     result.m_Response = R"({ "error": 404 })";
-    REQUIRE( IsFourChanResponseError( result ) == true );
+    REQUIRE( IsStandardResponseError( result ) == true );
     REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::NotFound );
 }
 
-TEST_CASE( "IsFourChanResponseError returns true for invalid JSON", "[DownloadUtils][FourChan]" )
+TEST_CASE( "IsStandardResponseError returns true for invalid 4chan JSON", "[DownloadUtils][FourChan]" )
 {
     RequestResult result;
     result.m_Response = "not valid json{{";
-    REQUIRE( IsFourChanResponseError( result ) == true );
+    REQUIRE( IsStandardResponseError( result ) == true );
     REQUIRE( result.m_Error.m_ErrorCode == ResponseErrorCode::InternalServerError );
 }
 

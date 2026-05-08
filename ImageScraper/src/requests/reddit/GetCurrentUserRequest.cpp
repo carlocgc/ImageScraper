@@ -47,7 +47,7 @@ ImageScraper::RequestResult ImageScraper::Reddit::GetCurrentUserRequest::Perform
 
     result.m_Response = response.m_Body;
 
-    if( DownloadHelpers::IsRedditResponseError( result ) )
+    if( DownloadHelpers::IsStandardResponseError( result ) )
     {
         LogDebug( "[%s] GetCurrentUserRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;

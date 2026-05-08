@@ -313,10 +313,6 @@ namespace ImageScraper::DownloadHelpers
         } );
     }
 
-    static bool IsRedditResponseError( RequestResult& result )   { return IsStandardResponseError( result ); }
-    static bool IsTumblrResponseError( RequestResult& result )   { return IsStandardResponseError( result ); }
-    static bool IsFourChanResponseError( RequestResult& result ) { return IsStandardResponseError( result ); }
-
     static bool IsMastodonResponseError( RequestResult& result )
     {
         return Detail::ParseAndInspect( result, [ &result ]( const Json& payload ) -> bool

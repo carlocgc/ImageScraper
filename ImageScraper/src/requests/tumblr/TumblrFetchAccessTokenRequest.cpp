@@ -53,7 +53,7 @@ ImageScraper::RequestResult ImageScraper::Tumblr::TumblrFetchAccessTokenRequest:
 
     result.m_Response = response.m_Body;
 
-    if( DownloadHelpers::IsTumblrResponseError( result ) )
+    if( DownloadHelpers::IsStandardResponseError( result ) )
     {
         LogDebug( "[%s] TumblrFetchAccessTokenRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;

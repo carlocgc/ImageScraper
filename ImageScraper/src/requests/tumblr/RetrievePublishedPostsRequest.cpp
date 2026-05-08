@@ -48,7 +48,7 @@ ImageScraper::RequestResult ImageScraper::Tumblr::RetrievePublishedPostsRequest:
 
     result.m_Response = response.m_Body;
 
-    if( DownloadHelpers::IsTumblrResponseError( result ) )
+    if( DownloadHelpers::IsStandardResponseError( result ) )
     {
         LogDebug( "[%s] Tumblr::RetrievePublishedPostsRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
