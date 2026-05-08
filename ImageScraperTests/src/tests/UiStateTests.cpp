@@ -1,5 +1,6 @@
 #include "catch2/catch_amalgamated.hpp"
 #include "ui/CredentialsPanel.h"
+#include "ui/DownloadDeleteController.h"
 #include "ui/DownloadHistoryPanel.h"
 #include "ui/MediaPreviewPanel.h"
 #include "ui/SettingsPanel.h"
@@ -29,36 +30,36 @@ TEST_CASE( "MediaPreviewPanel stops playback only when a new download run starts
     REQUIRE( MediaPreviewPanel::ShouldStopPlaybackForDownloadTransition( false, true ) == true );
 }
 
-TEST_CASE( "DownloadHistoryPanel computes deletion progress from bytes when available", "[UiState]" )
+TEST_CASE( "DownloadDeleteController computes deletion progress from bytes when available", "[UiState]" )
 {
-    REQUIRE( DownloadHistoryPanel::CalculateDeleteWorkProgressFraction( 100, 25, 0, 0 ) == Catch::Approx( 0.25f ) );
-    REQUIRE( DownloadHistoryPanel::CalculateDeleteWorkProgressFraction( 100, 250, 0, 0 ) == Catch::Approx( 1.0f ) );
+    REQUIRE( DownloadDeleteController::CalculateWorkProgressFraction( 100, 25, 0, 0 ) == Catch::Approx( 0.25f ) );
+    REQUIRE( DownloadDeleteController::CalculateWorkProgressFraction( 100, 250, 0, 0 ) == Catch::Approx( 1.0f ) );
 }
 
-TEST_CASE( "DownloadHistoryPanel falls back to entry counts when total bytes are unknown", "[UiState]" )
+TEST_CASE( "DownloadDeleteController falls back to entry counts when total bytes are unknown", "[UiState]" )
 {
-    REQUIRE( DownloadHistoryPanel::CalculateDeleteWorkProgressFraction( 0, 0, 4, 1 ) == Catch::Approx( 0.25f ) );
-    REQUIRE( DownloadHistoryPanel::CalculateDeleteWorkProgressFraction( 0, 0, 0, 0 ) == Catch::Approx( 0.0f ) );
+    REQUIRE( DownloadDeleteController::CalculateWorkProgressFraction( 0, 0, 4, 1 ) == Catch::Approx( 0.25f ) );
+    REQUIRE( DownloadDeleteController::CalculateWorkProgressFraction( 0, 0, 0, 0 ) == Catch::Approx( 0.0f ) );
 }
 
-TEST_CASE( "DownloadHistoryPanel keeps delete progress visible until the minimum duration elapses", "[UiState]" )
+TEST_CASE( "DownloadDeleteController keeps delete progress visible until the minimum duration elapses", "[UiState]" )
 {
     const auto startedAt = std::chrono::steady_clock::time_point{ std::chrono::milliseconds{ 1000 } };
     const auto visibleUntil = startedAt + std::chrono::milliseconds{ 1000 };
 
-    REQUIRE( DownloadHistoryPanel::ShouldKeepDeleteProgressVisible( visibleUntil, startedAt + std::chrono::milliseconds{ 500 }, true ) == true );
-    REQUIRE( DownloadHistoryPanel::ShouldKeepDeleteProgressVisible( visibleUntil, startedAt + std::chrono::milliseconds{ 999 }, true ) == true );
-    REQUIRE( DownloadHistoryPanel::ShouldKeepDeleteProgressVisible( visibleUntil, startedAt + std::chrono::milliseconds{ 1000 }, true ) == false );
-    REQUIRE( DownloadHistoryPanel::ShouldKeepDeleteProgressVisible( visibleUntil, startedAt + std::chrono::milliseconds{ 500 }, false ) == false );
+    REQUIRE( DownloadDeleteController::ShouldKeepProgressVisible( visibleUntil, startedAt + std::chrono::milliseconds{ 500 }, true ) == true );
+    REQUIRE( DownloadDeleteController::ShouldKeepProgressVisible( visibleUntil, startedAt + std::chrono::milliseconds{ 999 }, true ) == true );
+    REQUIRE( DownloadDeleteController::ShouldKeepProgressVisible( visibleUntil, startedAt + std::chrono::milliseconds{ 1000 }, true ) == false );
+    REQUIRE( DownloadDeleteController::ShouldKeepProgressVisible( visibleUntil, startedAt + std::chrono::milliseconds{ 500 }, false ) == false );
 }
 
-TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time into modal progress", "[UiState]" )
+TEST_CASE( "DownloadDeleteController combines delete work and minimum visible time into modal progress", "[UiState]" )
 {
     const auto startedAt = std::chrono::steady_clock::time_point{ std::chrono::milliseconds{ 1000 } };
     const auto visibleUntil = startedAt + std::chrono::milliseconds{ 1000 };
 
     REQUIRE(
-        DownloadHistoryPanel::CalculateDeleteModalProgressFraction(
+        DownloadDeleteController::CalculateModalProgressFraction(
             100,
             25,
             0,
@@ -70,7 +71,7 @@ TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time i
             false ) == Catch::Approx( 0.25f ) );
 
     REQUIRE(
-        DownloadHistoryPanel::CalculateDeleteModalProgressFraction(
+        DownloadDeleteController::CalculateModalProgressFraction(
             100,
             60,
             0,
@@ -82,7 +83,7 @@ TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time i
             false ) == Catch::Approx( 0.25f ) );
 
     REQUIRE(
-        DownloadHistoryPanel::CalculateDeleteModalProgressFraction(
+        DownloadDeleteController::CalculateModalProgressFraction(
             100,
             60,
             0,
@@ -94,7 +95,7 @@ TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time i
             false ) == Catch::Approx( 0.6f ) );
 
     REQUIRE(
-        DownloadHistoryPanel::CalculateDeleteModalProgressFraction(
+        DownloadDeleteController::CalculateModalProgressFraction(
             100,
             100,
             0,
@@ -106,7 +107,7 @@ TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time i
             true ) == Catch::Approx( 0.25f ) );
 
     REQUIRE(
-        DownloadHistoryPanel::CalculateDeleteModalProgressFraction(
+        DownloadDeleteController::CalculateModalProgressFraction(
             100,
             100,
             0,
@@ -118,7 +119,7 @@ TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time i
             true ) == Catch::Approx( 0.75f ) );
 
     REQUIRE(
-        DownloadHistoryPanel::CalculateDeleteModalProgressFraction(
+        DownloadDeleteController::CalculateModalProgressFraction(
             100,
             100,
             0,
@@ -130,7 +131,7 @@ TEST_CASE( "DownloadHistoryPanel combines delete work and minimum visible time i
             true ) == Catch::Approx( 1.0f ) );
 
     REQUIRE(
-        DownloadHistoryPanel::CalculateDeleteModalProgressFraction(
+        DownloadDeleteController::CalculateModalProgressFraction(
             100,
             100,
             10,
