@@ -7,6 +7,7 @@
 #include "ui/ProgressPopup.h"
 #include "imgui/imgui_internal.h"
 #include "utils/DownloadUtils.h"
+#include "utils/FilesystemUtils.h"
 #include "utils/StringUtils.h"
 #include "log/Logger.h"
 
@@ -36,19 +37,6 @@ namespace
     constexpr auto k_MinDirectoryDeleteProgressVisible = std::chrono::seconds{ 1 };
     constexpr auto k_MinFileDeleteProgressVisible = std::chrono::milliseconds{ 300 };
 
-    std::filesystem::path NormalisePath( const std::filesystem::path& path )
-    {
-        std::error_code ec;
-        std::filesystem::path normalised = std::filesystem::weakly_canonical( path, ec );
-        if( ec )
-        {
-            normalised = path.lexically_normal( );
-        }
-
-        normalised.make_preferred( );
-        return normalised;
-    }
-
     std::string MakeFastPreferredPathString( const std::filesystem::path& path )
     {
         if( path.empty( ) )
@@ -66,7 +54,7 @@ namespace
         std::string label = path.filename( ).string( );
         if( label.empty( ) )
         {
-            label = NormalisePath( path ).string( );
+            label = ImageScraper::FilesystemUtils::NormalisePath(path ).string( );
         }
 
         return label;
@@ -1155,12 +1143,12 @@ void ImageScraper::DownloadHistoryPanel::EvictThumbnailsInPath( const std::files
         return;
     }
 
-    const std::filesystem::path normalisedTarget = NormalisePath( targetPath );
+    const std::filesystem::path normalisedTarget = ImageScraper::FilesystemUtils::NormalisePath(targetPath );
     std::vector<std::string> pathsToRemove{ };
     for( const auto& [ filepath, entry ] : m_ThumbnailCache )
     {
         const std::filesystem::path entryPath = filepath;
-        const std::filesystem::path normalisedEntry = NormalisePath( entryPath );
+        const std::filesystem::path normalisedEntry = ImageScraper::FilesystemUtils::NormalisePath(entryPath );
         const bool matchesTarget =
             treatAsDirectory
             ? IsPathWithinRoot( normalisedEntry, normalisedTarget )
@@ -1624,7 +1612,7 @@ void ImageScraper::DownloadHistoryPanel::OnFileDownloaded( const std::string& fi
 void ImageScraper::DownloadHistoryPanel::Load( std::shared_ptr<JsonFile> appConfig, const std::filesystem::path& downloadsRoot )
 {
     m_AppConfig = std::move( appConfig );
-    m_DownloadsRoot = downloadsRoot.empty( ) ? downloadsRoot : NormalisePath( downloadsRoot );
+    m_DownloadsRoot = downloadsRoot.empty( ) ? downloadsRoot : ImageScraper::FilesystemUtils::NormalisePath(downloadsRoot );
     m_DownloadsRootString = MakeFastPreferredPathString( m_DownloadsRoot );
     RefreshDownloadsRootExists( );
     m_OpenDirectoryPaths.clear( );
@@ -1718,7 +1706,7 @@ std::string ImageScraper::DownloadHistoryPanel::MakePreferredPathString( const s
         return { };
     }
 
-    return NormalisePath( path ).string( );
+    return ImageScraper::FilesystemUtils::NormalisePath(path ).string( );
 }
 
 bool ImageScraper::DownloadHistoryPanel::IsPathWithinRoot( const std::filesystem::path& path, const std::filesystem::path& root )
