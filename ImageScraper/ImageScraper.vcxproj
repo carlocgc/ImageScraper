@@ -398,6 +398,7 @@ xcopy "$(ProjectDir)resources\icons" "$(TargetDir)resources\icons\" /Y /I /E</Co
     <ClCompile Include="src\ui\FourChanPanel.cpp" />
     <ClCompile Include="src\ui\GifFrameAnimator.cpp" />
     <ClCompile Include="src\ui\GifTextureManager.cpp" />
+    <ClCompile Include="src\ui\HistoryEntrySorter.cpp" />
     <ClCompile Include="src\ui\MediaPreviewPanel.cpp" />
     <ClCompile Include="src\ui\ProgressPopup.cpp" />
     <ClCompile Include="src\ui\ProviderSearchInput.cpp" />
@@ -545,6 +546,7 @@ xcopy "$(ProjectDir)resources\icons" "$(TargetDir)resources\icons\" /Y /I /E</Co
     <ClInclude Include="include\ui\FourChanPanel.h" />
     <ClInclude Include="include\ui\GifFrameAnimator.h" />
     <ClInclude Include="include\ui\GifTextureManager.h" />
+    <ClInclude Include="include\ui\HistoryEntrySorter.h" />
     <ClInclude Include="include\ui\MediaPreviewPanel.h" />
     <ClInclude Include="include\ui\ProgressPopup.h" />
     <ClInclude Include="include\ui\VideoPlayer.h" />
