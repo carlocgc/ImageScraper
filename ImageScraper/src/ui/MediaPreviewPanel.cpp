@@ -97,31 +97,20 @@ void ImageScraper::MediaPreviewPanel::Update( )
             ImGui::GetWindowDrawList( )->AddRectFilled(
                 contentScreenMin, contentScreenMax, IM_COL32_BLACK );
         }
-        else if( m_Textures.empty( ) )
+        else if( m_TextureManager.IsEmpty( ) )
         {
             ImGui::TextDisabled( m_IsDecoding ? "Loading preview..." : "No media loaded yet" );
         }
         else
         {
-            if( m_MediaState == MediaState::GifPlaying && m_Textures.size( ) > 1 && !m_IsScrubbing )
+            if( m_MediaState == MediaState::GifPlaying && m_TextureManager.TextureCount( ) > 1 && !m_IsScrubbing )
             {
-                m_FrameAccumMs += ImGui::GetIO( ).DeltaTime * 1000.0f;
-
-                while( true )
-                {
-                    const int delayMs = m_FrameDelaysMs.empty( ) ? 100 : m_FrameDelaysMs[ m_CurrentFrame ];
-                    if( m_FrameAccumMs < static_cast<float>( delayMs ) )
-                    {
-                        break;
-                    }
-                    m_FrameAccumMs -= static_cast<float>( delayMs );
-                    m_CurrentFrame = ( m_CurrentFrame + 1 ) % static_cast<int>( m_Textures.size( ) );
-                }
+                m_FrameAnimator.Advance( ImGui::GetIO( ).DeltaTime * 1000.0f );
             }
 
             const ImVec2 avail = ImGui::GetContentRegionAvail( );
-            float drawW = static_cast<float>( m_Width );
-            float drawH = static_cast<float>( m_Height );
+            float drawW = static_cast<float>( m_TextureManager.Width( ) );
+            float drawH = static_cast<float>( m_TextureManager.Height( ) );
 
             if( drawW > avail.x )
             {
@@ -138,7 +127,7 @@ void ImageScraper::MediaPreviewPanel::Update( )
             const float offsetY = ( avail.y - drawH ) * 0.5f;
             ImGui::SetCursorPos( ImVec2( ImGui::GetCursorPosX( ) + offsetX, ImGui::GetCursorPosY( ) + offsetY ) );
 
-            const GLuint tex = m_Textures[ m_CurrentFrame ];
+            const GLuint tex = m_TextureManager.FrameTexture( m_FrameAnimator.CurrentFrame( ) );
             ImGui::Image( static_cast<ImTextureID>( tex ), ImVec2( drawW, drawH ) );
 
             if( ImGui::IsItemHovered( ) )
@@ -240,7 +229,7 @@ void ImageScraper::MediaPreviewPanel::Update( )
             const ImVec2 nameBadgeSize = DrawBadge( ImVec2( contentScreenMin.x + k_Pad, badgeY ), m_CurrentFileName.c_str( ) );
 
             std::vector<std::string> metadataBadges{ };
-            const std::string dimensionsLabel = FormatDimensionsLabel( m_Width, m_Height );
+            const std::string dimensionsLabel = FormatDimensionsLabel( m_TextureManager.Width( ), m_TextureManager.Height( ) );
 
             if( !m_CurrentProviderName.empty( ) )
             {
@@ -403,7 +392,7 @@ void ImageScraper::MediaPreviewPanel::TogglePlayPause( )
 {
     if( m_MediaState == MediaState::StaticFrame )
     {
-        if( m_Textures.size( ) > 1 )
+        if( m_TextureManager.TextureCount( ) > 1 )
         {
             m_MediaState = MediaState::GifPlaying;
         }
@@ -414,8 +403,8 @@ void ImageScraper::MediaPreviewPanel::TogglePlayPause( )
     }
     else if( m_MediaState == MediaState::GifPlaying )
     {
-        m_MediaState   = MediaState::StaticFrame;
-        m_FrameAccumMs = 0.0f;
+        m_MediaState = MediaState::StaticFrame;
+        m_FrameAnimator.SetFrame( m_FrameAnimator.CurrentFrame( ) );
     }
     else if( m_MediaState == MediaState::VideoPlaying )
     {
@@ -623,8 +612,7 @@ void ImageScraper::MediaPreviewPanel::ResetPlaybackToStartPaused( )
     StopAudioPlayback( );
     m_IsPlaybackClockRunning = false;
     m_PlaybackTimeSeconds = 0.0;
-    m_CurrentFrame = 0;
-    m_FrameAccumMs = 0.0f;
+    m_FrameAnimator.Reset( );
 
     if( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::LoadingFullFrames )
     {
@@ -639,7 +627,7 @@ void ImageScraper::MediaPreviewPanel::ResetPlaybackToStartPaused( )
     m_MediaState = MediaState::VideoPaused;
     m_VideoFrameIndex = 0;
 
-    if( !m_VideoPlayer || !m_VideoPlayer->IsOpen( ) || m_Textures.empty( ) )
+    if( !m_VideoPlayer || !m_VideoPlayer->IsOpen( ) || m_TextureManager.IsEmpty( ) )
     {
         return;
     }
@@ -681,7 +669,7 @@ void ImageScraper::MediaPreviewPanel::PauseVideoPlayback( )
 
 void ImageScraper::MediaPreviewPanel::RestartVideoPlayback( )
 {
-    if( !m_VideoPlayer || !m_VideoPlayer->IsOpen( ) || m_Textures.empty( ) )
+    if( !m_VideoPlayer || !m_VideoPlayer->IsOpen( ) || m_TextureManager.IsEmpty( ) )
     {
         return;
     }
@@ -724,14 +712,7 @@ void ImageScraper::MediaPreviewPanel::StopAudioPlayback( )
 
 void ImageScraper::MediaPreviewPanel::UploadCurrentVideoFrame( ) const
 {
-    if( m_Textures.empty( ) )
-    {
-        return;
-    }
-
-    glBindTexture( GL_TEXTURE_2D, m_Textures[ 0 ] );
-    glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, m_Width, m_Height, GL_RGBA, GL_UNSIGNED_BYTE, m_VideoFrameBuffer.data( ) );
-    glBindTexture( GL_TEXTURE_2D, 0 );
+    m_TextureManager.UpdateTexture( m_VideoFrameBuffer.data( ) );
 }
 
 double ImageScraper::MediaPreviewPanel::GetPlaybackTimeSeconds( ) const
@@ -769,10 +750,10 @@ bool ImageScraper::MediaPreviewPanel::CanScrub( ) const
 float ImageScraper::MediaPreviewPanel::GetProgress( ) const
 {
     if( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::StaticFrame )
-        && m_Textures.size( ) > 1 )
+        && m_TextureManager.TextureCount( ) > 1 )
     {
-        return static_cast<float>( m_CurrentFrame ) /
-               static_cast<float>( m_Textures.size( ) - 1 );
+        return static_cast<float>( m_FrameAnimator.CurrentFrame( ) ) /
+               static_cast<float>( m_TextureManager.TextureCount( ) - 1 );
     }
 
     if( ( m_MediaState == MediaState::VideoPlaying || m_MediaState == MediaState::VideoPaused )
@@ -804,10 +785,10 @@ std::string ImageScraper::MediaPreviewPanel::GetProgressLabel( ) const
     };
 
     if( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::StaticFrame )
-        && m_Textures.size( ) > 1 )
+        && m_TextureManager.TextureCount( ) > 1 )
     {
         std::ostringstream oss;
-        oss << "frame " << ( m_CurrentFrame + 1 ) << " / " << m_Textures.size( );
+        oss << "frame " << ( m_FrameAnimator.CurrentFrame( ) + 1 ) << " / " << m_TextureManager.TextureCount( );
         return oss.str( );
     }
 
@@ -854,13 +835,12 @@ void ImageScraper::MediaPreviewPanel::UpdateScrub( float normalized )
     normalized = std::clamp( normalized, 0.0f, 1.0f );
 
     if( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::StaticFrame )
-        && m_Textures.size( ) > 1 )
+        && m_TextureManager.TextureCount( ) > 1 )
     {
-        const int frameCount = static_cast<int>( m_Textures.size( ) );
+        const int frameCount = m_TextureManager.TextureCount( );
         int target = static_cast<int>( std::round( normalized * static_cast<float>( frameCount - 1 ) ) );
         target = std::clamp( target, 0, frameCount - 1 );
-        m_CurrentFrame  = target;
-        m_FrameAccumMs  = 0.0f;
+        m_FrameAnimator.SetFrame( target );
         return;
     }
 
@@ -912,13 +892,12 @@ void ImageScraper::MediaPreviewPanel::EndScrub( float normalized )
     normalized = std::clamp( normalized, 0.0f, 1.0f );
 
     if( ( m_MediaState == MediaState::GifPlaying || m_MediaState == MediaState::StaticFrame )
-        && m_Textures.size( ) > 1 )
+        && m_TextureManager.TextureCount( ) > 1 )
     {
-        const int frameCount = static_cast<int>( m_Textures.size( ) );
+        const int frameCount = m_TextureManager.TextureCount( );
         int target = static_cast<int>( std::round( normalized * static_cast<float>( frameCount - 1 ) ) );
         target = std::clamp( target, 0, frameCount - 1 );
-        m_CurrentFrame = target;
-        m_FrameAccumMs = 0.0f;
+        m_FrameAnimator.SetFrame( target );
 
         m_IsScrubbing = false;
         if( m_WasPlayingBeforeScrub && m_MediaState == MediaState::StaticFrame )
@@ -962,7 +941,7 @@ void ImageScraper::MediaPreviewPanel::EndScrub( float normalized )
 
 void ImageScraper::MediaPreviewPanel::AdvanceVideoFrame( )
 {
-    if( !m_VideoPlayer || !m_VideoPlayer->IsOpen( ) || m_Textures.empty( ) )
+    if( !m_VideoPlayer || !m_VideoPlayer->IsOpen( ) || m_TextureManager.IsEmpty( ) )
     {
         return;
     }
@@ -1013,11 +992,6 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
 
     m_CurrentFilePath = decoded.m_FilePath;
     RefreshMetadataCache( );
-    m_Width           = decoded.m_Width;
-    m_Height          = decoded.m_Height;
-    m_CurrentFrame    = 0;
-    m_FrameAccumMs    = 0.0f;
-    m_FrameDelaysMs   = decoded.m_FrameDelaysMs;
 
     if( decoded.m_IsVideo )
     {
@@ -1025,17 +999,7 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
         m_VideoFrameBuffer = std::move( decoded.m_PixelData );
         m_VideoPlayer      = std::move( decoded.m_VideoPlayer );
 
-        GLuint textureId = 0;
-        glGenTextures( 1, &textureId );
-        glBindTexture( GL_TEXTURE_2D, textureId );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA,
-                      decoded.m_Width, decoded.m_Height, 0,
-                      GL_RGBA, GL_UNSIGNED_BYTE,
-                      m_VideoFrameBuffer.data( ) );
-        glBindTexture( GL_TEXTURE_2D, 0 );
-        m_Textures.push_back( textureId );
+        m_TextureManager.UploadSingle( m_VideoFrameBuffer.data( ), decoded.m_Width, decoded.m_Height );
         m_VideoFrameIndex = 0;
         m_MediaState      = MediaState::VideoPaused;
 
@@ -1049,22 +1013,8 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
         return;
     }
 
-    const int frameBytes = decoded.m_Width * decoded.m_Height * 4;
-
-    m_Textures.reserve( static_cast<size_t>( decoded.m_Frames ) );
-    for( int i = 0; i < decoded.m_Frames; ++i )
-    {
-        GLuint textureId = 0;
-        glGenTextures( 1, &textureId );
-        glBindTexture( GL_TEXTURE_2D, textureId );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA,
-                      decoded.m_Width, decoded.m_Height, 0,
-                      GL_RGBA, GL_UNSIGNED_BYTE,
-                      decoded.m_PixelData.data( ) + i * frameBytes );
-        m_Textures.push_back( textureId );
-    }
+    m_FrameAnimator.Initialise( decoded.m_FrameDelaysMs, decoded.m_Frames );
+    m_TextureManager.Upload( decoded.m_PixelData, decoded.m_Width, decoded.m_Height, decoded.m_Frames );
 
     if( decoded.m_Frames > 1 )
     {
@@ -1084,16 +1034,8 @@ void ImageScraper::MediaPreviewPanel::UploadDecoded( DecodedMedia&& decoded )
 
 void ImageScraper::MediaPreviewPanel::FreeTextures( )
 {
-    if( !m_Textures.empty( ) )
-    {
-        glDeleteTextures( static_cast<GLsizei>( m_Textures.size( ) ), m_Textures.data( ) );
-        m_Textures.clear( );
-    }
-    m_FrameDelaysMs.clear( );
-    m_Width        = 0;
-    m_Height       = 0;
-    m_CurrentFrame = 0;
-    m_FrameAccumMs = 0.0f;
+    m_TextureManager.Free( );
+    m_FrameAnimator.Reset( );
 }
 
 std::unique_ptr<ImageScraper::MediaPreviewPanel::DecodedMedia>
