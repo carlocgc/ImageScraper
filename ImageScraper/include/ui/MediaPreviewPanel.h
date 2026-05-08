@@ -1,11 +1,12 @@
 #pragma once
 
 #include "io/JsonFile.h"
+#include "ui/GifFrameAnimator.h"
+#include "ui/GifTextureManager.h"
 #include "ui/IUiPanel.h"
 #include "ui/MediaAudioPlayer.h"
 #include "ui/VideoPlayer.h"
 #include "imgui/imgui.h"
-#include "imgui/imgui_impl_opengl3_loader.h"
 
 #include <chrono>
 #include <string>
@@ -165,12 +166,8 @@ namespace ImageScraper
         bool                m_PlayOnUpload{ false };
 
         // Current display state - only touched on the main thread
-        std::vector<GLuint> m_Textures{ };
-        std::vector<int>    m_FrameDelaysMs{ };
-        int         m_Width{ 0 };
-        int         m_Height{ 0 };
-        int         m_CurrentFrame{ 0 };
-        float       m_FrameAccumMs{ 0.0f };
+        GifTextureManager m_TextureManager{ };
+        GifFrameAnimator  m_FrameAnimator{ };
         std::string m_CurrentFilePath{ };
         std::string m_CurrentFileName{ };
         std::string m_CurrentProviderName{ };
