@@ -26,9 +26,6 @@ namespace
     constexpr const char* kDownloadsSelectedPathKey = "downloads_selected_path";
     constexpr const char* kLegacySelectedPathKey    = "history_selected_path";
     constexpr const char* kDeleteConfirmPopupId     = "Confirm Delete##downloads";
-    constexpr auto k_MinDirectoryDeleteProgressVisible = std::chrono::seconds{ 1 };
-    constexpr auto k_MinFileDeleteProgressVisible = std::chrono::milliseconds{ 300 };
-
     std::string MakeFastPreferredPathString( const std::filesystem::path& path )
     {
         if( path.empty( ) )
@@ -220,11 +217,6 @@ ImageScraper::DownloadHistoryPanel::DownloadHistoryPanel( PreviewCallback onPrev
 
 ImageScraper::DownloadHistoryPanel::~DownloadHistoryPanel( )
 {
-    if( m_DeleteFuture.valid( ) )
-    {
-        m_DeleteFuture.wait( );
-    }
-
     for( auto& [ filepath, future ] : m_ThumbnailFutures )
     {
         if( future.valid( ) )
@@ -469,30 +461,16 @@ void ImageScraper::DownloadHistoryPanel::FlushDecodedThumbnails( )
 
 void ImageScraper::DownloadHistoryPanel::PumpDeleteOperation( )
 {
-    if( !m_DeleteCompletedResult.has_value( ) )
-    {
-        if( !m_DeleteFuture.valid( ) )
-        {
-            return;
-        }
-
-        if( m_DeleteFuture.wait_for( std::chrono::milliseconds( 0 ) ) != std::future_status::ready )
-        {
-            return;
-        }
-
-        m_DeleteCompletedResult = m_DeleteFuture.get( );
-    }
+    m_DeleteController.Update( );
 
     const auto now = std::chrono::steady_clock::now( );
-    if( ShouldKeepDeleteProgressVisible( m_DeleteOperationVisibleUntil, now, true ) )
+    const std::optional<DownloadDeleteController::Result> result = m_DeleteController.TryConsumeCompletedResult( now );
+    if( !result.has_value( ) )
     {
         return;
     }
 
-    const std::pair<bool, std::string> result = *m_DeleteCompletedResult;
-    m_DeleteCompletedResult.reset( );
-    FinaliseDeleteOperation( result.first, result.second );
+    FinaliseDeleteOperation( result->m_Success, result->m_ErrorMessage );
 }
 
 void ImageScraper::DownloadHistoryPanel::InvalidateTreeCaches( )
@@ -760,7 +738,7 @@ void ImageScraper::DownloadHistoryPanel::ClearSelection( bool requestPreview )
 
 void ImageScraper::DownloadHistoryPanel::DeletePath( const std::filesystem::path& path )
 {
-    if( !CanDeletePath( path ) || IsDeleteOperationActive( ) )
+    if( !CanDeletePath( path ) || m_DeleteController.IsActive( ) )
     {
         return;
     }
@@ -800,155 +778,20 @@ void ImageScraper::DownloadHistoryPanel::DeletePath( const std::filesystem::path
 void ImageScraper::DownloadHistoryPanel::StartDeleteOperation( DeleteOperationContext context )
 {
     m_ActiveDeleteOperation = std::move( context );
-    m_DeleteCompletedResult.reset( );
-    m_DeleteOperationStartedAt = std::chrono::steady_clock::now( );
-    const auto minVisibleDuration = context.m_IsDirectory ? k_MinDirectoryDeleteProgressVisible : k_MinFileDeleteProgressVisible;
-    m_DeleteOperationVisibleUntil = m_DeleteOperationStartedAt + minVisibleDuration;
-    UpdateDeleteOperationProgress( DeleteOperationProgress{ } );
-    SetDeleteOperationStage(
-        DeleteOperationStage::Scanning,
-        m_ActiveDeleteOperation->m_IsDirectory ? "Scanning folder for deletion..." : "Preparing deletion..." );
-
-    const DeleteOperationContext workerContext = *m_ActiveDeleteOperation;
-    m_DeleteFuture = std::async( std::launch::async, [ this, workerContext ]( ) -> std::pair<bool, std::string>
-    {
-        DeleteOperationProgress progress{ };
-        progress.m_Message = workerContext.m_IsDirectory ? "Scanning folder for deletion..." : "Preparing deletion...";
-        UpdateDeleteOperationProgress( progress );
-
-        std::vector<DeleteOperationEntry> deletePlan{ };
-        BuildDeletePlan( workerContext.m_TargetPath, deletePlan, progress );
-        if( !progress.m_Error.empty( ) )
-        {
-            return { false, progress.m_Error };
-        }
-
-        SetDeleteOperationStage( DeleteOperationStage::Deleting, "Deleting from disk..." );
-        progress.m_Message = "Deleting from disk...";
-        UpdateDeleteOperationProgress( progress );
-
-        for( const DeleteOperationEntry& entry : deletePlan )
-        {
-            if( !ExecuteDeletePlanEntry( entry, progress ) )
-            {
-                return { false, progress.m_Error };
-            }
-        }
-
-        return { true, std::string{ } };
-    } );
-}
-
-void ImageScraper::DownloadHistoryPanel::BuildDeletePlan(
-    const std::filesystem::path& path,
-    std::vector<DeleteOperationEntry>& deletePlan,
-    DeleteOperationProgress& progress )
-{
-    std::error_code ec;
-    const bool isDirectory = std::filesystem::is_directory( path, ec );
-    if( ec )
-    {
-        progress.m_Error = ec.message( );
-        UpdateDeleteOperationProgress( progress );
-        return;
-    }
-
-    if( !isDirectory )
-    {
-        uintmax_t sizeBytes = 0;
-        if( std::filesystem::is_regular_file( path, ec ) && !ec )
-        {
-            sizeBytes = std::filesystem::file_size( path, ec );
-            if( ec )
-            {
-                sizeBytes = 0;
-            }
-        }
-
-        deletePlan.push_back( { path, sizeBytes, false } );
-        progress.m_TotalBytes = sizeBytes;
-        progress.m_TotalEntries = 1;
-        progress.m_CurrentPath = MakeFastPreferredPathString( path );
-        UpdateDeleteOperationProgress( progress );
-        return;
-    }
-
-    std::vector<DeleteOperationEntry> stagedEntries{ };
-    stagedEntries.push_back( { path, 0, true } );
-    for( std::filesystem::recursive_directory_iterator it{ path, std::filesystem::directory_options::skip_permission_denied, ec }, end;
-         !ec && it != end;
-         it.increment( ec ) )
-    {
-        const std::filesystem::path entryPath = it->path( );
-        const bool entryIsDirectory = it->is_directory( ec ) && !ec;
-        uintmax_t sizeBytes = 0;
-        if( !entryIsDirectory && it->is_regular_file( ec ) && !ec )
-        {
-            sizeBytes = it->file_size( ec );
-            if( ec )
-            {
-                sizeBytes = 0;
-            }
-            progress.m_TotalBytes += sizeBytes;
-        }
-
-        stagedEntries.push_back( { entryPath, sizeBytes, entryIsDirectory } );
-        progress.m_TotalEntries = static_cast<int>( stagedEntries.size( ) );
-        progress.m_CurrentPath = MakeFastPreferredPathString( entryPath );
-        UpdateDeleteOperationProgress( progress );
-    }
-
-    if( ec )
-    {
-        progress.m_Error = ec.message( );
-        UpdateDeleteOperationProgress( progress );
-        return;
-    }
-
-    std::reverse( stagedEntries.begin( ), stagedEntries.end( ) );
-    deletePlan = std::move( stagedEntries );
-}
-
-bool ImageScraper::DownloadHistoryPanel::ExecuteDeletePlanEntry(
-    const DeleteOperationEntry& entry,
-    DeleteOperationProgress& progress )
-{
-    progress.m_CurrentPath = MakeFastPreferredPathString( entry.m_Path );
-    UpdateDeleteOperationProgress( progress );
-
-    std::error_code ec;
-    std::filesystem::remove( entry.m_Path, ec );
-    if( ec )
-    {
-        progress.m_Error = ec.message( );
-        UpdateDeleteOperationProgress( progress );
-        return false;
-    }
-
-    ++progress.m_ProcessedEntries;
-    if( !entry.m_IsDirectory )
-    {
-        progress.m_ProcessedBytes += entry.m_SizeBytes;
-    }
-    UpdateDeleteOperationProgress( progress );
-    return true;
+    m_DeleteController.Start( DownloadDeleteController::Request{
+        m_ActiveDeleteOperation->m_TargetPath,
+        m_ActiveDeleteOperation->m_IsDirectory } );
 }
 
 void ImageScraper::DownloadHistoryPanel::FinaliseDeleteOperation( bool success, const std::string& errorMessage )
 {
     if( !m_ActiveDeleteOperation.has_value( ) )
     {
-        SetDeleteOperationStage( DeleteOperationStage::Idle, { } );
-        UpdateDeleteOperationProgress( DeleteOperationProgress{ } );
         return;
     }
 
     const DeleteOperationContext context = *m_ActiveDeleteOperation;
     m_ActiveDeleteOperation.reset( );
-    SetDeleteOperationStage( DeleteOperationStage::Idle, { } );
-    UpdateDeleteOperationProgress( DeleteOperationProgress{ } );
-    m_DeleteOperationStartedAt = std::chrono::steady_clock::time_point{ };
-    m_DeleteOperationVisibleUntil = std::chrono::steady_clock::time_point{ };
 
     if( !success )
     {
@@ -1019,7 +862,7 @@ void ImageScraper::DownloadHistoryPanel::AdvanceSelectionAndPreview( int preferr
 
 void ImageScraper::DownloadHistoryPanel::DrawDeleteProgressPopup( )
 {
-    if( !IsDeleteOperationActive( ) )
+    if( !m_DeleteController.IsActive( ) )
     {
         return;
     }
@@ -1030,21 +873,9 @@ void ImageScraper::DownloadHistoryPanel::DrawDeleteProgressPopup( )
         return;
     }
 
-    const DeleteOperationProgress progress = GetDeleteOperationProgressSnapshot( );
+    const DownloadDeleteController::Progress progress = m_DeleteController.GetProgressSnapshot( );
     const auto now = std::chrono::steady_clock::now( );
-    const bool deleteReady = m_DeleteCompletedResult.has_value( );
-    const DeleteOperationStage stage = GetDeleteOperationStage( );
-    const bool deleteWorkStarted = stage == DeleteOperationStage::Deleting || deleteReady;
-    const float fraction = CalculateDeleteModalProgressFraction(
-        progress.m_TotalBytes,
-        progress.m_ProcessedBytes,
-        progress.m_TotalEntries,
-        progress.m_ProcessedEntries,
-        m_DeleteOperationStartedAt,
-        m_DeleteOperationVisibleUntil,
-        now,
-        deleteWorkStarted,
-        deleteReady );
+    const float fraction = m_DeleteController.GetModalProgressFraction( now );
 
     std::string primaryDetail{ };
     if( progress.m_TotalEntries > 0 )
@@ -1320,7 +1151,7 @@ bool ImageScraper::DownloadHistoryPanel::HasSelectedDescendant( const std::strin
 
 bool ImageScraper::DownloadHistoryPanel::CanDeletePath( const std::filesystem::path& path ) const
 {
-    if( m_Blocked || IsDeleteOperationActive( ) || path.empty( ) || m_DownloadsRoot.empty( ) || IsRootPath( MakeFastPreferredPathString( path ) ) )
+    if( m_Blocked || m_DeleteController.IsActive( ) || path.empty( ) || m_DownloadsRoot.empty( ) || IsRootPath( MakeFastPreferredPathString( path ) ) )
     {
         return false;
     }
@@ -1332,40 +1163,6 @@ bool ImageScraper::DownloadHistoryPanel::CanDeletePath( const std::filesystem::p
     }
 
     return IsPathWithinRoot( path, m_DownloadsRoot );
-}
-
-bool ImageScraper::DownloadHistoryPanel::IsDeleteOperationActive( ) const
-{
-    std::lock_guard<std::mutex> lock( m_DeleteOperationMutex );
-    return m_DeleteOperationStage != DeleteOperationStage::Idle;
-}
-
-ImageScraper::DownloadHistoryPanel::DeleteOperationStage ImageScraper::DownloadHistoryPanel::GetDeleteOperationStage( ) const
-{
-    std::lock_guard<std::mutex> lock( m_DeleteOperationMutex );
-    return m_DeleteOperationStage;
-}
-
-ImageScraper::DownloadHistoryPanel::DeleteOperationProgress ImageScraper::DownloadHistoryPanel::GetDeleteOperationProgressSnapshot( ) const
-{
-    std::lock_guard<std::mutex> lock( m_DeleteOperationMutex );
-    return m_DeleteOperationProgress;
-}
-
-void ImageScraper::DownloadHistoryPanel::SetDeleteOperationStage( DeleteOperationStage stage, const std::string& message )
-{
-    std::lock_guard<std::mutex> lock( m_DeleteOperationMutex );
-    m_DeleteOperationStage = stage;
-    if( !message.empty( ) )
-    {
-        m_DeleteOperationProgress.m_Message = message;
-    }
-}
-
-void ImageScraper::DownloadHistoryPanel::UpdateDeleteOperationProgress( const DeleteOperationProgress& progress )
-{
-    std::lock_guard<std::mutex> lock( m_DeleteOperationMutex );
-    m_DeleteOperationProgress = progress;
 }
 
 bool ImageScraper::DownloadHistoryPanel::IsRootPath( const std::string& pathString ) const

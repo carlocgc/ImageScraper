@@ -176,6 +176,7 @@
     <ClCompile Include="..\ImageScraper\src\requests\reddit\FetchSubredditPostsRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\tumblr\RetrievePublishedPostsRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\ui\GifFrameAnimator.cpp" />
+    <ClCompile Include="..\ImageScraper\src\ui\DownloadDeleteController.cpp" />
     <ClCompile Include="..\ImageScraper\src\ui\HistoryEntrySorter.cpp" />
     <ClCompile Include="..\ImageScraper\src\auth\OAuthClient.cpp" />
     <ClCompile Include="src\tests\OAuthClientTests.cpp" />
