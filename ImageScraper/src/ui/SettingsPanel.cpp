@@ -6,6 +6,7 @@
 #include "network\CurlHttpClient.h"
 #include "ui\ProgressPopup.h"
 #include "services\ServiceOptionTypes.h"
+#include "utils\FilesystemUtils.h"
 #include "version\Version.h"
 
 #include "imgui\imgui.h"
@@ -33,18 +34,6 @@ namespace
     constexpr uintmax_t k_MinFreeSpaceBufferBytes = 1024ull * 1024ull * 1024ull;
     constexpr int k_MinOperationStageMs = 750;
 
-    bool DirectoryHasEntries( const std::filesystem::path& path )
-    {
-        std::error_code ec;
-        if( !std::filesystem::exists( path, ec ) || ec || !std::filesystem::is_directory( path, ec ) || ec )
-        {
-            return false;
-        }
-
-        std::filesystem::directory_iterator it{ path, std::filesystem::directory_options::skip_permission_denied, ec };
-        return !ec && it != std::filesystem::directory_iterator{ };
-    }
-
     std::vector<std::filesystem::path> GetManagedProviderRoots( const std::filesystem::path& downloadRoot )
     {
         std::vector<std::filesystem::path> providerRoots{ };
@@ -61,7 +50,7 @@ namespace
     {
         for( const std::filesystem::path& providerRoot : GetManagedProviderRoots( downloadRoot ) )
         {
-            if( DirectoryHasEntries( providerRoot ) )
+            if( ImageScraper::FilesystemUtils::DirectoryHasEntries( providerRoot ) )
             {
                 return true;
             }
