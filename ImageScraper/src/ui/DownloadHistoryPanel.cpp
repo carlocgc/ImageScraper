@@ -22,14 +22,6 @@
 
 namespace
 {
-    enum class SortColumn : ImGuiID
-    {
-        Name    = 0,
-        Size    = 1,
-        Type    = 2,
-        Created = 3
-    };
-
     constexpr const char* kLegacyDownloadHistoryKey = "download_history";
     constexpr const char* kDownloadsSelectedPathKey = "downloads_selected_path";
     constexpr const char* kLegacySelectedPathKey    = "history_selected_path";
@@ -125,23 +117,6 @@ namespace
         } );
 
         return extension + " file";
-    }
-
-    int CompareStringsCaseInsensitive( const std::string& lhs, const std::string& rhs )
-    {
-        const std::string lhsLower = ImageScraper::StringUtils::ToLower( lhs );
-        const std::string rhsLower = ImageScraper::StringUtils::ToLower( rhs );
-        if( lhsLower < rhsLower )
-        {
-            return -1;
-        }
-
-        if( lhsLower > rhsLower )
-        {
-            return 1;
-        }
-
-        return 0;
     }
 
     uintmax_t GetPathFileSizeBytes( const std::filesystem::path& path )
@@ -323,22 +298,22 @@ void ImageScraper::DownloadHistoryPanel::Update( )
                     "Name",
                     ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_DefaultSort,
                     0.0f,
-                    static_cast<ImGuiID>( SortColumn::Name ) );
+                    static_cast<ImGuiID>( ImageScraper::HistorySortColumn::Name ) );
                 ImGui::TableSetupColumn(
                     "Size",
                     ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending,
                     120.0f,
-                    static_cast<ImGuiID>( SortColumn::Size ) );
+                    static_cast<ImGuiID>( ImageScraper::HistorySortColumn::Size ) );
                 ImGui::TableSetupColumn(
                     "Type",
                     ImGuiTableColumnFlags_WidthFixed,
                     160.0f,
-                    static_cast<ImGuiID>( SortColumn::Type ) );
+                    static_cast<ImGuiID>( ImageScraper::HistorySortColumn::Type ) );
                 ImGui::TableSetupColumn(
                     "Created",
                     ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending,
                     145.0f,
-                    static_cast<ImGuiID>( SortColumn::Created ) );
+                    static_cast<ImGuiID>( ImageScraper::HistorySortColumn::Created ) );
                 ImGui::TableHeadersRow( );
                 RefreshTreeSnapshot( ImGui::TableGetSortSpecs( ) );
                 if( m_TreeSnapshot.has_value( ) )
@@ -531,7 +506,7 @@ void ImageScraper::DownloadHistoryPanel::InvalidateTreeCaches( )
 
 void ImageScraper::DownloadHistoryPanel::RefreshTreeSnapshot( const ImGuiTableSortSpecs* sortSpecs )
 {
-    ImGuiID sortColumnUserId = static_cast<ImGuiID>( SortColumn::Name );
+    ImGuiID sortColumnUserId = static_cast<ImGuiID>( ImageScraper::HistorySortColumn::Name );
     ImGuiSortDirection sortDirection = ImGuiSortDirection_Ascending;
 
     if( sortSpecs != nullptr && sortSpecs->SpecsCount > 0 )
@@ -587,7 +562,7 @@ void ImageScraper::DownloadHistoryPanel::EnsureTreeSnapshotCached( ) const
     ImGuiID sortColumnUserId = m_TreeSortColumnUserId;
     if( sortColumnUserId == 0 )
     {
-        sortColumnUserId = static_cast<ImGuiID>( SortColumn::Name );
+        sortColumnUserId = static_cast<ImGuiID>( ImageScraper::HistorySortColumn::Name );
     }
 
     ImGuiSortDirection sortDirection = m_TreeSortDirection;
@@ -714,50 +689,9 @@ ImageScraper::DownloadHistoryPanel::BuildTreeNodeSnapshot(
 
     FindClose( hFind );
 
-    std::sort( children.begin( ), children.end( ), [ sortColumnUserId, sortDirection ]( const TreeNodeSnapshot& lhs, const TreeNodeSnapshot& rhs )
-    {
-        if( lhs.m_IsDirectory != rhs.m_IsDirectory )
-        {
-            return lhs.m_IsDirectory > rhs.m_IsDirectory;
-        }
-
-        int comparison = 0;
-        switch( static_cast<SortColumn>( sortColumnUserId ) )
-        {
-            case SortColumn::Name:
-                comparison = CompareStringsCaseInsensitive( lhs.m_Label, rhs.m_Label );
-                break;
-
-            case SortColumn::Size:
-                comparison = ( lhs.m_SizeBytes < rhs.m_SizeBytes ) ? -1 : ( lhs.m_SizeBytes > rhs.m_SizeBytes ? 1 : 0 );
-                break;
-
-            case SortColumn::Type:
-                comparison = CompareStringsCaseInsensitive( lhs.m_TypeLabel, rhs.m_TypeLabel );
-                break;
-
-            case SortColumn::Created:
-                comparison = ( lhs.m_CreationTicks < rhs.m_CreationTicks ) ? -1 : ( lhs.m_CreationTicks > rhs.m_CreationTicks ? 1 : 0 );
-                break;
-        }
-
-        if( sortDirection == ImGuiSortDirection_Descending )
-        {
-            comparison = -comparison;
-        }
-
-        if( comparison == 0 )
-        {
-            comparison = CompareStringsCaseInsensitive( lhs.m_Label, rhs.m_Label );
-        }
-
-        if( comparison == 0 )
-        {
-            comparison = CompareStringsCaseInsensitive( lhs.m_PathString, rhs.m_PathString );
-        }
-
-        return comparison < 0;
-    } );
+    const bool ascending = ( sortDirection != ImGuiSortDirection_Descending );
+    std::sort( children.begin( ), children.end( ),
+        ImageScraper::MakeHistoryComparator( static_cast<ImageScraper::HistorySortColumn>( sortColumnUserId ), ascending ) );
 
     node.m_Children = std::move( children );
     return node;

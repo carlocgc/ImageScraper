@@ -2,6 +2,7 @@
 
 #include "ui/IUiPanel.h"
 #include "ui/VideoPlayer.h"
+#include "ui/HistoryEntrySorter.h"
 #include "io/JsonFile.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl3_loader.h"
@@ -123,16 +124,10 @@ namespace ImageScraper
             int                        m_Height{ 0 };
         };
 
-        struct TreeNodeSnapshot
+        struct TreeNodeSnapshot : HistorySortEntry
         {
             std::filesystem::path       m_Path{ };
-            std::string                 m_PathString{ };
-            std::string                 m_Label{ };
-            bool                        m_IsDirectory{ false };
-            uintmax_t                   m_SizeBytes{ 0 };
             std::string                 m_SizeLabel{ };
-            std::string                 m_TypeLabel{ };
-            unsigned long long          m_CreationTicks{ 0 };
             std::string                 m_CreationLabel{ };
             std::vector<TreeNodeSnapshot> m_Children{ };
         };
