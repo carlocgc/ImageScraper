@@ -1,4 +1,5 @@
 #include "requests/tumblr/TumblrFetchAccessTokenRequest.h"
+#include "requests/AuthRequestHelpers.h"
 #include "network/CurlHttpClient.h"
 #include "network/RetryHttpClient.h"
 #include "utils/DownloadUtils.h"
@@ -23,28 +24,15 @@ ImageScraper::RequestResult ImageScraper::Tumblr::TumblrFetchAccessTokenRequest:
 
     RequestResult result{ };
 
-    if( options.m_ClientId == "" )
+    if( !AuthRequestHelpers::ValidateOAuthCredentials( options, result ) )
     {
-        result.SetError( ResponseErrorCode::InternalServerError );
-        LogDebug( "[%s] TumblrFetchAccessTokenRequest failed, Client ID not provided.", __FUNCTION__ );
-        return result;
-    }
-
-    if( options.m_ClientSecret == "" )
-    {
-        result.SetError( ResponseErrorCode::InternalServerError );
-        LogDebug( "[%s] TumblrFetchAccessTokenRequest failed, Client Secret not provided.", __FUNCTION__ );
+        LogDebug( "[%s] TumblrFetchAccessTokenRequest failed, credentials not provided.", __FUNCTION__ );
         return result;
     }
 
     // Tumblr uses body-based client credentials, not Basic auth
-    std::string postData = s_AuthData;
-    postData += "&client_id=" + options.m_ClientId;
-    postData += "&client_secret=" + options.m_ClientSecret;
-    for( const auto& [key, value] : options.m_QueryParams )
-    {
-        postData += "&" + key + "=" + value;
-    }
+    const std::string tumblrBase = s_AuthData + "&client_id=" + options.m_ClientId + "&client_secret=" + options.m_ClientSecret;
+    const std::string postData = AuthRequestHelpers::BuildQueryString( tumblrBase, options );
 
     HttpRequest request{ };
     request.m_Url = s_AuthUrl;
@@ -57,10 +45,8 @@ ImageScraper::RequestResult ImageScraper::Tumblr::TumblrFetchAccessTokenRequest:
 
     const HttpResponse response = m_HttpClient->Post( request, "fetch_token" );
 
-    if( !response.m_Success )
+    if( AuthRequestHelpers::HandleHttpError( response, result ) )
     {
-        result.m_Error.m_ErrorCode = ResponseErrorCodefromInt( response.m_StatusCode );
-        result.m_Error.m_ErrorString = response.m_Error;
         LogDebug( "[%s] TumblrFetchAccessTokenRequest failed! %s", __FUNCTION__, result.m_Error.m_ErrorString.c_str( ) );
         return result;
     }
