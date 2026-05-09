@@ -25,17 +25,22 @@ jobs:
       - name: Build Debug|x64
         run: msbuild ImageScraper.sln /p:Configuration=Debug /p:Platform=x64 /m /nologo /verbosity:minimal
 
-      - name: Run tests with JUnit output
+      - name: Run native Visual Studio tests
         timeout-minutes: 5
-        run: bin\ImageScraperTests\x64\Debug\ImageScraperTests.exe --reporter junit --out test-results.xml
+        shell: pwsh
+        run: |
+          $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          $vstest = Join-Path $vsPath 'Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe'
+          & $vstest "bin\ImageScraperTests\x64\Debug\ImageScraperTests.dll" /Platform:x64 /Logger:"trx;LogFileName=ImageScraperTests.trx"
 
       - name: Publish test results
         uses: dorny/test-reporter@v1
         if: always()
         with:
-          name: Catch2 Tests
-          path: test-results.xml
-          reporter: java-junit
+          name: Native CppUnitTest Tests
+          path: TestResults/*.trx
+          reporter: dotnet-trx
+          path-replace-backslashes: 'true'
 
       - name: Upload debug binaries on failure
         uses: actions/upload-artifact@v4
@@ -43,6 +48,6 @@ jobs:
         with:
           name: debug-test-binaries
           path: |
-            bin\ImageScraperTests\x64\Debug\ImageScraperTests.exe
+            bin\ImageScraperTests\x64\Debug\ImageScraperTests.dll
             bin\ImageScraperTests\x64\Debug\libcurl-d.dll
           retention-days: 7
