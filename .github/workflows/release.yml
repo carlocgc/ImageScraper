@@ -68,7 +68,11 @@ jobs:
         run: msbuild ImageScraper.sln /p:Configuration=Release /p:Platform=x64 /m /nologo /verbosity:minimal
 
       - name: Run tests
-        run: bin\ImageScraperTests\x64\Release\ImageScraperTests.exe
+        shell: pwsh
+        run: |
+          $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          $vstest = Join-Path $vsPath 'Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe'
+          & $vstest "bin\ImageScraperTests\x64\Release\ImageScraperTests.dll" /Platform:x64 /Logger:"trx;LogFileName=ImageScraperTests.Release.trx"
 
       - name: Copy MSVC CRT DLLs
         shell: pwsh
