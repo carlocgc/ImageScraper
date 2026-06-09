@@ -33,6 +33,11 @@ jobs:
           $vstest = Join-Path $vsPath 'Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe'
           & $vstest "bin\ImageScraperTests\x64\Debug\ImageScraperTests.dll" /Platform:x64 /Logger:"trx;LogFileName=ImageScraperTests.trx"
 
+      - name: Verify release packaging rules
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File ".\scripts\Test-ReleasePackaging.ps1"
+
       - name: Publish test results
         uses: dorny/test-reporter@v1
         if: always()
