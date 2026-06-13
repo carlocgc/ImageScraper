@@ -42,7 +42,7 @@ ImageScraper is a native C++17 desktop application built with Dear ImGui, GLFW, 
 - **Reusable OAuth implementation**: `OAuthClient` centralizes browser launch, redirect handling, token exchange, refresh, and persistence for OAuth-backed providers
 - **Threaded work orchestration**: `TaskManager` and the thread pool move downloads, thumbnail decoding, and preview preparation off the UI thread
 - **Modular UI and service boundaries**: provider panels, services, and sink interfaces keep platform-specific logic isolated
-- **Automated validation**: Catch2 unit tests and GitHub Actions CI cover core request, parsing, utility, and threading behavior
+- **Automated validation**: Visual Studio native C++ unit tests and GitHub Actions CI cover core request, parsing, utility, and threading behavior
 
 ## Build
 
@@ -108,9 +108,7 @@ For local development, `ImageScraper/data/config.json` is gitignored and can be 
 
 ## Testing
 
-The recommended local workflow is Visual Studio Test Explorer with the **Test Adapter for Catch2** extension by JohnnyHendriks. `ImageScraper.runsettings` is already included for that setup.
-
-If the **Class** column is empty in Test Explorer, that is expected: Catch2 tests in this project are free functions. Group by traits or tags instead.
+The recommended local workflow is Visual Studio Test Explorer with the built-in Microsoft Native Unit Test Framework for C++ support that ships with Visual Studio's C++ test tooling.
 
 ### Command-line test run
 
@@ -122,15 +120,17 @@ If the **Class** column is empty in Test Explorer, that is expected: Catch2 test
   /t:ImageScraperTests `
   /m /nologo
 
-.\bin\ImageScraperTests\x64\Debug\ImageScraperTests.exe
+$vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+$vstest = Join-Path $vsPath 'Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe'
+& $vstest '.\bin\ImageScraperTests\x64\Debug\ImageScraperTests.dll' /Platform:x64 /Logger:trx
 ```
 
-CI runs the same test binary explicitly after the build step, rather than launching tests as a post-build side effect.
+CI runs the same native Visual Studio test container after the build step, rather than relying on a framework-specific test executable.
 
 ## Project Layout
 
 - `ImageScraper/` - application source, UI panels, provider services, networking, and media preview code
-- `ImageScraperTests/` - Catch2 unit tests for request handling, utilities, threading, JSON IO, and shared helpers
+- `ImageScraperTests/` - Visual Studio native C++ unit tests for request handling, utilities, threading, JSON IO, and shared helpers
 - `docs/` - refactor notes and longer-form engineering documentation
 - `.github/workflows/ci.yml` - Windows CI build and test workflow
 
@@ -142,7 +142,7 @@ CI runs the same test binary explicitly after the build step, rather than launch
 
 ## Third-Party Software
 
-Key libraries used by the project include FFmpeg, Dear ImGui, GLFW, libcurl, curlpp, nlohmann/json, cppcodec, and Catch2.
+Key libraries used by the project include FFmpeg, Dear ImGui, GLFW, libcurl, curlpp, nlohmann/json, and cppcodec.
 
 Full third-party license information is available in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 

@@ -30,7 +30,7 @@ Most provider additions will touch the same first-party areas:
 - `ImageScraper/include/utils/` and `ImageScraper/src/utils/`
   - add parser and media-extraction helpers
 - `ImageScraperTests/src/tests/`
-  - add Catch2 coverage for pure helpers and response parsing
+  - add native C++ unit test coverage for pure helpers and response parsing
 
 ## Recommended Order
 
@@ -48,7 +48,7 @@ This order favors providers that either unlock media the app already encounters 
 - Land the provider shell before the provider does real network work.
 - Prefer public or API-key modes before full sign-in when that is enough for an MVP.
 - Treat `UserInputOptions` changes as part of the provider slice, not as a separate follow-up.
-- Add Catch2 tests for any new parser/helper code in the same PR that introduces it.
+- Add native C++ unit tests for any new parser/helper code in the same PR that introduces it.
 
 ## Redgifs
 

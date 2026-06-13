@@ -1,6 +1,15 @@
-#include "catch2/catch_amalgamated.hpp"
+#include "CppUnitTest.h"
 
-TEST_CASE( "Sanity check", "[Sanity]" )
+using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+
+namespace ImageScraperTests
 {
-    REQUIRE( 1 + 1 == 2 );
+    TEST_CLASS(SanityTests)
+    {
+    public:
+        TEST_METHOD(SanityCheck)
+        {
+            Assert::AreEqual( 2, 1 + 1 );
+        }
+    };
 }

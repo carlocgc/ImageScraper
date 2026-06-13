@@ -1,236 +1,248 @@
-#include "catch2/catch_amalgamated.hpp"
+#include "CppUnitTest.h"
 #include "utils/RedditUtils.h"
 
-using namespace ImageScraper::RedditUtils;
+using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
-// ----------------------------------------------------------------------------
-// ParseAccessToken
-// ----------------------------------------------------------------------------
-
-TEST_CASE( "ParseAccessToken returns token and expiry for valid response", "[RedditUtils]" )
+namespace ImageScraperTests
 {
-    Json response = { { "access_token", "abc123" }, { "expires_in", 3600 } };
-    auto result = ParseAccessToken( response );
 
-    REQUIRE( result.has_value( ) );
-    REQUIRE( result->m_Token == "abc123" );
-    REQUIRE( result->m_ExpireSeconds == 3600 );
-}
+    using namespace ImageScraper::RedditUtils;
 
-TEST_CASE( "ParseAccessToken returns nullopt when access_token missing", "[RedditUtils]" )
-{
-    Json response = { { "expires_in", 3600 } };
-    REQUIRE( !ParseAccessToken( response ).has_value( ) );
-}
+    // ----------------------------------------------------------------------------
+    // ParseAccessToken
+    // ----------------------------------------------------------------------------
 
-TEST_CASE( "ParseAccessToken returns nullopt when expires_in missing", "[RedditUtils]" )
-{
-    Json response = { { "access_token", "abc123" } };
-    REQUIRE( !ParseAccessToken( response ).has_value( ) );
-}
 
-TEST_CASE( "ParseAccessToken returns nullopt for empty response", "[RedditUtils]" )
-{
-    REQUIRE( !ParseAccessToken( Json{ } ).has_value( ) );
-}
-
-// ----------------------------------------------------------------------------
-// ParseRefreshToken
-// ----------------------------------------------------------------------------
-
-TEST_CASE( "ParseRefreshToken returns token for valid response", "[RedditUtils]" )
-{
-    Json response = { { "refresh_token", "refresh_abc" } };
-    auto result = ParseRefreshToken( response );
-
-    REQUIRE( result.has_value( ) );
-    REQUIRE( result.value( ) == "refresh_abc" );
-}
-
-TEST_CASE( "ParseRefreshToken returns nullopt when refresh_token missing", "[RedditUtils]" )
-{
-    Json response = { { "access_token", "abc123" } };
-    REQUIRE( !ParseRefreshToken( response ).has_value( ) );
-}
-
-TEST_CASE( "ParseRefreshToken returns nullopt for empty response", "[RedditUtils]" )
-{
-    REQUIRE( !ParseRefreshToken( Json{ } ).has_value( ) );
-}
-
-// ----------------------------------------------------------------------------
-// GetMediaUrls
-// ----------------------------------------------------------------------------
-
-TEST_CASE( "NormalizeUserName accepts bare usernames", "[RedditUtils]" )
-{
-    REQUIRE( NormalizeUserName( "spez" ) == "spez" );
-}
-
-TEST_CASE( "NormalizeUserName strips user prefixes", "[RedditUtils]" )
-{
-    REQUIRE( NormalizeUserName( "u/spez" ) == "spez" );
-    REQUIRE( NormalizeUserName( "/user/spez" ) == "spez" );
-}
-
-TEST_CASE( "NormalizeUserName extracts usernames from Reddit URLs", "[RedditUtils]" )
-{
-    REQUIRE( NormalizeUserName( "https://www.reddit.com/user/spez/submitted/" ) == "spez" );
-    REQUIRE( NormalizeUserName( "https://reddit.com/u/spez/?sort=new" ) == "spez" );
-}
-
-TEST_CASE( "NormalizeUserName rejects empty shells", "[RedditUtils]" )
-{
-    REQUIRE( NormalizeUserName( "/user/" ).empty( ) );
-    REQUIRE( NormalizeUserName( "u/" ).empty( ) );
-}
-
-TEST_CASE( "NormalizeSubredditName accepts bare subreddit names", "[RedditUtils]" )
-{
-    REQUIRE( NormalizeSubredditName( "pics" ) == "pics" );
-}
-
-TEST_CASE( "NormalizeSubredditName strips r slash prefixes", "[RedditUtils]" )
-{
-    REQUIRE( NormalizeSubredditName( "r/pics" ) == "pics" );
-    REQUIRE( NormalizeSubredditName( "/r/pics" ) == "pics" );
-}
-
-TEST_CASE( "NormalizeSubredditName extracts subreddit names from Reddit URLs", "[RedditUtils]" )
-{
-    REQUIRE( NormalizeSubredditName( "https://www.reddit.com/r/pics/top/" ) == "pics" );
-    REQUIRE( NormalizeSubredditName( "https://reddit.com/r/gifs/?sort=hot" ) == "gifs" );
-}
-
-TEST_CASE( "NormalizeSubredditName rejects empty shells", "[RedditUtils]" )
-{
-    REQUIRE( NormalizeSubredditName( "/r/" ).empty( ) );
-    REQUIRE( NormalizeSubredditName( "r/" ).empty( ) );
-}
-
-TEST_CASE( "GetMediaUrls returns empty for response with no data field", "[RedditUtils]" )
-{
-    Json response = { { "other", "value" } };
-    auto result = GetMediaUrls( response );
-
-    REQUIRE( result.m_Urls.empty( ) );
-    REQUIRE( result.m_AfterParam.empty( ) );
-}
-
-TEST_CASE( "GetMediaUrls returns empty for response with no children", "[RedditUtils]" )
-{
-    Json response = { { "data", { } } };
-    auto result = GetMediaUrls( response );
-
-    REQUIRE( result.m_Urls.empty( ) );
-}
-
-TEST_CASE( "GetMediaUrls extracts image URLs from url field", "[RedditUtils]" )
-{
-    Json response = Json::parse( R"({
-        "data": {
-            "children": [ { "data": { "url": "https://i.redd.it/image.jpg" } } ],
-            "after": null
-        }
-    })" );
-
-    auto result = GetMediaUrls( response );
-    REQUIRE( result.m_Urls.size( ) == 1 );
-    REQUIRE( result.m_Urls[ 0 ] == "https://i.redd.it/image.jpg" );
-}
-
-TEST_CASE( "GetMediaUrls extracts image URLs from url_overridden_by_dest field", "[RedditUtils]" )
-{
-    Json response = Json::parse( R"({
-        "data": {
-            "children": [ { "data": { "url_overridden_by_dest": "https://i.redd.it/image.png" } } ],
-            "after": null
-        }
-    })" );
-
-    auto result = GetMediaUrls( response );
-    REQUIRE( result.m_Urls.size( ) == 1 );
-    REQUIRE( result.m_Urls[ 0 ] == "https://i.redd.it/image.png" );
-}
-
-TEST_CASE( "GetMediaUrls filters out non-media URLs", "[RedditUtils]" )
-{
-    Json response = Json::parse( R"({
-        "data": {
-            "children": [ { "data": { "url": "https://www.reddit.com/r/pics/comments/abc" } } ],
-            "after": null
-        }
-    })" );
-
-    auto result = GetMediaUrls( response );
-    REQUIRE( result.m_Urls.empty( ) );
-}
-
-TEST_CASE( "GetMediaUrls captures after param for pagination", "[RedditUtils]" )
-{
-    Json response = Json::parse( R"({ "data": { "children": [], "after": "t3_xyz789" } })" );
-
-    auto result = GetMediaUrls( response );
-    REQUIRE( result.m_AfterParam == "t3_xyz789" );
-}
-
-TEST_CASE( "GetMediaUrls clears after param when null", "[RedditUtils]" )
-{
-    Json response = Json::parse( R"({ "data": { "children": [], "after": null } })" );
-
-    auto result = GetMediaUrls( response );
-    REQUIRE( result.m_AfterParam.empty( ) );
-}
-
-TEST_CASE( "GetMediaUrls bails on first post with no URL key", "[RedditUtils]" )
-{
-    // Documents existing behaviour: returns early on first post with no url/url_overridden_by_dest
-    Json response = Json::parse( R"({
-        "data": {
-            "children": [
-                { "data": { "title": "no url here" } },
-                { "data": { "url": "https://i.redd.it/image.jpg" } }
-            ],
-            "after": null
-        }
-    })" );
-
-    auto result = GetMediaUrls( response );
-    REQUIRE( result.m_Urls.empty( ) );
-}
-
-TEST_CASE( "GetMediaUrls accepts redgifs watch URLs even without an extension", "[RedditUtils]" )
-{
-    Json response = Json::parse( R"({
-        "data": {
-            "children": [
-                { "data": { "url": "https://redgifs.com/watch/somegifslug" } },
-                { "data": { "url": "https://www.redgifs.com/watch/anotherSlug" } },
-                { "data": { "url": "https://v3.redgifs.com/watch/thirdSlug" } }
-            ],
-            "after": null
-        }
-    })" );
-
-    auto result = GetMediaUrls( response );
-    REQUIRE( result.m_Urls.size( ) == 3 );
-    REQUIRE( result.m_Urls[ 0 ] == "https://redgifs.com/watch/somegifslug" );
-    REQUIRE( result.m_Urls[ 1 ] == "https://www.redgifs.com/watch/anotherSlug" );
-    REQUIRE( result.m_Urls[ 2 ] == "https://v3.redgifs.com/watch/thirdSlug" );
-}
-
-TEST_CASE( "GetMediaUrls still rejects unrelated extension-less URLs (e.g. gfycat)", "[RedditUtils]" )
-{
-    Json response = Json::parse( R"({
-        "data": {
-            "children": [
-                { "data": { "url": "https://gfycat.com/SomeSlug" } },
-                { "data": { "url": "https://reddit.com/r/sub/comments/xyz/title/" } }
-            ],
-            "after": null
-        }
-    })" );
-
-    auto result = GetMediaUrls( response );
-    REQUIRE( result.m_Urls.empty( ) );
+    TEST_CLASS(RedditUtilsTests)
+    {
+    public:
+    TEST_METHOD(ParseAccessToken_Returns_Token_And_Expiry_For_Valid_Response)
+    {
+        Json response = { { "access_token", "abc123" }, { "expires_in", 3600 } };
+        auto result = ParseAccessToken( response );
+    
+        Assert::IsTrue(  result.has_value( ) );
+        Assert::IsTrue(  result->m_Token == "abc123" );
+        Assert::IsTrue(  result->m_ExpireSeconds == 3600 );
+    }
+    
+    TEST_METHOD(ParseAccessToken_Returns_Nullopt_When_Access_Token_Missing)
+    {
+        Json response = { { "expires_in", 3600 } };
+        Assert::IsTrue(  !ParseAccessToken( response ).has_value( ) );
+    }
+    
+    TEST_METHOD(ParseAccessToken_Returns_Nullopt_When_Expires_In_Missing)
+    {
+        Json response = { { "access_token", "abc123" } };
+        Assert::IsTrue(  !ParseAccessToken( response ).has_value( ) );
+    }
+    
+    TEST_METHOD(ParseAccessToken_Returns_Nullopt_For_Empty_Response)
+    {
+        Assert::IsTrue(  !ParseAccessToken( Json{ } ).has_value( ) );
+    }
+    
+    // ----------------------------------------------------------------------------
+    // ParseRefreshToken
+    // ----------------------------------------------------------------------------
+    
+    TEST_METHOD(ParseRefreshToken_Returns_Token_For_Valid_Response)
+    {
+        Json response = { { "refresh_token", "refresh_abc" } };
+        auto result = ParseRefreshToken( response );
+    
+        Assert::IsTrue(  result.has_value( ) );
+        Assert::IsTrue(  result.value( ) == "refresh_abc" );
+    }
+    
+    TEST_METHOD(ParseRefreshToken_Returns_Nullopt_When_Refresh_Token_Missing)
+    {
+        Json response = { { "access_token", "abc123" } };
+        Assert::IsTrue(  !ParseRefreshToken( response ).has_value( ) );
+    }
+    
+    TEST_METHOD(ParseRefreshToken_Returns_Nullopt_For_Empty_Response)
+    {
+        Assert::IsTrue(  !ParseRefreshToken( Json{ } ).has_value( ) );
+    }
+    
+    // ----------------------------------------------------------------------------
+    // GetMediaUrls
+    // ----------------------------------------------------------------------------
+    
+    TEST_METHOD(NormalizeUserName_Accepts_Bare_Usernames)
+    {
+        Assert::IsTrue(  NormalizeUserName( "spez" ) == "spez" );
+    }
+    
+    TEST_METHOD(NormalizeUserName_Strips_User_Prefixes)
+    {
+        Assert::IsTrue(  NormalizeUserName( "u/spez" ) == "spez" );
+        Assert::IsTrue(  NormalizeUserName( "/user/spez" ) == "spez" );
+    }
+    
+    TEST_METHOD(NormalizeUserName_Extracts_Usernames_From_Reddit_URLs)
+    {
+        Assert::IsTrue(  NormalizeUserName( "https://www.reddit.com/user/spez/submitted/" ) == "spez" );
+        Assert::IsTrue(  NormalizeUserName( "https://reddit.com/u/spez/?sort=new" ) == "spez" );
+    }
+    
+    TEST_METHOD(NormalizeUserName_Rejects_Empty_Shells)
+    {
+        Assert::IsTrue(  NormalizeUserName( "/user/" ).empty( ) );
+        Assert::IsTrue(  NormalizeUserName( "u/" ).empty( ) );
+    }
+    
+    TEST_METHOD(NormalizeSubredditName_Accepts_Bare_Subreddit_Names)
+    {
+        Assert::IsTrue(  NormalizeSubredditName( "pics" ) == "pics" );
+    }
+    
+    TEST_METHOD(NormalizeSubredditName_Strips_R_Slash_Prefixes)
+    {
+        Assert::IsTrue(  NormalizeSubredditName( "r/pics" ) == "pics" );
+        Assert::IsTrue(  NormalizeSubredditName( "/r/pics" ) == "pics" );
+    }
+    
+    TEST_METHOD(NormalizeSubredditName_Extracts_Subreddit_Names_From_Reddit_URLs)
+    {
+        Assert::IsTrue(  NormalizeSubredditName( "https://www.reddit.com/r/pics/top/" ) == "pics" );
+        Assert::IsTrue(  NormalizeSubredditName( "https://reddit.com/r/gifs/?sort=hot" ) == "gifs" );
+    }
+    
+    TEST_METHOD(NormalizeSubredditName_Rejects_Empty_Shells)
+    {
+        Assert::IsTrue(  NormalizeSubredditName( "/r/" ).empty( ) );
+        Assert::IsTrue(  NormalizeSubredditName( "r/" ).empty( ) );
+    }
+    
+    TEST_METHOD(GetMediaUrls_Returns_Empty_For_Response_With_No_Data_Field)
+    {
+        Json response = { { "other", "value" } };
+        auto result = GetMediaUrls( response );
+    
+        Assert::IsTrue(  result.m_Urls.empty( ) );
+        Assert::IsTrue(  result.m_AfterParam.empty( ) );
+    }
+    
+    TEST_METHOD(GetMediaUrls_Returns_Empty_For_Response_With_No_Children)
+    {
+        Json response = { { "data", { } } };
+        auto result = GetMediaUrls( response );
+    
+        Assert::IsTrue(  result.m_Urls.empty( ) );
+    }
+    
+    TEST_METHOD(GetMediaUrls_Extracts_Image_URLs_From_Url_Field)
+    {
+        Json response = Json::parse( R"({
+            "data": {
+                "children": [ { "data": { "url": "https://i.redd.it/image.jpg" } } ],
+                "after": null
+            }
+        })" );
+    
+        auto result = GetMediaUrls( response );
+        Assert::IsTrue(  result.m_Urls.size( ) == 1 );
+        Assert::IsTrue(  result.m_Urls[ 0 ] == "https://i.redd.it/image.jpg" );
+    }
+    
+    TEST_METHOD(GetMediaUrls_Extracts_Image_URLs_From_Url_Overridden_By_Dest_Field)
+    {
+        Json response = Json::parse( R"({
+            "data": {
+                "children": [ { "data": { "url_overridden_by_dest": "https://i.redd.it/image.png" } } ],
+                "after": null
+            }
+        })" );
+    
+        auto result = GetMediaUrls( response );
+        Assert::IsTrue(  result.m_Urls.size( ) == 1 );
+        Assert::IsTrue(  result.m_Urls[ 0 ] == "https://i.redd.it/image.png" );
+    }
+    
+    TEST_METHOD(GetMediaUrls_Filters_Out_Non_Media_URLs)
+    {
+        Json response = Json::parse( R"({
+            "data": {
+                "children": [ { "data": { "url": "https://www.reddit.com/r/pics/comments/abc" } } ],
+                "after": null
+            }
+        })" );
+    
+        auto result = GetMediaUrls( response );
+        Assert::IsTrue(  result.m_Urls.empty( ) );
+    }
+    
+    TEST_METHOD(GetMediaUrls_Captures_After_Param_For_Pagination)
+    {
+        Json response = Json::parse( R"({ "data": { "children": [], "after": "t3_xyz789" } })" );
+    
+        auto result = GetMediaUrls( response );
+        Assert::IsTrue(  result.m_AfterParam == "t3_xyz789" );
+    }
+    
+    TEST_METHOD(GetMediaUrls_Clears_After_Param_When_Null)
+    {
+        Json response = Json::parse( R"({ "data": { "children": [], "after": null } })" );
+    
+        auto result = GetMediaUrls( response );
+        Assert::IsTrue(  result.m_AfterParam.empty( ) );
+    }
+    
+    TEST_METHOD(GetMediaUrls_Bails_On_First_Post_With_No_URL_Key)
+    {
+        // Documents existing behaviour: returns early on first post with no url/url_overridden_by_dest
+        Json response = Json::parse( R"({
+            "data": {
+                "children": [
+                    { "data": { "title": "no url here" } },
+                    { "data": { "url": "https://i.redd.it/image.jpg" } }
+                ],
+                "after": null
+            }
+        })" );
+    
+        auto result = GetMediaUrls( response );
+        Assert::IsTrue(  result.m_Urls.empty( ) );
+    }
+    
+    TEST_METHOD(GetMediaUrls_Accepts_Redgifs_Watch_URLs_Even_Without_An_Extension)
+    {
+        Json response = Json::parse( R"({
+            "data": {
+                "children": [
+                    { "data": { "url": "https://redgifs.com/watch/somegifslug" } },
+                    { "data": { "url": "https://www.redgifs.com/watch/anotherSlug" } },
+                    { "data": { "url": "https://v3.redgifs.com/watch/thirdSlug" } }
+                ],
+                "after": null
+            }
+        })" );
+    
+        auto result = GetMediaUrls( response );
+        Assert::IsTrue(  result.m_Urls.size( ) == 3 );
+        Assert::IsTrue(  result.m_Urls[ 0 ] == "https://redgifs.com/watch/somegifslug" );
+        Assert::IsTrue(  result.m_Urls[ 1 ] == "https://www.redgifs.com/watch/anotherSlug" );
+        Assert::IsTrue(  result.m_Urls[ 2 ] == "https://v3.redgifs.com/watch/thirdSlug" );
+    }
+    
+    TEST_METHOD(GetMediaUrls_Still_Rejects_Unrelated_Extension_Less_URLs_E_G_Gfycat)
+    {
+        Json response = Json::parse( R"({
+            "data": {
+                "children": [
+                    { "data": { "url": "https://gfycat.com/SomeSlug" } },
+                    { "data": { "url": "https://reddit.com/r/sub/comments/xyz/title/" } }
+                ],
+                "after": null
+            }
+        })" );
+    
+        auto result = GetMediaUrls( response );
+        Assert::IsTrue(  result.m_Urls.empty( ) );
+    }
+    
+    };
 }
