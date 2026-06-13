@@ -54,6 +54,7 @@ Source: "{#SourceDir}\ImageScraper.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\*.crt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\auth.html"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceDir}\resources\icons\*"; DestDir: "{app}\resources\icons"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#RootDir}\LICENSE.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#RootDir}\THIRD_PARTY_LICENSES.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#RootDir}\README.MD"; DestDir: "{app}"; Flags: ignoreversion

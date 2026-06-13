@@ -20,6 +20,9 @@ The installer is per-user and installs to:
 The installer intentionally packages only runtime files. It excludes local files such
 as `config.json`, `imgui.ini`, debug symbols, and download output.
 
+Runtime assets under `resources/icons/` are included in both the portable zip and the
+installer because the media control buttons load those PNGs at runtime.
+
 ## Signing Status
 
 The installer is currently unsigned. This is enough to provide a normal Windows setup
