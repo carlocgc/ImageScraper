@@ -28,6 +28,7 @@ namespace ImageScraper
         std::string               m_UserName{ };
         RedditScope               m_RedditScope{ RedditScope::Hot };
         RedditScopeTimeFrame      m_RedditScopeTimeFrame{ RedditScopeTimeFrame::All };
+        RedditNsfwFilter          m_RedditNsfwFilter{ RedditNsfwFilter::AllPosts };
         int                       m_RedditMaxMediaItems{ REDDIT_LIMIT_DEFAULT };
         std::shared_ptr<JsonFile> m_AppConfig{ };
     };

@@ -15,6 +15,7 @@ namespace
     constexpr const char* s_ConfigKey_RedditMaxDownloads     = "reddit_max_downloads";
     constexpr const char* s_ConfigKey_RedditScope            = "reddit_scope";
     constexpr const char* s_ConfigKey_RedditScopeTimeFrame   = "reddit_scope_time_frame";
+    constexpr const char* s_ConfigKey_RedditNsfwFilter       = "reddit_nsfw_filter";
 }
 
 void ImageScraper::RedditPanel::LoadPanelState( std::shared_ptr<JsonFile> appConfig )
@@ -51,6 +52,14 @@ void ImageScraper::RedditPanel::LoadPanelState( std::shared_ptr<JsonFile> appCon
         if( m_AppConfig->GetValue<int>( s_ConfigKey_RedditScopeTimeFrame, scopeTimeFrame ) )
         {
             m_RedditScopeTimeFrame = static_cast<RedditScopeTimeFrame>( scopeTimeFrame );
+        }
+
+        int nsfwFilter = static_cast<int>( RedditNsfwFilter::AllPosts );
+        if( m_AppConfig->GetValue<int>( s_ConfigKey_RedditNsfwFilter, nsfwFilter )
+            && nsfwFilter >= 0
+            && nsfwFilter < REDDIT_NSFW_FILTERS_COUNT )
+        {
+            m_RedditNsfwFilter = static_cast<RedditNsfwFilter>( nsfwFilter );
         }
     }
 }
@@ -176,6 +185,28 @@ void ImageScraper::RedditPanel::Update( )
         }
     }
 
+    const RedditNsfwFilter previousNsfwFilter = m_RedditNsfwFilter;
+    int redditNsfwFilter = static_cast<int>( m_RedditNsfwFilter );
+    if( DownloadOptionControls::DrawCombo(
+        {
+            "RedditNsfwFilter",
+            "##reddit_nsfw_filter",
+            "Posts",
+            "All posts - download any matching Reddit post.\nSFW only - exclude posts marked NSFW.\nNSFW only - include only posts marked NSFW."
+        },
+        redditNsfwFilter,
+        s_RedditNsfwFilterStrings,
+        IM_ARRAYSIZE( s_RedditNsfwFilterStrings ) ) )
+    {
+        m_RedditNsfwFilter = static_cast<RedditNsfwFilter>( redditNsfwFilter );
+
+        if( m_RedditNsfwFilter != previousNsfwFilter && m_AppConfig )
+        {
+            m_AppConfig->SetValue<int>( s_ConfigKey_RedditNsfwFilter, redditNsfwFilter );
+            m_AppConfig->Serialise( );
+        }
+    }
+
     const int prev = m_RedditMaxMediaItems;
     if( DownloadOptionControls::DrawClampedInputInt(
         {
@@ -217,6 +248,7 @@ ImageScraper::UserInputOptions ImageScraper::RedditPanel::BuildInputOptions( ) c
         }
     }
 
+    options.m_RedditNsfwFilter = m_RedditNsfwFilter;
     options.m_RedditMaxMediaItems = m_RedditMaxMediaItems;
     return options;
 }
