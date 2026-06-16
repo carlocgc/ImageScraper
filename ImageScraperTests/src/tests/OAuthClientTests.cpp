@@ -34,6 +34,7 @@ namespace ImageScraperTests
 
     static const std::string k_StateKey        = "oauth_test_state_id";
     static const std::string k_RefreshTokenKey = "oauth_test_refresh_token";
+    static const std::string k_ScopeKey        = "oauth_test_scopes";
     static const std::string k_ClientIdKey     = "oauth_test_client_id";
     static const std::string k_ClientSecretKey = "oauth_test_client_secret";
     static const std::string k_KnownState      = "KNOWN_TEST_STATE_ABC123";
@@ -65,6 +66,7 @@ namespace ImageScraperTests
                 k_ClientSecretKey,
                 k_StateKey,
                 k_RefreshTokenKey,
+                k_ScopeKey,
                 redirectUri,
                 { }
             };
@@ -152,6 +154,63 @@ namespace ImageScraperTests
         OAuthFixture f;
         auto client = f.MakeClient( );
         Assert::IsTrue(  client->IsAuthenticated( ) == false );
+    }
+
+    TEST_METHOD(Constructor_Clears_Stored_Refresh_Token_When_Scope_Metadata_Is_Missing)
+    {
+        OAuthFixture f;
+        f.appConfig->SetValue<std::string>( k_RefreshTokenKey, "legacy_refresh_token" );
+        f.appConfig->Serialise( );
+
+        auto client = f.MakeClient( );
+
+        Assert::IsFalse(  client->IsSignedIn( ) );
+
+        JsonFile reloaded( f.appFile.path );
+        reloaded.Deserialise( );
+
+        std::string storedRefreshToken;
+        std::string storedScopes;
+        reloaded.GetValue<std::string>( k_RefreshTokenKey, storedRefreshToken );
+        reloaded.GetValue<std::string>( k_ScopeKey, storedScopes );
+
+        Assert::IsTrue(  storedRefreshToken.empty( ) );
+        Assert::IsTrue(  storedScopes == "read" );
+    }
+
+    TEST_METHOD(Constructor_Clears_Stored_Refresh_Token_When_Stored_Scopes_Do_Not_Match)
+    {
+        OAuthFixture f;
+        f.appConfig->SetValue<std::string>( k_RefreshTokenKey, "legacy_refresh_token" );
+        f.appConfig->SetValue<std::string>( k_ScopeKey, "identity,read" );
+        f.appConfig->Serialise( );
+
+        auto client = f.MakeClient( );
+
+        Assert::IsFalse(  client->IsSignedIn( ) );
+
+        JsonFile reloaded( f.appFile.path );
+        reloaded.Deserialise( );
+
+        std::string storedRefreshToken;
+        std::string storedScopes;
+        reloaded.GetValue<std::string>( k_RefreshTokenKey, storedRefreshToken );
+        reloaded.GetValue<std::string>( k_ScopeKey, storedScopes );
+
+        Assert::IsTrue(  storedRefreshToken.empty( ) );
+        Assert::IsTrue(  storedScopes == "read" );
+    }
+
+    TEST_METHOD(Constructor_Preserves_Stored_Refresh_Token_When_Stored_Scopes_Match)
+    {
+        OAuthFixture f;
+        f.appConfig->SetValue<std::string>( k_RefreshTokenKey, "current_refresh_token" );
+        f.appConfig->SetValue<std::string>( k_ScopeKey, "read" );
+        f.appConfig->Serialise( );
+
+        auto client = f.MakeClient( );
+
+        Assert::IsTrue(  client->IsSignedIn( ) );
     }
     
     // ---------------------------------------------------------------------------

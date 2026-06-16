@@ -705,6 +705,21 @@ namespace ImageScraperTests
         Assert::IsTrue(  mock->m_LastRequest.m_Url.find( "www.reddit.com/user/spez/submitted.json" ) != std::string::npos );
         Assert::IsTrue(  mock->m_LastRequest.m_Url.find( "oauth.reddit.com" ) == std::string::npos );
     }
+
+    TEST_METHOD(FetchSubredditPostsRequest_User_Listing_Path_With_Token_Uses_OAuth_And_Bearer_Header)
+    {
+        auto mock = std::make_shared<MockHttpClient>( );
+        mock->m_Response = MakeSuccess( R"({"data":{}})" );
+
+        Reddit::FetchSubredditPostsRequest req{ mock };
+        auto opts = MakeOptions( );
+        opts.m_UrlExt = "user/spez/submitted.json";
+        opts.m_AccessToken = "mytoken";
+        req.Perform( opts );
+
+        Assert::IsTrue(  mock->m_LastRequest.m_Url.find( "oauth.reddit.com/user/spez/submitted.json" ) != std::string::npos );
+        Assert::IsTrue(  HasHeaderPrefix( mock->m_LastRequest.m_Headers, "Authorization: Bearer " ) );
+    }
     
     TEST_METHOD(FetchSubredditPostsRequest_HTTP_Failure_Sets_Error)
     {

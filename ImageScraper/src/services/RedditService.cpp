@@ -76,6 +76,7 @@ namespace
 const std::string ImageScraper::RedditService::s_RedirectUrl              = "http://localhost:8080";
 const std::string ImageScraper::RedditService::s_AppDataKey_DeviceId      = "reddit_device_id";
 const std::string ImageScraper::RedditService::s_AppDataKey_RefreshToken  = "reddit_refresh_token";
+const std::string ImageScraper::RedditService::s_AppDataKey_OAuthScopes   = "reddit_oauth_scopes";
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientId     = "reddit_client_id";
 const std::string ImageScraper::RedditService::s_UserDataKey_ClientSecret = "reddit_client_secret";
 
@@ -99,11 +100,12 @@ ImageScraper::RedditService::RedditService( std::shared_ptr<JsonFile> appConfig,
 {
     OAuthConfig oauthConfig{
         "https://www.reddit.com/api/v1/authorize",
-        "identity,read",
+        "identity,read,history",
         s_UserDataKey_ClientId,
         s_UserDataKey_ClientSecret,
         s_AppDataKey_DeviceId,
         s_AppDataKey_RefreshToken,
+        s_AppDataKey_OAuthScopes,
         s_RedirectUrl,
         { { "duration", "permanent" } }
     };
@@ -344,6 +346,12 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
                 if( !fetchResult.m_Success )
                 {
+                    if( isUserMode &&
+                        useAuthenticatedListing &&
+                        fetchResult.m_Error.m_ErrorCode == ResponseErrorCode::Forbidden )
+                    {
+                        WarningLog( "[%s] Reddit rejected the user listing request. Existing sign-in may be missing the history scope - sign out and sign in again.", __FUNCTION__ );
+                    }
                     LogError( "[%s] Failed to fetch Reddit listing (page %i), error: %s", __FUNCTION__, pageNum, fetchResult.m_Error.m_ErrorString.c_str( ) );
                     continue;
                 }

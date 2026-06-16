@@ -40,6 +40,7 @@ namespace ImageScraper
         static const std::string s_RedirectUrl;
         static const std::string s_AppDataKey_DeviceId;
         static const std::string s_AppDataKey_RefreshToken;
+        static const std::string s_AppDataKey_OAuthScopes;
         static const std::string s_UserDataKey_ClientId;
         static const std::string s_UserDataKey_ClientSecret;
 
