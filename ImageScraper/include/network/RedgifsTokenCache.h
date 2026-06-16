@@ -21,6 +21,7 @@ namespace ImageScraper
         // Lazily fetches a token if one is not cached or has expired.
         // Returns true if a usable token is available afterwards.
         bool EnsureToken( );
+        void Invalidate( );
 
         const std::string& Token( ) const { return m_Token; }
 

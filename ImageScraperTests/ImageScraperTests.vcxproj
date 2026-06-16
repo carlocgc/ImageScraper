@@ -162,6 +162,8 @@
     <ClCompile Include="..\ImageScraper\src\network\CurlHttpClient.cpp" />
     <ClCompile Include="..\ImageScraper\src\network\RetryHttpClient.cpp" />
     <ClCompile Include="..\ImageScraper\src\network\RateLimitedHttpClient.cpp" />
+    <ClCompile Include="..\ImageScraper\src\network\RedgifsTokenCache.cpp" />
+    <ClCompile Include="..\ImageScraper\src\network\RedgifsUrlResolver.cpp" />
     <ClCompile Include="..\ImageScraper\src\updater\UpdateChecker.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\bluesky\GetAuthorFeedRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\bluesky\ResolveHandleRequest.cpp" />
@@ -174,6 +176,8 @@
     <ClCompile Include="..\ImageScraper\src\requests\reddit\FetchAccessTokenRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\reddit\RefreshAccessTokenRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\reddit\FetchSubredditPostsRequest.cpp" />
+    <ClCompile Include="..\ImageScraper\src\requests\redgifs\GetGifRequest.cpp" />
+    <ClCompile Include="..\ImageScraper\src\requests\redgifs\GetTemporaryAuthRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\requests\tumblr\RetrievePublishedPostsRequest.cpp" />
     <ClCompile Include="..\ImageScraper\src\ui\GifFrameAnimator.cpp" />
     <ClCompile Include="..\ImageScraper\src\ui\DownloadDeleteController.cpp" />
