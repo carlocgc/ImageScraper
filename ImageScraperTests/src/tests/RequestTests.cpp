@@ -7,6 +7,7 @@
 #include "requests/fourchan/GetThreadsRequest.h"
 #include "requests/mastodon/GetAccountStatusesRequest.h"
 #include "requests/mastodon/SearchAccountsRequest.h"
+#include "network/RedgifsUrlResolver.h"
 #include "requests/reddit/AppOnlyAuthRequest.h"
 #include "requests/reddit/FetchAccessTokenRequest.h"
 #include "requests/reddit/RefreshAccessTokenRequest.h"
@@ -14,6 +15,7 @@
 #include "requests/tumblr/RetrievePublishedPostsRequest.h"
 
 #include <algorithm>
+#include <deque>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -55,6 +57,34 @@ namespace ImageScraperTests
             return h.rfind( prefix, 0 ) == 0;
         } );
     }
+
+    class SequencedHttpClient final : public IHttpClient
+    {
+    public:
+        std::deque<HttpResponse> m_Responses{ };
+        std::vector<HttpRequest> m_Requests{ };
+        std::vector<std::string> m_RateLimitKeys{ };
+
+        HttpResponse Get( const HttpRequest& request, const std::string& rateLimitKey = "" ) override
+        {
+            m_Requests.push_back( request );
+            m_RateLimitKeys.push_back( rateLimitKey );
+
+            if( m_Responses.empty( ) )
+            {
+                return MakeFailure( 500 );
+            }
+
+            const HttpResponse response = m_Responses.front( );
+            m_Responses.pop_front( );
+            return response;
+        }
+
+        HttpResponse Post( const HttpRequest& request, const std::string& rateLimitKey = "" ) override
+        {
+            return Get( request, rateLimitKey );
+        }
+    };
 
     // ---------------------------------------------------------------------------
     // FourChan::GetBoardsRequest
@@ -743,10 +773,39 @@ namespace ImageScraperTests
         auto opts = MakeOptions( );
         opts.m_UrlExt = "r/pics/hot.json";
         const auto result = req.Perform( opts );
-    
+
         Assert::IsFalse(  result.m_Success );
     }
-    
+
+    // ---------------------------------------------------------------------------
+    // RedgifsUrlResolver
+    // ---------------------------------------------------------------------------
+    TEST_METHOD(RedgifsUrlResolver_Reauthenticates_And_Retries_Once_After_Unauthorized)
+    {
+        auto client = std::make_shared<SequencedHttpClient>( );
+        client->m_Responses.push_back( MakeSuccess( R"({"token":"token-1","expiresIn":7200})" ) );
+        client->m_Responses.push_back( MakeFailure( 401 ) );
+        client->m_Responses.push_back( MakeSuccess( R"({"token":"token-2","expiresIn":7200})" ) );
+        client->m_Responses.push_back( MakeSuccess( R"({"gif":{"urls":{"hd":"https://media.redgifs.com/Slug.mp4"}}})" ) );
+
+        RedgifsUrlResolver resolver{ client, "ca-bundle.crt", "TestAgent/1.0" };
+
+        const auto resolved = resolver.Resolve( "https://www.redgifs.com/watch/SomeSlug" );
+
+        Assert::IsTrue(  resolved.has_value( ) );
+        Assert::IsTrue(  *resolved == "https://media.redgifs.com/Slug.mp4" );
+        Assert::IsTrue(  client->m_Requests.size( ) == 4 );
+        Assert::IsTrue(  client->m_RateLimitKeys.size( ) == 4 );
+        Assert::IsTrue(  client->m_RateLimitKeys[ 0 ] == "get_temp_auth" );
+        Assert::IsTrue(  client->m_RateLimitKeys[ 1 ] == "get_gif" );
+        Assert::IsTrue(  client->m_RateLimitKeys[ 2 ] == "get_temp_auth" );
+        Assert::IsTrue(  client->m_RateLimitKeys[ 3 ] == "get_gif" );
+        Assert::IsTrue(  client->m_Requests[ 1 ].m_Headers.size( ) == 1 );
+        Assert::IsTrue(  client->m_Requests[ 1 ].m_Headers[ 0 ] == "Authorization: Bearer token-1" );
+        Assert::IsTrue(  client->m_Requests[ 3 ].m_Headers.size( ) == 1 );
+        Assert::IsTrue(  client->m_Requests[ 3 ].m_Headers[ 0 ] == "Authorization: Bearer token-2" );
+    }
+
     // ---------------------------------------------------------------------------
     // Tumblr::RetrievePublishedPostsRequest
     // ---------------------------------------------------------------------------

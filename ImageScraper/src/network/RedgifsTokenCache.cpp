@@ -61,3 +61,9 @@ bool ImageScraper::RedgifsTokenCache::EnsureToken( )
 
     return true;
 }
+
+void ImageScraper::RedgifsTokenCache::Invalidate( )
+{
+    m_Token.clear( );
+    m_TokenExpiresAt = std::chrono::steady_clock::time_point{ };
+}
