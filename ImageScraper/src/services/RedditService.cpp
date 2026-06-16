@@ -25,6 +25,21 @@ using Json = nlohmann::json;
 
 namespace
 {
+    const char* GetRedditNsfwFilterLabel( const ImageScraper::RedditNsfwFilter filter )
+    {
+        switch( filter )
+        {
+            case ImageScraper::RedditNsfwFilter::AllPosts:
+                return "All posts";
+            case ImageScraper::RedditNsfwFilter::SfwOnly:
+                return "SFW only";
+            case ImageScraper::RedditNsfwFilter::NsfwOnly:
+                return "NSFW only";
+            default:
+                return "Unknown";
+        }
+    }
+
     const char* GetRedditTargetTypeLabel( const ImageScraper::RedditTargetType targetType )
     {
         switch( targetType )
@@ -242,6 +257,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
             {
                 LogDebug( "[%s] Scope: %s", __FUNCTION__, options.m_RedditScope.c_str( ) );
             }
+            LogDebug( "[%s] Posts Filter: %s", __FUNCTION__, GetRedditNsfwFilterLabel( options.m_RedditNsfwFilter ) );
             LogDebug( "[%s] Media Item Limit: %i", __FUNCTION__, options.m_RedditMaxMediaItems );
 
             if( IsCancelled( ) )
@@ -251,9 +267,12 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 return;
             }
 
-            const bool useAuthenticatedListing = options.m_RedditTargetType == RedditTargetType::Subreddit;
+            const bool isUserMode = options.m_RedditTargetType == RedditTargetType::User;
+            const bool shouldAttemptAuthenticatedUserListing = isUserMode && m_OAuthClient->IsSignedIn( );
+            const bool shouldRequireAuthentication = options.m_RedditTargetType == RedditTargetType::Subreddit
+                || shouldAttemptAuthenticatedUserListing;
 
-            if( useAuthenticatedListing && !m_OAuthClient->IsAuthenticated( ) )
+            if( shouldRequireAuthentication && !m_OAuthClient->IsAuthenticated( ) )
             {
                 if( m_OAuthClient->IsSignedIn( ) )
                 {
@@ -261,17 +280,25 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                     // TryRefreshToken clears the refresh token internally on failure.
                     m_OAuthClient->TryRefreshToken( );
                 }
-                else
+                else if( options.m_RedditTargetType == RedditTargetType::Subreddit )
                 {
                     TryPerformAppOnlyAuth( );
                 }
             }
 
-            if( useAuthenticatedListing && !m_OAuthClient->IsAuthenticated( ) )
+            if( options.m_RedditTargetType == RedditTargetType::Subreddit && !m_OAuthClient->IsAuthenticated( ) )
             {
                 LogError( "[%s] Could not authenticate with reddit api", __FUNCTION__ );
                 TaskManager::Instance( ).SubmitMain( onFail );
                 return;
+            }
+
+            const bool useAuthenticatedListing = shouldRequireAuthentication && m_OAuthClient->IsAuthenticated( );
+            if( isUserMode &&
+                options.m_RedditNsfwFilter != RedditNsfwFilter::AllPosts &&
+                !useAuthenticatedListing )
+            {
+                WarningLog( "[%s] Reddit user listing is running without OAuth. NSFW filtering may be incomplete.", __FUNCTION__ );
             }
 
             m_AfterParam.clear( );
@@ -307,7 +334,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 fetchOptions.m_UrlExt = BuildRedditListingPath( options );
                 fetchOptions.m_CaBundle = m_CaBundle;
                 fetchOptions.m_UserAgent = m_UserAgent;
-                if( options.m_RedditTargetType == RedditTargetType::Subreddit )
+                if( useAuthenticatedListing )
                 {
                     fetchOptions.m_AccessToken = m_OAuthClient->GetAccessToken( );
                 }
@@ -323,7 +350,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
                 Json pageResponse = Json::parse( fetchResult.m_Response );
 
-                std::vector<std::string> pageMediaUrls = GetMediaUrls( pageResponse );
+                std::vector<std::string> pageMediaUrls = GetMediaUrls( pageResponse, options.m_RedditNsfwFilter );
                 mediaUrls.insert( mediaUrls.end( ), pageMediaUrls.begin( ), pageMediaUrls.end( ) );
 
                 const std::size_t maxItems = static_cast< std::size_t >( options.m_RedditMaxMediaItems );
@@ -408,9 +435,9 @@ bool ImageScraper::RedditService::TryPerformAppOnlyAuth( )
     return true;
 }
 
-std::vector<std::string> ImageScraper::RedditService::GetMediaUrls( const Json& response )
+std::vector<std::string> ImageScraper::RedditService::GetMediaUrls( const Json& response, RedditNsfwFilter filter )
 {
-    RedditUtils::MediaUrlsData result = RedditUtils::GetMediaUrls( response );
+    RedditUtils::MediaUrlsData result = RedditUtils::GetMediaUrls( response, filter );
     m_AfterParam = result.m_AfterParam;
     return result.m_Urls;
 }

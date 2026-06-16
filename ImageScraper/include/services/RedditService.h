@@ -34,7 +34,7 @@ namespace ImageScraper
     private:
         void DownloadContent( const UserInputOptions& inputOptions );
         bool TryPerformAppOnlyAuth( );
-        std::vector<std::string> GetMediaUrls( const Json& postData );
+        std::vector<std::string> GetMediaUrls( const Json& postData, RedditNsfwFilter filter );
         void FetchCurrentUser( );
 
         static const std::string s_RedirectUrl;

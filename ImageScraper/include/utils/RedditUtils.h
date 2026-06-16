@@ -1,6 +1,7 @@
 #pragma once
 
 #include "log/Logger.h"
+#include "services/ServiceOptionTypes.h"
 #include "nlohmann/json.hpp"
 #include "utils/StringUtils.h"
 
@@ -35,6 +36,24 @@ namespace ImageScraper::RedditUtils
         std::vector<std::string> m_Urls{ };
         std::string m_AfterParam{ };
     };
+
+    inline bool ShouldIncludePostForNsfwFilter( const Json& postData, RedditNsfwFilter filter )
+    {
+        if( filter == RedditNsfwFilter::AllPosts )
+        {
+            return true;
+        }
+
+        const bool hasNsfwFlag = postData.contains( "over_18" ) && postData[ "over_18" ].is_boolean( );
+        const bool isNsfw = hasNsfwFlag && postData[ "over_18" ].get<bool>( );
+
+        if( filter == RedditNsfwFilter::SfwOnly )
+        {
+            return !isNsfw;
+        }
+
+        return hasNsfwFlag && isNsfw;
+    }
 
     inline std::string NormalizeUserName( std::string value )
     {
@@ -167,7 +186,7 @@ namespace ImageScraper::RedditUtils
         }
     }
 
-    inline MediaUrlsData GetMediaUrls( const Json& response )
+    inline MediaUrlsData GetMediaUrls( const Json& response, RedditNsfwFilter filter = RedditNsfwFilter::AllPosts )
     {
         MediaUrlsData result;
 
@@ -197,6 +216,11 @@ namespace ImageScraper::RedditUtils
             for( const auto& post : children )
             {
                 const Json& postData = post[ "data" ];
+
+                if( !ShouldIncludePostForNsfwFilter( postData, filter ) )
+                {
+                    continue;
+                }
 
                 std::string contentKey{ };
 
