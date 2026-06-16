@@ -49,6 +49,7 @@ ImageScraper::TumblrService::TumblrService( std::shared_ptr<JsonFile> appConfig,
         s_UserDataKey_ConsumerSecret,
         s_AppDataKey_StateId,
         s_AppDataKey_RefreshToken,
+        "",
         // redirect_uri intentionally omitted - Tumblr's OAuth2 server mismatches
         // the parameter even when it matches the registered URL exactly. Omitting it
         // causes Tumblr to redirect to the sole registered callback URL automatically,
