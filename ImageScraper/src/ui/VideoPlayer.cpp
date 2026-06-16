@@ -9,6 +9,7 @@ extern "C"
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
 #include <libavutil/imgutils.h>
+#include <libavutil/pixdesc.h>
 #include <libavutil/pixfmt.h>
 #include <libswscale/swscale.h>
 }
@@ -51,6 +52,12 @@ namespace
             default:
                 return 0;
         }
+    }
+
+    bool IsValidPixelFormat( AVPixelFormat pixelFormat )
+    {
+        return pixelFormat != AV_PIX_FMT_NONE
+            && av_pix_fmt_desc_get( pixelFormat ) != nullptr;
     }
 }
 
@@ -191,30 +198,6 @@ bool ImageScraper::VideoPlayer::Open( const std::string& filepath )
         {
             m_Fps = fps;
         }
-    }
-
-    const AVPixelFormat swscalePixelFormat = NormaliseSwscalePixelFormat( m_CodecCtx->pix_fmt );
-    m_SwsCtx = sws_getContext(
-        m_Width, m_Height, swscalePixelFormat,
-        m_Width, m_Height, AV_PIX_FMT_RGBA,
-        SWS_BILINEAR, nullptr, nullptr, nullptr );
-
-    if( !m_SwsCtx )
-    {
-        LogError( "[%s] sws_getContext failed for: %s", __FUNCTION__, filepath.c_str( ) );
-        Close( );
-        return false;
-    }
-
-    const int* swscaleCoefficients = sws_getCoefficients( SWS_CS_DEFAULT );
-    const int sourceRange = GetSwscaleRangeFlag( m_CodecCtx->pix_fmt, m_CodecCtx->color_range );
-    if( sws_setColorspaceDetails(
-            m_SwsCtx,
-            swscaleCoefficients, sourceRange,
-            swscaleCoefficients, 1,
-            0, 1 << 16, 1 << 16 ) < 0 )
-    {
-        WarningLog( "[%s] sws_setColorspaceDetails failed for: %s", __FUNCTION__, filepath.c_str( ) );
     }
 
     m_Frame  = av_frame_alloc( );
@@ -411,8 +394,59 @@ void ImageScraper::VideoPlayer::Close( )
     m_LastFramePtsSeconds = -1.0;
 }
 
+bool ImageScraper::VideoPlayer::EnsureSwsContext( )
+{
+    if( m_SwsCtx )
+    {
+        return true;
+    }
+
+    if( !m_CodecCtx || !m_Frame )
+    {
+        LogError( "[%s] Decoder state incomplete", __FUNCTION__ );
+        return false;
+    }
+
+    const AVPixelFormat framePixelFormat = static_cast<AVPixelFormat>( m_Frame->format );
+    if( !IsValidPixelFormat( framePixelFormat ) )
+    {
+        LogError( "[%s] Invalid frame pixel format: %d", __FUNCTION__, m_Frame->format );
+        return false;
+    }
+
+    const AVPixelFormat swscalePixelFormat = NormaliseSwscalePixelFormat( framePixelFormat );
+    m_SwsCtx = sws_getContext(
+        m_Width, m_Height, swscalePixelFormat,
+        m_Width, m_Height, AV_PIX_FMT_RGBA,
+        SWS_BILINEAR, nullptr, nullptr, nullptr );
+
+    if( !m_SwsCtx )
+    {
+        LogError( "[%s] sws_getContext failed for frame pixel format: %d", __FUNCTION__, framePixelFormat );
+        return false;
+    }
+
+    const int* swscaleCoefficients = sws_getCoefficients( SWS_CS_DEFAULT );
+    const int sourceRange = GetSwscaleRangeFlag( framePixelFormat, m_Frame->color_range );
+    if( sws_setColorspaceDetails(
+            m_SwsCtx,
+            swscaleCoefficients, sourceRange,
+            swscaleCoefficients, 1,
+            0, 1 << 16, 1 << 16 ) < 0 )
+    {
+        WarningLog( "[%s] sws_setColorspaceDetails failed for frame pixel format: %d", __FUNCTION__, framePixelFormat );
+    }
+
+    return true;
+}
+
 bool ImageScraper::VideoPlayer::ConvertFrame( std::vector<uint8_t>& rgbaOut )
 {
+    if( !EnsureSwsContext( ) )
+    {
+        return false;
+    }
+
     const int bufSize    = m_Width * m_Height * 4;
     // sws_scale uses SIMD stores that can write up to 64 bytes past the last row.
     // Allocate a padded buffer so those stores land in owned memory.
