@@ -69,6 +69,7 @@ namespace ImageScraper
         double GetDuration( ) const; // total duration in seconds; 0 if unknown
 
     private:
+        bool EnsureSwsContext( );
         bool ConvertFrame( std::vector<uint8_t>& rgbaOut );
 
         AVFormatContext* m_FormatCtx  { nullptr };
