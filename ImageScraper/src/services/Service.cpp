@@ -136,6 +136,8 @@ std::optional<int> ImageScraper::Service::DownloadMediaUrls( std::vector<std::st
 {
     std::vector<MediaDownload> downloads{ };
     downloads.reserve( mediaUrls.size( ) );
+    int resolvedUrls = 0;
+    int skippedUrls = 0;
 
     for( std::string& url : mediaUrls )
     {
@@ -145,8 +147,11 @@ std::optional<int> ImageScraper::Service::DownloadMediaUrls( std::vector<std::st
             if( !resolved )
             {
                 LogError( "[%s] URL resolution failed, skipping: %s", __FUNCTION__, url.c_str( ) );
+                ++skippedUrls;
                 continue;
             }
+
+            ++resolvedUrls;
             url = *resolved;
         }
 
@@ -158,6 +163,8 @@ std::optional<int> ImageScraper::Service::DownloadMediaUrls( std::vector<std::st
 
         downloads.push_back( { url, DownloadHelpers::ExtractFileNameAndExtFromUrl( url ), DownloadMethod::DirectFile } );
     }
+
+    InfoLog( "[%s] Prepared %i downloads from %i urls (%i resolved, %i skipped).", __FUNCTION__, static_cast<int>( downloads.size( ) ), static_cast<int>( mediaUrls.size( ) ), resolvedUrls, skippedUrls );
 
     return DownloadMedia( downloads, dir );
 }
