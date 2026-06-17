@@ -31,6 +31,13 @@ std::optional<std::string> ImageScraper::RedgifsUrlResolver::Resolve( const std:
         return std::nullopt;
     }
 
+    const auto cached = m_ResolvedUrlCache.find( slug );
+    if( cached != m_ResolvedUrlCache.end( ) )
+    {
+        LogDebug( "[%s] Redgifs cache hit for slug '%s'.", __FUNCTION__, slug.c_str( ) );
+        return cached->second;
+    }
+
     Redgifs::GetGifRequest request{ m_HttpClient };
 
     auto performLookup = [ & ]( ) -> std::optional<std::string>
@@ -55,6 +62,7 @@ std::optional<std::string> ImageScraper::RedgifsUrlResolver::Resolve( const std:
 
         if( result.m_Error.m_ErrorCode == ResponseErrorCode::Unauthorized )
         {
+            WarningLog( "[%s] Redgifs returned 401 for slug '%s'. Refreshing token and retrying once.", __FUNCTION__, slug.c_str( ) );
             m_TokenCache.Invalidate( );
             if( !m_TokenCache.EnsureToken( ) )
             {
@@ -66,6 +74,7 @@ std::optional<std::string> ImageScraper::RedgifsUrlResolver::Resolve( const std:
             const RequestResult retry = request.Perform( options );
             if( retry.m_Success )
             {
+                InfoLog( "[%s] Redgifs lookup succeeded for slug '%s' after token refresh.", __FUNCTION__, slug.c_str( ) );
                 return retry.m_Response;
             }
 
@@ -90,5 +99,7 @@ std::optional<std::string> ImageScraper::RedgifsUrlResolver::Resolve( const std:
         return std::nullopt;
     }
 
+    m_ResolvedUrlCache[ slug ] = resolved;
+    LogDebug( "[%s] Cached resolved Redgifs media URL for slug '%s'.", __FUNCTION__, slug.c_str( ) );
     return resolved;
 }

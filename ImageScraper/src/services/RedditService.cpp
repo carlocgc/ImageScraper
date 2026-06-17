@@ -244,13 +244,19 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
         m_Sink->OnRunComplete( );
     };
 
+    auto onCancelled = [ this ]( )
+    {
+        InfoLog( "[%s] Content download cancelled by user.", __FUNCTION__ );
+        m_Sink->OnRunComplete( );
+    };
+
     auto onFail = [ this ]( )
     {
         LogError( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
         m_Sink->OnRunComplete( );
     };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, options = inputOptions, onComplete, onFail ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, options = inputOptions, onComplete, onCancelled, onFail ]( )
         {
             InfoLog( "[%s] Starting Reddit media download!", __FUNCTION__ );
             LogDebug( "[%s] Target Type: %s", __FUNCTION__, GetRedditTargetTypeLabel( options.m_RedditTargetType ) );
@@ -265,7 +271,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
             if( IsCancelled( ) )
             {
                 InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
-                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                TaskManager::Instance( ).SubmitMain( onCancelled );
                 return;
             }
 
@@ -313,7 +319,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 if( IsCancelled( ) )
                 {
                     InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
-                    TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                    TaskManager::Instance( ).SubmitMain( onCancelled );
                     return;
                 }
 
@@ -368,7 +374,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
                 }
 
                 SuccessLog( "[%s] Reddit listing (page %i) fetched successfully. Media urls queued: %i/%i", __FUNCTION__, pageNum, static_cast< int >( mediaUrls.size( ) ), options.m_RedditMaxMediaItems );
-                LogDebug( "[%s] Response: %s", __FUNCTION__, fetchResult.m_Response.c_str( ) );
+                LogDebug( "[%s] Reddit listing page %i summary: page items %i, queued %i/%i, next after: %s", __FUNCTION__, pageNum, static_cast<int>( pageMediaUrls.size( ) ), static_cast<int>( mediaUrls.size( ) ), options.m_RedditMaxMediaItems, m_AfterParam.empty( ) ? "<end>" : m_AfterParam.c_str( ) );
 
                 ++pageNum;
             }
@@ -396,7 +402,14 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
             const std::optional<int> filesDownloaded = DownloadMediaUrls( mediaUrls, dir );
             if( !filesDownloaded.has_value( ) )
             {
-                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                if( IsCancelled( ) )
+                {
+                    TaskManager::Instance( ).SubmitMain( onCancelled );
+                }
+                else
+                {
+                    TaskManager::Instance( ).SubmitMain( onFail );
+                }
                 return;
             }
 

@@ -75,18 +75,24 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
         m_Sink->OnRunComplete( );
     };
 
+    auto onCancelled = [ this ]( )
+    {
+        InfoLog( "[%s] Content download cancelled by user.", __FUNCTION__ );
+        m_Sink->OnRunComplete( );
+    };
+
     auto onFail = [ this ]( )
     {
         LogError( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
         m_Sink->OnRunComplete( );
     };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, options = inputOptions, onComplete, onFail ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, options = inputOptions, onComplete, onCancelled, onFail ]( )
         {
             if( IsCancelled( ) )
             {
                 InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
-                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                TaskManager::Instance( ).SubmitMain( onCancelled );
                 return;
             }
 
@@ -107,7 +113,6 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
             }
 
             SuccessLog( "[%s] 4chan boards retrieved successfully.", __FUNCTION__ );
-            LogDebug( "[%s] Response: %s", __FUNCTION__, getBoardResult.m_Response.c_str( ) );
 
             // Get page count for board
 
@@ -128,7 +133,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 if( IsCancelled( ) )
                 {
                     InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
-                    TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                    TaskManager::Instance( ).SubmitMain( onCancelled );
                     return;
                 }
 
@@ -149,7 +154,6 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                 }
 
                 SuccessLog( "[%s] Threads on page %i retrieved successfully.", __FUNCTION__, i );
-                LogDebug( "[%s] Response: %s", __FUNCTION__, getThreadResult.m_Response.c_str( ) );
 
                 json getThreadResponse = json::parse( getThreadResult.m_Response );
                 std::vector<std::string> filenames{ };
@@ -169,6 +173,8 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
                         break;
                     }
                 }
+
+                InfoLog( "[%s] Board %s page %i queued %i/%i media urls.", __FUNCTION__, options.m_FourChanBoard.c_str( ), i, static_cast<int>( mediaUrls.size( ) ), options.m_FourChanMaxMediaItems );
 
                 if( static_cast<int>( mediaUrls.size( ) ) >= options.m_FourChanMaxMediaItems )
                 {
@@ -197,7 +203,14 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
             const std::optional<int> filesDownloaded = DownloadMediaUrls( mediaUrls, dir );
             if( !filesDownloaded.has_value( ) )
             {
-                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                if( IsCancelled( ) )
+                {
+                    TaskManager::Instance( ).SubmitMain( onCancelled );
+                }
+                else
+                {
+                    TaskManager::Instance( ).SubmitMain( onFail );
+                }
                 return;
             }
 

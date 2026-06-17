@@ -8,6 +8,22 @@
 
 #include <sstream>
 #include <list>
+#include <algorithm>
+
+namespace
+{
+    std::string MakeSingleLinePreview( std::string text, std::size_t maxLen = 200 )
+    {
+        std::replace( text.begin( ), text.end( ), '\r', ' ' );
+        std::replace( text.begin( ), text.end( ), '\n', ' ' );
+        if( text.size( ) > maxLen )
+        {
+            text.resize( maxLen );
+            text += "...";
+        }
+        return text;
+    }
+}
 
 ImageScraper::HttpResponse ImageScraper::CurlHttpClient::Get( const HttpRequest& request, const std::string& /*rateLimitKey*/ )
 {
@@ -53,6 +69,13 @@ ImageScraper::HttpResponse ImageScraper::CurlHttpClient::Execute( const HttpRequ
         response.m_Body = body.str( );
         response.m_StatusCode = curlpp::infos::ResponseCode::get( easy );
         response.m_Success = ( response.m_StatusCode >= 200 && response.m_StatusCode < 300 );
+        if( !response.m_Success )
+        {
+            response.m_Error = response.m_Body.empty( )
+                ? "HTTP " + std::to_string( response.m_StatusCode )
+                : "HTTP " + std::to_string( response.m_StatusCode ) + " response: " + MakeSingleLinePreview( response.m_Body );
+            LogDebug( "[%s] HTTP request failed, status: %i, url: %s, detail: %s", __FUNCTION__, response.m_StatusCode, request.m_Url.c_str( ), response.m_Error.c_str( ) );
+        }
     }
     catch( curlpp::RuntimeError& error )
     {

@@ -205,18 +205,24 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
         m_Sink->OnRunComplete( );
     };
 
+    auto onCancelled = [ this ]( )
+    {
+        InfoLog( "[%s] Content download cancelled by user.", __FUNCTION__ );
+        m_Sink->OnRunComplete( );
+    };
+
     auto onFail = [ this ]( )
     {
         LogError( "[%s] Failed to download media!, See log for details.", __FUNCTION__ );
         m_Sink->OnRunComplete( );
     };
 
-    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, options = inputOptions, onComplete, onFail ]( )
+    auto task = TaskManager::Instance( ).Submit( TaskManager::s_ServiceContext, [ this, options = inputOptions, onComplete, onCancelled, onFail ]( )
         {
             if( IsCancelled( ) )
             {
                 InfoLog( "[%s] User cancelled operation!", __FUNCTION__ );
-                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                TaskManager::Instance( ).SubmitMain( onCancelled );
                 return;
             }
 
@@ -261,7 +267,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
             }
 
             SuccessLog( "[%s] Tumblr posts retrieved successfully.", __FUNCTION__ );
-            LogDebug( "[%s] Response: %s", __FUNCTION__, fetchResult.m_Response.c_str( ) );
+            LogDebug( "[%s] Tumblr posts response received for user %s.", __FUNCTION__, options.m_TumblrUser.c_str( ) );
 
             Json response = Json::parse( fetchResult.m_Response );
             std::vector<std::string> mediaUrls = GetMediaUrlsFromResponse( response, options.m_TumblrMaxMediaItems );
@@ -288,7 +294,14 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
             const std::optional<int> filesDownloaded = DownloadMediaUrls( mediaUrls, dir );
             if( !filesDownloaded.has_value( ) )
             {
-                TaskManager::Instance( ).SubmitMain( onComplete, 0 );
+                if( IsCancelled( ) )
+                {
+                    TaskManager::Instance( ).SubmitMain( onCancelled );
+                }
+                else
+                {
+                    TaskManager::Instance( ).SubmitMain( onFail );
+                }
                 return;
             }
 

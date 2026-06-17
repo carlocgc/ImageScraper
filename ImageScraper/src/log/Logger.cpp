@@ -13,12 +13,12 @@ std::string ImageScraper::Logger::TimeStamp( )
 {
     std::chrono::system_clock::time_point timePoint = std::chrono::system_clock::now( );
     std::time_t timeT = std::chrono::system_clock::to_time_t( timePoint );
-    std::tm gmt{ };
-    gmtime_s( &gmt, &timeT );
-    std::chrono::duration<double> fractionalSeconds = ( timePoint - std::chrono::system_clock::from_time_t( timeT ) ) + std::chrono::seconds( gmt.tm_sec );
+    std::tm local{ };
+    localtime_s( &local, &timeT );
+    std::chrono::duration<double> fractionalSeconds = ( timePoint - std::chrono::system_clock::from_time_t( timeT ) ) + std::chrono::seconds( local.tm_sec );
 
     std::string buffer( "[year/mo/dy hr:mn:sc.xxxxxx]" );
-    sprintf_s( &buffer.front( ), buffer.size( ) + 1, "[%04d/%02d/%02d %02d:%02d:%09.6f]", gmt.tm_year + 1900, gmt.tm_mon + 1, gmt.tm_mday, gmt.tm_hour, gmt.tm_min, fractionalSeconds.count( ) );
+    sprintf_s( &buffer.front( ), buffer.size( ) + 1, "[%04d/%02d/%02d %02d:%02d:%09.6f]", local.tm_year + 1900, local.tm_mon + 1, local.tm_mday, local.tm_hour, local.tm_min, fractionalSeconds.count( ) );
     return buffer;
 }
 
