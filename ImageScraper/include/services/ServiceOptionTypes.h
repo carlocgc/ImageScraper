@@ -12,6 +12,7 @@ namespace ImageScraper
     constexpr int REDDIT_TARGET_TYPES_COUNT     = 2;
     constexpr int REDDIT_SCOPES_COUNT           = 8;
     constexpr int REDDIT_SCOPE_TIMEFRAMES_COUNT = 5;
+    constexpr int REDDIT_NSFW_FILTERS_COUNT     = 3;
     constexpr int TUMBLR_LIMIT_MIN              = 1;
     constexpr int TUMBLR_LIMIT_DEFAULT          = 5;
     constexpr int TUMBLR_LIMIT_MAX              = 10000;
@@ -108,6 +109,21 @@ namespace ImageScraper
         "All"
     };
 
+    enum class RedditNsfwFilter : uint16_t
+    {
+        AllPosts = 0,
+        SfwOnly = 1,
+        NsfwOnly = 2,
+        Count = REDDIT_NSFW_FILTERS_COUNT
+    };
+
+    static const char* s_RedditNsfwFilterStrings[ REDDIT_NSFW_FILTERS_COUNT ]
+    {
+        "All posts",
+        "SFW only",
+        "NSFW only"
+    };
+
     struct UserInputOptions
     {
         ContentProvider m_Provider;
@@ -117,6 +133,7 @@ namespace ImageScraper
         std::string m_RedditTargetName;
         std::string m_RedditScope;
         std::string m_RedditScopeTimeFrame;
+        RedditNsfwFilter m_RedditNsfwFilter{ RedditNsfwFilter::AllPosts };
         int m_RedditMaxMediaItems{ REDDIT_LIMIT_DEFAULT };
 
         // Tumblr

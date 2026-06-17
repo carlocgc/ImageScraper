@@ -5,6 +5,7 @@
 #include "network/RedgifsTokenCache.h"
 
 #include <memory>
+#include <map>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -30,6 +31,7 @@ namespace ImageScraper
         std::string                  m_CaBundle;
         std::string                  m_UserAgent;
         RedgifsTokenCache            m_TokenCache;
+        std::map<std::string, std::string> m_ResolvedUrlCache;
         mutable std::mutex           m_Mutex;
     };
 }

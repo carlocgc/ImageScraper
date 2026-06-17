@@ -27,6 +27,7 @@ OAuthClient::OAuthClient( OAuthConfig config,
     , m_RefreshTokenFn{ std::move( refreshToken ) }
 {
     LoadOrGenerateStateId( );
+    MigrateStoredScopes( );
 
     {
         std::unique_lock<std::mutex> lock( m_RefreshTokenMutex );
@@ -38,6 +39,53 @@ OAuthClient::OAuthClient( OAuthConfig config,
         {
             LogDebug( "[%s] No OAuth refresh token found.", __FUNCTION__ );
         }
+    }
+}
+
+void OAuthClient::MigrateStoredScopes( )
+{
+    if( m_Config.m_ScopeAppKey.empty( ) )
+    {
+        return;
+    }
+
+    std::string storedScopes;
+    const bool hasStoredScopes = m_AppConfig->GetValue<std::string>( m_Config.m_ScopeAppKey, storedScopes );
+
+    std::string storedRefreshToken;
+    const bool hasStoredRefreshToken = m_AppConfig->GetValue<std::string>( m_Config.m_RefreshTokenAppKey, storedRefreshToken )
+        && !storedRefreshToken.empty( );
+
+    bool shouldSerialise = false;
+
+    if( !hasStoredScopes )
+    {
+        if( hasStoredRefreshToken )
+        {
+            m_AppConfig->SetValue<std::string>( m_Config.m_RefreshTokenAppKey, "" );
+            WarningLog( "[%s] Clearing persisted OAuth refresh token because no stored scope metadata was found for scope set: %s",
+                        __FUNCTION__, m_Config.m_Scopes.c_str( ) );
+        }
+
+        m_AppConfig->SetValue<std::string>( m_Config.m_ScopeAppKey, m_Config.m_Scopes );
+        shouldSerialise = true;
+    }
+    else if( storedScopes != m_Config.m_Scopes )
+    {
+        if( hasStoredRefreshToken )
+        {
+            m_AppConfig->SetValue<std::string>( m_Config.m_RefreshTokenAppKey, "" );
+            WarningLog( "[%s] Clearing persisted OAuth refresh token because stored scopes '%s' do not match required scopes '%s'.",
+                        __FUNCTION__, storedScopes.c_str( ), m_Config.m_Scopes.c_str( ) );
+        }
+
+        m_AppConfig->SetValue<std::string>( m_Config.m_ScopeAppKey, m_Config.m_Scopes );
+        shouldSerialise = true;
+    }
+
+    if( shouldSerialise )
+    {
+        m_AppConfig->Serialise( );
     }
 }
 

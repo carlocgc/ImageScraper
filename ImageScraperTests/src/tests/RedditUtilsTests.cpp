@@ -239,10 +239,67 @@ namespace ImageScraperTests
                 "after": null
             }
         })" );
-    
+
         auto result = GetMediaUrls( response );
         Assert::IsTrue(  result.m_Urls.empty( ) );
     }
-    
+
+    TEST_METHOD(GetMediaUrls_AllPosts_Includes_Sfw_Nsfw_And_Unknown_Posts)
+    {
+        Json response = Json::parse( R"({
+            "data": {
+                "children": [
+                    { "data": { "url": "https://i.redd.it/sfw.jpg", "over_18": false } },
+                    { "data": { "url": "https://i.redd.it/nsfw.jpg", "over_18": true } },
+                    { "data": { "url": "https://i.redd.it/unknown.jpg" } }
+                ],
+                "after": null
+            }
+        })" );
+
+        auto result = GetMediaUrls( response, ImageScraper::RedditNsfwFilter::AllPosts );
+        Assert::IsTrue(  result.m_Urls.size( ) == 3 );
+        Assert::IsTrue(  result.m_Urls[ 0 ] == "https://i.redd.it/sfw.jpg" );
+        Assert::IsTrue(  result.m_Urls[ 1 ] == "https://i.redd.it/nsfw.jpg" );
+        Assert::IsTrue(  result.m_Urls[ 2 ] == "https://i.redd.it/unknown.jpg" );
+    }
+
+    TEST_METHOD(GetMediaUrls_SfwOnly_Excludes_Nsfw_Posts_And_Keeps_Unknown_Posts)
+    {
+        Json response = Json::parse( R"({
+            "data": {
+                "children": [
+                    { "data": { "url": "https://i.redd.it/sfw.jpg", "over_18": false } },
+                    { "data": { "url": "https://i.redd.it/nsfw.jpg", "over_18": true } },
+                    { "data": { "url": "https://i.redd.it/unknown.jpg" } }
+                ],
+                "after": null
+            }
+        })" );
+
+        auto result = GetMediaUrls( response, ImageScraper::RedditNsfwFilter::SfwOnly );
+        Assert::IsTrue(  result.m_Urls.size( ) == 2 );
+        Assert::IsTrue(  result.m_Urls[ 0 ] == "https://i.redd.it/sfw.jpg" );
+        Assert::IsTrue(  result.m_Urls[ 1 ] == "https://i.redd.it/unknown.jpg" );
+    }
+
+    TEST_METHOD(GetMediaUrls_NsfwOnly_Excludes_Sfw_And_Unknown_Posts)
+    {
+        Json response = Json::parse( R"({
+            "data": {
+                "children": [
+                    { "data": { "url": "https://i.redd.it/sfw.jpg", "over_18": false } },
+                    { "data": { "url": "https://i.redd.it/nsfw.jpg", "over_18": true } },
+                    { "data": { "url": "https://i.redd.it/unknown.jpg" } }
+                ],
+                "after": null
+            }
+        })" );
+
+        auto result = GetMediaUrls( response, ImageScraper::RedditNsfwFilter::NsfwOnly );
+        Assert::IsTrue(  result.m_Urls.size( ) == 1 );
+        Assert::IsTrue(  result.m_Urls[ 0 ] == "https://i.redd.it/nsfw.jpg" );
+    }
+
     };
 }

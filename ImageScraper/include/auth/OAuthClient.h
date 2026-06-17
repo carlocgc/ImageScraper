@@ -22,6 +22,7 @@ namespace ImageScraper
         std::string m_ClientSecretKey;      // userConfig key for the client secret
         std::string m_StateIdAppKey;        // appConfig key used to persist the state/device ID
         std::string m_RefreshTokenAppKey;   // appConfig key used to persist the refresh token
+        std::string m_ScopeAppKey;          // appConfig key used to persist the granted scope set
         std::string m_RedirectUri;          // redirect URI, or "" to omit (Tumblr quirk)
         std::vector<QueryParam> m_ExtraAuthParams; // additional query params appended to the auth URL
     };
@@ -77,6 +78,7 @@ namespace ImageScraper
 
     private:
         void LoadOrGenerateStateId( );
+        void MigrateStoredScopes( );
         bool FetchAccessToken( const std::string& code );
         bool ParseAndStoreTokenResponse( const std::string& rawResponse );
         void ClearAccessToken( );

@@ -27,6 +27,8 @@ ImageScraper::HttpResponse ImageScraper::RetryHttpClient::Post( const HttpReques
 ImageScraper::HttpResponse ImageScraper::RetryHttpClient::Execute( const HttpRequest& request, const std::string& rateLimitKey, bool isPost )
 {
     HttpResponse response{ };
+    const char* method = isPost ? "POST" : "GET";
+    const char* effectiveKey = rateLimitKey.empty( ) ? "<default>" : rateLimitKey.c_str( );
 
     for( int attempt = 0; attempt <= m_MaxRetries; ++attempt )
     {
@@ -39,7 +41,7 @@ ImageScraper::HttpResponse ImageScraper::RetryHttpClient::Execute( const HttpReq
 
         if( response.m_StatusCode == s_RateLimitCode )
         {
-            WarningLog( "[%s] Rate limited (429), waiting %is before retry (attempt %i/%i)...", __FUNCTION__, s_RateLimitDelaySeconds, attempt + 1, m_MaxRetries );
+            WarningLog( "[%s] %s %s hit 429 for key '%s'. Waiting %is before retry (attempt %i/%i).", __FUNCTION__, method, request.m_Url.c_str( ), effectiveKey, s_RateLimitDelaySeconds, attempt + 1, m_MaxRetries );
             std::this_thread::sleep_for( std::chrono::seconds( s_RateLimitDelaySeconds ) );
             continue;
         }
@@ -47,14 +49,14 @@ ImageScraper::HttpResponse ImageScraper::RetryHttpClient::Execute( const HttpReq
         // Don't retry on client errors (4xx) other than 429
         if( response.m_StatusCode >= 400 && response.m_StatusCode < 500 )
         {
-            LogDebug( "[%s] Client error %i, not retrying.", __FUNCTION__, response.m_StatusCode );
+            LogDebug( "[%s] %s %s failed with client error %i for key '%s', not retrying at HTTP layer.", __FUNCTION__, method, request.m_Url.c_str( ), response.m_StatusCode, effectiveKey );
             return response;
         }
 
         if( attempt < m_MaxRetries )
         {
             const int delay = m_RetryDelaySeconds * ( 1 << attempt ); // exponential backoff
-            WarningLog( "[%s] Request failed (status %i), retrying in %is (attempt %i/%i)...", __FUNCTION__, response.m_StatusCode, delay, attempt + 1, m_MaxRetries );
+            WarningLog( "[%s] %s %s failed with status %i for key '%s'. Retrying in %is (attempt %i/%i).", __FUNCTION__, method, request.m_Url.c_str( ), response.m_StatusCode, effectiveKey, delay, attempt + 1, m_MaxRetries );
             std::this_thread::sleep_for( std::chrono::seconds( delay ) );
         }
     }

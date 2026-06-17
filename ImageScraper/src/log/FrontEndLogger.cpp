@@ -33,11 +33,31 @@ std::string ImageScraper::FrontEndLogger::RemoveDebugLogInfo( const std::string&
     std::string out = line;
 
     // TODO: A lot of str copies here, try optimize
-    // Find the index of the 3rd occurrence of the '[' character
-    std::size_t start = out.find_first_of( "[", out.find_first_of( "[", out.find_first_of( "[" ) + 1 ) + 1 );
+    const std::size_t first = out.find( '[' );
+    if( first == std::string::npos )
+    {
+        return out;
+    }
+
+    const std::size_t second = out.find( '[', first + 1 );
+    if( second == std::string::npos )
+    {
+        return out;
+    }
+
+    const std::size_t start = out.find( '[', second + 1 );
+    if( start == std::string::npos )
+    {
+        return out;
+    }
 
     // Remove the function name and closing bracket
     std::size_t end = out.find( "] ", start );
+    if( end == std::string::npos || end < start )
+    {
+        return out;
+    }
+
     out.erase( start, end - start + 2 );
 
     return out;
