@@ -31,6 +31,12 @@ std::optional<std::string> ImageScraper::RedgifsUrlResolver::Resolve( const std:
         return std::nullopt;
     }
 
+    const auto cached = m_ResolvedUrlCache.find( slug );
+    if( cached != m_ResolvedUrlCache.end( ) )
+    {
+        return cached->second;
+    }
+
     Redgifs::GetGifRequest request{ m_HttpClient };
 
     auto performLookup = [ & ]( ) -> std::optional<std::string>
@@ -90,5 +96,6 @@ std::optional<std::string> ImageScraper::RedgifsUrlResolver::Resolve( const std:
         return std::nullopt;
     }
 
+    m_ResolvedUrlCache[ slug ] = resolved;
     return resolved;
 }

@@ -806,6 +806,27 @@ namespace ImageScraperTests
         Assert::IsTrue(  client->m_Requests[ 3 ].m_Headers[ 0 ] == "Authorization: Bearer token-2" );
     }
 
+    TEST_METHOD(RedgifsUrlResolver_Caches_Successful_Resolutions_By_Slug)
+    {
+        auto client = std::make_shared<SequencedHttpClient>( );
+        client->m_Responses.push_back( MakeSuccess( R"({"token":"token-1","expiresIn":7200})" ) );
+        client->m_Responses.push_back( MakeSuccess( R"({"gif":{"urls":{"hd":"https://media.redgifs.com/Slug.mp4"}}})" ) );
+
+        RedgifsUrlResolver resolver{ client, "ca-bundle.crt", "TestAgent/1.0" };
+
+        const auto first = resolver.Resolve( "https://www.redgifs.com/watch/SomeSlug" );
+        const auto second = resolver.Resolve( "https://redgifs.com/watch/someslug" );
+
+        Assert::IsTrue(  first.has_value( ) );
+        Assert::IsTrue(  second.has_value( ) );
+        Assert::IsTrue(  *first == "https://media.redgifs.com/Slug.mp4" );
+        Assert::IsTrue(  *second == "https://media.redgifs.com/Slug.mp4" );
+        Assert::IsTrue(  client->m_Requests.size( ) == 2 );
+        Assert::IsTrue(  client->m_RateLimitKeys.size( ) == 2 );
+        Assert::IsTrue(  client->m_RateLimitKeys[ 0 ] == "get_temp_auth" );
+        Assert::IsTrue(  client->m_RateLimitKeys[ 1 ] == "get_gif" );
+    }
+
     // ---------------------------------------------------------------------------
     // Tumblr::RetrievePublishedPostsRequest
     // ---------------------------------------------------------------------------
