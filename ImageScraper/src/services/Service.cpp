@@ -24,6 +24,7 @@ namespace
             case ImageScraper::ContentProvider::Bluesky:   return "Bluesky";
             case ImageScraper::ContentProvider::Mastodon:  return "Mastodon";
             case ImageScraper::ContentProvider::Redgifs:   return "Redgifs";
+            case ImageScraper::ContentProvider::Danbooru:  return "Danbooru";
             default:                                       return "Service";
         }
     }

@@ -4,8 +4,8 @@
 namespace ImageScraper
 {
     // ── Limits & capacities ───────────────────────────────────────────────────
-    constexpr int CONTENT_PROVIDERS_COUNT       = 6;
-    constexpr int INPUT_STRING_MAX              = 64;
+    constexpr int CONTENT_PROVIDERS_COUNT       = 7;
+    constexpr int INPUT_STRING_MAX              = 512;
     constexpr int REDDIT_LIMIT_MIN              = 1;
     constexpr int REDDIT_LIMIT_DEFAULT          = 5;
     constexpr int REDDIT_LIMIT_MAX              = 10000;
@@ -30,6 +30,9 @@ namespace ImageScraper
     constexpr int REDGIFS_LIMIT_MIN             = 1;
     constexpr int REDGIFS_LIMIT_DEFAULT         = 5;
     constexpr int REDGIFS_LIMIT_MAX             = 10000;
+    constexpr int DANBOORU_LIMIT_MIN            = 1;
+    constexpr int DANBOORU_LIMIT_DEFAULT        = 5;
+    constexpr int DANBOORU_LIMIT_MAX            = 10000;
 
     enum class ContentProvider : uint16_t
     {
@@ -39,6 +42,7 @@ namespace ImageScraper
         Bluesky = 3,
         Mastodon = 4,
         Redgifs = 5,
+        Danbooru = 6,
         Count = CONTENT_PROVIDERS_COUNT
     };
 
@@ -49,7 +53,8 @@ namespace ImageScraper
         "4chan",
         "Bluesky",
         "Mastodon",
-        "Redgifs"
+        "Redgifs",
+        "Danbooru"
     };
 
     enum class RedditTargetType : uint16_t
@@ -157,5 +162,9 @@ namespace ImageScraper
         // Redgifs
         std::string m_RedgifsUser;
         int m_RedgifsMaxMediaItems{ REDGIFS_LIMIT_DEFAULT };
+
+        // Danbooru
+        std::string m_DanbooruQuery;
+        int m_DanbooruMaxMediaItems{ DANBOORU_LIMIT_DEFAULT };
     };
 }
