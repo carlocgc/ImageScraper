@@ -5,6 +5,8 @@
 #include "requests/bluesky/ResolveHandleRequest.h"
 #include "requests/fourchan/GetBoardsRequest.h"
 #include "requests/fourchan/GetThreadsRequest.h"
+#include "requests/danbooru/GetPostRequest.h"
+#include "requests/danbooru/SearchPostsRequest.h"
 #include "requests/mastodon/GetAccountStatusesRequest.h"
 #include "requests/mastodon/SearchAccountsRequest.h"
 #include "network/RedgifsUrlResolver.h"
@@ -180,6 +182,66 @@ namespace ImageScraperTests
         Assert::IsFalse(  result.m_Success );
     }
     
+    // ---------------------------------------------------------------------------
+    // Danbooru::SearchPostsRequest
+    // ---------------------------------------------------------------------------
+    TEST_METHOD(SearchPostsRequest_URL_Encodes_Query_Params)
+    {
+        auto mock = std::make_shared<MockHttpClient>( );
+        mock->m_Response = MakeSuccess( R"([])" );
+
+        Danbooru::SearchPostsRequest req{ mock };
+        auto opts = MakeOptions( );
+        opts.m_QueryParams = {
+            { "tags", "pool:19776 rating:g" },
+            { "limit", "200" },
+            { "page", "1" }
+        };
+        req.Perform( opts );
+
+        Assert::IsTrue(  mock->m_LastRequest.m_Url == "https://danbooru.donmai.us/posts.json?tags=pool%3A19776%20rating%3Ag&limit=200&page=1" );
+        Assert::IsTrue(  mock->m_LastRateLimitKey == "search_posts" );
+    }
+
+    TEST_METHOD(SearchPostsRequest_HTTP_Failure_Sets_Error)
+    {
+        auto mock = std::make_shared<MockHttpClient>( );
+        mock->m_Response = MakeFailure( 429 );
+
+        Danbooru::SearchPostsRequest req{ mock };
+        const auto result = req.Perform( MakeOptions( ) );
+
+        Assert::IsFalse(  result.m_Success );
+    }
+
+    // ---------------------------------------------------------------------------
+    // Danbooru::GetPostRequest
+    // ---------------------------------------------------------------------------
+    TEST_METHOD(GetPostRequest_Sends_Correct_URL)
+    {
+        auto mock = std::make_shared<MockHttpClient>( );
+        mock->m_Response = MakeSuccess( R"({"id":11661839})" );
+
+        Danbooru::GetPostRequest req{ mock };
+        auto opts = MakeOptions( );
+        opts.m_ResourceId = "11661839";
+        req.Perform( opts );
+
+        Assert::IsTrue(  mock->m_LastRequest.m_Url == "https://danbooru.donmai.us/posts/11661839.json" );
+        Assert::IsTrue(  mock->m_LastRateLimitKey == "get_post" );
+    }
+
+    TEST_METHOD(GetPostRequest_Missing_Post_Id_Fails_Without_Network_Call)
+    {
+        auto mock = std::make_shared<MockHttpClient>( );
+        mock->m_Response = MakeSuccess( R"({})" );
+
+        Danbooru::GetPostRequest req{ mock };
+        const auto result = req.Perform( MakeOptions( ) );
+
+        Assert::IsFalse(  result.m_Success );
+        Assert::IsTrue(  mock->m_CallCount == 0 );
+    }
     // ---------------------------------------------------------------------------
     // Bluesky::ResolveHandleRequest
     // ---------------------------------------------------------------------------
