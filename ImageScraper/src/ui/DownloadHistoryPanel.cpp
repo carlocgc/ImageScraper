@@ -432,8 +432,7 @@ void ImageScraper::DownloadHistoryPanel::FlushPending( )
     }
 
     m_DownloadsRootExists = true;
-    InvalidateTreeCaches( );
-    m_TreeDirtyFromDownload = true;
+    MarkTreeDirtyFromDownload( );
 
     // Follow the newest downloaded item and request preview from the main thread
     // so auto-preview stays in sync with the Downloads selection.
@@ -473,12 +472,27 @@ void ImageScraper::DownloadHistoryPanel::PumpDeleteOperation( )
     FinaliseDeleteOperation( result->m_Success, result->m_ErrorMessage );
 }
 
+// Hard invalidation: the cached tree can no longer be shown at all (root changed,
+// a path was deleted). Forces a rebuild on the next EnsureTreeSnapshotCached call.
 void ImageScraper::DownloadHistoryPanel::InvalidateTreeCaches( )
 {
     m_TreeSnapshot.reset( );
     m_TreeDirty = true;
+    m_TreeDirtyFromDownload = false;
     m_NavigableFilesCache.clear( );
     m_NavigableFileIndexByPath.clear( );
+    m_NavigableFilesDirty = true;
+}
+
+// Soft invalidation for completed downloads, which arrive continuously while a
+// task runs. The existing snapshot stays valid enough to render, so keep it and
+// let the cooldown in EnsureTreeSnapshotCached coalesce the rebuilds. Resetting
+// the snapshot here would blank the panel and, because the cooldown requires a
+// snapshot to serve, would force a full recursive tree walk per downloaded file.
+void ImageScraper::DownloadHistoryPanel::MarkTreeDirtyFromDownload( )
+{
+    m_TreeDirty = true;
+    m_TreeDirtyFromDownload = true;
     m_NavigableFilesDirty = true;
 }
 
@@ -530,6 +544,9 @@ void ImageScraper::DownloadHistoryPanel::EnsureTreeSnapshotCached( ) const
         return;
     }
 
+    // Coalesce download-driven rebuilds by continuing to serve the previous
+    // snapshot. This relies on MarkTreeDirtyFromDownload leaving m_TreeSnapshot
+    // intact - a reset one would fail the has_value check and rebuild every frame.
     constexpr auto k_RebuildCooldown = std::chrono::milliseconds{ 500 };
     const auto now = std::chrono::steady_clock::now( );
     if( m_TreeDirtyFromDownload && m_TreeSnapshot.has_value( ) && ( now - m_LastTreeRebuild ) < k_RebuildCooldown )
@@ -598,6 +615,7 @@ ImageScraper::DownloadHistoryPanel::BuildTreeNodeSnapshot(
         return std::nullopt;
     }
 
+    node.m_Id = ImHashStr( node.m_PathString.c_str( ), node.m_PathString.size( ) );
     node.m_IsDirectory = attrs.m_IsDirectory;
 
     node.m_Label = path.filename( ).string( );
@@ -974,7 +992,9 @@ void ImageScraper::DownloadHistoryPanel::RenderTreeNode( const TreeNodeSnapshot&
         flags |= ImGuiTreeNodeFlags_Selected;
     }
 
-    ImGui::PushID( pathString.c_str( ) );
+    // Absolute paths are already unique, so push the prehashed id directly rather
+    // than hashing the full path string again on every row of every frame.
+    ImGui::PushOverrideID( node.m_Id );
     const bool isOpen = ImGui::TreeNodeEx( node.m_Label.c_str( ), flags );
     if( isDirectory )
     {

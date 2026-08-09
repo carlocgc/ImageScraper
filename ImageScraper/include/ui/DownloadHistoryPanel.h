@@ -76,6 +76,9 @@ namespace ImageScraper
             std::filesystem::path       m_Path{ };
             std::string                 m_SizeLabel{ };
             std::string                 m_CreationLabel{ };
+            // Hashed once at build time from m_PathString so RenderTreeNode does not
+            // re-hash a full absolute path for every visible row, every frame.
+            ImGuiID                     m_Id{ 0 };
             std::vector<TreeNodeSnapshot> m_Children{ };
         };
 
@@ -100,6 +103,7 @@ namespace ImageScraper
         void FlushDecodedThumbnails( );
         void PumpDeleteOperation( );
         void InvalidateTreeCaches( );
+        void MarkTreeDirtyFromDownload( );
         void EnsureTreeSnapshotCached( ) const;
         void RefreshTreeSnapshot( const ImGuiTableSortSpecs* sortSpecs );
         std::optional<TreeNodeSnapshot> BuildTreeNodeSnapshot(
