@@ -217,6 +217,12 @@ ImageScraper::DownloadHistoryPanel::DownloadHistoryPanel( PreviewCallback onPrev
 
 ImageScraper::DownloadHistoryPanel::~DownloadHistoryPanel( )
 {
+    // The rebuild task captures this, so it must not outlive the panel.
+    if( m_TreeRebuildFuture.valid( ) )
+    {
+        m_TreeRebuildFuture.wait( );
+    }
+
     for( auto& [ filepath, future ] : m_ThumbnailFutures )
     {
         if( future.valid( ) )
@@ -237,6 +243,7 @@ ImageScraper::DownloadHistoryPanel::~DownloadHistoryPanel( )
 void ImageScraper::DownloadHistoryPanel::Update( )
 {
     PumpDeleteOperation( );
+    PumpTreeRebuild( );
     FlushPending( );
     FlushDecodedThumbnails( );
 
@@ -432,8 +439,7 @@ void ImageScraper::DownloadHistoryPanel::FlushPending( )
     }
 
     m_DownloadsRootExists = true;
-    InvalidateTreeCaches( );
-    m_TreeDirtyFromDownload = true;
+    MarkTreeDirtyFromDownload( );
 
     // Follow the newest downloaded item and request preview from the main thread
     // so auto-preview stays in sync with the Downloads selection.
@@ -473,13 +479,89 @@ void ImageScraper::DownloadHistoryPanel::PumpDeleteOperation( )
     FinaliseDeleteOperation( result->m_Success, result->m_ErrorMessage );
 }
 
+// Every path that dirties the tree goes through here so an in-flight rebuild can
+// tell whether it was superseded before its result landed.
+void ImageScraper::DownloadHistoryPanel::MarkTreeDirty( )
+{
+    m_TreeDirty = true;
+    ++m_TreeDirtyVersion;
+}
+
+// Hard invalidation: the cached tree can no longer be shown at all (root changed,
+// a path was deleted). Bumping the rebuild generation discards any in-flight
+// result, which was built from a filesystem state that no longer exists.
 void ImageScraper::DownloadHistoryPanel::InvalidateTreeCaches( )
 {
     m_TreeSnapshot.reset( );
-    m_TreeDirty = true;
+    MarkTreeDirty( );
+    m_TreeDirtyFromDownload = false;
+    ++m_TreeRebuildGeneration;
     m_NavigableFilesCache.clear( );
     m_NavigableFileIndexByPath.clear( );
     m_NavigableFilesDirty = true;
+}
+
+// Soft invalidation for completed downloads, which arrive continuously while a
+// task runs. The existing snapshot stays valid enough to render, so keep it on
+// screen and let EnsureTreeSnapshotCached rebuild on a worker. Resetting it here
+// would blank the panel and force an inline rebuild per downloaded file.
+void ImageScraper::DownloadHistoryPanel::MarkTreeDirtyFromDownload( )
+{
+    MarkTreeDirty( );
+    m_TreeDirtyFromDownload = true;
+    m_NavigableFilesDirty = true;
+}
+
+// Publishes a finished async rebuild. Called from the top of Update, before the
+// tree is rendered: RenderTreeNode holds references into m_TreeSnapshot for the
+// whole recursion, so the snapshot must never be swapped mid-render.
+void ImageScraper::DownloadHistoryPanel::PumpTreeRebuild( )
+{
+    if( !m_TreeRebuildInFlight || !m_TreeRebuildFuture.valid( ) )
+    {
+        return;
+    }
+
+    if( m_TreeRebuildFuture.wait_for( std::chrono::seconds{ 0 } ) != std::future_status::ready )
+    {
+        return;
+    }
+
+    std::optional<TreeNodeSnapshot> rebuilt = m_TreeRebuildFuture.get( );
+    m_TreeRebuildInFlight = false;
+
+    if( m_TreeRebuildGenerationAtLaunch != m_TreeRebuildGeneration )
+    {
+        return;
+    }
+
+    m_TreeSnapshot = std::move( rebuilt );
+    m_NavigableFilesDirty = true;
+    m_LastTreeRebuild = std::chrono::steady_clock::now( );
+
+    // Files that landed after this rebuild started are missing from the result,
+    // so leave the tree dirty and let the next rebuild pick them up.
+    const bool supersededWhileBuilding = m_TreeDirtyVersionAtLaunch != m_TreeDirtyVersion;
+    m_TreeDirty = supersededWhileBuilding;
+    m_TreeDirtyFromDownload = supersededWhileBuilding && m_TreeDirtyFromDownload;
+}
+
+void ImageScraper::DownloadHistoryPanel::StartAsyncTreeRebuild(
+    ImGuiID sortColumnUserId,
+    ImGuiSortDirection sortDirection ) const
+{
+    // BuildTreeNodeSnapshot reads no members, so the worker only touches the copies
+    // captured here. Everything it produces is published on the main thread.
+    const std::filesystem::path root = m_DownloadsRoot;
+
+    m_TreeRebuildGenerationAtLaunch = m_TreeRebuildGeneration;
+    m_TreeDirtyVersionAtLaunch = m_TreeDirtyVersion;
+    m_TreeRebuildInFlight = true;
+    m_TreeRebuildFuture = std::async( std::launch::async,
+        [ this, root, sortColumnUserId, sortDirection ]( )
+        {
+            return BuildTreeNodeSnapshot( root, sortColumnUserId, sortDirection );
+        } );
 }
 
 void ImageScraper::DownloadHistoryPanel::RefreshTreeSnapshot( const ImGuiTableSortSpecs* sortSpecs )
@@ -509,7 +591,7 @@ void ImageScraper::DownloadHistoryPanel::RefreshTreeSnapshot( const ImGuiTableSo
     m_TreeSortDirection = sortDirection;
     if( sortChanged )
     {
-        m_TreeDirty = true;
+        MarkTreeDirty( );
         m_NavigableFilesDirty = true;
     }
 
@@ -530,13 +612,6 @@ void ImageScraper::DownloadHistoryPanel::EnsureTreeSnapshotCached( ) const
         return;
     }
 
-    constexpr auto k_RebuildCooldown = std::chrono::milliseconds{ 500 };
-    const auto now = std::chrono::steady_clock::now( );
-    if( m_TreeDirtyFromDownload && m_TreeSnapshot.has_value( ) && ( now - m_LastTreeRebuild ) < k_RebuildCooldown )
-    {
-        return;
-    }
-
     ImGuiID sortColumnUserId = m_TreeSortColumnUserId;
     if( sortColumnUserId == 0 )
     {
@@ -549,10 +624,35 @@ void ImageScraper::DownloadHistoryPanel::EnsureTreeSnapshotCached( ) const
         sortDirection = ImGuiSortDirection_Ascending;
     }
 
-    m_TreeSnapshot = BuildTreeNodeSnapshot( m_DownloadsRoot, sortColumnUserId, sortDirection );
-    m_TreeDirty = false;
-    m_TreeDirtyFromDownload = false;
-    m_LastTreeRebuild = now;
+    // Nothing to display at all: first load, root changed, or a delete invalidated
+    // the tree. Build inline so the panel and keyboard navigation have data this
+    // frame rather than rendering an empty tree until a worker finishes.
+    if( !m_TreeSnapshot.has_value( ) )
+    {
+        m_TreeSnapshot = BuildTreeNodeSnapshot( m_DownloadsRoot, sortColumnUserId, sortDirection );
+        m_TreeDirty = false;
+        m_TreeDirtyFromDownload = false;
+        m_LastTreeRebuild = std::chrono::steady_clock::now( );
+        return;
+    }
+
+    if( m_TreeRebuildInFlight )
+    {
+        return;
+    }
+
+    // A complete, if slightly stale, tree is already on screen. Walking a large
+    // downloads folder costs tens of milliseconds, so hand it to a worker and keep
+    // serving the current snapshot until PumpTreeRebuild publishes the result.
+    // The cooldown stops a run of downloads from saturating a worker thread.
+    constexpr auto k_RebuildCooldown = std::chrono::milliseconds{ 500 };
+    const auto now = std::chrono::steady_clock::now( );
+    if( m_TreeDirtyFromDownload && ( now - m_LastTreeRebuild ) < k_RebuildCooldown )
+    {
+        return;
+    }
+
+    StartAsyncTreeRebuild( sortColumnUserId, sortDirection );
 }
 
 std::optional<ImageScraper::DownloadHistoryPanel::TreeNodeSnapshot>
@@ -598,6 +698,7 @@ ImageScraper::DownloadHistoryPanel::BuildTreeNodeSnapshot(
         return std::nullopt;
     }
 
+    node.m_Id = ImHashStr( node.m_PathString.c_str( ), node.m_PathString.size( ) );
     node.m_IsDirectory = attrs.m_IsDirectory;
 
     node.m_Label = path.filename( ).string( );
@@ -974,7 +1075,9 @@ void ImageScraper::DownloadHistoryPanel::RenderTreeNode( const TreeNodeSnapshot&
         flags |= ImGuiTreeNodeFlags_Selected;
     }
 
-    ImGui::PushID( pathString.c_str( ) );
+    // Absolute paths are already unique, so push the prehashed id directly rather
+    // than hashing the full path string again on every row of every frame.
+    ImGui::PushOverrideID( node.m_Id );
     const bool isOpen = ImGui::TreeNodeEx( node.m_Label.c_str( ), flags );
     if( isDirectory )
     {

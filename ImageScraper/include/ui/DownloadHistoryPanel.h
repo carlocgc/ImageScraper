@@ -76,6 +76,9 @@ namespace ImageScraper
             std::filesystem::path       m_Path{ };
             std::string                 m_SizeLabel{ };
             std::string                 m_CreationLabel{ };
+            // Hashed once at build time from m_PathString so RenderTreeNode does not
+            // re-hash a full absolute path for every visible row, every frame.
+            ImGuiID                     m_Id{ 0 };
             std::vector<TreeNodeSnapshot> m_Children{ };
         };
 
@@ -100,6 +103,10 @@ namespace ImageScraper
         void FlushDecodedThumbnails( );
         void PumpDeleteOperation( );
         void InvalidateTreeCaches( );
+        void MarkTreeDirty( );
+        void MarkTreeDirtyFromDownload( );
+        void PumpTreeRebuild( );
+        void StartAsyncTreeRebuild( ImGuiID sortColumnUserId, ImGuiSortDirection sortDirection ) const;
         void EnsureTreeSnapshotCached( ) const;
         void RefreshTreeSnapshot( const ImGuiTableSortSpecs* sortSpecs );
         std::optional<TreeNodeSnapshot> BuildTreeNodeSnapshot(
@@ -181,6 +188,18 @@ namespace ImageScraper
         mutable bool                                       m_TreeDirty{ true };
         mutable bool                                       m_TreeDirtyFromDownload{ false };
         mutable std::chrono::steady_clock::time_point      m_LastTreeRebuild{ };
+        // Rebuilds run on a worker so a full walk of a large downloads folder does
+        // not stall the frame. m_TreeRebuildGeneration is bumped by hard
+        // invalidations, so a result describing the pre-invalidation filesystem is
+        // discarded rather than published. m_TreeDirtyVersion tracks dirt that
+        // arrives while a rebuild is running, so publishing does not wrongly mark
+        // the tree clean and drop the file that caused it.
+        mutable std::future<std::optional<TreeNodeSnapshot>> m_TreeRebuildFuture{ };
+        mutable bool                                       m_TreeRebuildInFlight{ false };
+        mutable unsigned long long                         m_TreeRebuildGeneration{ 0 };
+        mutable unsigned long long                         m_TreeRebuildGenerationAtLaunch{ 0 };
+        mutable unsigned long long                         m_TreeDirtyVersion{ 0 };
+        mutable unsigned long long                         m_TreeDirtyVersionAtLaunch{ 0 };
         mutable std::vector<std::filesystem::path>         m_NavigableFilesCache{ };
         mutable std::unordered_map<std::string, int>       m_NavigableFileIndexByPath{ };
         mutable bool                                       m_NavigableFilesDirty{ true };
