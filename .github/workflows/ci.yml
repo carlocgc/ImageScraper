@@ -19,6 +19,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Cheap lint before the build so an encoding regression fails in seconds
+      # rather than after a full compile.
+      - name: Verify UTF-8 path usage
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File ".\scripts\Test-Utf8PathUsage.ps1"
+
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 

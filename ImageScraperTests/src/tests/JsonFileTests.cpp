@@ -1,5 +1,6 @@
 #include "CppUnitTest.h"
 #include "io/JsonFile.h"
+#include "utils/FilesystemUtils.h"
 
 #include <filesystem>
 #include <string>
@@ -18,7 +19,7 @@ namespace ImageScraperTests
 
         TempFile( )
         {
-            path = ( std::filesystem::temp_directory_path( ) / "imagescraper_test_config.json" ).string( );
+            path = ImageScraper::FilesystemUtils::PathToUtf8( std::filesystem::temp_directory_path( ) / "imagescraper_test_config.json" );
         }
 
         ~TempFile( )

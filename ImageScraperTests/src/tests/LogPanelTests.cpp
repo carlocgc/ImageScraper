@@ -1,5 +1,6 @@
 #include "CppUnitTest.h"
 #include "ui/LogPanel.h"
+#include "utils/FilesystemUtils.h"
 
 #include <filesystem>
 #include <memory>
@@ -20,7 +21,7 @@ namespace ImageScraperTests
 
             explicit TempFile( const std::string& suffix )
             {
-                path = ( std::filesystem::temp_directory_path( ) / suffix ).string( );
+                path = ImageScraper::FilesystemUtils::PathToUtf8( std::filesystem::temp_directory_path( ) / suffix );
             }
 
             ~TempFile( )
