@@ -1,4 +1,5 @@
 #include "services/RedditService.h"
+#include "utils/FilesystemUtils.h"
 #include "services/OAuthServiceHelpers.h"
 #include "requests/RequestTypes.h"
 #include "requests/reddit/FetchSubredditPostsRequest.h"
@@ -391,7 +392,7 @@ void ImageScraper::RedditService::DownloadContent( const UserInputOptions& input
 
             // Create download directory
             const std::filesystem::path dir = BuildRedditDownloadDirectory( m_OutputDir, options );
-            const std::string dirStr = dir.generic_string( );
+            const std::string dirStr = ImageScraper::FilesystemUtils::PathToUtf8Generic( dir );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
                 LogError( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );

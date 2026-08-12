@@ -1,7 +1,9 @@
 #include "ui/LogPanel.h"
+#include "utils/StringUtils.h"
 
 #include <algorithm>
 #include <cstring>
+#include <string>
 #include <vector>
 
 #ifdef _WIN32
@@ -355,7 +357,11 @@ void ImageScraper::LogPanel::OpenLogFileLocation( ) const
         return;
     }
     // Opens Explorer at the parent directory and selects the current log file.
-    const std::string params = std::string( "/select,\"" ) + m_LogFilePath + "\"";
-    ::ShellExecuteA( nullptr, "open", "explorer.exe", params.c_str( ), nullptr, SW_SHOWNORMAL );
+    // m_LogFilePath is UTF-8, so this has to go out through the wide API - the
+    // ANSI one would re-decode it as the local code page.
+    const std::wstring params = L"/select,\""
+        + StringUtils::Utf8ToWideString( m_LogFilePath, false )
+        + L"\"";
+    ::ShellExecuteW( nullptr, L"open", L"explorer.exe", params.c_str( ), nullptr, SW_SHOWNORMAL );
 #endif
 }

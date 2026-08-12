@@ -1,4 +1,5 @@
 #include "services/MastodonService.h"
+#include "utils/FilesystemUtils.h"
 
 #include "async/TaskManager.h"
 #include "requests/RequestTypes.h"
@@ -267,7 +268,7 @@ void ImageScraper::MastodonService::DownloadContent( const UserInputOptions& inp
             InfoLog( "[%s] Prepared %i unique Mastodon downloads for %s from %i fetched media items (%i images, %i gifv, %i videos).", __FUNCTION__, static_cast<int>( preparedDownloads.size( ) ), accountLabel.c_str( ), static_cast<int>( mediaItems.size( ) ), imageCount, gifvCount, videoCount );
 
             const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Mastodon" / preparedDownloads.front( ).m_InstanceDirectory / preparedDownloads.front( ).m_AccountDirectory;
-            const std::string dirStr = dir.generic_string( );
+            const std::string dirStr = ImageScraper::FilesystemUtils::PathToUtf8Generic( dir );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
                 LogError( "[%s] Failed to create download directory: %s", __FUNCTION__, dirStr.c_str( ) );

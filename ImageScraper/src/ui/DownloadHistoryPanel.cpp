@@ -22,6 +22,13 @@
 
 namespace
 {
+    // Every narrow path string in this panel - m_SelectedPath, m_DownloadsRootString,
+    // the thumbnail cache keys, the persisted selection - is UTF-8, so it has to go
+    // through these rather than path::string() / the path(std::string) constructor,
+    // which use the ANSI code page and throw on non-representable filenames.
+    using ImageScraper::FilesystemUtils::PathFromUtf8;
+    using ImageScraper::FilesystemUtils::PathToUtf8;
+
     constexpr const char* kLegacyDownloadHistoryKey = "download_history";
     constexpr const char* kDownloadsSelectedPathKey = "downloads_selected_path";
     constexpr const char* kLegacySelectedPathKey    = "history_selected_path";
@@ -35,15 +42,20 @@ namespace
 
         std::filesystem::path result = path.lexically_normal( );
         result.make_preferred( );
-        return result.string( );
+        return PathToUtf8( result );
+    }
+
+    std::string MakeFastPreferredPathString( const std::string& utf8Path )
+    {
+        return MakeFastPreferredPathString( PathFromUtf8( utf8Path ) );
     }
 
     std::string GetPathDisplayName( const std::filesystem::path& path )
     {
-        std::string label = path.filename( ).string( );
+        std::string label = PathToUtf8( path.filename( ) );
         if( label.empty( ) )
         {
-            label = ImageScraper::FilesystemUtils::NormalisePath(path ).string( );
+            label = PathToUtf8( ImageScraper::FilesystemUtils::NormalisePath( path ) );
         }
 
         return label;
@@ -51,7 +63,7 @@ namespace
 
     std::string GetTypeLabelFromExtension( const std::filesystem::path& path )
     {
-        std::string extension = ImageScraper::StringUtils::ToLower( path.extension( ).string( ) );
+        std::string extension = ImageScraper::StringUtils::ToLower( PathToUtf8( path.extension( ) ) );
 
         static const std::unordered_set<std::string> imageTypes =
         {
@@ -328,9 +340,9 @@ void ImageScraper::DownloadHistoryPanel::Update( )
 
         if( ImGui::IsWindowFocused( ImGuiFocusedFlags_ChildWindows )
             && ImGui::IsKeyPressed( ImGuiKey_Delete )
-            && CanDeletePath( std::filesystem::path{ m_SelectedPath } ) )
+            && CanDeletePath( PathFromUtf8( m_SelectedPath ) ) )
         {
-            const std::filesystem::path deletePath{ m_SelectedPath };
+            const std::filesystem::path deletePath = PathFromUtf8( m_SelectedPath );
             std::error_code ec;
             const bool isDirectory = std::filesystem::is_directory( deletePath, ec );
             if( ec || isDirectory )
@@ -353,13 +365,13 @@ void ImageScraper::DownloadHistoryPanel::Update( )
         if( ImGui::BeginPopupModal( kDeleteConfirmPopupId, nullptr,
                 ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize ) )
         {
-            const std::filesystem::path deletePath = m_DeleteConfirmPath;
+            const std::filesystem::path deletePath = PathFromUtf8( m_DeleteConfirmPath );
             std::error_code ec;
             const bool isDirectory = std::filesystem::is_directory( deletePath, ec );
             const std::string deleteLabel =
                 deletePath.filename( ).empty( )
                 ? MakePreferredPathString( deletePath )
-                : deletePath.filename( ).string( );
+                : PathToUtf8( deletePath.filename( ) );
 
             ImGui::Spacing( );
             ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 1.0f, 0.6f, 0.1f, 1.0f ) );
@@ -701,7 +713,7 @@ ImageScraper::DownloadHistoryPanel::BuildTreeNodeSnapshot(
     node.m_Id = ImHashStr( node.m_PathString.c_str( ), node.m_PathString.size( ) );
     node.m_IsDirectory = attrs.m_IsDirectory;
 
-    node.m_Label = path.filename( ).string( );
+    node.m_Label = PathToUtf8( path.filename( ) );
     if( node.m_Label.empty( ) )
     {
         node.m_Label = node.m_PathString;
@@ -815,7 +827,7 @@ void ImageScraper::DownloadHistoryPanel::SetSelection( const std::string& path, 
     }
 
     std::error_code ec;
-    if( std::filesystem::is_regular_file( std::filesystem::path{ preferredPath }, ec ) )
+    if( std::filesystem::is_regular_file( PathFromUtf8( preferredPath ), ec ) )
     {
         m_OnPreviewRequested( preferredPath );
         return;
@@ -921,7 +933,7 @@ void ImageScraper::DownloadHistoryPanel::FinaliseDeleteOperation( bool success, 
 
     std::error_code existsEc;
     if( !context.m_SelectedPathBeforeDelete.empty( )
-        && std::filesystem::exists( std::filesystem::path{ context.m_SelectedPathBeforeDelete }, existsEc )
+        && std::filesystem::exists( PathFromUtf8( context.m_SelectedPathBeforeDelete ), existsEc )
         && !existsEc )
     {
         SetSelection( context.m_SelectedPathBeforeDelete, false, true );
@@ -1013,7 +1025,7 @@ void ImageScraper::DownloadHistoryPanel::EvictThumbnailsInPath( const std::files
     std::vector<std::string> pathsToRemove{ };
     for( const auto& [ filepath, entry ] : m_ThumbnailCache )
     {
-        const std::filesystem::path entryPath = filepath;
+        const std::filesystem::path entryPath = PathFromUtf8( filepath );
         const std::filesystem::path normalisedEntry = ImageScraper::FilesystemUtils::NormalisePath(entryPath );
         const bool matchesTarget =
             treatAsDirectory
@@ -1290,7 +1302,7 @@ bool ImageScraper::DownloadHistoryPanel::PathExists( const std::string& preferre
     }
 
     std::error_code ec;
-    return std::filesystem::exists( std::filesystem::path{ preferredPath }, ec ) && !ec;
+    return std::filesystem::exists( PathFromUtf8( preferredPath ), ec ) && !ec;
 }
 
 const std::vector<std::filesystem::path>& ImageScraper::DownloadHistoryPanel::GetNavigableFiles( ) const
@@ -1357,7 +1369,7 @@ void ImageScraper::DownloadHistoryPanel::CollectNavigableFiles(
 
 int ImageScraper::DownloadHistoryPanel::FindNavigableIndexByPath( const std::string& filepath ) const
 {
-    std::filesystem::path currentPath = filepath;
+    std::filesystem::path currentPath = PathFromUtf8( filepath );
     while( !currentPath.empty( ) )
     {
         const std::string preferredPath = MakeFastPreferredPathString( currentPath );
@@ -1476,7 +1488,7 @@ void ImageScraper::DownloadHistoryPanel::Load( std::shared_ptr<JsonFile> appConf
     selectedPath = MakeFastPreferredPathString( selectedPath );
     if( !selectedPath.empty( )
         && PathExists( selectedPath )
-        && ( m_DownloadsRoot.empty( ) || IsPathWithinRoot( selectedPath, m_DownloadsRoot ) ) )
+        && ( m_DownloadsRoot.empty( ) || IsPathWithinRoot( PathFromUtf8( selectedPath ), m_DownloadsRoot ) ) )
     {
         SetSelection( selectedPath, true, true );
         return;
@@ -1509,12 +1521,12 @@ void ImageScraper::DownloadHistoryPanel::OpenInExplorer( const std::filesystem::
 
 std::string ImageScraper::DownloadHistoryPanel::ExtractFileName( const std::string& filepath )
 {
-    return std::filesystem::path( filepath ).filename( ).string( );
+    return PathToUtf8( PathFromUtf8( filepath ).filename( ) );
 }
 
 std::string ImageScraper::DownloadHistoryPanel::GetFileTypeLabel( const std::string& filepath )
 {
-    std::string extension = std::filesystem::path( filepath ).extension( ).string( );
+    std::string extension = PathToUtf8( PathFromUtf8( filepath ).extension( ) );
     if( extension.empty( ) )
     {
         return "-";
@@ -1540,7 +1552,7 @@ std::string ImageScraper::DownloadHistoryPanel::MakePreferredPathString( const s
         return { };
     }
 
-    return ImageScraper::FilesystemUtils::NormalisePath(path ).string( );
+    return PathToUtf8( ImageScraper::FilesystemUtils::NormalisePath( path ) );
 }
 
 bool ImageScraper::DownloadHistoryPanel::IsPathWithinRoot( const std::filesystem::path& path, const std::filesystem::path& root )
@@ -1649,12 +1661,12 @@ ImageScraper::DownloadHistoryPanel::DecodedThumbnail ImageScraper::DownloadHisto
 
     // GIFs are decoded as first-frame previews, so file size is less important to memory use.
     // For other still-image formats the decoded bitmap can scale sharply with source size, so cap it.
-    const std::string ext = std::filesystem::path( filepath ).extension( ).string( );
+    const std::string ext = PathToUtf8( PathFromUtf8( filepath ).extension( ) );
     const bool isGif = ( ext == ".gif" || ext == ".GIF" );
     if( !isGif )
     {
         std::error_code ec;
-        const auto bytes = std::filesystem::file_size( filepath, ec );
+        const auto bytes = std::filesystem::file_size( PathFromUtf8( filepath ), ec );
         if( ec || bytes > k_MaxThumbnailBytes )
         {
             return DecodedThumbnail{ filepath };
@@ -1672,7 +1684,7 @@ ImageScraper::DownloadHistoryPanel::DecodedThumbnail ImageScraper::DownloadHisto
 
 bool ImageScraper::DownloadHistoryPanel::IsSupportedMediaExtension( const std::string& filepath )
 {
-    const std::string ext = StringUtils::ToLower( std::filesystem::path( filepath ).extension( ).string( ) );
+    const std::string ext = StringUtils::ToLower( PathToUtf8( PathFromUtf8( filepath ).extension( ) ) );
 
     static const std::unordered_set<std::string> k_Supported =
     {
@@ -1685,7 +1697,7 @@ bool ImageScraper::DownloadHistoryPanel::IsSupportedMediaExtension( const std::s
 
 bool ImageScraper::DownloadHistoryPanel::IsVideoExtension( const std::string& filepath )
 {
-    const std::string ext = StringUtils::ToLower( std::filesystem::path( filepath ).extension( ).string( ) );
+    const std::string ext = StringUtils::ToLower( PathToUtf8( PathFromUtf8( filepath ).extension( ) ) );
 
     static const std::unordered_set<std::string> k_Video =
     {
@@ -1711,7 +1723,7 @@ ImageScraper::DownloadHistoryPanel::DecodedThumbnail ImageScraper::DownloadHisto
 std::string ImageScraper::DownloadHistoryPanel::FormatFileSize( const std::string& filepath )
 {
     std::error_code ec;
-    const auto bytes = std::filesystem::file_size( filepath, ec );
+    const auto bytes = std::filesystem::file_size( PathFromUtf8( filepath ), ec );
     if( ec )
     {
         return "?";
@@ -1722,7 +1734,7 @@ std::string ImageScraper::DownloadHistoryPanel::FormatFileSize( const std::strin
 
 std::string ImageScraper::DownloadHistoryPanel::GetSizeColumnLabel( const std::filesystem::path& path )
 {
-    return FormatFileSize( path.string( ) );
+    return FormatFileSize( PathToUtf8( path ) );
 }
 
 std::string ImageScraper::DownloadHistoryPanel::GetTypeColumnLabel( const std::filesystem::path& path )
@@ -1733,7 +1745,7 @@ std::string ImageScraper::DownloadHistoryPanel::GetTypeColumnLabel( const std::f
         return "Folder";
     }
 
-    std::string extension = StringUtils::ToLower( path.extension( ).string( ) );
+    std::string extension = StringUtils::ToLower( PathToUtf8( path.extension( ) ) );
 
     static const std::unordered_set<std::string> imageTypes =
     {

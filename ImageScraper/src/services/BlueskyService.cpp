@@ -1,4 +1,5 @@
 #include "services/BlueskyService.h"
+#include "utils/FilesystemUtils.h"
 
 #include "async/TaskManager.h"
 #include "requests/RequestTypes.h"
@@ -240,7 +241,7 @@ void ImageScraper::BlueskyService::DownloadContent( const UserInputOptions& inpu
             InfoLog( "[%s] Prepared %i unique Bluesky downloads for %s from %i fetched media items (%i images, %i videos -> %i image downloads, %i video downloads).", __FUNCTION__, static_cast<int>( preparedDownloads.size( ) ), actor.c_str( ), static_cast<int>( mediaItems.size( ) ), imageCount, videoCount, preparedImageCount, preparedVideoCount );
 
             const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Bluesky" / preparedDownloads.front( ).m_ActorDirectory;
-            const std::string dirStr = dir.generic_string( );
+            const std::string dirStr = ImageScraper::FilesystemUtils::PathToUtf8Generic( dir );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
                 LogError( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );

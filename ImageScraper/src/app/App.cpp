@@ -23,6 +23,7 @@
 #include "network/RateLimitTypes.h"
 #include "network/RedgifsUrlResolver.h"
 #include "network/RetryHttpClient.h"
+#include "utils/FilesystemUtils.h"
 
 #include <string>
 #include <chrono>
@@ -59,21 +60,23 @@ ImageScraper::App::App( )
     Logger::AddLogger( std::make_shared<DevLogger>( ) );
     Logger::AddLogger( std::make_shared<ConsoleLogger>( ) );
 
-    char exePath[ MAX_PATH ];
-    GetModuleFileNameA( nullptr, exePath, MAX_PATH );
+    // Wide, because the install directory can contain characters the ANSI code
+    // page cannot represent.
+    wchar_t exePath[ MAX_PATH ];
+    GetModuleFileNameW( nullptr, exePath, MAX_PATH );
     const std::filesystem::path exeDir = std::filesystem::path( exePath ).parent_path( );
 
     auto fileLogger = std::make_shared<FileLogger>( exeDir / "logs" );
     Logger::AddLogger( fileLogger );
-    m_LogFilePath = fileLogger->GetLogFilePath( ).string( );
+    m_LogFilePath = FilesystemUtils::PathToUtf8( fileLogger->GetLogFilePath( ) );
 
-    const std::string appConfigPath = ( std::filesystem::temp_directory_path( ) / s_AppConfigFile ).generic_string( );
+    const std::string appConfigPath = FilesystemUtils::PathToUtf8Generic( std::filesystem::temp_directory_path( ) / s_AppConfigFile );
     m_AppConfig = std::make_shared<JsonFile>( appConfigPath );
 
-    const std::string userConfigPath = ( exeDir / s_UserConfigFile ).generic_string( );
+    const std::string userConfigPath = FilesystemUtils::PathToUtf8Generic( exeDir / s_UserConfigFile );
     m_UserConfig = std::make_shared<JsonFile>( userConfigPath );
 
-    m_AuthHtmlPath = ( exeDir / s_AuthHtmlFile ).generic_string( );
+    m_AuthHtmlPath = FilesystemUtils::PathToUtf8Generic( exeDir / s_AuthHtmlFile );
 
     m_FrontEnd = std::make_shared<FrontEnd>( UI_MAX_LOG_LINES );
     m_FrontEnd->SetLogFilePath( m_LogFilePath );
@@ -90,9 +93,9 @@ ImageScraper::App::App( )
         SuccessLog( "[%s] User Config Loaded!", __FUNCTION__ );
     }
 
-    const std::string caBundlePath = ( exeDir / s_CaBundleFile ).generic_string( );
+    const std::string caBundlePath = FilesystemUtils::PathToUtf8Generic( exeDir / s_CaBundleFile );
     const std::filesystem::path defaultDownloadRoot = DownloadLocationConfig::GetDefaultDownloadRoot( exeDir );
-    m_OutputDirPath = DownloadLocationConfig::LoadDownloadRoot( m_AppConfig, defaultDownloadRoot ).generic_string( );
+    m_OutputDirPath = FilesystemUtils::PathToUtf8Generic( DownloadLocationConfig::LoadDownloadRoot( m_AppConfig, defaultDownloadRoot ) );
 
     // One rate-limited HTTP client for all redgifs traffic, shared between RedgifsUrlResolver
     // (used by every service that may encounter redgifs URLs) and RedgifsService itself.
