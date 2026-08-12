@@ -1,5 +1,6 @@
 #include "CppUnitTest.h"
 #include "utils/DownloadUtils.h"
+#include "utils/FilesystemUtils.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -96,9 +97,9 @@ namespace ImageScraperTests
     TEST_METHOD(GetProviderName_Extracts_The_Provider_Folder_From_A_Download_Path)
     {
         const std::string redditPath =
-            ( std::filesystem::path( "Downloads" ) / "Reddit" / "aww" / "cat.jpg" ).string( );
+            ImageScraper::FilesystemUtils::PathToUtf8( std::filesystem::path( "Downloads" ) / "Reddit" / "aww" / "cat.jpg" );
         const std::string missingDownloadsPath =
-            ( std::filesystem::path( "Archives" ) / "Reddit" / "aww" / "cat.jpg" ).string( );
+            ImageScraper::FilesystemUtils::PathToUtf8( std::filesystem::path( "Archives" ) / "Reddit" / "aww" / "cat.jpg" );
     
         Assert::IsTrue(  GetProviderName( redditPath ) == "Reddit" );
         Assert::IsTrue(  GetProviderName( missingDownloadsPath ).empty( ) );
@@ -108,7 +109,7 @@ namespace ImageScraperTests
     {
         const std::filesystem::path root = std::filesystem::path( "CustomRoot" );
         const std::string filepath =
-            ( root / "Reddit" / "Subreddit" / "aww" / "kitten.png" ).string( );
+            ImageScraper::FilesystemUtils::PathToUtf8( root / "Reddit" / "Subreddit" / "aww" / "kitten.png" );
     
         Assert::IsTrue(  GetProviderName( filepath, root ) == "Reddit" );
         Assert::IsTrue(  GetSubfolderLabel( filepath, root ) == "r/aww" );
@@ -117,56 +118,56 @@ namespace ImageScraperTests
     TEST_METHOD(GetSubfolderLabel_Uses_Reddit_Prefix)
     {
         const std::string filepath =
-            ( std::filesystem::path( "Downloads" ) / "Reddit" / "cats" / "kitten.png" ).string( );
+            ImageScraper::FilesystemUtils::PathToUtf8( std::filesystem::path( "Downloads" ) / "Reddit" / "cats" / "kitten.png" );
         Assert::IsTrue(  GetSubfolderLabel( filepath ) == "r/cats" );
     }
 
     TEST_METHOD(GetSubfolderLabel_Omits_Reddit_Target_Directory)
     {
         const std::string filepath =
-            ( std::filesystem::path( "Downloads" ) / "Reddit" / "Subreddit" / "aww" / "kitten.png" ).string( );
+            ImageScraper::FilesystemUtils::PathToUtf8( std::filesystem::path( "Downloads" ) / "Reddit" / "Subreddit" / "aww" / "kitten.png" );
         Assert::IsTrue(  GetSubfolderLabel( filepath ) == "r/aww" );
     }
 
     TEST_METHOD(GetSubfolderLabel_Uses_Reddit_User_Prefix)
     {
         const std::string filepath =
-            ( std::filesystem::path( "Downloads" ) / "Reddit" / "User" / "spez" / "post.jpg" ).string( );
+            ImageScraper::FilesystemUtils::PathToUtf8( std::filesystem::path( "Downloads" ) / "Reddit" / "User" / "spez" / "post.jpg" );
         Assert::IsTrue(  GetSubfolderLabel( filepath ) == "u/spez" );
     }
 
     TEST_METHOD(GetSubfolderLabel_Uses_Tumblr_Prefix)
     {
         const std::string filepath =
-            ( std::filesystem::path( "Downloads" ) / "Tumblr" / "artist-name" / "post.gif" ).string( );
+            ImageScraper::FilesystemUtils::PathToUtf8( std::filesystem::path( "Downloads" ) / "Tumblr" / "artist-name" / "post.gif" );
         Assert::IsTrue(  GetSubfolderLabel( filepath ) == "@artist-name" );
     }
 
     TEST_METHOD(GetSubfolderLabel_Uses_Bluesky_Prefix)
     {
         const std::string filepath =
-            ( std::filesystem::path( "Downloads" ) / "Bluesky" / "alice.bsky.social" / "post.jpg" ).string( );
+            ImageScraper::FilesystemUtils::PathToUtf8( std::filesystem::path( "Downloads" ) / "Bluesky" / "alice.bsky.social" / "post.jpg" );
         Assert::IsTrue(  GetSubfolderLabel( filepath ) == "@alice.bsky.social" );
     }
 
     TEST_METHOD(GetSubfolderLabel_Wraps_FourChan_Board_In_Slashes)
     {
         const std::string filepath =
-            ( std::filesystem::path( "Downloads" ) / "4chan" / "wg" / "thread.jpg" ).string( );
+            ImageScraper::FilesystemUtils::PathToUtf8( std::filesystem::path( "Downloads" ) / "4chan" / "wg" / "thread.jpg" );
         Assert::IsTrue(  GetSubfolderLabel( filepath ) == "/wg/" );
     }
 
     TEST_METHOD(GetSubfolderLabel_Uses_Raw_Relative_Subfolder_For_Other_Providers)
     {
         const std::string filepath =
-            ( std::filesystem::path( "Downloads" ) / "ExampleSource" / "server" / "channel" / "clip.mp4" ).string( );
+            ImageScraper::FilesystemUtils::PathToUtf8( std::filesystem::path( "Downloads" ) / "ExampleSource" / "server" / "channel" / "clip.mp4" );
         Assert::IsTrue(  GetSubfolderLabel( filepath ) == "server/channel" );
     }
 
     TEST_METHOD(GetSubfolderLabel_Is_Empty_For_Files_Directly_Under_Provider_Root)
     {
         const std::string filepath =
-            ( std::filesystem::path( "Downloads" ) / "Reddit" / "loose-file.jpg" ).string( );
+            ImageScraper::FilesystemUtils::PathToUtf8( std::filesystem::path( "Downloads" ) / "Reddit" / "loose-file.jpg" );
         Assert::IsTrue(  GetSubfolderLabel( filepath ).empty( ) );
     }
     

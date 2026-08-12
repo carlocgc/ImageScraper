@@ -114,7 +114,7 @@ void ImageScraper::CredentialsPanel::Update( )
                 std::string arrowId = std::string( "##link" ) + id;
                 if( ImGui::ArrowButton( arrowId.c_str( ), ImGuiDir_Right ) )
                 {
-                    ShellExecuteA( nullptr, "open", url, nullptr, nullptr, SW_SHOWNORMAL );
+                    ShellExecuteA( nullptr, "open", url, nullptr, nullptr, SW_SHOWNORMAL ); // utf8-guard: ok - url is an ASCII string literal, not a path
                 }
                 if( ImGui::IsItemHovered( ) )
                 {
