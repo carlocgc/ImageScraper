@@ -1,4 +1,5 @@
 #include "services/RedgifsService.h"
+#include "utils/FilesystemUtils.h"
 
 #include "async/TaskManager.h"
 #include "log/Logger.h"
@@ -176,7 +177,7 @@ void ImageScraper::RedgifsService::DownloadContent( const UserInputOptions& inpu
             }
 
             const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Redgifs" / lowerUser;
-            const std::string dirStr = dir.generic_string( );
+            const std::string dirStr = ImageScraper::FilesystemUtils::PathToUtf8Generic( dir );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
                 LogError( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );

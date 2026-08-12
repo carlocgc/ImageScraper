@@ -1,5 +1,6 @@
 #include "ui/CredentialsPanel.h"
 #include "log/Logger.h"
+#include "utils/FilesystemUtils.h"
 
 #include "imgui/imgui.h"
 
@@ -186,7 +187,7 @@ void ImageScraper::CredentialsPanel::SaveField( const std::string& key, const ch
 
         std::error_code ec;
         std::filesystem::copy_file(
-            std::filesystem::path( m_UserConfig->GetFilePath( ) ),
+            FilesystemUtils::PathFromUtf8( m_UserConfig->GetFilePath( ) ),
             devDataPath,
             std::filesystem::copy_options::overwrite_existing,
             ec );
@@ -197,7 +198,7 @@ void ImageScraper::CredentialsPanel::SaveField( const std::string& key, const ch
         }
         else
         {
-            LogDebug( "[%s] Credentials backed up to %s", __FUNCTION__, devDataPath.string( ).c_str( ) );
+            LogDebug( "[%s] Credentials backed up to %s", __FUNCTION__, FilesystemUtils::PathToUtf8( devDataPath ).c_str( ) );
         }
     }
 #endif

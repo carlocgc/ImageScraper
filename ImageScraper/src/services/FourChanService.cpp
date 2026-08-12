@@ -1,4 +1,5 @@
 #include "services/FourChanService.h"
+#include "utils/FilesystemUtils.h"
 #include "async/TaskManager.h"
 #include "log/Logger.h"
 #include "requests/RequestTypes.h"
@@ -192,7 +193,7 @@ void ImageScraper::FourChanService::DownloadContent( const UserInputOptions& inp
             // Create download directory
 
             const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "4chan" / options.m_FourChanBoard;
-            const std::string dirStr = dir.generic_string( );
+            const std::string dirStr = ImageScraper::FilesystemUtils::PathToUtf8Generic( dir );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
                 LogError( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );

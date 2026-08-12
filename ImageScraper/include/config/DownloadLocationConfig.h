@@ -28,7 +28,9 @@ namespace ImageScraper::DownloadLocationConfig
         std::string savedLocation;
         if( appConfig && appConfig->GetValue<std::string>( s_DownloadLocationConfigKey, savedLocation ) && !savedLocation.empty( ) )
         {
-            return NormalisePath( savedLocation );
+            // The config stores UTF-8; the path(std::string) constructor would
+            // decode it as ANSI and mangle any non-Latin folder name.
+            return NormalisePath( FilesystemUtils::PathFromUtf8( savedLocation ) );
         }
 
         return NormalisePath( defaultDownloadRoot );

@@ -154,6 +154,84 @@ namespace ImageScraperTests
         const std::filesystem::path file = tmp.MakeFile( "test.txt" );
         Assert::IsFalse(  FilesystemUtils::DirectoryHasEntries( file ) );
     }
-    
+
+    // ---------------------------------------------------------------------------
+    // PathToUtf8 / PathFromUtf8
+    //
+    // The name below is "Reze 霊夢 (Chainsaw Man)" - the kanji are unrepresentable
+    // in a western ANSI code page, which is exactly what made path::string( )
+    // throw std::system_error while building the downloads tree.
+    // ---------------------------------------------------------------------------
+    static const std::wstring& NonAnsiName( )
+    {
+        static const std::wstring name = L"Reze \u970A\u5922 (Chainsaw Man)";
+        return name;
+    }
+
+    TEST_METHOD(PathToUtf8_Empty_Path_Returns_Empty)
+    {
+        Assert::IsTrue( FilesystemUtils::PathToUtf8( {} ).empty( ) );
+    }
+
+    TEST_METHOD(PathFromUtf8_Empty_String_Returns_Empty)
+    {
+        Assert::IsTrue( FilesystemUtils::PathFromUtf8( {} ).empty( ) );
+    }
+
+    TEST_METHOD(PathToUtf8_Ascii_Path_Matches_Native_String)
+    {
+        const std::filesystem::path path{ L"C:\\Downloads\\Reddit\\file.jpg" };
+        Assert::AreEqual( std::string{ "C:\\Downloads\\Reddit\\file.jpg" },
+                          FilesystemUtils::PathToUtf8( path ) );
+    }
+
+    TEST_METHOD(PathToUtf8_Non_Ansi_Filename_Does_Not_Throw)
+    {
+        const std::filesystem::path path = std::filesystem::path{ L"C:\\Downloads" } / NonAnsiName( );
+
+        // path::string( ) throws std::system_error here on a western ANSI code page.
+        const std::string utf8 = FilesystemUtils::PathToUtf8( path );
+        Assert::IsFalse( utf8.empty( ) );
+    }
+
+    TEST_METHOD(PathToUtf8_Non_Ansi_Filename_Produces_Utf8_Bytes)
+    {
+        const std::filesystem::path path{ NonAnsiName( ) };
+        const std::string utf8 = FilesystemUtils::PathToUtf8( path );
+
+        // U+970A encodes as E9 9C 8A in UTF-8.
+        Assert::IsTrue( utf8.find( "\xE9\x9C\x8A" ) != std::string::npos );
+    }
+
+    TEST_METHOD(PathFromUtf8_Round_Trips_Non_Ansi_Filename)
+    {
+        const std::filesystem::path original = std::filesystem::path{ L"C:\\Downloads" } / NonAnsiName( );
+        const std::filesystem::path roundTripped =
+            FilesystemUtils::PathFromUtf8( FilesystemUtils::PathToUtf8( original ) );
+
+        Assert::IsTrue( original == roundTripped );
+        Assert::IsTrue( original.wstring( ) == roundTripped.wstring( ) );
+    }
+
+    TEST_METHOD(PathToUtf8Generic_Uses_Forward_Slashes)
+    {
+        const std::filesystem::path path = std::filesystem::path{ L"C:\\Downloads" } / NonAnsiName( );
+        const std::string generic = FilesystemUtils::PathToUtf8Generic( path );
+
+        Assert::IsTrue( generic.find( '\\' ) == std::string::npos );
+        Assert::IsTrue( generic.find( '/' ) != std::string::npos );
+        Assert::IsTrue( FilesystemUtils::PathFromUtf8( generic ) == path );
+    }
+
+    TEST_METHOD(PathToUtf8_Round_Trips_Non_Ansi_File_On_Disk)
+    {
+        TempDir tmp;
+        const std::filesystem::path file = tmp.path / ( NonAnsiName( ) + L".jpg" );
+        std::ofstream{ file };
+
+        const std::string utf8 = FilesystemUtils::PathToUtf8( file );
+        Assert::IsTrue( std::filesystem::exists( FilesystemUtils::PathFromUtf8( utf8 ) ) );
+    }
+
     };
 }
