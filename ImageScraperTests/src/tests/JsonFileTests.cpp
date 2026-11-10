@@ -143,6 +143,39 @@ namespace ImageScraperTests
     // Empty-string credentials check (mirrors HasRequiredCredentials logic)
     // ---------------------------------------------------------------------------
     
+    // ---------------------------------------------------------------------------
+    // Non-ANSI paths (callers pass UTF-8, e.g. a Cyrillic or CJK Windows username)
+    // ---------------------------------------------------------------------------
+
+    TEST_METHOD(Serialise_And_Deserialise_Round_Trip_Under_A_Non_Ansi_Directory)
+    {
+        const std::filesystem::path dir = std::filesystem::temp_directory_path( ) / L"JsonFileTest_\u0414\u0430\u043D\u043D\u044B\u0435_\u4E34\u65F6";
+        const std::filesystem::path file = dir / L"config.json";
+        std::error_code ec;
+        std::filesystem::remove_all( dir, ec );
+
+        const std::string utf8Path = file.u8string( );
+
+        {
+            JsonFile writer( utf8Path );
+            Assert::IsTrue( writer.Deserialise( ), L"Deserialise should create the file under the non-ANSI directory" );
+            writer.SetValue<std::string>( "download_location", "D:/Pics" );
+            Assert::IsTrue( writer.Serialise( ) );
+        }
+
+        Assert::IsTrue( std::filesystem::exists( file ), L"File should exist at the real UTF-8 decoded path" );
+
+        {
+            JsonFile reader( utf8Path );
+            Assert::IsTrue( reader.Deserialise( ) );
+            std::string out;
+            Assert::IsTrue( reader.GetValue<std::string>( "download_location", out ) );
+            Assert::AreEqual( std::string{ "D:/Pics" }, out );
+        }
+
+        std::filesystem::remove_all( dir, ec );
+    }
+
     TEST_METHOD(Empty_String_Value_Is_Retrievable_And_Detected_As_Empty)
     {
         TempFile tmp;
