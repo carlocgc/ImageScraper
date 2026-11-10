@@ -80,6 +80,8 @@ Swap `Debug` for `Release` or `/t:ImageScraper` for `/t:ImageScraperTests` as ne
 
 Credentials are entered through the in-app **Credentials** panel. User credentials are stored in `config.json` next to the executable, so normal use does not require manual JSON editing.
 
+App state (the download location, OAuth refresh tokens, and similar settings the app manages itself) is stored separately in `%LOCALAPPDATA%\ImageScraper\config.json`. Older versions kept this file in `%TEMP%\ImageScraper\`, where Windows could clear it; on first launch the app copies an existing temp copy to the new location.
+
 ### Provider setup
 
 **Reddit**

@@ -422,6 +422,7 @@ xcopy "$(ProjectDir)resources\icons" "$(TargetDir)resources\icons\" /Y /I /E</Co
     <ClInclude Include="include\async\ThreadPool.h" />
     <ClInclude Include="include\collections\RingBuffer.h" />
     <ClInclude Include="include\config\Config.h" />
+    <ClInclude Include="include\config\AppConfigLocation.h" />
     <ClInclude Include="include\config\DownloadLocationConfig.h" />
     <ClInclude Include="include\cppcodec\base32_crockford.hpp" />
     <ClInclude Include="include\cppcodec\base32_default_crockford.hpp" />
