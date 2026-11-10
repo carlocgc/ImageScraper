@@ -209,6 +209,7 @@
     <ClCompile Include="src\tests\UpdateCheckerTests.cpp" />
     <ClCompile Include="src\tests\AuthRequestHelpersTests.cpp" />
     <ClCompile Include="src\tests\FilesystemUtilsTests.cpp" />
+    <ClCompile Include="src\tests\AppConfigLocationTests.cpp" />
     <ClCompile Include="..\ImageScraper\src\io\JsonFile.cpp" />
   </ItemGroup>
   <ItemGroup>

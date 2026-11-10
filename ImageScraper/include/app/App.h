@@ -21,7 +21,6 @@ namespace ImageScraper
         App( );
         int Run( );
 
-        static const std::string s_AppConfigFile;
         static const std::string s_UserConfigFile;
         static const std::string s_CaBundleFile;
         static const std::string s_AuthHtmlFile;
