@@ -371,6 +371,9 @@
     <ClInclude Include="include\config\Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\config\AppConfigLocation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\config\DownloadLocationConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
