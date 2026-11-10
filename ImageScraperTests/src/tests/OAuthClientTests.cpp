@@ -1,6 +1,7 @@
 #include "CppUnitTest.h"
 #include "auth/OAuthClient.h"
 #include "io/JsonFile.h"
+#include "utils/FilesystemUtils.h"
 
 #include <filesystem>
 #include <string>
@@ -22,7 +23,7 @@ namespace ImageScraperTests
 
         explicit TempOAuthFile( const char* suffix )
         {
-            path = ( std::filesystem::temp_directory_path( ) / suffix ).string( );
+            path = ImageScraper::FilesystemUtils::PathToUtf8( std::filesystem::temp_directory_path( ) / suffix );
         }
 
         ~TempOAuthFile( )
