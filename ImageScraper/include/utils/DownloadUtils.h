@@ -2,6 +2,7 @@
 
 #include "log/Logger.h"
 #include "requests/RequestTypes.h"
+#include "utils/FilesystemUtils.h"
 #include "nlohmann/json.hpp"
 
 #include <string>
@@ -99,9 +100,10 @@ namespace ImageScraper::DownloadHelpers
 
     static bool CreateDir( const std::string& dir )
     {
-        if( !std::filesystem::exists( dir ) )
+        const std::filesystem::path dirPath = FilesystemUtils::PathFromUtf8( dir );
+        if( !std::filesystem::exists( dirPath ) )
         {
-            if( !std::filesystem::create_directories( dir ) )
+            if( !std::filesystem::create_directories( dirPath ) )
             {
                 LogError( "[%s] Failed to create download folder, invalid path: %s", __FUNCTION__, dir );
                 return false;
@@ -116,7 +118,7 @@ namespace ImageScraper::DownloadHelpers
     {
         if( !downloadsRoot.empty( ) )
         {
-            const std::filesystem::path filePath = std::filesystem::path( filepath );
+            const std::filesystem::path filePath = FilesystemUtils::PathFromUtf8( filepath );
             const std::filesystem::path relativePath = filePath.lexically_relative( downloadsRoot );
             if( relativePath.empty( ) || relativePath == std::filesystem::path( "." ) )
             {
@@ -124,7 +126,7 @@ namespace ImageScraper::DownloadHelpers
             }
 
             auto relativeIt = relativePath.begin( );
-            if( relativeIt == relativePath.end( ) || relativeIt->string( ) == ".." )
+            if( relativeIt == relativePath.end( ) || *relativeIt == std::filesystem::path( ".." ) )
             {
                 return { };
             }
@@ -134,7 +136,7 @@ namespace ImageScraper::DownloadHelpers
 
         std::filesystem::path result;
         bool foundDownloads = false;
-        for( const auto& part : std::filesystem::path( filepath ) )
+        for( const auto& part : FilesystemUtils::PathFromUtf8( filepath ) )
         {
             result /= part;
             if( foundDownloads )
@@ -158,12 +160,12 @@ namespace ImageScraper::DownloadHelpers
 
     static std::string GetProviderName( const std::string& filepath )
     {
-        return GetProviderRoot( filepath ).filename( ).string( );
+        return FilesystemUtils::PathToUtf8( GetProviderRoot( filepath ).filename( ) );
     }
 
     static std::string GetProviderName( const std::string& filepath, const std::filesystem::path& downloadsRoot )
     {
-        return GetProviderRoot( filepath, downloadsRoot ).filename( ).string( );
+        return FilesystemUtils::PathToUtf8( GetProviderRoot( filepath, downloadsRoot ).filename( ) );
     }
 
     static std::string GetSubfolderLabel( const std::string& filepath, const std::filesystem::path& downloadsRoot )
@@ -174,7 +176,7 @@ namespace ImageScraper::DownloadHelpers
             return { };
         }
 
-        const auto fileDir = std::filesystem::path( filepath ).parent_path( );
+        const auto fileDir = FilesystemUtils::PathFromUtf8( filepath ).parent_path( );
         std::error_code ec;
         const auto relativePath = std::filesystem::relative( fileDir, providerRoot, ec );
         if( ec || relativePath.empty( ) || relativePath == std::filesystem::path( "." ) )
@@ -182,8 +184,8 @@ namespace ImageScraper::DownloadHelpers
             return { };
         }
 
-        const std::string subfolderName = relativePath.generic_string( );
-        const std::string providerName = providerRoot.filename( ).string( );
+        const std::string subfolderName = FilesystemUtils::PathToUtf8Generic( relativePath );
+        const std::string providerName = FilesystemUtils::PathToUtf8( providerRoot.filename( ) );
 
         if( providerName == "4chan" )
         {
@@ -198,13 +200,13 @@ namespace ImageScraper::DownloadHelpers
                 return { };
             }
 
-            const std::string firstPart = relativeIt->string( );
+            const std::string firstPart = FilesystemUtils::PathToUtf8( *relativeIt );
             if( firstPart == "Subreddit" )
             {
                 ++relativeIt;
                 if( relativeIt != relativePath.end( ) )
                 {
-                    return "r/" + relativeIt->string( );
+                    return "r/" + FilesystemUtils::PathToUtf8( *relativeIt );
                 }
             }
 
@@ -213,7 +215,7 @@ namespace ImageScraper::DownloadHelpers
                 ++relativeIt;
                 if( relativeIt != relativePath.end( ) )
                 {
-                    return "u/" + relativeIt->string( );
+                    return "u/" + FilesystemUtils::PathToUtf8( *relativeIt );
                 }
             }
 

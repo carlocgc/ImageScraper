@@ -30,6 +30,11 @@
 
 namespace
 {
+    // path::string() converts to the ANSI code page and throws on filenames it
+    // cannot represent, so the download root and every progress/log string built
+    // from a path goes through the UTF-8 helper instead.
+    using ImageScraper::FilesystemUtils::PathToUtf8;
+
     constexpr uintmax_t k_CopyBufferBytes = 1024 * 1024;
     constexpr uintmax_t k_MinFreeSpaceBufferBytes = 1024ull * 1024ull * 1024ull;
     constexpr int k_MinOperationStageMs = 750;
@@ -797,7 +802,7 @@ void ImageScraper::SettingsPanel::PersistDownloadRoot( const std::filesystem::pa
     }
     else
     {
-        m_AppConfig->SetValue<std::string>( DownloadLocationConfig::s_DownloadLocationConfigKey, downloadRoot.string( ) );
+        m_AppConfig->SetValue<std::string>( DownloadLocationConfig::s_DownloadLocationConfigKey, PathToUtf8( downloadRoot ) );
     }
 
     if( !m_AppConfig->Serialise( ) )
@@ -826,7 +831,7 @@ void ImageScraper::SettingsPanel::BeginCopyDownloadLocation( const std::filesyst
 
     if( DownloadLocationConfig::IsPathWithinRoot( nextRoot, previousRoot ) )
     {
-        LogError( "[%s] Refusing to copy downloads into a child of the current downloads folder: %s", __FUNCTION__, nextRoot.string( ).c_str( ) );
+        LogError( "[%s] Refusing to copy downloads into a child of the current downloads folder: %s", __FUNCTION__, PathToUtf8( nextRoot ).c_str( ) );
         return;
     }
 
@@ -975,7 +980,7 @@ void ImageScraper::SettingsPanel::ScanCopyPlan(
         ++progress.m_FailedFiles;
         progress.m_Message = "Failed to create the new download location.";
         UpdateOperationProgress( progress );
-        LogError( "[%s] Failed to create new download location %s: %s", __FUNCTION__, nextRoot.string( ).c_str( ), ec.message( ).c_str( ) );
+        LogError( "[%s] Failed to create new download location %s: %s", __FUNCTION__, PathToUtf8( nextRoot ).c_str( ), ec.message( ).c_str( ) );
         return;
     }
 
@@ -994,7 +999,7 @@ void ImageScraper::SettingsPanel::ScanCopyPlan(
 
         if( !std::filesystem::is_directory( providerRoot, ec ) || ec )
         {
-            WarningLog( "[%s] Skipped unmanaged provider path because it is not a directory: %s", __FUNCTION__, providerRoot.string( ).c_str( ) );
+            WarningLog( "[%s] Skipped unmanaged provider path because it is not a directory: %s", __FUNCTION__, PathToUtf8( providerRoot ).c_str( ) );
             continue;
         }
 
@@ -1004,7 +1009,7 @@ void ImageScraper::SettingsPanel::ScanCopyPlan(
         {
             ++progress.m_FailedFiles;
             progress.m_Message = "Failed while preparing destination folders.";
-            LogError( "[%s] Failed to create provider destination folder %s: %s", __FUNCTION__, providerDestinationRoot.string( ).c_str( ), ec.message( ).c_str( ) );
+            LogError( "[%s] Failed to create provider destination folder %s: %s", __FUNCTION__, PathToUtf8( providerDestinationRoot ).c_str( ), ec.message( ).c_str( ) );
             return;
         }
 
@@ -1015,7 +1020,7 @@ void ImageScraper::SettingsPanel::ScanCopyPlan(
             const std::filesystem::path sourcePath = it->path( );
             const std::filesystem::path relativePath = sourcePath.lexically_relative( previousRoot );
             const std::filesystem::path destinationPath = nextRoot / relativePath;
-            progress.m_CurrentPath = sourcePath.string( );
+            progress.m_CurrentPath = PathToUtf8( sourcePath );
 
             if( it->is_directory( ec ) && !ec )
             {
@@ -1024,7 +1029,7 @@ void ImageScraper::SettingsPanel::ScanCopyPlan(
                 {
                     ++progress.m_FailedFiles;
                     progress.m_Message = "Failed while preparing destination folders.";
-                    LogError( "[%s] Failed to create destination folder %s: %s", __FUNCTION__, destinationPath.string( ).c_str( ), ec.message( ).c_str( ) );
+                    LogError( "[%s] Failed to create destination folder %s: %s", __FUNCTION__, PathToUtf8( destinationPath ).c_str( ), ec.message( ).c_str( ) );
                     return;
                 }
                 continue;
@@ -1038,7 +1043,7 @@ void ImageScraper::SettingsPanel::ScanCopyPlan(
             if( std::filesystem::exists( destinationPath, ec ) && !ec )
             {
                 ++progress.m_SkippedFiles;
-                WarningLog( "[%s] Skipped copying download because destination already exists: %s", __FUNCTION__, destinationPath.string( ).c_str( ) );
+                WarningLog( "[%s] Skipped copying download because destination already exists: %s", __FUNCTION__, PathToUtf8( destinationPath ).c_str( ) );
                 UpdateOperationProgress( progress );
                 continue;
             }
@@ -1048,7 +1053,7 @@ void ImageScraper::SettingsPanel::ScanCopyPlan(
             {
                 ++progress.m_FailedFiles;
                 progress.m_Message = "Failed while reading source file sizes.";
-                LogError( "[%s] Failed to read source file size %s: %s", __FUNCTION__, sourcePath.string( ).c_str( ), ec.message( ).c_str( ) );
+                LogError( "[%s] Failed to read source file size %s: %s", __FUNCTION__, PathToUtf8( sourcePath ).c_str( ), ec.message( ).c_str( ) );
                 return;
             }
 
@@ -1062,7 +1067,7 @@ void ImageScraper::SettingsPanel::ScanCopyPlan(
         {
             ++progress.m_FailedFiles;
             progress.m_Message = "Failed while scanning existing downloads.";
-            LogError( "[%s] Failed while scanning existing downloads in %s: %s", __FUNCTION__, providerRoot.string( ).c_str( ), ec.message( ).c_str( ) );
+            LogError( "[%s] Failed while scanning existing downloads in %s: %s", __FUNCTION__, PathToUtf8( providerRoot ).c_str( ), ec.message( ).c_str( ) );
             UpdateOperationProgress( progress );
             return;
         }
@@ -1117,7 +1122,7 @@ void ImageScraper::SettingsPanel::ScanDeletePlan(
 
         if( !std::filesystem::is_directory( providerRoot, ec ) || ec )
         {
-            WarningLog( "[%s] Skipped unmanaged provider path because it is not a directory: %s", __FUNCTION__, providerRoot.string( ).c_str( ) );
+            WarningLog( "[%s] Skipped unmanaged provider path because it is not a directory: %s", __FUNCTION__, PathToUtf8( providerRoot ).c_str( ) );
             continue;
         }
 
@@ -1128,7 +1133,7 @@ void ImageScraper::SettingsPanel::ScanDeletePlan(
              it.increment( ec ) )
         {
             const std::filesystem::path path = it->path( );
-            progress.m_CurrentPath = path.string( );
+            progress.m_CurrentPath = PathToUtf8( path );
 
             const bool isDirectory = it->is_directory( ec ) && !ec;
             uintmax_t sizeBytes = 0;
@@ -1151,7 +1156,7 @@ void ImageScraper::SettingsPanel::ScanDeletePlan(
         {
             ++progress.m_FailedFiles;
             progress.m_Message = "Failed while scanning originals for deletion.";
-            LogError( "[%s] Failed while scanning originals in %s: %s", __FUNCTION__, providerRoot.string( ).c_str( ), ec.message( ).c_str( ) );
+            LogError( "[%s] Failed while scanning originals in %s: %s", __FUNCTION__, PathToUtf8( providerRoot ).c_str( ), ec.message( ).c_str( ) );
             UpdateOperationProgress( progress );
             return;
         }
@@ -1218,7 +1223,7 @@ bool ImageScraper::SettingsPanel::CopyFileWithProgress( const CopyPlanEntry& ent
     if( ec )
     {
         progress.m_Message = "Failed to create destination folders.";
-        LogError( "[%s] Failed to create destination folder %s: %s", __FUNCTION__, entry.m_DestinationPath.parent_path( ).string( ).c_str( ), ec.message( ).c_str( ) );
+        LogError( "[%s] Failed to create destination folder %s: %s", __FUNCTION__, PathToUtf8( entry.m_DestinationPath.parent_path( ) ).c_str( ), ec.message( ).c_str( ) );
         return false;
     }
 
@@ -1226,7 +1231,7 @@ bool ImageScraper::SettingsPanel::CopyFileWithProgress( const CopyPlanEntry& ent
     if( !input.is_open( ) )
     {
         progress.m_Message = "Failed to open source file.";
-        LogError( "[%s] Failed to open source file: %s", __FUNCTION__, entry.m_SourcePath.string( ).c_str( ) );
+        LogError( "[%s] Failed to open source file: %s", __FUNCTION__, PathToUtf8( entry.m_SourcePath ).c_str( ) );
         return false;
     }
 
@@ -1234,13 +1239,13 @@ bool ImageScraper::SettingsPanel::CopyFileWithProgress( const CopyPlanEntry& ent
     if( !output.is_open( ) )
     {
         progress.m_Message = "Failed to open destination file.";
-        LogError( "[%s] Failed to open destination file: %s", __FUNCTION__, entry.m_DestinationPath.string( ).c_str( ) );
+        LogError( "[%s] Failed to open destination file: %s", __FUNCTION__, PathToUtf8( entry.m_DestinationPath ).c_str( ) );
         return false;
     }
 
     std::vector<char> buffer( static_cast<size_t>( k_CopyBufferBytes ) );
     uintmax_t copiedForFile = 0;
-    progress.m_CurrentPath = entry.m_SourcePath.string( );
+    progress.m_CurrentPath = PathToUtf8( entry.m_SourcePath );
     UpdateOperationProgress( progress );
 
     while( !m_CancelLocationOperation.load( ) && input.good( ) )
@@ -1256,7 +1261,7 @@ bool ImageScraper::SettingsPanel::CopyFileWithProgress( const CopyPlanEntry& ent
         if( !output.good( ) )
         {
             progress.m_Message = "Failed while writing destination file.";
-            LogError( "[%s] Failed while writing destination file: %s", __FUNCTION__, entry.m_DestinationPath.string( ).c_str( ) );
+            LogError( "[%s] Failed while writing destination file: %s", __FUNCTION__, PathToUtf8( entry.m_DestinationPath ).c_str( ) );
             return false;
         }
 
@@ -1273,7 +1278,7 @@ bool ImageScraper::SettingsPanel::CopyFileWithProgress( const CopyPlanEntry& ent
     if( copiedForFile != entry.m_SizeBytes )
     {
         progress.m_Message = "Failed while reading source file.";
-        LogError( "[%s] Failed while reading source file: %s", __FUNCTION__, entry.m_SourcePath.string( ).c_str( ) );
+        LogError( "[%s] Failed while reading source file: %s", __FUNCTION__, PathToUtf8( entry.m_SourcePath ).c_str( ) );
         return false;
     }
 
@@ -1282,7 +1287,7 @@ bool ImageScraper::SettingsPanel::CopyFileWithProgress( const CopyPlanEntry& ent
 
 bool ImageScraper::SettingsPanel::DeleteFileWithProgress( const DeletePlanEntry& entry, LocationOperationProgress& progress )
 {
-    progress.m_CurrentPath = entry.m_Path.string( );
+    progress.m_CurrentPath = PathToUtf8( entry.m_Path );
     UpdateOperationProgress( progress );
 
     std::error_code ec;
@@ -1290,7 +1295,7 @@ bool ImageScraper::SettingsPanel::DeleteFileWithProgress( const DeletePlanEntry&
     if( ec )
     {
         progress.m_Message = "Failed while deleting originals.";
-        LogError( "[%s] Failed to delete original path %s: %s", __FUNCTION__, entry.m_Path.string( ).c_str( ), ec.message( ).c_str( ) );
+        LogError( "[%s] Failed to delete original path %s: %s", __FUNCTION__, PathToUtf8( entry.m_Path ).c_str( ), ec.message( ).c_str( ) );
         return false;
     }
 
@@ -1381,7 +1386,7 @@ bool ImageScraper::SettingsPanel::IsDownloadRootAvailableOrCreatable( const std:
 
 std::string ImageScraper::SettingsPanel::FormatPathForDisplay( const std::filesystem::path& path ) const
 {
-    return path.empty( ) ? std::string{ "(not set)" } : path.string( );
+    return path.empty( ) ? std::string{ "(not set)" } : PathToUtf8( path );
 }
 
 std::optional<std::filesystem::path> ImageScraper::SettingsPanel::PickFolder( const std::filesystem::path& initialPath )

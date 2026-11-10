@@ -1,4 +1,5 @@
 #include "requests/VideoDownloadRequest.h"
+#include "utils/FilesystemUtils.h"
 #include "log/Logger.h"
 
 extern "C"
@@ -132,7 +133,7 @@ ImageScraper::RequestResult ImageScraper::VideoDownloadRequest::Perform( const D
         {
             m_Result.SetError( ResponseErrorCode::InternalServerError );
             m_Result.m_Error.m_ErrorString = AvErrorToString( writeResult );
-            LogError( "[%s] av_interleaved_write_frame failed for %s, error: %s", __FUNCTION__, m_OutputFilePath.string( ).c_str( ), m_Result.m_Error.m_ErrorString.c_str( ) );
+            LogError( "[%s] av_interleaved_write_frame failed for %s, error: %s", __FUNCTION__, ImageScraper::FilesystemUtils::PathToUtf8( m_OutputFilePath ).c_str( ), m_Result.m_Error.m_ErrorString.c_str( ) );
             closeRequest( true );
             return m_Result;
         }
@@ -143,7 +144,7 @@ ImageScraper::RequestResult ImageScraper::VideoDownloadRequest::Perform( const D
     {
         m_Result.SetError( ResponseErrorCode::InternalServerError );
         m_Result.m_Error.m_ErrorString = AvErrorToString( trailerResult );
-        LogError( "[%s] av_write_trailer failed for %s, error: %s", __FUNCTION__, m_OutputFilePath.string( ).c_str( ), m_Result.m_Error.m_ErrorString.c_str( ) );
+        LogError( "[%s] av_write_trailer failed for %s, error: %s", __FUNCTION__, ImageScraper::FilesystemUtils::PathToUtf8( m_OutputFilePath ).c_str( ), m_Result.m_Error.m_ErrorString.c_str( ) );
         closeRequest( true );
         return m_Result;
     }
@@ -246,7 +247,7 @@ bool ImageScraper::VideoDownloadRequest::OpenInput( const DownloadOptions& optio
 
 bool ImageScraper::VideoDownloadRequest::CreateOutput( )
 {
-    const std::string outputPath = m_OutputFilePath.string( );
+    const std::string outputPath = ImageScraper::FilesystemUtils::PathToUtf8( m_OutputFilePath );
     const int allocResult = avformat_alloc_output_context2( &m_OutputFormatCtx, nullptr, nullptr, outputPath.c_str( ) );
     if( allocResult < 0 || !m_OutputFormatCtx )
     {
@@ -353,7 +354,7 @@ void ImageScraper::VideoDownloadRequest::CleanupPartialOutputFile( )
     std::filesystem::remove( m_OutputFilePath, ec );
     if( ec )
     {
-        WarningLog( "[%s] Failed to remove partial download file %s: %s", __FUNCTION__, m_OutputFilePath.string( ).c_str( ), ec.message( ).c_str( ) );
+        WarningLog( "[%s] Failed to remove partial download file %s: %s", __FUNCTION__, ImageScraper::FilesystemUtils::PathToUtf8( m_OutputFilePath ).c_str( ), ec.message( ).c_str( ) );
     }
 }
 

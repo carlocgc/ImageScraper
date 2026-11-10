@@ -1,5 +1,6 @@
 #include "log/FileLogger.h"
 #include "log/Logger.h"
+#include "utils/FilesystemUtils.h"
 
 #include <algorithm>
 #include <chrono>
@@ -91,9 +92,9 @@ void ImageScraper::FileLogger::PruneOldSessions( const std::filesystem::path& lo
     {
         if( ec ) break;
         if( !entry.is_regular_file( ec ) ) continue;
-        const std::string name = entry.path( ).filename( ).string( );
+        const std::string name = FilesystemUtils::PathToUtf8( entry.path( ).filename( ) );
         if( name.rfind( k_FilePrefix, 0 ) != 0 ) continue;
-        if( entry.path( ).extension( ).string( ) != k_FileExtension ) continue;
+        if( entry.path( ).extension( ) != k_FileExtension ) continue;
         sessionFiles.push_back( entry.path( ) );
     }
 

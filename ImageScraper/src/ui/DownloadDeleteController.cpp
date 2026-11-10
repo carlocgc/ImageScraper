@@ -1,4 +1,5 @@
 #include "ui/DownloadDeleteController.h"
+#include "utils/FilesystemUtils.h"
 
 #include <algorithm>
 
@@ -16,7 +17,7 @@ namespace
 
         std::filesystem::path result = path.lexically_normal( );
         result.make_preferred( );
-        return result.string( );
+        return ImageScraper::FilesystemUtils::PathToUtf8( result );
     }
 }
 

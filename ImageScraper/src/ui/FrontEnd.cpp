@@ -2,6 +2,7 @@
 #include "ui/DownloadProgressPanel.h"
 #include "config/DownloadLocationConfig.h"
 #include "log/Logger.h"
+#include "utils/FilesystemUtils.h"
 #include "version/Version.h"
 
 #include "imgui/imgui_internal.h"
@@ -27,7 +28,7 @@ namespace
             ImageScraper::Logger::Log( ImageScraper::LogLevel::Warning,
                                        "[%s] Media control icon font not found: %s",
                                        __FUNCTION__,
-                                       fontPath.string( ).c_str( ) );
+                                       ImageScraper::FilesystemUtils::PathToUtf8( fontPath ).c_str( ) );
             return nullptr;
         }
 
@@ -35,8 +36,9 @@ namespace
         fontConfig.PixelSnapH = true;
         fontConfig.GlyphOffset = ImVec2( 0.0f, 1.0f );
 
+        // AddFontFromFileTTF expects UTF-8 and widens the path itself.
         ImFont* iconFont = io.Fonts->AddFontFromFileTTF(
-            fontPath.string( ).c_str( ),
+            ImageScraper::FilesystemUtils::PathToUtf8( fontPath ).c_str( ),
             k_IconFontSize,
             &fontConfig,
             k_IconRanges );
@@ -46,7 +48,7 @@ namespace
             ImageScraper::Logger::Log( ImageScraper::LogLevel::Warning,
                                        "[%s] Failed to load media control icon font from: %s",
                                        __FUNCTION__,
-                                       fontPath.string( ).c_str( ) );
+                                       ImageScraper::FilesystemUtils::PathToUtf8( fontPath ).c_str( ) );
         }
 
         return iconFont;
@@ -71,8 +73,10 @@ ImageScraper::FrontEnd::~FrontEnd( )
 
 bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& services, std::shared_ptr<JsonFile> userConfig, std::shared_ptr<JsonFile> appConfig )
 {
-    char exePath[ MAX_PATH ];
-    GetModuleFileNameA( nullptr, exePath, MAX_PATH );
+    // Wide, because the install directory can contain characters the ANSI code
+    // page cannot represent.
+    wchar_t exePath[ MAX_PATH ];
+    GetModuleFileNameW( nullptr, exePath, MAX_PATH );
     const std::filesystem::path exeDir = std::filesystem::path( exePath ).parent_path( );
     const std::filesystem::path defaultDownloadRoot = DownloadLocationConfig::GetDefaultDownloadRoot( exeDir );
     const std::filesystem::path initialDownloadRoot = DownloadLocationConfig::LoadDownloadRoot( appConfig, defaultDownloadRoot );
@@ -87,7 +91,7 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     m_CredentialsPanel      = std::make_unique<CredentialsPanel>( userConfig );
     m_SettingsPanel         = std::make_unique<SettingsPanel>(
         appConfig,
-        ( exeDir / "curl-ca-bundle.crt" ).generic_string( ),
+        FilesystemUtils::PathToUtf8Generic( exeDir / "curl-ca-bundle.crt" ),
         defaultDownloadRoot,
         initialDownloadRoot,
         [ this, appConfig ]( const std::filesystem::path& downloadRoot )
@@ -140,7 +144,8 @@ bool ImageScraper::FrontEnd::Init( const std::vector<std::shared_ptr<Service>>& 
     ImFont* mediaControlsIconFont = LoadMediaControlsIconFont( io );
     m_MediaPreviewPanel->SetIconFont( mediaControlsIconFont );
 
-    m_IniPath = ( exeDir / "imgui.ini" ).string( );
+    // ImGui widens IniFilename itself via ImFileOpen, so it wants UTF-8.
+    m_IniPath = FilesystemUtils::PathToUtf8( exeDir / "imgui.ini" );
     io.IniFilename = m_IniPath.c_str( );
 
     ImGui::StyleColorsDark( );

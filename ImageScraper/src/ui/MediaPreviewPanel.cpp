@@ -1,6 +1,7 @@
 #define NOMINMAX
 #include "ui/MediaPreviewPanel.h"
 #include "utils/DownloadUtils.h"
+#include "utils/FilesystemUtils.h"
 #include "utils/StringUtils.h"
 #include "log/Logger.h"
 
@@ -1167,7 +1168,7 @@ void ImageScraper::MediaPreviewPanel::RefreshMetadataCache( )
         return;
     }
 
-    m_CurrentFileName = std::filesystem::path( m_CurrentFilePath ).filename( ).string( );
+    m_CurrentFileName = FilesystemUtils::PathToUtf8( FilesystemUtils::PathFromUtf8( m_CurrentFilePath ).filename( ) );
     m_CurrentProviderName = DownloadHelpers::GetProviderName( m_CurrentFilePath, m_DownloadRoot );
     m_CurrentSubfolderLabel = DownloadHelpers::GetSubfolderLabel( m_CurrentFilePath, m_DownloadRoot );
     m_CurrentFileSizeLabel = FormatFileSize( m_CurrentFilePath );

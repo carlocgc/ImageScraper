@@ -1,4 +1,5 @@
 #include "services/TumblrService.h"
+#include "utils/FilesystemUtils.h"
 #include "services/OAuthServiceHelpers.h"
 #include "io/JsonFile.h"
 #include "log/Logger.h"
@@ -281,7 +282,7 @@ void ImageScraper::TumblrService::DownloadContent( const UserInputOptions& input
 
             // Create download directory
             const std::filesystem::path dir = std::filesystem::path( m_OutputDir ) / "Tumblr" / options.m_TumblrUser;
-            const std::string dirStr = dir.generic_string( );
+            const std::string dirStr = ImageScraper::FilesystemUtils::PathToUtf8Generic( dir );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
                 LogError( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.c_str( ) );

@@ -1,4 +1,5 @@
 #include "services/DanbooruService.h"
+#include "utils/FilesystemUtils.h"
 
 #include "async/TaskManager.h"
 #include "log/Logger.h"
@@ -217,10 +218,10 @@ void ImageScraper::DanbooruService::DownloadContent( const UserInputOptions& inp
                 return;
             }
 
-            const std::string dirStr = dir.generic_string( );
+            const std::string dirStr = ImageScraper::FilesystemUtils::PathToUtf8Generic( dir );
             if( !DownloadHelpers::CreateDir( dirStr ) )
             {
-                LogError( "[%s] Failed to create download directory: %s", __FUNCTION__, dir.string( ).c_str( ) );
+                LogError( "[%s] Failed to create download directory: %s", __FUNCTION__, ImageScraper::FilesystemUtils::PathToUtf8( dir ).c_str( ) );
                 TaskManager::Instance( ).SubmitMain( onFail );
                 return;
             }

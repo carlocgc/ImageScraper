@@ -1,4 +1,5 @@
 #include "requests/DownloadRequest.h"
+#include "utils/FilesystemUtils.h"
 #include "utils/DownloadUtils.h"
 #include "utils/StringUtils.h"
 #include "log/Logger.h"
@@ -34,7 +35,7 @@ ImageScraper::RequestResult ImageScraper::DownloadRequest::Perform( const Downlo
         if( !m_OutputFile.is_open( ) )
         {
             m_Result.SetError( ResponseErrorCode::InternalServerError );
-            LogError( "[%s] DownloadRequest failed, could not open file for write: %s", __FUNCTION__, m_OutputFilePath.string( ).c_str( ) );
+            LogError( "[%s] DownloadRequest failed, could not open file for write: %s", __FUNCTION__, ImageScraper::FilesystemUtils::PathToUtf8( m_OutputFilePath ).c_str( ) );
             return m_Result;
         }
     }
@@ -159,7 +160,7 @@ size_t ImageScraper::DownloadRequest::WriteCallback( char* contents, size_t size
     m_OutputFile.write( contents, static_cast<std::streamsize>( realsize ) );
     if( !m_OutputFile.good( ) )
     {
-        LogError( "[%s] DownloadRequest failed while writing file: %s", __FUNCTION__, m_OutputFilePath.string( ).c_str( ) );
+        LogError( "[%s] DownloadRequest failed while writing file: %s", __FUNCTION__, ImageScraper::FilesystemUtils::PathToUtf8( m_OutputFilePath ).c_str( ) );
         m_Result.SetError( ResponseErrorCode::InternalServerError );
         return 0;
     }
@@ -209,6 +210,6 @@ void ImageScraper::DownloadRequest::CleanupPartialOutputFile( )
     std::filesystem::remove( m_OutputFilePath, ec );
     if( ec )
     {
-        WarningLog( "[%s] Failed to remove partial download file %s: %s", __FUNCTION__, m_OutputFilePath.string( ).c_str( ), ec.message( ).c_str( ) );
+        WarningLog( "[%s] Failed to remove partial download file %s: %s", __FUNCTION__, ImageScraper::FilesystemUtils::PathToUtf8( m_OutputFilePath ).c_str( ), ec.message( ).c_str( ) );
     }
 }

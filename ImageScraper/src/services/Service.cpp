@@ -1,4 +1,5 @@
 #include "services/Service.h"
+#include "utils/FilesystemUtils.h"
 #include "requests/DownloadRequest.h"
 #include "requests/VideoDownloadRequest.h"
 #include "requests/DownloadRequestTypes.h"
@@ -69,7 +70,7 @@ ImageScraper::Service::Service( ContentProvider provider, std::shared_ptr<JsonFi
 
 void ImageScraper::Service::SetDownloadRoot( const std::filesystem::path& downloadRoot )
 {
-    m_OutputDir = downloadRoot.generic_string( );
+    m_OutputDir = ImageScraper::FilesystemUtils::PathToUtf8Generic( downloadRoot );
 }
 
 std::optional<int> ImageScraper::Service::DownloadMedia( const std::vector<MediaDownload>& downloads, const std::filesystem::path& dir )
@@ -92,7 +93,7 @@ std::optional<int> ImageScraper::Service::DownloadMedia( const std::vector<Media
         std::this_thread::sleep_for( std::chrono::seconds{ 1 } );
 
         const std::filesystem::path filepath = dir / download.m_FileName;
-        const std::string filepathStr = filepath.generic_string( );
+        const std::string filepathStr = ImageScraper::FilesystemUtils::PathToUtf8Generic( filepath );
 
         DownloadOptions downloadOptions{ };
         downloadOptions.m_CaBundle = m_CaBundle;

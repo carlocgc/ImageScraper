@@ -13,6 +13,7 @@
 #include "services/RedgifsService.h"
 #include "services/DanbooruService.h"
 #include "async/TaskManager.h"
+#include "config/AppConfigLocation.h"
 #include "config/Config.h"
 #include "config/DownloadLocationConfig.h"
 #include "ui/FrontEnd.h"
@@ -23,10 +24,13 @@
 #include "network/RateLimitTypes.h"
 #include "network/RedgifsUrlResolver.h"
 #include "network/RetryHttpClient.h"
+#include "utils/FilesystemUtils.h"
 
 #include <string>
 #include <chrono>
+#include <optional>
 #include <windows.h>
+#include <shlobj.h>
 
 #define UI_MAX_LOG_LINES 10000
 #define LISTEN_SERVER_PORT 8080
@@ -47,10 +51,24 @@ namespace
         { "get_gif",                           { { 60, 60 } } },
         { ImageScraper::s_DefaultRateLimitKey, { { 60, 60 } } },
     };
+
+    // %LOCALAPPDATA%, or nullopt if the shell cannot resolve it.
+    std::optional<std::filesystem::path> GetLocalAppDataDir( )
+    {
+        PWSTR path = nullptr;
+        const HRESULT result = ::SHGetKnownFolderPath( FOLDERID_LocalAppData, KF_FLAG_DEFAULT, nullptr, &path );
+        std::optional<std::filesystem::path> dir{ };
+        if( SUCCEEDED( result ) && path != nullptr )
+        {
+            dir = std::filesystem::path{ path };
+        }
+
+        ::CoTaskMemFree( path );
+        return dir;
+    }
 }
 
 const std::string ImageScraper::App::s_UserConfigFile = "config.json";
-const std::string ImageScraper::App::s_AppConfigFile = "ImageScraper/config.json";
 const std::string ImageScraper::App::s_CaBundleFile = "curl-ca-bundle.crt";
 const std::string ImageScraper::App::s_AuthHtmlFile = "auth.html";
 
@@ -59,26 +77,51 @@ ImageScraper::App::App( )
     Logger::AddLogger( std::make_shared<DevLogger>( ) );
     Logger::AddLogger( std::make_shared<ConsoleLogger>( ) );
 
-    char exePath[ MAX_PATH ];
-    GetModuleFileNameA( nullptr, exePath, MAX_PATH );
+    // Wide, because the install directory can contain characters the ANSI code
+    // page cannot represent.
+    wchar_t exePath[ MAX_PATH ];
+    GetModuleFileNameW( nullptr, exePath, MAX_PATH );
     const std::filesystem::path exeDir = std::filesystem::path( exePath ).parent_path( );
 
     auto fileLogger = std::make_shared<FileLogger>( exeDir / "logs" );
     Logger::AddLogger( fileLogger );
-    m_LogFilePath = fileLogger->GetLogFilePath( ).string( );
+    m_LogFilePath = FilesystemUtils::PathToUtf8( fileLogger->GetLogFilePath( ) );
 
-    const std::string appConfigPath = ( std::filesystem::temp_directory_path( ) / s_AppConfigFile ).generic_string( );
-    m_AppConfig = std::make_shared<JsonFile>( appConfigPath );
+    std::error_code tempEc;
+    const std::filesystem::path tempDir = std::filesystem::temp_directory_path( tempEc );
+    const std::filesystem::path legacyAppConfigPath = tempEc ? std::filesystem::path{ } : AppConfigLocation::GetAppConfigPath( tempDir );
+    const std::optional<std::filesystem::path> localAppDataDir = GetLocalAppDataDir( );
+    const std::filesystem::path appConfigPath = localAppDataDir ? AppConfigLocation::GetAppConfigPath( *localAppDataDir ) : legacyAppConfigPath;
+    m_AppConfig = std::make_shared<JsonFile>( FilesystemUtils::PathToUtf8Generic( appConfigPath ) );
 
-    const std::string userConfigPath = ( exeDir / s_UserConfigFile ).generic_string( );
+    const std::string userConfigPath = FilesystemUtils::PathToUtf8Generic( exeDir / s_UserConfigFile );
     m_UserConfig = std::make_shared<JsonFile>( userConfigPath );
 
-    m_AuthHtmlPath = ( exeDir / s_AuthHtmlFile ).generic_string( );
+    m_AuthHtmlPath = FilesystemUtils::PathToUtf8Generic( exeDir / s_AuthHtmlFile );
 
     m_FrontEnd = std::make_shared<FrontEnd>( UI_MAX_LOG_LINES );
     m_FrontEnd->SetLogFilePath( m_LogFilePath );
 
     Logger::AddLogger( std::make_shared<FrontEndLogger>( m_FrontEnd ) );
+
+    if( !localAppDataDir )
+    {
+        WarningLog( "[%s] Could not resolve %%LOCALAPPDATA%%, app config falls back to the temp folder and may be cleared by Windows.", __FUNCTION__ );
+    }
+    else if( !legacyAppConfigPath.empty( ) )
+    {
+        switch( AppConfigLocation::MigrateLegacyAppConfig( legacyAppConfigPath, appConfigPath ) )
+        {
+        case AppConfigLocation::MigrationResult::Migrated:
+            InfoLog( "[%s] Moved app config from the temp folder to %s", __FUNCTION__, FilesystemUtils::PathToUtf8( appConfigPath ).c_str( ) );
+            break;
+        case AppConfigLocation::MigrationResult::Failed:
+            WarningLog( "[%s] Could not copy app config from %s, starting with defaults.", __FUNCTION__, FilesystemUtils::PathToUtf8( legacyAppConfigPath ).c_str( ) );
+            break;
+        case AppConfigLocation::MigrationResult::NotNeeded:
+            break;
+        }
+    }
 
     if( m_AppConfig->Deserialise( ) )
     {
@@ -90,9 +133,9 @@ ImageScraper::App::App( )
         SuccessLog( "[%s] User Config Loaded!", __FUNCTION__ );
     }
 
-    const std::string caBundlePath = ( exeDir / s_CaBundleFile ).generic_string( );
+    const std::string caBundlePath = FilesystemUtils::PathToUtf8Generic( exeDir / s_CaBundleFile );
     const std::filesystem::path defaultDownloadRoot = DownloadLocationConfig::GetDefaultDownloadRoot( exeDir );
-    m_OutputDirPath = DownloadLocationConfig::LoadDownloadRoot( m_AppConfig, defaultDownloadRoot ).generic_string( );
+    m_OutputDirPath = FilesystemUtils::PathToUtf8Generic( DownloadLocationConfig::LoadDownloadRoot( m_AppConfig, defaultDownloadRoot ) );
 
     // One rate-limited HTTP client for all redgifs traffic, shared between RedgifsUrlResolver
     // (used by every service that may encounter redgifs URLs) and RedgifsService itself.
