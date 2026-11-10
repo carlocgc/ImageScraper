@@ -33,7 +33,7 @@ namespace ImageScraperTests
         std::filesystem::path MakeFile( const std::string& name ) const
         {
             const std::filesystem::path filePath = path / name;
-            std::ofstream{ filePath.string( ) };
+            std::ofstream{ filePath };
             return filePath;
         }
 
@@ -85,7 +85,7 @@ namespace ImageScraperTests
     {
         TempDir tmp;
         // Build a path with forward slashes and verify make_preferred converts them.
-        const std::string forwardSlashStr = tmp.path.generic_string( ) + "/sub";
+        const std::string forwardSlashStr = FilesystemUtils::PathToUtf8Generic( tmp.path ) + "/sub";
         const std::filesystem::path forwardSlash{ forwardSlashStr };
         tmp.MakeSubDir( "sub" );
     
@@ -93,7 +93,7 @@ namespace ImageScraperTests
         Assert::IsTrue(  !result.empty( ) );
         // On Windows the preferred separator is backslash; the result string
         // must not contain forward slashes after make_preferred.
-        const std::string resultStr = result.string( );
+        const std::string resultStr = FilesystemUtils::PathToUtf8( result );
         Assert::IsTrue(  resultStr.find( '/' ) == std::string::npos );
     }
     
